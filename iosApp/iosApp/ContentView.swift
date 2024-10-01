@@ -1,15 +1,13 @@
 import SwiftUI
 import shared
-struct ContentView: View {
-	let greet = Greeting().greet()
-
+struct  HomeView : View {
 	var body: some View {
-		Text(greet)
+		LoginView()
 	}
 }
 
 struct ContentView_Previews: PreviewProvider {
 	static var previews: some View {
-		ContentView()
+		HomeView()
 	}
 }

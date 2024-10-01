@@ -9,11 +9,15 @@
 import SwiftUI
 
 struct AvatarImageView: View {
+    var imageName : String = "avatar"
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        Image(imageName).resizable().scaledToFit().frame(width: 200,height: 200).clipShape(Circle())
+            .overlay {
+                    Circle().stroke(.brown, lineWidth: 4)
+                       }
+            .shadow(radius:7)
     }
 }
-
 #Preview {
     AvatarImageView()
 }

@@ -8,12 +8,17 @@
 
 import SwiftUI
 
-struct OutlineTextfieldStyle: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
+struct OutlineTextfieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+            configuration
+            .padding().frame(height: 40)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
+                .overlay(){
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color(UIColor.brown), lineWidth: 1)
+                }.submitLabel(.next)
+        }
+  
 }
 
-#Preview {
-    OutlineTextfieldStyle()
-}
