@@ -1,8 +1,13 @@
 import SwiftUI
 import shared
 struct  HomeView : View {
+    @EnvironmentObject var router : Router
 	var body: some View {
-		LoginView()
+            LoginView()
+            .onAppear{
+            //auth and move to Notes List
+            
+        }
 	}
 }
 

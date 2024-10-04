@@ -22,3 +22,11 @@ struct OutlineTextfieldStyle: TextFieldStyle {
   
 }
 
+
+struct TextFieldStylePreview: PreviewProvider {
+   
+    static var previews: some View {
+        @State var name : String = ""
+        TextField("Sign up",   text: $name ).textFieldStyle(OutlineTextfieldStyle()).padding()
+    }
+}

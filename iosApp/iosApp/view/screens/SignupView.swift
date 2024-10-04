@@ -14,11 +14,10 @@ struct SignupView: View {
     @State private var phone : String = ""
     @State private var password : String = ""
     @State private var confirmPasword : String = ""
-    
+    @Environment(\.dismiss) var dismiss
     var body: some View {
         VStack(spacing:20){
             AvatarImageView()
-            Text("Signup").font(/*@START_MENU_TOKEN@*/.title/*@END_MENU_TOKEN@*/.bold()).foregroundColor(.brown)
             TextField(
                 "Your name",
                 text: $name
@@ -39,18 +38,14 @@ struct SignupView: View {
                 "Confirm Password",
                 text: $confirmPasword
             ).textFieldStyle(OutlineTextfieldStyle())
-            Button("Submit"){
+            Button("Sign up"){
                     // api call
-            }.font(.title2).frame(width: 120)
-            .padding(8).background(.brown)
-            .foregroundColor(.white)
-            .cornerRadius(12)
+            }.buttonStyle(SigninButtonStyle())
             
             Button("Login") {
-                    // api call
+                   dismiss()
             } .foregroundColor(.brown)
-        }.frame(width: .infinity,alignment: .top).padding(20)
-    
+        }.navigationBarBackButtonHidden().padding(20)
     }
 }
 #Preview {
