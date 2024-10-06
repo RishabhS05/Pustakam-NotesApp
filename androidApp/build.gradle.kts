@@ -43,6 +43,8 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.compose.ui)
+    implementation(libs.coil.svg)
+    implementation(libs.coil)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
