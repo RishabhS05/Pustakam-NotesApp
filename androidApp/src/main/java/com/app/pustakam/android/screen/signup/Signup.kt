@@ -1,15 +1,11 @@
 package com.app.pustakam.android.screen.signup
 
-
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +45,8 @@ fun SignUpView() {
     ) {
         IconLoad(placeHolderDrawable =  R.drawable.avatar,
             url ="https://picsum.photos/seed/picsum/200/300",
-            modifier = Modifier.padding(12.dp)){}
+            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)){}
+
         OutlinedTextField(value = name,
             shape = RoundedCornerShape(12.dp),
             label = { Text("Enter your name.") },
@@ -89,7 +86,9 @@ fun SignUpView() {
             modifier = textFieldModifier, onValueChange = { text ->
                 email = text
             })
-        PrimaryFilledButton(label = "Sign up", modifier = Modifier.padding(top = 8.dp)) {
+
+        PrimaryFilledButton(label = "Sign up",
+            modifier = Modifier.padding(top = 12.dp)) {
 
         }
         SecondaryTextButton(label = "Login",) {

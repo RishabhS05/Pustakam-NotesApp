@@ -2,6 +2,7 @@ import SwiftUI
 import shared
 struct  HomeView : View {
     @EnvironmentObject var router : Router
+
 	var body: some View {
             LoginView()
             .onAppear{

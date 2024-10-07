@@ -29,6 +29,6 @@ fun PrimaryFilledButton(label: String, modifier: Modifier = Modifier, onClick: (
 @Composable
 fun SecondaryTextButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     TextButton(onClick = onClick, modifier = modifier) {
-        Text(label, style = TextStyle(color = MaterialTheme.colorScheme.secondary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
+        Text(label, style = TextStyle(color = MaterialTheme.colorScheme.secondary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold))
     }
 }

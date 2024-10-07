@@ -7,10 +7,12 @@
 //
 
 import SwiftUI
+import shared
 
 struct LoginView: View {
     @State private var password : String = ""
     @State private var email : String = ""
+   
     @EnvironmentObject var router: Router
     var body: some View {
             TextField(
