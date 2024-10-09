@@ -10,7 +10,8 @@ import SwiftUI
 
 struct Notes: View {
     var body: some View {
-        NavigationStack(){}
+        Text("Notes")
+            .navigationBarBackButtonHidden().padding(20)
     }
 }
 

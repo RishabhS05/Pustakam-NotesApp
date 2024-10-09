@@ -7,13 +7,22 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
 import io.ktor.util.network.UnresolvedAddressException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 
 abstract class BaseClient {
     protected val httpClient: HttpClient = createHttpClient(getNetworkEngine())
     var token : String =""
-    suspend inline fun <reified T, E: Error> baseApiCall(actualApiCall : suspend ()-> HttpResponse ) : Result<T, Error> {
-       val response : HttpResponse = try { actualApiCall()
+    suspend inline fun <reified T, E: Error> baseApiCall(actualApiCall :  suspend ()-> HttpResponse ) :
+            Result<T, Error> {
+        val response = try {
+            CoroutineScope(Dispatchers.IO).run {
+                actualApiCall()
+            }
          } catch (e: UnresolvedAddressException){
              return Result.Error(NetworkError.NO_INTERNET)
          }
@@ -22,6 +31,7 @@ abstract class BaseClient {
          }
         token = (response.headers["Authorization Bearer "]?.get(1) ?: "").toString()
         println(token)
+        println(response.status.value)
          return when (response.status.value){
              in 200..299 -> Result.Success(response.body<T>())
              401 -> Result.Error(NetworkError.UNAUTHORIZED)
@@ -31,5 +41,6 @@ abstract class BaseClient {
              in 500 ..599 ->  Result.Error(NetworkError.SERVER_ERROR)
              else ->  Result.Error(NetworkError.UNKNOWN)
          }
+
      }
 }
