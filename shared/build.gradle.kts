@@ -1,10 +1,7 @@
-@file:Suppress("DEPRECATION")
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlin.serialization)
-
 }
 
 kotlin {
@@ -31,7 +28,7 @@ kotlin {
         commonMain.dependencies {
             //put your multiplatform dependencies here
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.bundles.ktor)
+            api(libs.bundles.ktor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

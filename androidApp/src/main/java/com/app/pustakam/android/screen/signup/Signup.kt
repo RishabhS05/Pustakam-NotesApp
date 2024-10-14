@@ -23,29 +23,31 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
+import com.app.pustakam.android.screen.Screen
 import com.app.pustakam.android.widgets.IconLoad
 import com.app.pustakam.android.widgets.POutLinedTextFieldColors
 import com.app.pustakam.android.widgets.PrimaryFilledButton
-import com.app.pustakam.android.widgets.SecondaryTextButton
 
 @Composable
-fun SignUpView() {
+fun SignUpView(onNavigate: (Screen) -> Unit) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
-    var password by remember { mutableStateOf(TextFieldValue("")) }
+    val password by remember { mutableStateOf(TextFieldValue("")) }
     var name by remember { mutableStateOf(TextFieldValue("")) }
-    var confirmPassword by remember { mutableStateOf(TextFieldValue("",)) }
+    val confirmPassword by remember { mutableStateOf(TextFieldValue("")) }
     var phone by remember { mutableStateOf(TextFieldValue("")) }
     var passwordVisible by remember { mutableStateOf(false) }
-    var textFieldModifier = Modifier
+    val textFieldModifier = Modifier
         .fillMaxWidth()
         .padding(vertical = 8.dp, horizontal = 12.dp)
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        IconLoad(placeHolderDrawable =  R.drawable.avatar,
-            url ="https://picsum.photos/seed/picsum/200/300",
-            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)){}
+        IconLoad(
+            placeHolderDrawable = R.drawable.avatar,
+            url = "https://picsum.photos/seed/picsum/200/300",
+            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
+        ) {}
 
         OutlinedTextField(value = name,
             shape = RoundedCornerShape(12.dp),
@@ -87,12 +89,11 @@ fun SignUpView() {
                 email = text
             })
 
-        PrimaryFilledButton(label = "Sign up",
-            modifier = Modifier.padding(top = 12.dp)) {
-
-        }
-        SecondaryTextButton(label = "Login",) {
-
+        PrimaryFilledButton(
+            label = "Sign up",
+            modifier = Modifier.padding(top = 12.dp)
+        ) {
+            onNavigate(Screen.LoginScreen)
         }
     }
 }
@@ -101,6 +102,8 @@ fun SignUpView() {
 @Composable
 private fun SignUp() {
     MyApplicationTheme {
-        SignUpView()
+        SignUpView { screen, ->
+
+        }
     }
 }

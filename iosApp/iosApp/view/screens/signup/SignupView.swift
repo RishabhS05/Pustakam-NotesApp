@@ -44,10 +44,7 @@ struct SignupView: View {
                 signUpHandle()
             }.buttonStyle(SigninButtonStyle())
             
-            Button("Login") {
-                   dismiss()
-            } .foregroundColor(.brown)
-        }.navigationBarBackButtonHidden().padding(20)
+        }.padding(20)
         .alert(isPresented: $errorField.showErrorAlert, content: {
                 return Alert(title: Text("Error!"), message: Text(errorField.errorMessage),
                              dismissButton: Alert.Button.default(Text("OK"), action: {
