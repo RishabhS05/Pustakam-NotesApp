@@ -22,5 +22,4 @@ open class BaseRepository() : IRemoteRepository, ILocalRepository{
     override suspend fun getNotesForUser(userId: String): Result<BaseResponse<Notes>, Error>
     = apiClient.getNotes(userId)
 
-
 }

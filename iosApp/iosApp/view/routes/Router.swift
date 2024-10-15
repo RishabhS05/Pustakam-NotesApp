@@ -17,6 +17,9 @@ final class Router: ObservableObject {
         case Notes
         case NoteDetails
         case Profile
+        case Notification
+        case Search
+        case Home
 
     }
     func navigate(to destination : Destination ){

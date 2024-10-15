@@ -2,6 +2,10 @@ import SwiftUI
 import shared
 struct SignUpHandler : IBaseHandler{
     var base: BaseRepository = BaseRepository()
+    func validateCred(req : RegisterReq) -> ErrorField {
+        let valmag = FieldValidationKt.checkRegisterFieldsValidity(req: req)
+        return ErrorField(showErrorAlert: valmag.first == false, errorMessage: valmag.second?.getError() ?? "")
+    }
     func signUpCall(reqUser : RegisterReq) async -> BaseResult<User?>{
        return await apiHandler(apiCall: {
                 try await base.registerUser(user: reqUser)
@@ -58,11 +62,14 @@ struct SignupView: View {
             name: name,
             email : email,
             password : password,
+            passwordConfirm: confirmPasword,
             phone : phone, imageUrl: "")
+        let validation = signupHandle.validateCred(req: user)
+        if validation.showErrorAlert { errorField = validation; return }
         Task{
             let resp = await signupHandle.signUpCall(reqUser: user)
             if(resp.error != nil && !resp.isSuccessful){
-                errorField.errorMessage = resp.error!.getError()
+                errorField.errorMessage = (resp.error as! NetworkError).getError()
                 errorField.showErrorAlert = !resp.isSuccessful
                 return
             }

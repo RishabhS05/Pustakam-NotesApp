@@ -11,7 +11,7 @@ import shared
 struct BaseResult<T>{
     let isSuccessful : Bool
     let data : T?
-    let error : NetworkError?
+    let error : Error?
 }
 
 protocol IBaseHandler{

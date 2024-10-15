@@ -7,7 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun AppNavGraph(navHostController: NavHostController = rememberNavController(), modifier: Modifier = Modifier) {
+fun AppNavGraph(navHostController: NavHostController = rememberNavController(),
+                modifier: Modifier = Modifier) {
     NavHost(
         navController = navHostController,
         startDestination = Route.Authentication,

@@ -1,6 +1,6 @@
 import SwiftUI
 import shared
-struct  HomeView : View {
+struct  AppView : View {
     @EnvironmentObject var router : Router
 
 	var body: some View {
@@ -14,6 +14,6 @@ struct  HomeView : View {
 
 struct ContentView_Previews: PreviewProvider {
 	static var previews: some View {
-		HomeView()
+		AppView()
 	}
 }

@@ -19,6 +19,9 @@
 		63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0892C2CAF8D13008FD8CC /* Router.swift */; };
 		63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */; };
 		63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E42CB6AEFF00626E49 /* ErrorField.swift */; };
+		63FD32A42CBEA2AD0047ED10 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FD32A32CBEA2AD0047ED10 /* HomeView.swift */; };
+		63FD32A92CBEAEB20047ED10 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FD32A82CBEAEB20047ED10 /* SearchView.swift */; };
+		63FD32AB2CBEAEC50047ED10 /* NotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FD32AA2CBEAEC50047ED10 /* NotificationView.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
@@ -48,6 +51,9 @@
 		63D0892C2CAF8D13008FD8CC /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
 		63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseNetworkHandler.swift; sourceTree = "<group>"; };
 		63DE80E42CB6AEFF00626E49 /* ErrorField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorField.swift; sourceTree = "<group>"; };
+		63FD32A32CBEA2AD0047ED10 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		63FD32A82CBEAEB20047ED10 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		63FD32AA2CBEAEC50047ED10 /* NotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationView.swift; sourceTree = "<group>"; };
 		7555FF7B242A565900829871 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -119,6 +125,9 @@
 		63D089192CABD653008FD8CC /* screens */ = {
 			isa = PBXGroup;
 			children = (
+				63FD32A72CBEAD9C0047ED10 /* notification */,
+				63FD32A62CBEAD8C0047ED10 /* search */,
+				63FD32A52CBEAD5E0047ED10 /* home */,
 				6343B1412CB4233200186B67 /* notes */,
 				6343B1402CB4232100186B67 /* signup */,
 				6343B13F2CB4230100186B67 /* login */,
@@ -165,6 +174,30 @@
 				63DE80E42CB6AEFF00626E49 /* ErrorField.swift */,
 			);
 			path = network;
+			sourceTree = "<group>";
+		};
+		63FD32A52CBEAD5E0047ED10 /* home */ = {
+			isa = PBXGroup;
+			children = (
+				63FD32A32CBEA2AD0047ED10 /* HomeView.swift */,
+			);
+			path = home;
+			sourceTree = "<group>";
+		};
+		63FD32A62CBEAD8C0047ED10 /* search */ = {
+			isa = PBXGroup;
+			children = (
+				63FD32A82CBEAEB20047ED10 /* SearchView.swift */,
+			);
+			path = search;
+			sourceTree = "<group>";
+		};
+		63FD32A72CBEAD9C0047ED10 /* notification */ = {
+			isa = PBXGroup;
+			children = (
+				63FD32AA2CBEAEC50047ED10 /* NotificationView.swift */,
+			);
+			path = notification;
 			sourceTree = "<group>";
 		};
 		7555FF72242A565900829871 = {
@@ -297,7 +330,10 @@
 				63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */,
 				63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */,
 				63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */,
+				63FD32A92CBEAEB20047ED10 /* SearchView.swift in Sources */,
+				63FD32AB2CBEAEC50047ED10 /* NotificationView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
+				63FD32A42CBEA2AD0047ED10 /* HomeView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 				63D089292CAEADA5008FD8CC /* Notes.swift in Sources */,
 			);

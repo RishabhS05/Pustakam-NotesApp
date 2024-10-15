@@ -47,7 +47,9 @@ fun SignUpView(onNavigate: () -> Unit) {
             placeHolderDrawable = R.drawable.avatar,
             url = "https://picsum.photos/seed/picsum/200/300",
             modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
-        ) {}
+        ) {
+
+        }
 
         OutlinedTextField(value = name,
             shape = RoundedCornerShape(12.dp),
