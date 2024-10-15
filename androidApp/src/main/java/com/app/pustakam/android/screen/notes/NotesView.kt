@@ -1,6 +1,5 @@
 package com.app.pustakam.android.screen.notes
 
-import android.transition.Scene
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,8 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
-import com.app.pustakam.android.screen.Route
-import com.app.pustakam.android.screen.Screen
+import com.app.pustakam.android.screen.navigation.Screen
 
 @Composable
 fun NotesView(onNavigate : (Screen)->Unit) {

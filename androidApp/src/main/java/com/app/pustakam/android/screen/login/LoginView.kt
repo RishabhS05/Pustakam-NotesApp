@@ -23,13 +23,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
-import com.app.pustakam.android.screen.Screen
+import com.app.pustakam.android.screen.navigation.Screen
 import com.app.pustakam.android.widgets.POutLinedTextFieldColors
 import com.app.pustakam.android.widgets.PrimaryFilledButton
 import com.app.pustakam.android.widgets.SecondaryTextButton
 
 @Composable
-fun LoginView(onNavigate : (Screen) -> Unit, clearStack: ()-> Unit) {
+fun LoginView(onNavigateToHome : () -> Unit, onNavigateToSignUp: ()-> Unit) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -58,10 +58,9 @@ fun LoginView(onNavigate : (Screen) -> Unit, clearStack: ()-> Unit) {
                 email = text
             })
         PrimaryFilledButton(label = "Login", modifier = Modifier.padding(top=8.dp)) {
-            onNavigate(Screen.NotesScreen)
-            clearStack()
+              onNavigateToHome()
         }
-        SecondaryTextButton(label = "Sign up", onClick = { onNavigate(Screen.SignUpScreen) })
+        SecondaryTextButton(label = "Sign up", onClick = { onNavigateToSignUp() })
     }
 }
 
@@ -70,9 +69,9 @@ fun LoginView(onNavigate : (Screen) -> Unit, clearStack: ()-> Unit) {
 @Composable
 private fun Login() {
     MyApplicationTheme {
-        LoginView(onNavigate = {}){
-
-        }
+//        LoginView(){
+//
+//        }
     }
 
 }

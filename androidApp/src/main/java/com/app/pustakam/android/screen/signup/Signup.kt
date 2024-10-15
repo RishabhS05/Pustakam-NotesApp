@@ -23,13 +23,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
-import com.app.pustakam.android.screen.Screen
+import com.app.pustakam.android.screen.navigation.Screen
 import com.app.pustakam.android.widgets.IconLoad
 import com.app.pustakam.android.widgets.POutLinedTextFieldColors
 import com.app.pustakam.android.widgets.PrimaryFilledButton
 
 @Composable
-fun SignUpView(onNavigate: (Screen) -> Unit) {
+fun SignUpView(onNavigate: () -> Unit) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
     val password by remember { mutableStateOf(TextFieldValue("")) }
     var name by remember { mutableStateOf(TextFieldValue("")) }
@@ -93,7 +93,7 @@ fun SignUpView(onNavigate: (Screen) -> Unit) {
             label = "Sign up",
             modifier = Modifier.padding(top = 12.dp)
         ) {
-            onNavigate(Screen.LoginScreen)
+            onNavigate()
         }
     }
 }
@@ -102,8 +102,7 @@ fun SignUpView(onNavigate: (Screen) -> Unit) {
 @Composable
 private fun SignUp() {
     MyApplicationTheme {
-        SignUpView { screen, ->
-
+        SignUpView {
         }
     }
 }
