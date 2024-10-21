@@ -8,13 +8,16 @@ coil = "2.7.0"
 compose-material3 = "1.3.0"
 androidx-activityCompose = "1.9.2"
 navigationCompose = "2.8.2"
+viewmodelCompose = "2.8.6"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 #compose
 coil = { module = "io.coil-kt:coil-compose", version.ref= "coil" }
 coil-svg = {module = "io.coil-kt:coil-svg", version.ref= "coil" }
+
 compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
+compose-viewmodel= {module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodelCompose"}
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }

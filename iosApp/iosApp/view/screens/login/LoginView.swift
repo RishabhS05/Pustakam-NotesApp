@@ -3,9 +3,10 @@ import shared
 
 struct LoginHandler : IBaseHandler {
     var base: BaseRepository = BaseRepository()
-    func checkLoginCredValidity(req: Login) -> ErrorField{
+    func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
-        return ErrorField(showErrorAlert: valmsg.first == false, errorMessage: valmsg.second?.getError() ?? "")
+        return   valmsg != ValidationError.none ?
+        ErrorField(showErrorAlert: true, errorMessage : valmsg.getError() ?? "") :  nil
     }
     func loginWithEmail(login :Login) async -> BaseResult<BaseResponse<User>?>  {
         return await apiHandler(apiCall: {
@@ -50,11 +51,11 @@ struct LoginView: View {
     
     func login(email: String, password: String) {
         let login = Login(email: email, password: password, phone: nil)
-        let validation = loginHandler.checkLoginCredValidity(req: login)
-        if validation.showErrorAlert {
-            errorField = validation
-            return
-        }
+//        let validation = loginHandler.checkLoginCredValidity(req: login)
+//        if validation != nil && validation!.showErrorAlert {
+//            errorField = validation!
+//            return
+//        }
         Task {
             let resp =  await loginHandler.loginWithEmail(login: login)
             if( resp.error != nil && !resp.isSuccessful) {

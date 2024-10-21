@@ -1,10 +1,14 @@
-import SwiftUI
+
 import shared
+import SwiftUICore
+import SwiftUI
+
 struct SignUpHandler : IBaseHandler{
     var base: BaseRepository = BaseRepository()
-    func validateCred(req : RegisterReq) -> ErrorField {
-        let valmag = FieldValidationKt.checkRegisterFieldsValidity(req: req)
-        return ErrorField(showErrorAlert: valmag.first == false, errorMessage: valmag.second?.getError() ?? "")
+    func validateCred(req : RegisterReq) -> ErrorField? {
+        let valmsg = FieldValidationKt.checkRegisterFieldsValidity(req: req)
+        return   valmsg != ValidationError.none ?
+        ErrorField(showErrorAlert: true, errorMessage : valmsg.getError()) :  nil
     }
     func signUpCall(reqUser : RegisterReq) async -> BaseResult<User?>{
        return await apiHandler(apiCall: {
@@ -19,11 +23,12 @@ struct SignupView: View {
     @State private var password : String = ""
     @State private var confirmPasword : String = ""
     @State private var errorField : ErrorField = ErrorField()
+    @State private var imageUrl : String = ""
     private let signupHandle = SignUpHandler()
     @Environment(\.dismiss) var dismiss
     var body: some View {
         VStack(spacing:20){
-            AvatarImageView()
+            AvatarImageView(imageUrl: imageUrl){}
             TextField(
                 "Your name",
                 text: $name
@@ -65,7 +70,7 @@ struct SignupView: View {
             passwordConfirm: confirmPasword,
             phone : phone, imageUrl: "")
         let validation = signupHandle.validateCred(req: user)
-        if validation.showErrorAlert { errorField = validation; return }
+        if validation != nil && validation!.showErrorAlert { errorField = validation!; return }
         Task{
             let resp = await signupHandle.signUpCall(reqUser: user)
             if(resp.error != nil && !resp.isSuccessful){

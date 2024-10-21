@@ -5,21 +5,22 @@ import com.app.pustakam.data.models.request.RegisterReq
 import com.app.pustakam.extensions.isValidEmail
 import com.app.pustakam.extensions.isValidName
 import com.app.pustakam.extensions.isValidPassword
+import com.app.pustakam.extensions.isValidPhone
 
 
-fun comparePassword(password: String?, confirmPassword : String? ) = !confirmPassword.isNullOrEmpty() && !password.isNullOrEmpty() && password == confirmPassword
-fun checkLoginEmailPasswordValidity(req: Login): Pair<Boolean, ValidationError> = when {
-    !req.email.isValidEmail() -> Pair(false, ValidationError.EMAIL)
-        !req.password.isValidPassword() -> Pair(false, ValidationError.PASSWORD)
-        else -> Pair(true, ValidationError.NONE)
+fun isPasswordEqualsToConfirmPassword(password: String?, confirmPassword : String? ) = !confirmPassword.isNullOrEmpty() && !password.isNullOrEmpty() && password == confirmPassword
+fun checkLoginEmailPasswordValidity(req: Login): ValidationError = when {
+    !req.email.isValidEmail() ->  ValidationError.EMAIL
+        !req.password.isValidPassword() -> ValidationError.PASSWORD
+        else -> ValidationError.NONE
     }
 
-fun checkRegisterFieldsValidity(req : RegisterReq) : Pair<Boolean, ValidationError>
+fun checkRegisterFieldsValidity(req : RegisterReq) : ValidationError
 = when {
-    !req.name.isValidName() -> Pair(false,ValidationError.NAME )
-    !req.email.isValidEmail() -> Pair(false,ValidationError.EMAIL )
-    !req.phone.isValidName() -> Pair(false,ValidationError.PHONE )
-    !req.password.isValidPassword() -> Pair(false,ValidationError.PASSWORD )
-    !comparePassword(req.passwordConfirm,req.password) -> Pair(false,ValidationError.PASSWORD_NOT_MATCHED )
-    else -> Pair(true, ValidationError.NONE)
+    !req.name.isValidName() -> ValidationError.NAME
+    !req.email.isValidEmail() -> ValidationError.EMAIL
+    !req.phone.isValidPhone() ->ValidationError.PHONE
+    !req.password.isValidPassword() ->ValidationError.PASSWORD
+    !isPasswordEqualsToConfirmPassword(req.passwordConfirm,req.password) -> ValidationError.PASSWORD_NOT_MATCHED
+    else ->  ValidationError.NONE
 }

@@ -34,38 +34,43 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-val  NavController.shouldShowBottomBar get() =
-    when (currentBackStackEntry?.destination?.route) {
-    Route.Notes,
-    Route.Search,
-    Route.Notification,
-    -> true
-    else -> false
-}
-val NavController.shouldShowTopBar get() = when (currentBackStackEntry?.destination?.route) {
-    Route.Notes,
-    Route.Search,
-    Route.Notification,
-    -> true
-    Route.Login, Route.Signup -> false
-    else -> false
-}
+val NavController.shouldShowBottomBar
+    get() = when (currentBackStackEntry?.destination?.route) {
+        Route.Notes,
+        Route.Search,
+        Route.Notification,
+        -> true
+
+        else -> false
+    }
+val NavController.shouldShowTopBar
+    get() = when (currentBackStackEntry?.destination?.route) {
+        Route.Notes,
+        Route.Search,
+        Route.Notification,
+        -> true
+
+        Route.Login, Route.Signup -> false
+        else -> false
+    }
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppUi(navController: NavHostController = rememberNavController()) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    Scaffold(topBar = {
-        TopAppBar(title = {
-            if (currentRoute.isNotnull() && navController.shouldShowTopBar) {
-                Text(text = currentRoute!!, textAlign = TextAlign.Center)
-            }
+    Scaffold( topBar = {
+        if (currentRoute.isNotnull() && navController.shouldShowTopBar) TopAppBar(title = {
+            Text(text = currentRoute!!, textAlign = TextAlign.Center)
         })
-    }, bottomBar = {
-        if (navController.shouldShowBottomBar) BottomBar(navController = navController)
-    }) { paddingValues ->
+    }, bottomBar = { if (navController.shouldShowBottomBar) BottomBar(navController = navController) },
+
+        floatingActionButton = {}) { paddingValues ->
+
         AppNavGraph(
             navController, modifier = Modifier.padding(paddingValues)
         )
     }
+
 }
