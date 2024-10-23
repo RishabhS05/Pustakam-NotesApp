@@ -26,7 +26,6 @@ fun BottomBar(
         navigationScreen.forEach { item ->
             NavigationBarItem(
                 selected = currentRoute == item.route,
-
                 label = {
                     Text(text = item.title, style = MaterialTheme.typography.bodyMedium)
                 },
@@ -38,7 +37,6 @@ fun BottomBar(
                         contentDescription = item.title
                     )
                 },
-
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo(navController.graph.findStartDestination().id) {

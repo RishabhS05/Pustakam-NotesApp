@@ -8,8 +8,20 @@ import com.app.pustakam.util.Error
 import com.app.pustakam.util.Result
 import kotlinx.coroutines.flow.Flow
 
-class SignUseCase  : BaseUseCase(){
-    suspend operator fun invoke(user : RegisterReq): Flow<Result<BaseResponse<User>, Error>> = getBaseApiCall{
-        repository.registerUser( user = user)
+class SignUseCase : BaseUseCase() {
+    suspend operator fun invoke(user: RegisterReq): Flow<Result<BaseResponse<User>, Error>> = getBaseApiCall {
+        repository.registerUser(user = user)
     }
+}
+
+class DeleteUserUseCase : BaseUseCase() {
+    suspend operator fun invoke(userId: String) = repository.deleteUser("")
+}
+
+class UpdateUserUseCase : BaseUseCase() {
+    suspend operator fun invoke(user: User) = repository.updateUser(user)
+}
+
+class ReadUserUseCase : BaseUseCase() {
+    suspend operator fun invoke(userId: User) = repository.getUser("")
 }

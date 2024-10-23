@@ -1,7 +1,9 @@
 package com.app.pustakam.util
 
 import com.app.pustakam.data.models.request.Login
+import com.app.pustakam.data.models.request.NoteRequest
 import com.app.pustakam.data.models.request.RegisterReq
+import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.extensions.isValidEmail
 import com.app.pustakam.extensions.isValidName
 import com.app.pustakam.extensions.isValidPassword
@@ -24,3 +26,5 @@ fun checkRegisterFieldsValidity(req : RegisterReq) : ValidationError
     !isPasswordEqualsToConfirmPassword(req.passwordConfirm,req.password) -> ValidationError.PASSWORD_NOT_MATCHED
     else ->  ValidationError.NONE
 }
+
+fun checkAnyUpdateOnNote(new : NoteRequest, old : Note ): Boolean = new.title === old.title && new.body === old.description

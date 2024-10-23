@@ -96,7 +96,11 @@ fun SignUpView(onNavigate: () -> Unit) {
             label = "Sign up", modifier = Modifier.padding(top = 12.dp)
         ) {
             registerViewModel.registerUser(
-                email = email.text, password = password.text, confirmPassword = confirmPassword.text, name = name.text, phoneNumber = phone.text
+                email = email.text,
+                password = password.text,
+                confirmPassword = confirmPassword.text,
+                name = name.text,
+                phoneNumber = phone.text
             )
         }
     }

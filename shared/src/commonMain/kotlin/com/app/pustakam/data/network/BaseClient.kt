@@ -34,6 +34,7 @@ abstract class BaseClient {
         println(response.status.value)
          return when (response.status.value){
              in 200..299 -> Result.Success(response.body<T>())
+             400-> Result.Error(NetworkError.NOT_FOUND)
              401 -> Result.Error(NetworkError.UNAUTHORIZED)
              409 -> Result.Error(NetworkError.CONFLICT)
              408 -> Result.Error(NetworkError.REQUEST_TIMEOUT)

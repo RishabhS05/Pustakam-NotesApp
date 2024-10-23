@@ -4,9 +4,10 @@ import com.app.pustakam.android.screen.AUTH
 import com.app.pustakam.android.screen.BaseViewModel
 import com.app.pustakam.android.screen.LoginUIState
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.android.screen.login.LoginUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.Login
+import com.app.pustakam.data.models.response.User
+import com.app.pustakam.domain.repositories.BaseRepository
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+
 class LoginViewModel : BaseViewModel() {
  private val loginUseCase = LoginUseCase()
     private val _loginUiState = MutableStateFlow(LoginUIState(isLoading = false ))
@@ -26,7 +28,7 @@ class LoginViewModel : BaseViewModel() {
         val isValidationCred = checkLoginEmailPasswordValidity(req = req)
         if( isValidationCred == ValidationError.NONE)
              makeAWish(AUTH.LOGIN, showLoader = true, call = {
-            loginUseCase.invoke(login = req) },
+                    loginUseCase.invoke(login = req) },
                  )
         else {
             _loginUiState.update { it.copy(isLogging = false , isLoading = false ,
@@ -34,9 +36,12 @@ class LoginViewModel : BaseViewModel() {
         }
     }
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
-        val response = result.data
+        val response = result.data as BaseResponse
        when (taskCode){
            AUTH.LOGIN -> {
+                val user = response.data as User
+               BaseRepository.UserData.userID = user._id.toString()
+               println("userid = ${BaseRepository.UserData.userID}")
           _loginUiState.update{
               it.copy(isLogging =  response.isSuccessful,
                   error = null,

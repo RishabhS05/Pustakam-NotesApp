@@ -16,23 +16,19 @@ fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
         composable(
             route = Route.Notes
         ) {
-            NotesView(onNavigate = {
-
-            })
+            NotesView(onNavigate = {})
         }
         composable(
             route = Route.Notification
         ) {
             NotificationView(onNavigate = {
-                navController.navigateUp()
+
             })
         }
         composable(
             route = Route.Search
         ) {
-            SearchView(onNavigate = {
-                navController.navigateUp()
-            })
+            SearchView(onNavigate = {})
         }
     }
 }

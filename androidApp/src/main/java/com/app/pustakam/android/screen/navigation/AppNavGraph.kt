@@ -5,13 +5,14 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.app.pustakam.domain.repositories.BaseRepository
 
 @Composable
 fun AppNavGraph(navHostController: NavHostController = rememberNavController(),
                 modifier: Modifier = Modifier) {
     NavHost(
         navController = navHostController,
-        startDestination = Route.Authentication,
+        startDestination = if (BaseRepository.userID.isNullOrEmpty()) Route.Authentication else Route.Home,
         modifier = modifier
     ) {
         AuthNavGraph(navHostController)

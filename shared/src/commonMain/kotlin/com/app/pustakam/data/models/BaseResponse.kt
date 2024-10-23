@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 class BaseResponse<T>(
     val data : T?,
     val isSuccessful : Boolean,
-    val message : String?
+    val message : String? =""
 )

@@ -4,16 +4,21 @@ package com.app.pustakam.data.network
 
     LOGIN {
         override fun getName(): String ="$baseUrl/login"
-    }, REGISTER {
-         override fun getName(): String ="$baseUrl/register"
-     },NOTES {
-         override fun getName(): String = "$baseUrl/Notes"
      },
+     REGISTER {
+         override fun getName(): String ="$baseUrl/register"
+     },
+     NOTES {
+         override fun getName(): String = "$baseUrl/notes"
+     },
+     PROFILE {
+         override fun getName(): String = "$baseUrl/profile"
+             },
      USERS{
          override fun getName(): String = "$baseUrl/users"
          };
 
-val baseUrl = getUrl()
+     val baseUrl = getUrl()
      abstract fun getName(): String
 }
-const val headerAuth = "Authorization Bearer "
+const val headerAuth = "Authorization"

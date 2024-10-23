@@ -10,5 +10,4 @@ data class Note(
     var createdAt: String?,
     var url: String?,
     var description: String?,
-    var message : String?
 )

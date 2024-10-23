@@ -1,6 +1,11 @@
 package com.app.pustakam.util
 
 enum class NetworkError : Error {
+    NOT_FOUND {
+        override fun getError(): String {
+            return "No Record found"
+        }
+              },
     REQUEST_TIMEOUT {
         override fun getError(): String {
             return "Request Timeout, Please try again later."
