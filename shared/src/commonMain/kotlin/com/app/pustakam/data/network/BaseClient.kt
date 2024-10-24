@@ -1,5 +1,6 @@
 package com.app.pustakam.data.network
 
+import com.app.pustakam.domain.repositories.BaseRepository
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -10,12 +11,10 @@ import io.ktor.util.network.UnresolvedAddressException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 
 abstract class BaseClient {
-    protected val httpClient: HttpClient = createHttpClient(getNetworkEngine())
+    protected val httpClient: HttpClient = createHttpClient()
     var token : String =""
     suspend inline fun <reified T, E: Error> baseApiCall(actualApiCall :  suspend ()-> HttpResponse ) :
             Result<T, Error> {
@@ -29,9 +28,12 @@ abstract class BaseClient {
          catch (e: SerializationException){
              return Result.Error(NetworkError.SERIALIZATION)
          }
-        token = (response.headers["Authorization Bearer "]?.get(1) ?: "").toString()
-        println(token)
-        println(response.status.value)
+        if(token.isEmpty()) {
+            token = response.headers["authorization"].toString()
+            println("auth ${response.headers["authorization"]}")
+            BaseRepository.token = token
+        }
+        print("Token ; $token")
          return when (response.status.value){
              in 200..299 -> Result.Success(response.body<T>())
              400-> Result.Error(NetworkError.NOT_FOUND)

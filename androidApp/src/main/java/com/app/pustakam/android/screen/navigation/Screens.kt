@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.serialization.Serializable
 
 object Route {
     const val Home = "HOME"
@@ -19,10 +20,13 @@ object Route {
 sealed class BottomNavigationItem(
     val title: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector, val batchCount: Int? = null, val hasNotification: Boolean, val route: String
 )
-
+@Serializable
 sealed class Screen(val route: String) {
+    @Serializable
     data object Authentication : Screen(route = Route.Authentication) {
+        @Serializable
         data object SignUpScreen : Screen(route = Route.Signup)
+        @Serializable
         data object LoginScreen : Screen(route = Route.Login)
     }
 

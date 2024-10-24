@@ -19,11 +19,9 @@ fun NavGraphBuilder.AuthNavGraph(
         ) {
             LoginView(
                 onNavigateToHome = {
+                    navController.clearBackStack<Screen.Authentication>()
                     navController.navigate(Route.Home) {
-                        popUpTo(Route.Authentication) {
-                            inclusive = true
-                            saveState =true
-                        }
+                        launchSingleTop =true
                     }
                 },
                 onNavigateToSignUp = {

@@ -14,9 +14,7 @@ abstract class BaseViewModel : ViewModel() {
     abstract fun onSuccess (taskCode: TaskCode, result: Result.Success<BaseResponse<*>> )
     abstract fun onFailure (taskCode : TaskCode, error : Error)
     abstract fun clearError()
-    open fun onLoading(taskCode : TaskCode) {
-        println("Loading .....")
-    }
+    open fun onLoading(taskCode : TaskCode) {}
     fun <T> makeAWish(
         taskCode : TaskCode,
         showLoader : Boolean = true,

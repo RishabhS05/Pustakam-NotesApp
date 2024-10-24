@@ -15,6 +15,7 @@ open class BaseRepository : IRemoteRepository, ILocalRepository{
     private val apiClient : ApiCallClient = ApiCallClient()
     companion object UserData  {
         var userID = ""
+        var token = ""
     }
     override suspend fun loginUser(login : Login): Result<BaseResponse<User>, Error>
     = apiClient.login(login)
