@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -15,7 +15,7 @@
 		63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089222CAC870A008FD8CC /* AvatarImageView.swift */; };
 		63D089252CAC92CA008FD8CC /* OutlineTextfieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089242CAC92CA008FD8CC /* OutlineTextfieldStyle.swift */; };
 		63D089272CAEA758008FD8CC /* SigninButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089262CAEA758008FD8CC /* SigninButton.swift */; };
-		63D089292CAEADA5008FD8CC /* Notes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089282CAEADA5008FD8CC /* Notes.swift */; };
+		63D089292CAEADA5008FD8CC /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089282CAEADA5008FD8CC /* NotesView.swift */; };
 		63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0892C2CAF8D13008FD8CC /* Router.swift */; };
 		63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */; };
 		63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E42CB6AEFF00626E49 /* ErrorField.swift */; };
@@ -47,7 +47,7 @@
 		63D089222CAC870A008FD8CC /* AvatarImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageView.swift; sourceTree = "<group>"; };
 		63D089242CAC92CA008FD8CC /* OutlineTextfieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutlineTextfieldStyle.swift; sourceTree = "<group>"; };
 		63D089262CAEA758008FD8CC /* SigninButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigninButton.swift; sourceTree = "<group>"; };
-		63D089282CAEADA5008FD8CC /* Notes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notes.swift; sourceTree = "<group>"; };
+		63D089282CAEADA5008FD8CC /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		63D0892C2CAF8D13008FD8CC /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
 		63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseNetworkHandler.swift; sourceTree = "<group>"; };
 		63DE80E42CB6AEFF00626E49 /* ErrorField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorField.swift; sourceTree = "<group>"; };
@@ -97,7 +97,7 @@
 		6343B1412CB4233200186B67 /* notes */ = {
 			isa = PBXGroup;
 			children = (
-				63D089282CAEADA5008FD8CC /* Notes.swift */,
+				63D089282CAEADA5008FD8CC /* NotesView.swift */,
 			);
 			path = notes;
 			sourceTree = "<group>";
@@ -308,6 +308,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		7555FFB5242A651A00829871 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -343,7 +344,7 @@
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				63FD32A42CBEA2AD0047ED10 /* HomeView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
-				63D089292CAEADA5008FD8CC /* Notes.swift in Sources */,
+				63D089292CAEADA5008FD8CC /* NotesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -474,6 +475,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -490,7 +492,7 @@
 					"-framework",
 					shared,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = orgIdentifier.iosApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.app.pustakam.iosApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -503,6 +505,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -519,7 +522,7 @@
 					"-framework",
 					shared,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = orgIdentifier.iosApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.app.pustakam.iosApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

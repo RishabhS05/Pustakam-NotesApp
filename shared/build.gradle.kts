@@ -5,6 +5,7 @@ plugins {
 }
 
 kotlin {
+    tasks.register("testClasses")
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -29,6 +30,9 @@ kotlin {
             //put your multiplatform dependencies here
             implementation(libs.kotlinx.coroutines.core)
             api(libs.bundles.ktor)
+            api(libs.datastore.preferences)
+            api(libs.datastore)
+            implementation(libs.koin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -59,4 +63,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+dependencies {
+    implementation(libs.androidx.compiler)
 }

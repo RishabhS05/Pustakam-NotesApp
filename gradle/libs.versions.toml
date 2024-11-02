@@ -9,7 +9,9 @@ compose-material3 = "1.3.0"
 androidx-activityCompose = "1.9.2"
 navigationCompose = "2.8.2"
 viewmodelCompose = "2.8.6"
-
+datastore = "1.1.1"
+compiler = "3.2.0-alpha11"
+koin = "3.3.2"
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 #compose
@@ -35,7 +37,14 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose" , version.ref = "navigationCompose" }
-
+ #DI
+koin-android ={ module ="io.insert-koin:koin-android", version.ref = "koin"}
+koin = { module ="io.insert-koin:koin-core", version.ref = "koin"}
+koin-compose ={ module ="io.insert-koin:koin-androidx-compose", version.ref = "koin"}
+#data
+datastore-preferences= { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+datastore= { module = "androidx.datastore:datastore", version.ref = "datastore" }
+androidx-compiler = { group = "androidx.databinding", name = "compiler", version.ref = "compiler" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
@@ -51,4 +60,7 @@ ktor = [
     "ktor-client-logging",
     "ktor-client-content-negotiation",
     "ktor-serialization-kotlinx-json",
+]
+koin = [
+    "koin-android"
 ]

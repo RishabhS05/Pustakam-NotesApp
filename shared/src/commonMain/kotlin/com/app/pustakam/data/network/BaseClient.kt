@@ -1,6 +1,8 @@
 package com.app.pustakam.data.network
 
+import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.domain.repositories.BaseRepository
+import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -8,41 +10,45 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
 import io.ktor.util.network.UnresolvedAddressException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
 
-abstract class BaseClient {
+abstract class BaseClient(val userPrefs : IAppPreferences ) {
     protected val httpClient: HttpClient = createHttpClient()
-    var token : String =""
-    suspend inline fun <reified T, E: Error> baseApiCall(actualApiCall :  suspend ()-> HttpResponse ) :
-            Result<T, Error> {
-        val response = try {
-            CoroutineScope(Dispatchers.IO).run {
-                actualApiCall()
-            }
-         } catch (e: UnresolvedAddressException){
-             return Result.Error(NetworkError.NO_INTERNET)
-         }
-         catch (e: SerializationException){
-             return Result.Error(NetworkError.SERIALIZATION)
-         }
-        if(token.isEmpty()) {
-            token = response.headers["authorization"].toString()
+    suspend inline fun < reified T, E: Error> baseApiCall(
+        crossinline actualApiCall : suspend  () -> HttpResponse
+    ) : Result<T, Error> = flow {
+           val response : HttpResponse = try {
+               actualApiCall.invoke()
+           } catch (e: UnresolvedAddressException) {
+               emit(Result.Error(NetworkError.NO_INTERNET))
+               return@flow
+           }
+           catch (e: SerializationException){
+               emit( Result.Error(NetworkError.SERIALIZATION))
+               return@flow
+           }
+        if(userPrefs.getAuthToken().isNullOrEmpty()) {
+           val token = response.headers["authorization"].toString()
             println("auth ${response.headers["authorization"]}")
-            BaseRepository.token = token
+            userPrefs.setToken(token)
+            print("Token ; $token")
         }
-        print("Token ; $token")
-         return when (response.status.value){
-             in 200..299 -> Result.Success(response.body<T>())
-             400-> Result.Error(NetworkError.NOT_FOUND)
-             401 -> Result.Error(NetworkError.UNAUTHORIZED)
-             409 -> Result.Error(NetworkError.CONFLICT)
-             408 -> Result.Error(NetworkError.REQUEST_TIMEOUT)
-             413 -> Result.Error(NetworkError.PAYLOAD_TOO_LARGE)
-             in 500 ..599 ->  Result.Error(NetworkError.SERVER_ERROR)
-             else ->  Result.Error(NetworkError.UNKNOWN)
-         }
+           when (response.status.value){
+               in 200..299 -> emit(Result.Success(response.body<T>()))
+               400 -> emit(Result.Error(NetworkError.NOT_FOUND))
+               401 -> emit(Result.Error(NetworkError.UNAUTHORIZED))
+               409 -> emit(Result.Error(NetworkError.CONFLICT))
+               408 -> emit(Result.Error(NetworkError.REQUEST_TIMEOUT))
+               413 -> emit(Result.Error(NetworkError.PAYLOAD_TOO_LARGE))
+               in 500 ..599 -> emit(Result.Error(NetworkError.SERVER_ERROR))
+               else ->  emit(Result.Error(NetworkError.UNKNOWN))
+           }
+
+       }.flowOn(Dispatchers.IO).map { it }.first()
      }
-}

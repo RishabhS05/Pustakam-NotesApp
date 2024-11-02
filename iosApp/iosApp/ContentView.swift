@@ -2,12 +2,11 @@ import SwiftUI
 import shared
 struct  AppView : View {
     @EnvironmentObject var router : Router
-
+    
 	var body: some View {
             LoginView()
             .onAppear{
             //auth and move to Notes List
-            
         }
 	}
 }

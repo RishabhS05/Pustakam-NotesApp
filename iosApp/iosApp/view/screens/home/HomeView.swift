@@ -9,9 +9,10 @@
 import SwiftUI
 
 struct HomeView : View {
+
     var body: some View {
         TabView{
-            Notes().tabItem {
+            NotesView().tabItem {
                 Image(systemName: "note.text.badge.plus")
                 Text("Notes")
             }

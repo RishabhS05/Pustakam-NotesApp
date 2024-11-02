@@ -40,8 +40,7 @@ class LoginViewModel : BaseViewModel() {
        when (taskCode){
            AUTH.LOGIN -> {
                 val user = response.data as User
-               BaseRepository.UserData.userID = user._id.toString()
-               println("userid = ${BaseRepository.UserData.userID}")
+
           _loginUiState.update{
               it.copy(isLogging =  response.isSuccessful,
                   error = null,

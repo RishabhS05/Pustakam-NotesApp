@@ -6,7 +6,7 @@ struct LoginHandler : IBaseHandler {
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
         return   valmsg != ValidationError.none ?
-        ErrorField(showErrorAlert: true, errorMessage : valmsg.getError() ?? "") :  nil
+        ErrorField(showErrorAlert: true, errorMessage : valmsg.getError()) :  nil
     }
     func loginWithEmail(login :Login) async -> BaseResult<BaseResponse<User>?>  {
         return await apiHandler(apiCall: {
@@ -22,6 +22,7 @@ struct LoginView: View {
     @State private var errorField : ErrorField = ErrorField()
     private let loginHandler = LoginHandler()
     @EnvironmentObject var router: Router
+    
     var body: some View {
         VStack{
             TextField(
@@ -51,11 +52,11 @@ struct LoginView: View {
     
     func login(email: String, password: String) {
         let login = Login(email: email, password: password, phone: nil)
-//        let validation = loginHandler.checkLoginCredValidity(req: login)
-//        if validation != nil && validation!.showErrorAlert {
-//            errorField = validation!
-//            return
-//        }
+        let validation = loginHandler.checkLoginCredValidity(req: login)
+        if validation != nil && validation!.showErrorAlert {
+            errorField = validation!
+            return
+        }
         Task {
             let resp =  await loginHandler.loginWithEmail(login: login)
             if( resp.error != nil && !resp.isSuccessful) {

@@ -3,14 +3,14 @@ package com.app.pustakam.android.screen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.domain.repositories.BaseRepository
 import kotlinx.coroutines.flow.Flow
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.Error
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
 
-abstract class BaseViewModel : ViewModel() {
-    val baseRepository : BaseRepository = BaseRepository()
+
+abstract class BaseViewModel : ViewModel() , KoinComponent {
     abstract fun onSuccess (taskCode: TaskCode, result: Result.Success<BaseResponse<*>> )
     abstract fun onFailure (taskCode : TaskCode, error : Error)
     abstract fun clearError()

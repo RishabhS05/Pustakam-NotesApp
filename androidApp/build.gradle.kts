@@ -41,6 +41,11 @@ android {
 }
 
 dependencies {
+    modules {
+        module("com.google.guava:listenablefuture") {
+            replacedBy("com.google.guava:guava", "listenablefuture is part of guava")
+        }
+    }
     implementation(projects.shared)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.compose.ui)
@@ -52,4 +57,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.bundles.koin)
+
 }

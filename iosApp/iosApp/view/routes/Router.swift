@@ -10,7 +10,6 @@ import SwiftUI
 
 final class Router: ObservableObject {
     @Published var navPath = NavigationPath()
-    
     public enum Destination : Codable , Hashable{
         case Login
         case Signup

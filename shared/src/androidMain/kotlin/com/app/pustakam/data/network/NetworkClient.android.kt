@@ -1,11 +1,7 @@
 package com.app.pustakam.data.network
-
-
-import com.app.pustakam.domain.repositories.BaseRepository.UserData.token
 import io.ktor.client.HttpClient
 
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
@@ -21,11 +17,6 @@ actual fun createHttpClient(): HttpClient {
             config {
                 retryOnConnectionFailure(true)
                 connectTimeout(5, TimeUnit.SECONDS)
-            }
-        }
-        install(DefaultRequest) {
-                headers.apply {
-                    append(headerAuth, token)
             }
         }
         install(Logging) {
@@ -47,11 +38,3 @@ actual fun createHttpClient(): HttpClient {
         }
     }
 }
-
-//class NetworkInterceptor : Interceptor {
-//    override fun intercept(chain: Interceptor.Chain): Response {
-//        val request = chain.request()
-//        val builder = request.newBuilder().method(request.method, request.body).addHeader("Authorization", "Bearer " + token)
-//        return chain.proceed(builder.build())
-//    }
-//}

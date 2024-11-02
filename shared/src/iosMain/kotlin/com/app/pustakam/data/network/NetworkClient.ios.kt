@@ -20,11 +20,8 @@ actual fun createHttpClient(): HttpClient {
             logger = Logger.DEFAULT
         }
         install(DefaultRequest) {
-            apply {
-                headers.apply {
-                    append("Accept", "application/json")
-                    append("Authorization", "Bearer ${BaseRepository.token}")
-                }
+            headers.apply {
+                append(headerAuth, BaseRepository.token)
             }
         }
         install(ContentNegotiation) {
