@@ -19,6 +19,7 @@ protocol IBaseHandler {
     var base: BaseRepository { get set }
 }
 extension IBaseHandler {
+    
     func apiHandler<T: KotlinBase>(apiCall: () async throws -> Result) async
         -> BaseResult<T?>
     {

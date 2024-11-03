@@ -4,9 +4,9 @@ import shared
 struct iOSApp: App {
     @ObservedObject var router = Router()
     
-    init() {
-         Koin.doInitKoin()
-     }
+//    init() {
+//        KoinIOS.shared.startApp()
+//     }
 	var body: some Scene {
        
         WindowGroup {

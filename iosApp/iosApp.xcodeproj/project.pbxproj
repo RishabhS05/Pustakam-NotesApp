@@ -102,6 +102,13 @@
 			path = notes;
 			sourceTree = "<group>";
 		};
+		63CE19502CD6889D003CBE52 /* DI */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = DI;
+			sourceTree = "<group>";
+		};
 		63D089152CABD616008FD8CC /* view */ = {
 			isa = PBXGroup;
 			children = (
@@ -200,13 +207,6 @@
 			path = notification;
 			sourceTree = "<group>";
 		};
-		63FD32B12CC3C6940047ED10 /* extensions */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = extensions;
-			sourceTree = "<group>";
-		};
 		7555FF72242A565900829871 = {
 			isa = PBXGroup;
 			children = (
@@ -226,7 +226,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
-				63FD32B12CC3C6940047ED10 /* extensions */,
+				63CE19502CD6889D003CBE52 /* DI */,
 				63DE80E12CB6ADA900626E49 /* network */,
 				63D089152CABD616008FD8CC /* view */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,

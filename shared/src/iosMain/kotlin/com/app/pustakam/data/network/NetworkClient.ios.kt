@@ -19,11 +19,6 @@ actual fun createHttpClient(): HttpClient {
             level = LogLevel.ALL
             logger = Logger.DEFAULT
         }
-        install(DefaultRequest) {
-            headers.apply {
-                append(headerAuth, BaseRepository.token)
-            }
-        }
         install(ContentNegotiation) {
             json(
                 json = Json {

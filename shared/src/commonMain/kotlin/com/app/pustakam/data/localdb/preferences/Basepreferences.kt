@@ -29,7 +29,4 @@ open class BasePreferences(override val dataStore: DataStore<Preferences>) : IAp
     override suspend fun getUserId(): String? {
         return dataStore.data.map { it[USER_ID] }.firstOrNull()
     }
-
-
-
 }

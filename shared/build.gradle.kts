@@ -32,16 +32,18 @@ kotlin {
             api(libs.bundles.ktor)
             api(libs.datastore.preferences)
             api(libs.datastore)
-            implementation(libs.koin)
+            api(libs.koin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            api(libs.bundles.koinAndroid)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
+
         }
 //        desktopMain.dependencies{
 //            implementation(compose.desktop.currentOs)

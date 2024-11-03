@@ -2,7 +2,7 @@ import SwiftUI
 import shared
 
 struct LoginHandler : IBaseHandler {
-    var base: BaseRepository = BaseRepository()
+    var base: BaseRepository = BaseRepositoryHelper.shared.baseRepository
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
         return   valmsg != ValidationError.none ?
@@ -22,7 +22,6 @@ struct LoginView: View {
     @State private var errorField : ErrorField = ErrorField()
     private let loginHandler = LoginHandler()
     @EnvironmentObject var router: Router
-    
     var body: some View {
         VStack{
             TextField(

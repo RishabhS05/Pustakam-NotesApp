@@ -57,6 +57,4 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.compose.ui.tooling)
-    implementation(libs.bundles.koin)
-
 }

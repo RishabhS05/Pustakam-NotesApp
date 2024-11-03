@@ -3,7 +3,7 @@ import SwiftUICore
 import shared
 
 struct SignUpHandler: IBaseHandler {
-    var base: BaseRepository = BaseRepository(userPrefs: IosAppPreferences())
+    var base: BaseRepository = BaseRepositoryHelper.shared.baseRepository
     func validateCred(req: RegisterReq) -> ErrorField? {
         let valmsg =
             FieldValidationKt.checkRegisterFieldsValidity(

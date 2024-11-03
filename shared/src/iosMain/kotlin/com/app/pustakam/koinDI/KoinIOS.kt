@@ -1,8 +1,14 @@
 package com.app.pustakam.koinDI
 
-import org.koin.core.KoinApplication
+import com.app.pustakam.koinDI.Modules.appModule
+import com.app.pustakam.koinDI.Modules.repositoriesModule
 import org.koin.core.context.startKoin
 
 object KoinIOS {
-    fun initialize(): KoinApplication = startKoin{}
+    fun startApp() = startKoin{
+        modules(
+            appModule,
+            repositoriesModule,
+        )
+    }
 }

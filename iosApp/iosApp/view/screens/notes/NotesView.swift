@@ -2,19 +2,23 @@ import SwiftUI
 import shared
 
 class NotesHandler : IBaseHandler, ObservableObject {
-    var base: BaseRepository = BaseRepository(userPrefs: IosAppPreferences())
+    var base: BaseRepository = BaseRepositoryHelper.shared.baseRepository
     @State var page: Int = 1
     @State var notes = [Note]()
     func clear(){
         self.page = 1
     }
     func getNotesCall() {
+      
         Task {
-            print("BaseResponseuserId \( BaseRepository.UserData.shared.userID)")
+ 
+            print(
+                "user Id \(String(describing: try? await base.getUserFromPrefId()))"
+            )
             let response = await apiHandler(
                 apiCall: {
                     try await base.getNotesForUser(
-                        userId: BaseRepository.UserData.shared.userID,
+                        userId: try await base.getUserFromPrefId() ?? "",
                         page: Int32(page)
                     )
                 })

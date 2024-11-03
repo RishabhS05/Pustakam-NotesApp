@@ -15,6 +15,7 @@ import com.app.pustakam.util.onSuccess
 import org.koin.core.component.KoinComponent
 
 open class BaseRepository(private val userPrefs :  IAppPreferences) : IRemoteRepository, ILocalRepository, KoinComponent{
+
     private val apiClient : ApiCallClient = ApiCallClient(userPrefs)
     override suspend fun loginUser(login : Login): Result<BaseResponse<User>, Error>
     = apiClient.login(login)
@@ -54,7 +55,7 @@ open class BaseRepository(private val userPrefs :  IAppPreferences) : IRemoteRep
       userPrefs.setUserId(userId)
     }
 
-    override suspend fun getUserFromPrefId()  :String?= userPrefs.getUserId()
+    override suspend fun getUserFromPrefId()  :String? = userPrefs.getUserId()
 
 
 }
