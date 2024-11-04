@@ -11,7 +11,7 @@ navigationCompose = "2.8.2"
 viewmodelCompose = "2.8.6"
 datastore = "1.1.1"
 compiler = "3.2.0-alpha11"
-koin = "4.0.0"
+koin = "3.5.0"
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 #compose

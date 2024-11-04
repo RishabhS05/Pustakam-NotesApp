@@ -1,13 +1,13 @@
-import SwiftUI
 import shared
+import SwiftUI
+
 @main
 struct iOSApp: App {
-    @ObservedObject var router = Router()
     
-//    init() {
-//        KoinIOS.shared.startApp()
-//     }
-	var body: some Scene {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    @ObservedObject var router = Router()
+    var body: some Scene {
        
         WindowGroup {
             NavigationStack(path: $router.navPath){
@@ -27,4 +27,12 @@ struct iOSApp: App {
             }.environmentObject(router)
         }
 	}
+}
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Override point for customization
+        KoinKt.doInitKoin(appDeclaration: {_ in})
+        return true
+    }
 }

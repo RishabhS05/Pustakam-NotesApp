@@ -2,7 +2,7 @@ import SwiftUI
 import shared
 
 class NotesHandler : IBaseHandler, ObservableObject {
-    var base: BaseRepository = BaseRepositoryHelper.shared.baseRepository
+    var base: BaseRepository = KoinHelper().getBaseRepository()
     @State var page: Int = 1
     @State var notes = [Note]()
     func clear(){

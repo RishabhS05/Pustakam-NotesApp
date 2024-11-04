@@ -2,7 +2,7 @@ import SwiftUI
 import shared
 
 struct LoginHandler : IBaseHandler {
-    var base: BaseRepository = BaseRepositoryHelper.shared.baseRepository
+    var base: BaseRepository = KoinHelper().getBaseRepository()
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
         return   valmsg != ValidationError.none ?

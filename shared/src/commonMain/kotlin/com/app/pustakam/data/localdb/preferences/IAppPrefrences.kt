@@ -9,4 +9,5 @@ import androidx.datastore.preferences.core.Preferences
     suspend fun getAuthToken() : String?
     suspend fun getUserId() : String?
     suspend  fun setUserId(userId : String)
+    suspend fun  clear()
 }

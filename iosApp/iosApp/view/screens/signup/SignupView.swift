@@ -3,7 +3,7 @@ import SwiftUICore
 import shared
 
 struct SignUpHandler: IBaseHandler {
-    var base: BaseRepository = BaseRepositoryHelper.shared.baseRepository
+    var base: BaseRepository = KoinHelper().getBaseRepository()
     func validateCred(req: RegisterReq) -> ErrorField? {
         let valmsg =
             FieldValidationKt.checkRegisterFieldsValidity(
