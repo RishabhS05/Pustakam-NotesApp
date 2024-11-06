@@ -22,6 +22,7 @@ actual fun createHttpClient(): HttpClient {
         install(ContentNegotiation) {
             json(
                 json = Json {
+                    explicitNulls = false
                     ignoreUnknownKeys = true
                     prettyPrint = true
                     isLenient = true

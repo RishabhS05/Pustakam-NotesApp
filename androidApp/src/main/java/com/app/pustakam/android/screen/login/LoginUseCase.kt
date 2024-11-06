@@ -12,8 +12,5 @@ import com.app.pustakam.util.onSuccess
 
 class LoginUseCase : BaseUseCase(){
     suspend operator fun invoke(login : Login): Flow<Result<BaseResponse<User>, Error>> =
-      getBaseApiCall{ repository.loginUser(login = login).onSuccess {
-          it.data?._id?.let {
-              it1 -> repository.setUserFromPrefId(it1) }
-      } }
+        getBaseApiCall{ repository.loginUser(login = login)}
 }

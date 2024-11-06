@@ -1,4 +1,5 @@
 package com.app.pustakam.data.network
+import com.app.pustakam.util.log_i
 import io.ktor.client.HttpClient
 
 import io.ktor.client.engine.okhttp.OkHttp
@@ -23,7 +24,7 @@ actual fun createHttpClient(): HttpClient {
             level = LogLevel.BODY
             logger = object : Logger {
                 override fun log(message: String) {
-                   println(message)
+                   log_i(message)
                 }
 
             }
