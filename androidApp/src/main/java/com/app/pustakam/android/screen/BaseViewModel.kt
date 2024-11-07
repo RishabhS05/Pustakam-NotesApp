@@ -6,6 +6,7 @@ import com.app.pustakam.data.models.BaseResponse
 import kotlinx.coroutines.flow.Flow
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.Error
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 
@@ -20,7 +21,7 @@ abstract class BaseViewModel : ViewModel() , KoinComponent {
         showLoader : Boolean = true,
         call: suspend () -> Flow<Result<BaseResponse<T>, Error>>
     ){
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             call().collect{
                 when (it){
                     is Result.Success -> onSuccess(taskCode, it)

@@ -5,11 +5,10 @@ import com.app.pustakam.data.models.response.notes.Note
 open class BaseUIState (open val isLoading : Boolean,
                         open val error : String? = null,
                         open val successMessage : String? = null,
-                        open var token: String? = null,
-                        open var userId : String? = null,
+
     ){
     override fun toString(): String {
-        return "BaseUIState(isLoading=$isLoading, error=$error, successMessage=$successMessage, token=$token, userId=$userId)"
+        return "BaseUIState(isLoading=$isLoading, error=$error, successMessage=$successMessage)"
     }
 
 }
@@ -32,18 +31,14 @@ data class NotesUIState(
     override val isLoading: Boolean,
     override val error: String? =null,
     override val successMessage: String? = null,
-    override var token: String? = null,
-    override var userId : String? = null,
     val page : Int = 1,
     val count : Int = 0,
     val isNextPage : Boolean = true,
     val notes: ArrayList<Note> = arrayListOf()
-) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage,token = token,userId= userId)
+) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 data class NoteUIState(
     override val isLoading: Boolean,
     override val error: String? =null,
-    override var token: String? = null,
-    override var userId : String? = null,
     override val successMessage: String? = null,
     val note : Note? =null
-) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage, token = token,userId= userId)
+) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)

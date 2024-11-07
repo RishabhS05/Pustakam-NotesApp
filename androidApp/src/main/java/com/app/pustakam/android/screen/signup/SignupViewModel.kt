@@ -51,8 +51,7 @@ class RegisterViewModel : BaseViewModel() {
 
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         val response = result.data
-
-                when (taskCode) {
+        when (taskCode) {
                     AUTH.SIGNUP -> {
                         _signupUiState.update {
                         it.copy(isRegistered = response.isSuccessful, successMessage = response.message)}

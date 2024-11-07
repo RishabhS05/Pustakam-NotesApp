@@ -29,8 +29,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
                 val navController = rememberNavController()
-                val appViewModel: AppViewModel = viewModel()
-                appViewModel.updateUserAuth()
                 AppUi(navController = navController)
             }
         }

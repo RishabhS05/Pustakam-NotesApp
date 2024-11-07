@@ -6,6 +6,7 @@ import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
+import com.app.pustakam.util.log_d
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
@@ -33,6 +34,7 @@ abstract class BaseClient(val userPrefs : IAppPreferences ) {
                emit( Result.Error(NetworkError.SERIALIZATION))
                return@flow
            }
+        log_d("auth"," ${response.headers["authorization"]}")
         if(userPrefs.getAuthToken().isNullOrEmpty()) {
            val token = response.headers["authorization"].toString()
             println("auth ${response.headers["authorization"]}")

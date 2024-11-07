@@ -10,6 +10,7 @@ import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
+import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +19,7 @@ import kotlinx.coroutines.flow.update
 class NotesViewModel : BaseViewModel() {
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false))
     val notesUIState: StateFlow<NotesUIState> = _notesUiState.asStateFlow()
-
+    private val getNoteUseCase = GetNotesUseCase()
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
 
         when (taskCode) {
@@ -46,7 +47,6 @@ class NotesViewModel : BaseViewModel() {
 
     fun getNotes() {
         if (!_notesUiState.value.isNextPage) return
-        val getNoteUseCase = GetNotesUseCase()
         makeAWish(NOTES_CODES.GET_NOTES) {
             getNoteUseCase.invoke(page = _notesUiState.value.page)
         }

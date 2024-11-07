@@ -4,7 +4,7 @@
     <!--suppress AndroidDomInspection -->
     <application
         android:name=".PustakmApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:supportsRtl="true"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme">

@@ -15,7 +15,7 @@ class SignUseCase : BaseUseCase() {
 }
 
 class DeleteUserUseCase : BaseUseCase() {
-    suspend operator fun invoke(userId: String) = repository.deleteUser("")
+    suspend operator fun invoke() = repository.deleteUser()
 }
 
 class UpdateUserUseCase : BaseUseCase() {

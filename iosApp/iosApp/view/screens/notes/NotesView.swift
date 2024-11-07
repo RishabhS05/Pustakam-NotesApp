@@ -3,30 +3,28 @@ import shared
 
 class NotesHandler : IBaseHandler, ObservableObject {
     var base: BaseRepository = KoinHelper().getBaseRepository()
-    @State var page: Int = 1
-    @State var notes = [Note]()
+    @Published var page: Int = 1
+    @Published var notes = [Note]()
     func clear(){
         self.page = 1
     }
     func getNotesCall() {
-      
         Task {
- 
-            print(
-                "user Id \(String(describing: try? await base.getUserFromPrefId()))"
-            )
             let response = await apiHandler(
                 apiCall: {
                     try await base.getNotesForUser(
-                        userId: try await base.getUserFromPrefId() ?? "",
                         page: Int32(page)
                     )
                 })
             print("Response \(response)")
             if response.isSuccessful {
-                let data =  response.data as! Notes
-                data.notes?.forEach{note in
-                    notes.append(note as! Note)
+                let data =  response.data as! BaseResponse<Notes>
+                DispatchQueue.main.async {
+                    data.data?.notes?
+                        .forEach{note in
+                            print(note)
+                            self.notes.append(note as! Note)
+                        }
                 }
             } else if response.error != nil {
                 print("Error \(response.error!)")
@@ -35,13 +33,13 @@ class NotesHandler : IBaseHandler, ObservableObject {
     }
 }
 struct NotesView: View {
-    private var notesHandler = NotesHandler()
+    @StateObject private var notesHandler = NotesHandler()
     private let columns  = [GridItem(.flexible()), GridItem(.flexible())]
     var body: some View {
         ScrollView {
                    LazyVGrid(columns: columns , spacing: 20) {
-                       ForEach(notesHandler.$notes, id: \.self) { note in
-                           Text( "\(note.title)")
+                       ForEach(notesHandler.notes, id: \.self) { note in
+                           Text(note.title ?? "")
                        }
                    }
                    .padding(.horizontal)
