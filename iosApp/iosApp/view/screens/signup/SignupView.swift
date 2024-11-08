@@ -2,8 +2,9 @@ import SwiftUI
 import SwiftUICore
 import shared
 
-struct SignUpHandler: IBaseHandler {
+class SignUpHandler: IBaseHandler {
     var base: BaseRepository = KoinHelper().getBaseRepository()
+    @Published var isLoading: Bool = false
     func validateCred(req: RegisterReq) -> ErrorField? {
         let valmsg =
             FieldValidationKt.checkRegisterFieldsValidity(
@@ -27,10 +28,12 @@ struct SignupView: View {
     @State private var confirmPasword: String = ""
     @State private var errorField: ErrorField = ErrorField()
     @State private var imageUrl: String = ""
+    @State private var isLoading: Bool = false
     private let signupHandle = SignUpHandler()
     @Environment(\.dismiss) var dismiss
     var body: some View {
-        VStack(spacing: 20) {
+        ZStack {
+            VStack(spacing: 20) {
             AvatarImageView(imageUrl: imageUrl) {}
             TextField(
                 "Your name",
@@ -55,21 +58,26 @@ struct SignupView: View {
             Button("Sign up") {
                 signUpHandle()
             }.buttonStyle(SigninButtonStyle())
-
+            
         }.padding(20)
-            .alert(
-                isPresented: $errorField.showErrorAlert,
-                content: {
-                    return Alert(
-                        title: Text("Error!"),
-                        message: Text(errorField.errorMessage),
-                        dismissButton: Alert.Button.default(
-                            Text("OK"),
-                            action: {
-                                errorField.showErrorAlert = false
-                            })
-                    )
-                })
+                .alert(
+                    isPresented: $errorField.showErrorAlert,
+                    content: {
+                        return Alert(
+                            title: Text("Error!"),
+                            message: Text(errorField.errorMessage),
+                            dismissButton: Alert.Button.default(
+                                Text("OK"),
+                                action: {
+                                    errorField.showErrorAlert = false
+                                })
+                        )
+                    })
+            if isLoading {
+                LoadingUI().frame(alignment: .center)
+                Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
+            }
+        }
     }
     func signUpHandle() {
         let user = RegisterReq(
@@ -84,8 +92,10 @@ struct SignupView: View {
             return
         }
         Task {
+           isLoading = true
             let resp = await signupHandle.signUpCall(
                 reqUser: user)
+            isLoading = false
             if resp.error != nil && !resp.isSuccessful {
                 errorField.errorMessage =
                     (resp.error as! NetworkError).getError()

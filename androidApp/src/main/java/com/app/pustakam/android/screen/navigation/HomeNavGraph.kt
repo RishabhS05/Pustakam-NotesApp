@@ -4,6 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.app.pustakam.android.screen.noteEditor.NotesEditorView
 import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
@@ -17,14 +18,17 @@ fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
         composable(
             route = Route.Notes
         ) {
-            NotesView()
+            NotesView(onNavigateNote = {})
+        }
+        composable(
+            route = Route.NotesEditor
+        ) {
+            NotesEditorView()
         }
         composable(
             route = Route.Notification
         ) {
-            NotificationView(onNavigate = {
-
-            })
+            NotificationView(onNavigate = {})
         }
         composable(
             route = Route.Search

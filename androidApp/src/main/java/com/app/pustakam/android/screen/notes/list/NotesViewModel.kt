@@ -33,7 +33,9 @@ class NotesViewModel : BaseViewModel() {
                     } else {
                         isNextPage = false
                     }
-                    it.copy(isLoading = false, notes = it.notes, successMessage = result.data.message, page = page, isNextPage = isNextPage)
+                    it.copy(isLoading = false, notes = it.notes,
+                        successMessage = result.data.message,
+                        page = page, isNextPage = isNextPage)
                 }
             }
         }

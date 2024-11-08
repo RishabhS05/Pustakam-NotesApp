@@ -29,7 +29,7 @@ extension IBaseHandler {
             let res = response as? ResultSuccess<T>
             baseResult = BaseResult<T?>(
                 isSuccessful: true, data: res?.data, error: nil)
-        } else {
+        }  else {
             let err = response as? ResultError<NetworkError>
             baseResult = BaseResult<T?>(
                 isSuccessful: false, data: nil, error: err?.error)

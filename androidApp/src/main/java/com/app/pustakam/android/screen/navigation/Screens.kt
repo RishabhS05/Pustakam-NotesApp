@@ -14,6 +14,7 @@ object Route {
     const val Login = "LOGIN"
     const val Signup = "SIGNUP"
     const val Notes = "NOTES"
+    const val NotesEditor = "NOTES_EDITOR"
     const val Authentication = "AUTH"
 }
 

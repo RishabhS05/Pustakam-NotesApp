@@ -14,7 +14,7 @@ final class Router: ObservableObject {
         case Login
         case Signup
         case Notes
-        case NoteDetails
+        case NoteEditor
         case Profile
         case Notification
         case Search

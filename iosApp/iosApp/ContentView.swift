@@ -20,7 +20,7 @@ struct AppView : View {
     @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
     var body: some View {
         LoginView()
-            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated) { isAuthenticated in
+            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
                         if isAuthenticated == true {
                             print("User is authenticated")
                             router.navigate(to: .Home)

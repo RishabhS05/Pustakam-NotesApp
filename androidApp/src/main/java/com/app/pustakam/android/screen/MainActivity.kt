@@ -21,6 +21,7 @@ import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.screen.navigation.AppNavGraph
 import com.app.pustakam.android.screen.navigation.BottomBar
 import com.app.pustakam.android.screen.navigation.Route
+import com.app.pustakam.android.widgets.FAB.AddNewNoteFAB
 import com.app.pustakam.extensions.isNotnull
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +55,10 @@ val NavController.shouldShowTopBar
         Route.Login, Route.Signup -> false
         else -> false
     }
+val NavController.shouldShowFloatingButton
+    get()= when(currentBackStackEntry?.destination?.route){
+        Route.Notes -> true else -> false
+    }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,8 +70,17 @@ fun AppUi(navController: NavHostController = rememberNavController()) {
         if (currentRoute.isNotnull() && navController.shouldShowTopBar) TopAppBar(title = {
             Text(text = currentRoute!!, textAlign = TextAlign.Center)
         })
-    }, bottomBar = { if (navController.shouldShowBottomBar) BottomBar(navController = navController) },
-        floatingActionButton = {}) { paddingValues ->
+    }, bottomBar = { if (navController.shouldShowBottomBar)
+        BottomBar(navController = navController) },
+        floatingActionButton = {
+            if(navController.shouldShowFloatingButton){
+                when(currentRoute){
+                    Route.Notes -> AddNewNoteFAB(){
+                        navController.navigate(Route.NotesEditor)
+                    }
+                }
+            }
+        }) { paddingValues ->
         AppNavGraph(
             navController, modifier = Modifier.padding(paddingValues)
         )
