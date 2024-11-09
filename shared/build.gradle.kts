@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -22,6 +23,7 @@ kotlin {
         it.binaries.framework {
             baseName = "shared"
             isStatic = true
+            linkerOpts.add("-lsqlite3")
         }
     }
 
@@ -39,11 +41,11 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.sqldelight.android)
             api(libs.bundles.koinAndroid)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
-
         }
 //        desktopMain.dependencies{
 //            implementation(compose.desktop.currentOs)
@@ -51,11 +53,8 @@ kotlin {
 //        }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-        }
-        getByName("iosMain") {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-            }
+            implementation(libs.sqldelight.native)
+            implementation(libs.kotlinx.coroutines.core)
         }
     }
 }
@@ -74,3 +73,11 @@ android {
 dependencies {
     implementation(libs.androidx.compiler)
 }
+sqldelight {
+    databases {
+        create("NotesDatabase") {
+            packageName.set("com.app.pustakam.database")
+        }
+    }
+}
+

@@ -1,5 +1,6 @@
 package com.app.pustakam.domain.repositories
 
+import com.app.pustakam.data.localdb.database.NotesDao
 import com.app.pustakam.data.localdb.preferences.BasePreferences
 import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.localdb.preferences.UserPreference
@@ -21,11 +22,12 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepository, ILocalRepository, KoinComponent {
 
     private val apiClient: ApiCallClient = ApiCallClient(userPrefs)
-
+    private  val notesDao by inject<NotesDao>()
     private val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
     lateinit var prefs: UserPreference
 
@@ -67,8 +69,14 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
         val id = userId.ifEmpty { prefs.userId }
         return apiClient.getUser(id)
     }
-
     override suspend fun deleteUser(): Result<BaseResponse<User>, Error> = apiClient.deleteUser(prefs.userId)
 
     override suspend fun profileImage(): Result<BaseResponse<User>, Error> = apiClient.profileImage()
+
+    //database
+    override fun insertUpdate(note: Note) = notesDao.insertOrUpdateNoteFromDb(note)
+
+    override fun deleteById(id: String) = notesDao.deleteByIdFromDb(id)
+
+    override fun getNotes(): Notes = notesDao.selectAllNotesFromDb()
 }
