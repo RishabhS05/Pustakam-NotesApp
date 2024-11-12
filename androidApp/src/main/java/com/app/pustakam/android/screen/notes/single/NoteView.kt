@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.app.pustakam.data.models.response.notes.Note
 
 @Composable
-fun NoteView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}) {
+fun NoteCardView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}) {
     Card(shape = CardDefaults.outlinedShape,
         modifier = modifier
             .height(intrinsicSize = IntrinsicSize.Min)
@@ -77,5 +77,5 @@ private fun NotesPreview() {
                 "    modifier = Modifier.fillMaxSize()\n" +
                 ")\n"
     )
-    NoteView(note =note)
+    NoteCardView(note =note)
 }

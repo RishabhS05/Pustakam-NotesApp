@@ -18,7 +18,7 @@ interface IRemoteRepository {
     suspend fun updateNote(note : NoteRequest) : Result<BaseResponse<Note>, Error>
     suspend fun updateUser(user : User) : Result<BaseResponse<User>, Error>
     suspend fun getUser(userId : String) : Result<BaseResponse<User>, Error>
-    suspend fun getNote( noteId : String) : Result<BaseResponse<User>, Error>
+    suspend fun getNote( noteId : String) : Result<BaseResponse<Note>, Error>
     suspend fun deleteUser() : Result<BaseResponse<User>, Error>
     suspend fun deleteNote(noteId : String ) : Result<BaseResponse<Note>, Error>
     suspend fun profileImage() : Result<BaseResponse<User>,Error>

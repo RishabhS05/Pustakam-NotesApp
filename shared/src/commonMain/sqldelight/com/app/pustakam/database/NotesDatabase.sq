@@ -14,7 +14,8 @@ VALUES(?,?,?,?,?,?,?);
 
 selectAll:
 SELECT * FROM Notes;
-
+selectById:
+SELECT * FROM Notes WHERE id =? ;
 deleteById:
 DELETE FROM Notes WHERE  id = ?;
 

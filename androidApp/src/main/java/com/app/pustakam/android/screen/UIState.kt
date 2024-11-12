@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen
 
+import com.app.pustakam.android.screen.noteEditor.UserAction
 import com.app.pustakam.data.models.response.notes.Note
 
 open class BaseUIState (open val isLoading : Boolean,
@@ -40,5 +41,9 @@ data class NoteUIState(
     override val isLoading: Boolean,
     override val error: String? =null,
     override val successMessage: String? = null,
+    val moveBack:Boolean = false,
+    var isSetupValues:Boolean = false,
+    var action : UserAction? = null,
     val note : Note? =null
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
+

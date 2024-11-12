@@ -6,5 +6,6 @@ import com.app.pustakam.data.models.response.notes.Notes
 interface ILocalRepository {
     fun insertUpdate(note: Note)
     fun deleteById(id : String)
-    fun getNotes() : Notes
+    fun getNotes() : Notes?
+    fun getNoteById(id :String) : Note?
 }

@@ -46,7 +46,7 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
                 }
             }
         }
-    suspend fun getNote(userId : String, noteId :String): Result<BaseResponse<User>, Error> = baseApiCall <BaseResponse<User>, NetworkError>  {
+    suspend fun getNote(userId : String, noteId :String): Result<BaseResponse<Note>, Error> = baseApiCall <BaseResponse<Note>, NetworkError>  {
         httpClient.get(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
             headers.apply {
                 val token = userPrefs.getAuthToken()?:""
@@ -95,7 +95,7 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
 
     suspend fun updateUser(user : User) : Result<BaseResponse<User>, Error> =
         baseApiCall<BaseResponse<User>, NetworkError> {
-            httpClient.post(urlString = "${ApiRoute.USERS.getName()}/$${user._id}") {
+            httpClient.post(urlString = "${ApiRoute.USERS.getName()}/${user._id}") {
                 contentType(ContentType.Application.Json)
                 headers.apply {
                     val token = userPrefs.getAuthToken()?:""

@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
-import com.app.pustakam.android.screen.notes.single.NoteView
+import com.app.pustakam.android.screen.notes.single.NoteCardView
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.data.models.response.notes.Note
@@ -34,7 +34,7 @@ fun NotesView(onNavigateNote : (note : Note)-> Unit) {
             ) {
                 notes.forEach { note ->
                     item {
-                        NoteView(note = note){ onNavigateNote(note) }
+                        NoteCardView(note = note){ onNavigateNote(note) }
                     }
                 }
             }

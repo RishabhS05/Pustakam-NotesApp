@@ -6,7 +6,9 @@ import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.notes.GetNotesUseCase
 import com.app.pustakam.data.models.BaseResponse
+import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.Notes
+import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -19,7 +21,7 @@ import kotlinx.coroutines.flow.update
 class NotesViewModel : BaseViewModel() {
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false))
     val notesUIState: StateFlow<NotesUIState> = _notesUiState.asStateFlow()
-    private val getNoteUseCase = GetNotesUseCase()
+    private val getNotesUseCase = GetNotesUseCase()
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
 
         when (taskCode) {
@@ -48,12 +50,22 @@ class NotesViewModel : BaseViewModel() {
     }
 
     fun getNotes() {
-        if (!_notesUiState.value.isNextPage) return
-        makeAWish(NOTES_CODES.GET_NOTES) {
-            getNoteUseCase.invoke(page = _notesUiState.value.page)
+        val notes  =  getNotesUseCase.invoke()
+        if(!notes?.notes.isNullOrEmpty()) {
+            _notesUiState.update {
+                it.notes.addAll(notes?.notes!!)
+                it.copy(notes = it.notes)
+            }
+        }else {
+            callGetNotesApi()
         }
     }
-
+   private fun callGetNotesApi(){
+    if (!_notesUiState.value.isNextPage) return
+    makeAWish(NOTES_CODES.GET_NOTES) {
+        getNotesUseCase.invoke(page = _notesUiState.value.page)
+    }
+   }
 
     override fun clearError() {
         _notesUiState.update {

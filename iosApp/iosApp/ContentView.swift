@@ -23,7 +23,7 @@ struct AppView : View {
             .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
                         if isAuthenticated == true {
                             print("User is authenticated")
-                            router.navigate(to: .Home)
+                            router.navigate(to: .NoteEditor)
                         }
                     }
 //            .onAppear{
