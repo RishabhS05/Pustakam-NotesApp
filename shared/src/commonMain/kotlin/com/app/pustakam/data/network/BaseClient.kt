@@ -27,19 +27,21 @@ abstract class BaseClient(val userPrefs : IAppPreferences ) {
            val response : HttpResponse = try {
                actualApiCall.invoke()
            } catch (e: UnresolvedAddressException) {
+               log_d("Error", "$e")
                emit(Result.Error(NetworkError.NO_INTERNET))
                return@flow
            }
            catch (e: SerializationException){
+               log_d("Error", "$e")
                emit( Result.Error(NetworkError.SERIALIZATION))
                return@flow
            }
         log_d("auth"," ${response.headers["authorization"]}")
         if(userPrefs.getAuthToken().isNullOrEmpty()) {
-           val token = response.headers["authorization"].toString()
-            println("auth ${response.headers["authorization"]}")
+           val token = response.headers[headerAuth.lowercase()].toString()
+            log_d("auth","${response.headers["authorization"]}")
             userPrefs.setToken(token)
-            print("Token ; $token")
+            log_d("Token" ," $token")
         }
            when (response.status.value){
                in 200..299 -> emit(Result.Success(response.body<T>()))

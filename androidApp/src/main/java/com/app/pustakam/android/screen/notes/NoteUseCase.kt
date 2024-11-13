@@ -18,14 +18,12 @@ class UpdateNoteUseCase : BaseUseCase() {
     suspend operator  fun invoke(note : NoteRequest) = getBaseApiCall{
         repository.updateNote(note)
     }
-    operator fun invoke(note: Note)  = repository.insertUpdate(note)
 }
 
 class ReadNoteUseCase : BaseUseCase() {
     suspend operator  fun invoke(id : String ,callApi : Boolean) =
         getBaseApiCall{ repository.getNote(id) }
     operator  fun invoke(id : String ) = repository.getNoteById(id)
-
 }
 
 class GetNotesUseCase : BaseUseCase() {

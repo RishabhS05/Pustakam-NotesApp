@@ -3,20 +3,21 @@ package com.app.pustakam.android.screen.noteEditor
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -26,61 +27,78 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
-import com.app.pustakam.android.widgets.PrimaryFilledButton
+import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SecondaryTextButton
+import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.extensions.isNotnull
-import com.app.pustakam.util.log_d
+
 
 @Composable
 fun NotesEditorView(
     id : String? = "",
-    onBack:()->Unit = {}, ) {
+    onBack:()->Unit = {},
+
+){
+   val noteEditorViewModel  : NoteEditorViewModel = viewModel()
+    NotesEditor(id= id, onBack=onBack, noteEditorViewModel= noteEditorViewModel)
+}
+
+@Composable
+fun NotesEditor(
+    id : String? = "",
+    onBack:()->Unit = {},
+    noteEditorViewModel  : NoteEditorViewModel = viewModel()
+) {
+
     // Note content state
-    val noteEditorViewModel  : NoteEditorViewModel = viewModel()
     val textState = remember { mutableStateOf("") }
     val textTitleState = remember { mutableStateOf("") }
     val isRuledEnabledState =  remember { mutableStateOf(false) }
   val appState =  noteEditorViewModel.noteUIState.collectAsState().value.apply {
-        OnLifecycleEvent { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                 if (!id.isNullOrEmpty()) noteEditorViewModel.readFromDataBase(id)
-
-                }
-                Lifecycle.Event.ON_PAUSE -> {
-                    noteEditorViewModel.createOrUpdate( id= id,
-                        title =  textTitleState.value,
-                        body = textState.value,
-                        note = note)
-                }
-                Lifecycle.Event.ON_DESTROY -> {
-                    //sink with server
-                }
-                else -> {}
+      when{
+          isLoading -> LoadingUI()
+          error.isNotnull() -> SnackBarUi(error = error!!) {
+              noteEditorViewModel.clearError()
+          }
+      }
+      when(noteStatus){
+          NoteStatus.onBackPress -> {
+              noteEditorViewModel.createOrUpdate( id= id,
+                  title =  textTitleState.value,
+                  body = textState.value,
+                  note = note)
+          }
+          NoteStatus.onSaveCompletedExit -> {
+              onBack()
+          }
+          NoteStatus.OnEditingMode ->{}
+          NoteStatus.onSaveCompleted -> {}
+          else -> {}
+      }
+  }
+    OnLifecycleEvent { owner, event ->
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> {
+                if (!id.isNullOrEmpty()) noteEditorViewModel.readFromDataBase(id)
             }
-        }
-        when {
-            this.note.isNotnull() && isSetupValues-> {
-                textTitleState.value = note!!.title.toString()
-                textState.value = note.description.toString()
-                isSetupValues =false
+            Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
             }
-            this.moveBack -> onBack()
-        }
-        when(action){
-            UserAction.onSave -> {
-
-              this.action = null
+            Lifecycle.Event.ON_DESTROY -> {
+                //sink with server
             }
-
-            UserAction.onBack -> { onBack() }
             else -> {}
         }
     }
-
+    LaunchedEffect(appState.note, appState.isSetupValues) {
+        if(appState.note.isNotnull() && appState.isSetupValues) {
+        textTitleState.value = appState.note!!.title.toString()
+        textState.value = appState.note.description.toString()
+        appState.isSetupValues =false
+    }
+    }
     val paddingLeft = if(isRuledEnabledState.value) 100.dp else 12.dp
     Box(
         modifier = Modifier
@@ -107,12 +125,11 @@ fun NotesEditorView(
                         textTitleState.value = it
                     }, textStyle = TextStyle(
                         color = Color.Black, fontSize = 24.sp
-                    ), modifier = Modifier
-                        .height(60.dp)
+                    ), modifier = Modifier.weight(1f)
                         .padding(top = 2.dp)
                 )
                 SecondaryTextButton(
-                    label = "Done", modifier = Modifier.padding(top = 8.dp)
+                    label = "Done", modifier = Modifier.padding(top = 8.dp).height(40.dp).weight(.5f)
                 ){
                     noteEditorViewModel.createOrUpdate( id= id,
                         title =  textTitleState.value,
@@ -131,7 +148,7 @@ fun NotesEditorView(
                         "Hi, whats in your mind take a quick note, before it get lost.",
                         modifier = Modifier.padding(start = paddingLeft),
                         style = TextStyle(
-                            color = Color.Gray, fontSize = 18.sp, lineHeight = 32.sp
+                            color = Color.Gray, fontSize = 14.sp, lineHeight = 32.sp
                         )
                     )
                 }, textStyle = TextStyle(

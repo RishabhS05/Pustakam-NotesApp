@@ -16,6 +16,7 @@ import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.checkAnyUpdateOnNote
+import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,11 +29,30 @@ class NoteEditorViewModel : BaseViewModel() {
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val updateNoteUseCase = UpdateNoteUseCase()
     private val createNoteUseCase = CreateNoteUseCase()
+    fun changeNoteStatus(status: NoteStatus?){
+        _noteUiState.update {
+            it.copy( noteStatus = status, isLoading = true)
+        }
+    }
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         when (taskCode) {
-            NOTES_CODES.INSERT, NOTES_CODES.READ, NOTES_CODES.UPDATE -> {
+            NOTES_CODES.INSERT, NOTES_CODES.UPDATE -> {
+                log_d("Loading", "Getting Update data")
                 val note = result.data.data as Note
-                _noteUiState.update { it.copy(isLoading = false, note = note, isSetupValues = true ) }
+                _noteUiState.update {
+                    val noteStatus = if (it.noteStatus == NoteStatus.onBackPress) NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
+                    it.copy(
+                        isLoading = false, note = note, isSetupValues = true, noteStatus = noteStatus )
+                }
+            }
+
+            NOTES_CODES.READ -> {
+                val note = result.data.data as Note
+                _noteUiState.update {
+                    it.copy(
+                        isLoading = false, note = note, isSetupValues = true,
+                    )
+                }
             }
 
             NOTES_CODES.DELETE -> {
@@ -40,14 +60,16 @@ class NoteEditorViewModel : BaseViewModel() {
             }
         }
     }
+
     fun readFromDataBase(id: String) {
         val note = readNoteUseCase.invoke(id)
         if (note.isNotnull()) {
             _noteUiState.update { it.copy(isLoading = false, note = note, isSetupValues = true) }
-        }else{
-        makeAWish(NOTES_CODES.READ) {
-            readNoteUseCase.invoke(id, callApi = true)
-        } }
+        } else {
+            makeAWish(NOTES_CODES.READ) {
+                readNoteUseCase.invoke(id, callApi = true)
+            }
+        }
     }
 
     fun createOrUpdate(id: String?, title: String?, body: String?, note: Note? = null) {
@@ -64,7 +86,8 @@ class NoteEditorViewModel : BaseViewModel() {
 
     private fun updateNote(updateNote: NoteRequest, note: Note) {
         if (checkAnyUpdateOnNote(new = updateNote, old = note)) return
-        makeAWish(NOTES_CODES.UPDATE) {q
+        log_d("Loading", "Calling Update Api ")
+        makeAWish(NOTES_CODES.UPDATE) {
             updateNoteUseCase.invoke(updateNote)
         }
     }
@@ -88,7 +111,7 @@ class NoteEditorViewModel : BaseViewModel() {
             }
 
             else -> _noteUiState.update {
-                it.copy(isLoading = false, error = (error as NetworkError).getError())
+                it.copy(isLoading = false, error = (error as NetworkError).getError() , noteStatus = null)
             }
         }
     }

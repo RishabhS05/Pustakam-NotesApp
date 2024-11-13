@@ -14,6 +14,7 @@ import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.data.network.ApiCallClient
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.Result
+import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +50,11 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     }
 
     override suspend fun updateNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.updateNote(prefs.userId, note).onSuccess {
-        it.data?.let { it1 -> insertUpdate(it1) }
+        it.data?.let {
+                it1 ->
+            log_d("Loading","setting it into data base Api ")
+            insertUpdate(it1)
+        }
     }
 
     override suspend fun deleteNote(noteId: String): Result<BaseResponse<Note>, Error> = apiClient.deleteNote(prefs.userId, noteId).onSuccess {

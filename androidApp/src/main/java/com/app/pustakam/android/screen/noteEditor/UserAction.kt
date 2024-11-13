@@ -1,5 +1,5 @@
 package com.app.pustakam.android.screen.noteEditor
 
-enum class UserAction {
-    onBack, onSave
+enum class NoteStatus {
+    onBackPress, onSaveCompletedExit, OnEditingMode, onSaveCompleted,onErrorSaving
 }
