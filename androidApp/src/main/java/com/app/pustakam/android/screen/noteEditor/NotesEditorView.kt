@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
+import com.app.pustakam.android.widgets.FAB.OverLayEditorButtons
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SecondaryTextButton
 import com.app.pustakam.android.widgets.SnackBarUi
@@ -123,7 +125,8 @@ fun NotesEditor(
                 TextField(
                     value = textTitleState.value, placeholder = {
                         Text(
-                            "Title : Keep your thoughts alive.", modifier = Modifier.padding(start = paddingLeft),
+                            "Title : Keep your thoughts alive.",
+                            modifier = Modifier.padding(start = paddingLeft),
                             style = TextStyle(
                                 color = Color.Gray,
                                 fontSize = 18.sp,
@@ -147,21 +150,12 @@ fun NotesEditor(
                     keyboardActions = KeyboardActions(onNext = {
                         focusManager.moveFocus(FocusDirection.Down)
                     }),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
                         .focusRequester(focusRequester)
                         .padding(top = 2.dp)
                 )
-                SecondaryTextButton(
-                    label = "Done", modifier = Modifier.padding(top = 8.dp).height(40.dp).weight(.5f)
-                ){
-                    noteEditorViewModel.createOrUpdate( id= id,
-                        title =  textTitleState.value,
-                        body = textState.value,
-                        note = appState.note)
-                }
             }
-
-
             TextField(
                 value = textState.value, onValueChange = {
                     textState.value = it
@@ -191,6 +185,13 @@ fun NotesEditor(
             )
 
         }
+        OverLayEditorButtons(modifier = Modifier.align(alignment = Alignment.CenterEnd),
+            onSave = {
+            noteEditorViewModel.createOrUpdate( id= id,
+            title =  textTitleState.value,
+            body = textState.value,
+            note = appState.note)
+        })
     }
 }
 

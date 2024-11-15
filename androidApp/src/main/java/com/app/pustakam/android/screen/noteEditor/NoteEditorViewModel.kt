@@ -34,6 +34,12 @@ class NoteEditorViewModel : BaseViewModel() {
             it.copy( noteStatus = status, isLoading = true)
         }
     }
+
+    override fun onLoading(taskCode: TaskCode) {
+        _noteUiState.update {
+            it.copy(isLoading = false,)
+        }
+    }
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         when (taskCode) {
             NOTES_CODES.INSERT, NOTES_CODES.UPDATE -> {
