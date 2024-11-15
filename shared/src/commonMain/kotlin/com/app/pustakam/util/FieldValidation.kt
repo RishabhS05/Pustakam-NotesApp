@@ -27,4 +27,4 @@ fun checkRegisterFieldsValidity(req : RegisterReq) : ValidationError
     else ->  ValidationError.NONE
 }
 
-fun checkAnyUpdateOnNote(new : NoteRequest, old : Note ): Boolean = new.title === old.title && new.body === old.description
+fun checkAnyUpdateOnNote(new : NoteRequest, old : Note ): Boolean = new.title === old.title && new.description === old.description

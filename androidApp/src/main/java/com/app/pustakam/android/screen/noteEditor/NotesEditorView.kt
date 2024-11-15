@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -21,8 +24,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,11 +59,13 @@ fun NotesEditor(
     onBack:()->Unit = {},
     noteEditorViewModel  : NoteEditorViewModel = viewModel()
 ) {
-
     // Note content state
     val textState = remember { mutableStateOf("") }
     val textTitleState = remember { mutableStateOf("") }
     val isRuledEnabledState =  remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
   val appState =  noteEditorViewModel.noteUIState.collectAsState().value.apply {
       when{
           isLoading -> LoadingUI()
@@ -93,6 +103,7 @@ fun NotesEditor(
         }
     }
     LaunchedEffect(appState.note, appState.isSetupValues) {
+        focusRequester.requestFocus()
         if(appState.note.isNotnull() && appState.isSetupValues) {
         textTitleState.value = appState.note!!.title.toString()
         textState.value = appState.note.description.toString()
@@ -114,18 +125,30 @@ fun NotesEditor(
                         Text(
                             "Title : Keep your thoughts alive.", modifier = Modifier.padding(start = paddingLeft),
                             style = TextStyle(
-                                color = Color.DarkGray,
+                                color = Color.Gray,
                                 fontSize = 18.sp,
                             )
                         )
                     }, colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
-                    ), onValueChange = {
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = MaterialTheme.colorScheme.tertiary
+                    ),
+
+
+                    onValueChange = {
                         textTitleState.value = it
                     }, textStyle = TextStyle(
                         color = Color.Black, fontSize = 24.sp
-                    ), modifier = Modifier.weight(1f)
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }),
+                    modifier = Modifier.weight(1f)
+                        .focusRequester(focusRequester)
                         .padding(top = 2.dp)
                 )
                 SecondaryTextButton(
@@ -156,7 +179,15 @@ fun NotesEditor(
                 ), colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                ), modifier = Modifier.fillMaxSize() // Padding to simulate left margin
+                    cursorColor = MaterialTheme.colorScheme.tertiary,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                     keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                }),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                modifier = Modifier.fillMaxSize() // Padding to simulate left margin
             )
 
         }

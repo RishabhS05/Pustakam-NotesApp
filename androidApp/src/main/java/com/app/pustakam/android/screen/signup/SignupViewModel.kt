@@ -67,12 +67,15 @@ class RegisterViewModel : BaseViewModel() {
 
 
     override fun onFailure(taskCode: TaskCode, error: Error) {
+        super.onFailure(taskCode, error)
         _signupUiState.update {
             it.copy(
                 error = (error as NetworkError).getError(), isLoading = false
             )
         }
     }
+
+    override suspend fun logoutUserForcefully() {}
 
     override fun clearError() {
         _signupUiState.update {

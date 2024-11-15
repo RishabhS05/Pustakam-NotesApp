@@ -1,6 +1,5 @@
 CREATE TABLE Notes (
  id TEXT NOT NULL PRIMARY KEY,
- userId TEXT NOT NULL,
  categoryId TEXT,
  title TEXT,
  description TEXT,
@@ -9,8 +8,8 @@ CREATE TABLE Notes (
 );
 
 insertOrUpdateNote:
-INSERT OR REPLACE INTO Notes(id, userId, categoryId, title, description, createdAt,updatedAt)
-VALUES(?,?,?,?,?,?,?);
+INSERT OR REPLACE INTO Notes(id,  categoryId, title, description, createdAt,updatedAt)
+VALUES(?,?,?,?,?,?);
 
 selectAll:
 SELECT * FROM Notes;

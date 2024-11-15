@@ -6,8 +6,6 @@ import com.app.pustakam.android.screen.LoginUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.response.User
-import com.app.pustakam.domain.repositories.BaseRepository
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -39,8 +37,6 @@ class LoginViewModel : BaseViewModel() {
         val response = result.data as BaseResponse
        when (taskCode){
            AUTH.LOGIN -> {
-                val user = response.data as User
-
           _loginUiState.update{
               it.copy(isLogging =  response.isSuccessful,
                   error = null,
@@ -60,8 +56,13 @@ class LoginViewModel : BaseViewModel() {
         }
     }
     override fun onFailure(taskCode: TaskCode, error: Error) {
+        super.onFailure(taskCode, error)
         _loginUiState.update{
             it.copy(error = (error as NetworkError).getError(), isLoading = false)
         }
+    }
+
+    override suspend fun logoutUserForcefully() {
+        loginUseCase.logoutUser()
     }
 }

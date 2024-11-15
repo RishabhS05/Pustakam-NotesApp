@@ -28,6 +28,5 @@ class ReadNoteUseCase : BaseUseCase() {
 
 class GetNotesUseCase : BaseUseCase() {
     suspend operator fun invoke(page : Int) = getBaseApiCall{ repository.getNotesForUser(page) }
-
     operator fun invoke() : Notes? = repository.getNotes()
 }

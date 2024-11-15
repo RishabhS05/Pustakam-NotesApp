@@ -38,7 +38,7 @@ abstract class BaseClient(val userPrefs : IAppPreferences ) {
            }
         log_d("auth"," ${response.headers["authorization"]}")
         if(userPrefs.getAuthToken().isNullOrEmpty()) {
-           val token = response.headers[headerAuth.lowercase()].toString()
+           val token = response.headers["authorization"].toString()
             log_d("auth","${response.headers["authorization"]}")
             userPrefs.setToken(token)
             log_d("Token" ," $token")

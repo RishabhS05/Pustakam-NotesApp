@@ -73,7 +73,8 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     fun createOrUpdate(id: String?, title: String?, body: String?, note: Note? = null) {
-        val createOrUpdateNote = NoteRequest(title = title, body = body, _id = id)
+        if(title.isNullOrEmpty() && body.isNullOrEmpty()) return
+        val createOrUpdateNote = NoteRequest(title = title, description = body, _id = id)
         if (!id.isNullOrEmpty() && note.isNotnull()) updateNote(createOrUpdateNote, note!!)
         else createNote(createOrUpdateNote)
     }
@@ -114,6 +115,10 @@ class NoteEditorViewModel : BaseViewModel() {
                 it.copy(isLoading = false, error = (error as NetworkError).getError() , noteStatus = null)
             }
         }
+    }
+
+    override suspend fun logoutUserForcefully() {
+        createNoteUseCase.logoutUser()
     }
 
     override fun clearError() {

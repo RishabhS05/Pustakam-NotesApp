@@ -27,7 +27,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
 
     private val apiClient: ApiCallClient = ApiCallClient(userPrefs)
     private val notesDao by inject<NotesDao>()
-    private val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
+    val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
     private lateinit var prefs: UserPreference
 
     init {
@@ -37,7 +37,6 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
             }
         }
     }
-
     /** note crud apis*/
     override suspend fun getNotesForUser(page: Int): Result<BaseResponse<Notes>, Error> {
         return apiClient.getNotes(prefs.userId).onSuccess {
@@ -46,13 +45,16 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     }
 
     override suspend fun addNewNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.addNewNote(prefs.userId, note).onSuccess {
-        it.data?.let { it1 -> insertUpdate(it1) }
+        it.data?.let { it1 ->
+           log_d("BaseRepo", "addNewNote: $it1")
+            insertUpdate(it1)
+        }
     }
 
     override suspend fun updateNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.updateNote(prefs.userId, note).onSuccess {
         it.data?.let {
                 it1 ->
-            log_d("Loading","setting it into data base Api ")
+            log_d("BaseRepo", "addNewNote: $it1")
             insertUpdate(it1)
         }
     }
@@ -84,6 +86,12 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     override suspend fun deleteUser(): Result<BaseResponse<User>, Error> = apiClient.deleteUser(prefs.userId)
 
     override suspend fun profileImage(): Result<BaseResponse<User>, Error> = apiClient.profileImage()
+
+    override suspend fun userLogout() {
+       _userAuthState.collect{
+           it.copy(token =  "", userId = "", isAuthenticated = false)
+       }
+    }
 
     //database
     override fun insertUpdate(note: Note) = notesDao.insertOrUpdateNoteFromDb(note)

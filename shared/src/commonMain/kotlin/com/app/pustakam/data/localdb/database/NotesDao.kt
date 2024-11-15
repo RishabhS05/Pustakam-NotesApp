@@ -5,6 +5,7 @@ import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.Notes
 
 import com.app.pustakam.database.NotesDatabase
+import com.app.pustakam.util.log_d
 
 class NotesDao(private val sharedDb: SqlDriver) {
     private val database = NotesDatabase(sharedDb)
@@ -16,7 +17,9 @@ class NotesDao(private val sharedDb: SqlDriver) {
     }
     fun insertNotes(notes : Notes){
         database.transaction{
-            notes.notes?.forEach(::insertOrUpdateNoteFromDb)
+            notes.notes?.forEach(::insertOrUpdateNoteFromDb).apply {
+                log_d("Note ", this.toString())
+            }
         }
      }
     fun deleteByIdFromDb(id: String) {
@@ -24,21 +27,33 @@ class NotesDao(private val sharedDb: SqlDriver) {
     }
 
     fun insertOrUpdateNoteFromDb(note: Note) {
+        log_d("insert", note)
         queries.insertOrUpdateNote(
-            id = note._id!!, userId = note.userId!!,
+            id = note._id!!,
             title = note.title,
-            description = note.description, updatedAt = note.updatedAt,
+            description = note.description,
+            updatedAt = note.updatedAt,
             createdAt = note.createdAt, categoryId = ""
         )
     }
 
     private fun noteMapper(
-        id: String?, userId: String?, categoryId: String?, title: String?, description: String?, createdAt: String?, updatedAt: String?
+        id: String?,
+        categoryId: String?,
+        title: String?,
+        description: String?,
+        createdAt: String?,
+        updatedAt: String?
     ): Note {
         return Note(
-            _id = id, title = title, userId = userId, createdAt = createdAt, updatedAt = updatedAt, url = "", description = description
+            _id = id,
+            title = title,
+            createdAt = createdAt,
+            updatedAt = updatedAt, url = "",
+            description = description
         )
     }
 
-    fun selectNoteById(id: String): Note? = queries.selectById(id, ::noteMapper).executeAsOneOrNull()
+    fun selectNoteById(id: String): Note? =
+        queries.selectById(id, ::noteMapper).executeAsOneOrNull()
 }

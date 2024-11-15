@@ -49,7 +49,7 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
     suspend fun getNote(userId : String, noteId :String): Result<BaseResponse<Note>, Error> = baseApiCall <BaseResponse<Note>, NetworkError>  {
         httpClient.get(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
             headers.apply {
-                val token = userPrefs.getAuthToken()?:""
+                val token = userPrefs.getAuthToken() ?: ""
                 append(headerAuth,token)
             }
         }
