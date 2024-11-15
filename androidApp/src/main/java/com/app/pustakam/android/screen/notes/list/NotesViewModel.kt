@@ -10,7 +10,6 @@ import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
-import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +18,7 @@ import kotlinx.coroutines.flow.update
 class NotesViewModel : BaseViewModel() {
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false))
     val notesUIState: StateFlow<NotesUIState> = _notesUiState.asStateFlow()
-    private val getNoteUseCase = GetNotesUseCase()
+    private val getNotesUseCase = GetNotesUseCase()
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
 
         when (taskCode) {
@@ -33,27 +32,49 @@ class NotesViewModel : BaseViewModel() {
                     } else {
                         isNextPage = false
                     }
-                    it.copy(isLoading = false, notes = it.notes,
+                    it.copy(
+                        isLoading = false, notes = it.notes,
                         successMessage = result.data.message,
-                        page = page, isNextPage = isNextPage)
+                        page = page, isNextPage = isNextPage
+                    )
                 }
             }
         }
     }
-
+    override fun onLoading(taskCode: TaskCode) {
+        _notesUiState.update {
+            it.copy(isLoading = true)
+        }
+    }
     override fun onFailure(taskCode: TaskCode, error: Error) {
+        super.onFailure(taskCode, error)
         _notesUiState.update {
             it.copy(error = (error as NetworkError).getError())
         }
     }
 
+    override suspend fun logoutUserForcefully() {
+        getNotesUseCase.logoutUser()
+    }
+
     fun getNotes() {
-        if (!_notesUiState.value.isNextPage) return
-        makeAWish(NOTES_CODES.GET_NOTES) {
-            getNoteUseCase.invoke(page = _notesUiState.value.page)
+        val notes = getNotesUseCase.invoke()
+        if (!notes?.notes.isNullOrEmpty()) {
+            _notesUiState.update {
+                it.notes.addAll(notes?.notes!!)
+                it.copy(notes = it.notes)
+            }
+        } else {
+            callGetNotesApi()
         }
     }
 
+    private fun callGetNotesApi() {
+        if (!_notesUiState.value.isNextPage) return
+        makeAWish(NOTES_CODES.GET_NOTES) {
+            getNotesUseCase.invoke(page = _notesUiState.value.page)
+        }
+    }
 
     override fun clearError() {
         _notesUiState.update {

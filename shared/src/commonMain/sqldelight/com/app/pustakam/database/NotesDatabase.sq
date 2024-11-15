@@ -1,0 +1,20 @@
+CREATE TABLE Notes (
+ id TEXT NOT NULL PRIMARY KEY,
+ categoryId TEXT,
+ title TEXT,
+ description TEXT,
+ createdAt TEXT,
+ updatedAt TEXT
+);
+
+insertOrUpdateNote:
+INSERT OR REPLACE INTO Notes(id,  categoryId, title, description, createdAt,updatedAt)
+VALUES(?,?,?,?,?,?);
+
+selectAll:
+SELECT * FROM Notes;
+selectById:
+SELECT * FROM Notes WHERE id =? ;
+deleteById:
+DELETE FROM Notes WHERE  id = ?;
+

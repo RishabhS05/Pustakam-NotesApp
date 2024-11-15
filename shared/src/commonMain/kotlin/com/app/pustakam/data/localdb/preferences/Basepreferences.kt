@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 
 data class UserPreference(val token: String = "",
@@ -81,7 +82,6 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
             it.clear()
         }
     }
-
     private fun mapAppPreferences(preferences: Preferences): UserPreference {
         val userId = preferences[USER_ID] ?: ""
         val token = preferences[TOKEN] ?: ""

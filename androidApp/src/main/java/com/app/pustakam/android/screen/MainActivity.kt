@@ -75,7 +75,7 @@ fun AppUi(navController: NavHostController = rememberNavController()) {
         floatingActionButton = {
             if(navController.shouldShowFloatingButton){
                 when(currentRoute){
-                    Route.Notes -> AddNewNoteFAB(){
+                    Route.Notes -> AddNewNoteFAB{
                         navController.navigate(Route.NotesEditor)
                     }
                 }

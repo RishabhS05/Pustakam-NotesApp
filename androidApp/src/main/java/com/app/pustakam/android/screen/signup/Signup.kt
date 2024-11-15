@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,6 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
@@ -41,12 +48,16 @@ fun SignUpView(onNavigate: () -> Unit) {
     var phone by remember { mutableStateOf(TextFieldValue("")) }
     var passwordVisible by remember { mutableStateOf(false) }
     val registerViewModel: RegisterViewModel = viewModel()
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
     registerViewModel.signupUIState.collectAsState().value.apply {
         when {
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 registerViewModel.clearError()
             }
-
             isRegistered -> onNavigate()
             isLoading -> LoadingUI()
         }
@@ -61,14 +72,40 @@ fun SignUpView(onNavigate: () -> Unit) {
             placeHolderDrawable = R.drawable.avatar, url = "https://picsum.photos/seed/picsum/200/300", modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
         ) {}
 
-        OutlinedTextField(value = name, shape = RoundedCornerShape(12.dp), label = { Text("Enter your name.") }, colors = POutLinedTextFieldColors(), modifier = textFieldModifier, onValueChange = { text ->
+        OutlinedTextField(value = name, shape = RoundedCornerShape(12.dp),
+            label = { Text("Enter your name.") },
+            colors = POutLinedTextFieldColors(),
+            keyboardOptions = KeyboardOptions(imeAction =  ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = {
+                focusManager.moveFocus(FocusDirection.Down)
+            }),
+            modifier = textFieldModifier.focusRequester(focusRequester),
+            onValueChange = { text ->
             name = text
         })
 
-        OutlinedTextField(value = email, label = { Text("Enter your email.") }, shape = RoundedCornerShape(12.dp), colors = POutLinedTextFieldColors(), modifier = textFieldModifier, onValueChange = { text ->
+        OutlinedTextField(value = email,
+            label = { Text("Enter your email.") },
+            shape = RoundedCornerShape(12.dp),
+            colors = POutLinedTextFieldColors(),
+            modifier = textFieldModifier,
+            keyboardOptions = KeyboardOptions(imeAction =  ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = {
+                focusManager.moveFocus(FocusDirection.Down)
+            }),
+            onValueChange = { text ->
             email = text
         })
-        OutlinedTextField(value = phone, label = { Text("Enter your phone number.") }, shape = RoundedCornerShape(12.dp), colors = POutLinedTextFieldColors(), modifier = textFieldModifier, onValueChange = { text ->
+        OutlinedTextField(value = phone,
+            label = { Text("Enter your phone number.") },
+            shape = RoundedCornerShape(12.dp),
+            colors = POutLinedTextFieldColors(),
+            modifier = textFieldModifier,
+            keyboardOptions = KeyboardOptions(imeAction =  ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = {
+                focusManager.moveFocus(FocusDirection.Down)
+            }),
+            onValueChange = { text ->
             phone = text
         })
         OutlinedTextField(value = password,
@@ -76,8 +113,11 @@ fun SignUpView(onNavigate: () -> Unit) {
             label = { Text("Enter a strong password.") },
             shape = RoundedCornerShape(12.dp),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password,imeAction =  ImeAction.Next),
             modifier = textFieldModifier,
+            keyboardActions = KeyboardActions(onNext = {
+                focusManager.moveFocus(FocusDirection.Down)
+            }),
             onValueChange = { text ->
                 password = text
             })
@@ -85,8 +125,18 @@ fun SignUpView(onNavigate: () -> Unit) {
             label = { Text("Confirm your password.") },
             shape = RoundedCornerShape(12.dp),
             colors = POutLinedTextFieldColors(),
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                registerViewModel.registerUser(
+                    email = email.text,
+                    password = password.text,
+                    confirmPassword = confirmPassword.text,
+                    name = name.text,
+                    phoneNumber = phone.text
+                )
+            }),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             modifier = textFieldModifier,
             onValueChange = { text ->
                 confirmPassword = text

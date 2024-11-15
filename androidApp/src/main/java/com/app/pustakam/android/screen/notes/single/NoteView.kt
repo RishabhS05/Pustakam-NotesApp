@@ -3,10 +3,14 @@ package com.app.pustakam.android.screen.notes.single
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,16 +23,19 @@ import androidx.compose.ui.unit.sp
 import com.app.pustakam.data.models.response.notes.Note
 
 @Composable
-fun NoteView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}) {
+fun NoteCardView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}) {
     Card(shape = CardDefaults.outlinedShape,
         modifier = modifier
-            .height(intrinsicSize = IntrinsicSize.Min)
+            .fillMaxWidth(0.5f)
+            .wrapContentHeight()
             .clickable { onClick() }
+            .padding(4.dp)
             ) {
         Column {
             Text(
                 note.title.toString(),
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier
+                    .padding(8.dp)
                     .align(alignment = Alignment.CenterHorizontally),
                 style = TextStyle(
                     fontSize = 17.sp,
@@ -37,7 +44,8 @@ fun NoteView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}
             )
             Text(
                 note.description?:"",
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier
+                    .padding(8.dp)
                     .align(alignment = Alignment.CenterHorizontally),
                 style = TextStyle(
                     fontSize = 17.sp,
@@ -53,7 +61,6 @@ fun NoteView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}
 private fun NotesPreview() {
     val note : Note = Note(
         _id = "1",
-        userId ="33",
         title = "Hare Rama Hare Rama",
         updatedAt = "",
         createdAt = "",
@@ -77,5 +84,5 @@ private fun NotesPreview() {
                 "    modifier = Modifier.fillMaxSize()\n" +
                 ")\n"
     )
-    NoteView(note =note)
+    NoteCardView(note =note)
 }

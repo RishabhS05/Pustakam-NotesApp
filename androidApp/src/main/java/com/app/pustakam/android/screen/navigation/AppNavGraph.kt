@@ -14,8 +14,8 @@ import com.app.pustakam.data.localdb.preferences.UserPreference
 @Composable
 fun AppNavGraph(navHostController: NavHostController = rememberNavController(),
                 modifier: Modifier = Modifier) {
-     val appViewModel: AppViewModel = viewModel()
-   val user =  appViewModel.authState.collectAsState(initial = UserPreference()).value
+    val appViewModel: AppViewModel = viewModel()
+   val user = appViewModel.authState.collectAsState(initial = UserPreference()).value
     val route = if (user.isAuthenticated) Route.Home else Route.Authentication
     NavHost(
         navController = navHostController,

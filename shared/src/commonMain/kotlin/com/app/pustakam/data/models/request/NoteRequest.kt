@@ -1,3 +1,6 @@
 package com.app.pustakam.data.models.request
 
- data class NoteRequest (val title : String? = null, val body : String? = null, val _id : String? = null)
+import kotlinx.serialization.Serializable
+
+@Serializable
+ data class NoteRequest (val title : String? = null, val description : String? = null, val _id : String? = null)

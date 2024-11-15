@@ -18,12 +18,24 @@ fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
         composable(
             route = Route.Notes
         ) {
-            NotesView(onNavigateNote = {})
+            NotesView(onNavigateNote = {
+                navController.navigate(Route.NotesEditor+"/${it._id}")
+            })
         }
         composable(
             route = Route.NotesEditor
         ) {
-            NotesEditorView()
+            NotesEditorView( onBack = {
+                navController.navigateUp()
+            })
+        }
+        composable(
+            route = Route.NotesEditor+"/{noteId}"
+        ) {
+           val noteId =  it.arguments?.getString("noteId") ?: ""
+            NotesEditorView(id = noteId, onBack = {
+                navController.navigateUp()
+            })
         }
         composable(
             route = Route.Notification

@@ -6,14 +6,23 @@ import com.app.pustakam.data.models.BaseResponse
 import kotlinx.coroutines.flow.Flow
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.Error
+import com.app.pustakam.util.NetworkError
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 
 
 abstract class BaseViewModel : ViewModel() , KoinComponent {
     abstract fun onSuccess (taskCode: TaskCode, result: Result.Success<BaseResponse<*>> )
-    abstract fun onFailure (taskCode : TaskCode, error : Error)
+    open fun onFailure (taskCode : TaskCode, error : Error){
+        when(error as NetworkError){
+            NetworkError.UNAUTHORIZED -> viewModelScope.launch { logoutUserForcefully() }
+            else -> {}
+        }
+    }
+    abstract suspend  fun logoutUserForcefully()
     abstract fun clearError()
     open fun onLoading(taskCode : TaskCode) {}
     fun <T> makeAWish(

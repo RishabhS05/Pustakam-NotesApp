@@ -1,5 +1,6 @@
 package com.app.pustakam.domain.repositories
 
+import com.app.pustakam.data.localdb.database.NotesDao
 import com.app.pustakam.data.localdb.preferences.BasePreferences
 import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.localdb.preferences.UserPreference
@@ -19,15 +20,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepository, ILocalRepository, KoinComponent {
 
     private val apiClient: ApiCallClient = ApiCallClient(userPrefs)
-
-    private val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
-    lateinit var prefs: UserPreference
+    private val notesDao by inject<NotesDao>()
+    val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
+    private lateinit var prefs: UserPreference
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
@@ -36,19 +37,33 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
             }
         }
     }
-
     /** note crud apis*/
     override suspend fun getNotesForUser(page: Int): Result<BaseResponse<Notes>, Error> {
-        return apiClient.getNotes(prefs.userId)
+        return apiClient.getNotes(prefs.userId).onSuccess {
+            it.data?.let { it1 -> notesDao.insertNotes(it1) }
+        }
     }
 
-    override suspend fun addNewNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.addNewNote(prefs.userId, note)
+    override suspend fun addNewNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.addNewNote(prefs.userId, note).onSuccess {
+        it.data?.let { it1 ->
+           log_d("BaseRepo", "addNewNote: $it1")
+            insertUpdate(it1)
+        }
+    }
 
-    override suspend fun updateNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.updateNote(prefs.userId, note)
+    override suspend fun updateNote(note: NoteRequest): Result<BaseResponse<Note>, Error> = apiClient.updateNote(prefs.userId, note).onSuccess {
+        it.data?.let {
+                it1 ->
+            log_d("BaseRepo", "addNewNote: $it1")
+            insertUpdate(it1)
+        }
+    }
 
-    override suspend fun deleteNote(noteId: String): Result<BaseResponse<Note>, Error> = apiClient.deleteNote(prefs.userId, noteId)
+    override suspend fun deleteNote(noteId: String): Result<BaseResponse<Note>, Error> = apiClient.deleteNote(prefs.userId, noteId).onSuccess {
+        deleteById(noteId)
+    }
 
-    override suspend fun getNote(noteId: String): Result<BaseResponse<User>, Error> = apiClient.getNote(prefs.userId, noteId)
+    override suspend fun getNote(noteId: String): Result<BaseResponse<Note>, Error> = apiClient.getNote(prefs.userId, noteId)
 
     override suspend fun loginUser(login: Login): Result<BaseResponse<User>, Error> = apiClient.login(login).onSuccess {
         it.data?._id?.let { it1 ->
@@ -58,7 +73,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     }
 
     override suspend fun registerUser(user: RegisterReq): Result<BaseResponse<User>, Error> = apiClient.register(user)
-    
+
     /** user crud apis*/
     override suspend fun updateUser(user: User): Result<BaseResponse<User>, Error> = apiClient.updateUser(user)
 
@@ -71,4 +86,20 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     override suspend fun deleteUser(): Result<BaseResponse<User>, Error> = apiClient.deleteUser(prefs.userId)
 
     override suspend fun profileImage(): Result<BaseResponse<User>, Error> = apiClient.profileImage()
+
+    override suspend fun userLogout() {
+       _userAuthState.collect{
+           it.copy(token =  "", userId = "", isAuthenticated = false)
+       }
+    }
+
+    //database
+    override fun insertUpdate(note: Note) = notesDao.insertOrUpdateNoteFromDb(note)
+
+    override fun deleteById(id: String) = notesDao.deleteByIdFromDb(id)
+
+    override fun getNotes(): Notes? = notesDao.selectAllNotesFromDb()
+
+    override fun getNoteById(id: String)  = notesDao.selectNoteById(id)
+
 }
