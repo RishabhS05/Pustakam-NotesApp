@@ -31,13 +31,14 @@ class NoteEditorViewModel : BaseViewModel() {
     private val createNoteUseCase = CreateNoteUseCase()
     fun changeNoteStatus(status: NoteStatus?){
         _noteUiState.update {
-            it.copy( noteStatus = status, isLoading = true)
+            it.copy( noteStatus = status,
+                isLoading = true)
         }
     }
 
     override fun onLoading(taskCode: TaskCode) {
         _noteUiState.update {
-            it.copy(isLoading = false,)
+            it.copy(isLoading = true)
         }
     }
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
@@ -46,12 +47,14 @@ class NoteEditorViewModel : BaseViewModel() {
                 log_d("Loading", "Getting Update data")
                 val note = result.data.data as Note
                 _noteUiState.update {
-                    val noteStatus = if (it.noteStatus == NoteStatus.onBackPress) NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
+                    val noteStatus = if (it.noteStatus === NoteStatus.onBackPress)
+                        NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
                     it.copy(
-                        isLoading = false, note = note, isSetupValues = true, noteStatus = noteStatus )
+                        isLoading = false, note = note,
+                        isSetupValues = true,
+                        noteStatus = noteStatus )
                 }
             }
-
             NOTES_CODES.READ -> {
                 val note = result.data.data as Note
                 _noteUiState.update {
@@ -60,9 +63,11 @@ class NoteEditorViewModel : BaseViewModel() {
                     )
                 }
             }
-
             NOTES_CODES.DELETE -> {
-                _noteUiState.update { it.copy(isLoading = false, moveBack = true) }
+                _noteUiState.update {
+                    it.copy(isLoading = false,
+                    noteStatus = NoteStatus.onSaveCompletedExit)
+                }
             }
         }
     }
@@ -92,7 +97,13 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     private fun updateNote(updateNote: NoteRequest, note: Note) {
-        if (checkAnyUpdateOnNote(new = updateNote, old = note)) return
+        if (checkAnyUpdateOnNote(new = updateNote, old = note)) {
+           val noteStatus = if (_noteUiState.value.noteStatus === NoteStatus.onBackPress)
+                NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
+            changeNoteStatus(noteStatus)
+            return
+        }
+
         log_d("Loading", "Calling Update Api ")
         makeAWish(NOTES_CODES.UPDATE) {
             updateNoteUseCase.invoke(updateNote)
@@ -100,7 +111,7 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     fun deleteNote(noteId: String) {
-        makeAWish(NOTES_CODES.INSERT) {
+        makeAWish(NOTES_CODES.DELETE) {
             deleteNoteUseCase.invoke(noteId)
         }
     }
@@ -112,7 +123,7 @@ class NoteEditorViewModel : BaseViewModel() {
                     it.copy(
                         isLoading = false,
                         error = (error as NetworkError).getError(),
-                        moveBack = true
+                        noteStatus = NoteStatus.onSaveCompletedExit
                     )
                 }
             }
@@ -130,7 +141,7 @@ class NoteEditorViewModel : BaseViewModel() {
     override fun clearError() {
         _noteUiState.update {
             it.copy(
-                error = null, moveBack = false, successMessage = null, isLoading = false
+                error = null, successMessage = null, isLoading = false
             )
         }
     }

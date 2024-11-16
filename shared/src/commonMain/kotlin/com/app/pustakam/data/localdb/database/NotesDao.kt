@@ -13,7 +13,11 @@ class NotesDao(private val sharedDb: SqlDriver) {
     fun selectAllNotesFromDb(): Notes {
         val notes : List<Note> = LinkedHashSet(queries.selectAll(::noteMapper).executeAsList()).toList()
         val arrayListNotes : ArrayList<Note> = if (notes.isNotEmpty()) notes as ArrayList<Note> else ArrayList()
-        return Notes(notes = arrayListNotes , count = notes?.size, page = 0)
+        arrayListNotes.forEach {
+            log_d("Notes ", it)
+        }
+        return Notes(notes = arrayListNotes ,
+            count = notes.size, page = 0)
     }
     fun insertNotes(notes : Notes){
         database.transaction{

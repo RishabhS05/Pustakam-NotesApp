@@ -5,6 +5,7 @@ import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.Login
 import com.app.pustakam.data.models.request.NoteRequest
 import com.app.pustakam.data.models.request.RegisterReq
+import com.app.pustakam.data.models.response.DeleteDataModel
 import com.app.pustakam.data.models.response.User
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.Notes
@@ -64,7 +65,7 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
          setBody(note)
      }
  }
-    suspend fun deleteNote(userId: String,noteId: String) : Result<BaseResponse<Note>, Error> = baseApiCall<BaseResponse<Note>, NetworkError> {
+    suspend fun deleteNote(userId: String,noteId: String) : Result<BaseResponse<DeleteDataModel>, Error> = baseApiCall<BaseResponse<DeleteDataModel>, NetworkError> {
         httpClient.delete(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
             contentType(ContentType.Application.Json)
             headers.apply {

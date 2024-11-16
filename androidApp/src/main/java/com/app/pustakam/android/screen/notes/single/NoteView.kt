@@ -2,18 +2,14 @@ package com.app.pustakam.android.screen.notes.single
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -23,30 +19,29 @@ import androidx.compose.ui.unit.sp
 import com.app.pustakam.data.models.response.notes.Note
 
 @Composable
-fun NoteCardView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit = {}) {
+fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit = {}) {
     Card(shape = CardDefaults.outlinedShape,
         modifier = modifier
             .fillMaxWidth(0.5f)
+            .heightIn(min = 50.dp, max = 250.dp)
             .wrapContentHeight()
             .clickable { onClick() }
             .padding(4.dp)
-            ) {
+    ) {
         Column {
             Text(
                 note.title.toString(),
                 modifier = Modifier
-                    .padding(8.dp)
-                    .align(alignment = Alignment.CenterHorizontally),
+                    .padding(8.dp),
                 style = TextStyle(
                     fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             )
             Text(
-                note.description?:"",
+                note.description ?: "",
                 modifier = Modifier
-                    .padding(8.dp)
-                    .align(alignment = Alignment.CenterHorizontally),
+                    .padding(8.dp),
                 style = TextStyle(
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Normal
@@ -59,7 +54,7 @@ fun NoteCardView(modifier: Modifier = Modifier, note : Note, onClick :()-> Unit 
 @Preview
 @Composable
 private fun NotesPreview() {
-    val note : Note = Note(
+    val note: Note = Note(
         _id = "1",
         title = "Hare Rama Hare Rama",
         updatedAt = "",
@@ -84,5 +79,5 @@ private fun NotesPreview() {
                 "    modifier = Modifier.fillMaxSize()\n" +
                 ")\n"
     )
-    NoteCardView(note =note)
+    NoteCardView(note = note)
 }

@@ -16,11 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class NotesViewModel : BaseViewModel() {
-    private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false))
+    private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false, isNextPage = false))
     val notesUIState: StateFlow<NotesUIState> = _notesUiState.asStateFlow()
     private val getNotesUseCase = GetNotesUseCase()
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
-
         when (taskCode) {
             NOTES_CODES.GET_NOTES -> {
                 val response = (result.data.data as Notes)
@@ -57,11 +56,15 @@ class NotesViewModel : BaseViewModel() {
         getNotesUseCase.logoutUser()
     }
 
+
     fun getNotes() {
         val notes = getNotesUseCase.invoke()
         if (!notes?.notes.isNullOrEmpty()) {
             _notesUiState.update {
-                it.notes.addAll(notes?.notes!!)
+                it.notes.apply {
+                    clear()
+                    addAll(notes?.notes!!)
+                }
                 it.copy(notes = it.notes)
             }
         } else {

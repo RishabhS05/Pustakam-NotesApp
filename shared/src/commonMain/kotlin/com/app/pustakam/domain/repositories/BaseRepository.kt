@@ -8,6 +8,7 @@ import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.Login
 import com.app.pustakam.data.models.request.NoteRequest
 import com.app.pustakam.data.models.request.RegisterReq
+import com.app.pustakam.data.models.response.DeleteDataModel
 import com.app.pustakam.data.models.response.User
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.Notes
@@ -59,7 +60,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
         }
     }
 
-    override suspend fun deleteNote(noteId: String): Result<BaseResponse<Note>, Error> = apiClient.deleteNote(prefs.userId, noteId).onSuccess {
+    override suspend fun deleteNote(noteId: String): Result<BaseResponse<DeleteDataModel>, Error> = apiClient.deleteNote(prefs.userId, noteId).onSuccess {
         deleteById(noteId)
     }
 

@@ -3,18 +3,14 @@ package com.app.pustakam.android.screen.noteEditor
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -40,79 +36,73 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.widgets.FAB.OverLayEditorButtons
 import com.app.pustakam.android.widgets.LoadingUI
-import com.app.pustakam.android.widgets.SecondaryTextButton
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.extensions.isNotnull
 
 
 @Composable
 fun NotesEditorView(
-    id : String? = "",
-    onBack:()->Unit = {},
-
-){
-   val noteEditorViewModel  : NoteEditorViewModel = viewModel()
-    NotesEditor(id= id, onBack=onBack, noteEditorViewModel= noteEditorViewModel)
+    id: String? = "",
+    onBack: () -> Unit = {},
+) {
+    val noteEditorViewModel: NoteEditorViewModel = viewModel()
+    NotesEditor(id = id, onBack = onBack, noteEditorViewModel = noteEditorViewModel)
 }
 
 @Composable
 fun NotesEditor(
-    id : String? = "",
-    onBack:()->Unit = {},
-    noteEditorViewModel  : NoteEditorViewModel = viewModel()
+    id: String? = "",
+    onBack: () -> Unit = {},
+    noteEditorViewModel: NoteEditorViewModel = viewModel()
 ) {
     // Note content state
     val textState = remember { mutableStateOf("") }
     val textTitleState = remember { mutableStateOf("") }
-    val isRuledEnabledState =  remember { mutableStateOf(false) }
+    val isRuledEnabledState = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-
-  val appState =  noteEditorViewModel.noteUIState.collectAsState().value.apply {
-      when{
-          isLoading -> LoadingUI()
-          error.isNotnull() -> SnackBarUi(error = error!!) {
-              noteEditorViewModel.clearError()
-          }
-      }
-      when(noteStatus){
-          NoteStatus.onBackPress -> {
-              noteEditorViewModel.createOrUpdate( id= id,
-                  title =  textTitleState.value,
-                  body = textState.value,
-                  note = note)
-          }
-          NoteStatus.onSaveCompletedExit -> {
-              onBack()
-          }
-          NoteStatus.OnEditingMode ->{}
-          NoteStatus.onSaveCompleted -> {}
-          else -> {}
-      }
-  }
+    BackHandler {
+    /*  block direct exit as my scope is getting distroyed */
+        noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
+    }
+    val appState = noteEditorViewModel.noteUIState.collectAsState().value.apply {
+        when {
+            isLoading -> LoadingUI()
+            error.isNotnull() -> SnackBarUi(error = error!!) {
+                noteEditorViewModel.clearError()
+            }
+        }
+    }
     OnLifecycleEvent { owner, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> {
-                if (!id.isNullOrEmpty()) noteEditorViewModel.readFromDataBase(id)
-            }
-            Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
-                noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
-            }
-            Lifecycle.Event.ON_DESTROY -> {
-                //sink with server
-            }
+                noteEditorViewModel.changeNoteStatus(null)
+                if (!id.isNullOrEmpty()) noteEditorViewModel.readFromDataBase(id) }
             else -> {}
         }
     }
+
     LaunchedEffect(appState.note, appState.isSetupValues) {
         focusRequester.requestFocus()
-        if(appState.note.isNotnull() && appState.isSetupValues) {
-        textTitleState.value = appState.note!!.title.toString()
-        textState.value = appState.note.description.toString()
-        appState.isSetupValues =false
+        if (appState.note.isNotnull() && appState.isSetupValues) {
+            textTitleState.value = appState.note!!.title.toString()
+            textState.value = appState.note.description.toString()
+            appState.isSetupValues = false
+        }
     }
+    when(appState.noteStatus){
+        NoteStatus.onBackPress ->{
+            noteEditorViewModel.createOrUpdate(
+                id = id,
+                title = textTitleState.value,
+                body = textState.value,
+                note = appState.note
+            )
+        }
+        NoteStatus.onSaveCompletedExit -> {onBack()}
+        else -> {}
     }
-    val paddingLeft = if(isRuledEnabledState.value) 100.dp else 12.dp
+    val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -123,7 +113,8 @@ fun NotesEditor(
         Column {
             Row {
                 TextField(
-                    value = textTitleState.value, placeholder = {
+                    value = textTitleState.value,
+                    placeholder = {
                         Text(
                             "Title : Keep your thoughts alive.",
                             modifier = Modifier.padding(start = paddingLeft),
@@ -132,18 +123,18 @@ fun NotesEditor(
                                 fontSize = 18.sp,
                             )
                         )
-                    }, colors = TextFieldDefaults.colors(
+                    },
+                    colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.tertiary
+                        cursorColor = colorScheme.tertiary
                     ),
-
-
                     onValueChange = {
                         textTitleState.value = it
-                    }, textStyle = TextStyle(
+                    },
+                    textStyle = TextStyle(
                         color = Color.Black, fontSize = 24.sp
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -173,11 +164,11 @@ fun NotesEditor(
                 ), colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    cursorColor = MaterialTheme.colorScheme.tertiary,
+                    cursorColor = colorScheme.tertiary,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                     keyboardActions = KeyboardActions(onDone = {
+                ),
+                keyboardActions = KeyboardActions(onDone = {
                     focusManager.clearFocus()
                 }),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -186,12 +177,18 @@ fun NotesEditor(
 
         }
         OverLayEditorButtons(modifier = Modifier.align(alignment = Alignment.CenterEnd),
+            showDelete = !id.isNullOrEmpty(),
             onSave = {
-            noteEditorViewModel.createOrUpdate( id= id,
-            title =  textTitleState.value,
-            body = textState.value,
-            note = appState.note)
-        })
+                noteEditorViewModel.createOrUpdate(
+                    id = id,
+                    title = textTitleState.value,
+                    body = textState.value,
+                    note = appState.note
+                )
+            }, onDelete = {
+                noteEditorViewModel.deleteNote(noteId = id!! )
+            }
+        )
     }
 }
 
@@ -213,11 +210,13 @@ fun RuledPage() {
         }
 
         drawLine(
-            color = marginColor, start = androidx.compose.ui.geometry.Offset(startX, 0f),
+            color = marginColor,
+            start = androidx.compose.ui.geometry.Offset(startX, 0f),
             end = androidx.compose.ui.geometry.Offset(startX, size.height), strokeWidth = 2.dp.toPx()
         )
         drawLine(
-            color = marginColor, start = androidx.compose.ui.geometry.Offset(startX + 20f, 0f),
+            color = marginColor,
+            start = androidx.compose.ui.geometry.Offset(startX + 20f, 0f),
             end = androidx.compose.ui.geometry.Offset(startX + 20f, size.height), strokeWidth = 2.dp.toPx()
         )
     }
