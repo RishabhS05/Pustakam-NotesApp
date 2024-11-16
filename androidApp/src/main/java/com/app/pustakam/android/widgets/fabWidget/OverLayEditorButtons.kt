@@ -1,4 +1,4 @@
-package com.app.pustakam.android.widgets.FAB
+package com.app.pustakam.android.widgets.fabWidget
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -11,8 +11,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -35,11 +33,13 @@ fun OverLayEditorButtons(
     offset: Animatable<Float, AnimationVector1D> = remember { Animatable(initialValue = 0f) },
     showDelete : Boolean = false,
     onSave: () -> Unit = {},
+    onSaveAs: () -> Unit = {},
     onRecordVideo: () -> Unit = {},
     onAddImage: () -> Unit = {},
     onShare: () -> Unit = {},
     onRecordMic: () -> Unit = {},
-    onDelete: ()-> Unit ={}
+    onDelete: ()-> Unit ={},
+    onArrowButton: ()-> Unit ={}
 ) {
     var showArrow = remember { mutableStateOf(false) }
     val cardColors = CardDefaults.cardColors(
@@ -62,6 +62,7 @@ fun OverLayEditorButtons(
                 modifier = Modifier
                     .padding(start = 4.dp, top = 4.dp)
                     .clickable {
+                        onArrowButton()
                         showArrow.value = !showArrow.value
                     })
             Column(
@@ -73,7 +74,10 @@ fun OverLayEditorButtons(
             ) {
 
                 Card(
-                    onClick = { onRecordMic() },
+                    onClick = {
+                        onArrowButton()
+                        onRecordMic()
+                              },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
@@ -84,7 +88,10 @@ fun OverLayEditorButtons(
                     )
                 }
                 Card(
-                    onClick = { onAddImage() },
+                    onClick = {
+                        onArrowButton()
+                        onAddImage()
+                             },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
@@ -95,7 +102,9 @@ fun OverLayEditorButtons(
                     )
                 }
                 Card(
-                    onClick = { onRecordVideo() },
+                    onClick = {
+                        onArrowButton()
+                        onRecordVideo() },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
@@ -106,7 +115,10 @@ fun OverLayEditorButtons(
                     )
                 }
                 Card(
-                    onClick = { onSave() },
+                    onClick = {
+                        onArrowButton()
+                        onSave()
+                              },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
@@ -118,7 +130,9 @@ fun OverLayEditorButtons(
                 }
 
                 Card(
-                    onClick = { onSave() },
+                    onClick = {
+                        onArrowButton()
+                        onSaveAs() },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
@@ -129,7 +143,9 @@ fun OverLayEditorButtons(
                     )
                 }
                 Card(
-                    onClick = { onShare() },
+                    onClick = {
+                        onArrowButton()
+                        onShare() },
                     colors = cardColors,
                     elevation = CardDefaults.elevatedCardElevation()
                 ) {
@@ -140,7 +156,9 @@ fun OverLayEditorButtons(
                 }
                 if(showDelete)
                 Card(
-                    onClick = { onDelete() },
+                    onClick = {  onArrowButton()
+                        onDelete()
+                              },
                     colors = cardColors,
                     elevation = CardDefaults.elevatedCardElevation()
                 ) {
@@ -158,6 +176,7 @@ fun OverLayEditorButtons(
             modifier = modifier
                 .padding(8.dp)
                 .clickable {
+                    onArrowButton()
                     showArrow.value = !showArrow.value
                 })
 

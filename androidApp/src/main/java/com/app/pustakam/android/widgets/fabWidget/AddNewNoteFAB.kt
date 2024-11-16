@@ -1,11 +1,10 @@
-package com.app.pustakam.android.widgets.FAB
+package com.app.pustakam.android.widgets.fabWidget
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 
 import androidx.compose.material3.Text

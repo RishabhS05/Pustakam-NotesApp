@@ -5,7 +5,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -24,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -34,9 +34,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
-import com.app.pustakam.android.widgets.FAB.OverLayEditorButtons
+
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
+import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
+import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.extensions.isNotnull
 
 
@@ -48,7 +50,6 @@ fun NotesEditorView(
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
     NotesEditor(id = id, onBack = onBack, noteEditorViewModel = noteEditorViewModel)
 }
-
 @Composable
 fun NotesEditor(
     id: String? = "",
@@ -62,14 +63,24 @@ fun NotesEditor(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     BackHandler {
-    /*  block direct exit as my scope is getting distroyed */
+    /**  block direct exit as my scope is getting distroyed */
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
+
     val appState = noteEditorViewModel.noteUIState.collectAsState().value.apply {
         when {
             isLoading -> LoadingUI()
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 noteEditorViewModel.clearError()
+            }
+            showDeleteAlert ->
+                DeleteNoteAlert(noteTitle = if(!note?.title.isNullOrEmpty()) note?.title!! else "",
+                    onConfirm = {
+                    noteEditorViewModel.deleteNote(noteId = id!! )
+                    noteEditorViewModel.showDeleteAlert(false)
+                }
+                ) {
+                    noteEditorViewModel.showDeleteAlert(false)
             }
         }
     }
@@ -81,7 +92,6 @@ fun NotesEditor(
             else -> {}
         }
     }
-
     LaunchedEffect(appState.note, appState.isSetupValues) {
         focusRequester.requestFocus()
         if (appState.note.isNotnull() && appState.isSetupValues) {
@@ -111,7 +121,6 @@ fun NotesEditor(
     ) {
         if (isRuledEnabledState.value) RuledPage()
         Column {
-            Row {
                 TextField(
                     value = textTitleState.value,
                     placeholder = {
@@ -142,11 +151,9 @@ fun NotesEditor(
                         focusManager.moveFocus(FocusDirection.Down)
                     }),
                     modifier = Modifier
-                        .weight(1f)
                         .focusRequester(focusRequester)
                         .padding(top = 2.dp)
                 )
-            }
             TextField(
                 value = textState.value, onValueChange = {
                     textState.value = it
@@ -172,12 +179,13 @@ fun NotesEditor(
                     focusManager.clearFocus()
                 }),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxSize() // Padding to simulate left margin
+                modifier = Modifier.fillMaxSize()
             )
 
         }
         OverLayEditorButtons(modifier = Modifier.align(alignment = Alignment.CenterEnd),
             showDelete = !id.isNullOrEmpty(),
+            onArrowButton = {focusManager.clearFocus()},
             onSave = {
                 noteEditorViewModel.createOrUpdate(
                     id = id,
@@ -186,7 +194,7 @@ fun NotesEditor(
                     note = appState.note
                 )
             }, onDelete = {
-                noteEditorViewModel.deleteNote(noteId = id!! )
+                noteEditorViewModel.showDeleteAlert(true)
             }
         )
     }
@@ -203,21 +211,23 @@ fun RuledPage() {
         var y = lineSpacing + 80
         while (y < size.height) {
             drawLine(
-                color = lineColor, start = androidx.compose.ui.geometry.Offset(0f, y),
-                end = androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1.dp.toPx()
+                color = lineColor, start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1.dp.toPx()
             )
             y += lineSpacing
         }
-
         drawLine(
             color = marginColor,
-            start = androidx.compose.ui.geometry.Offset(startX, 0f),
-            end = androidx.compose.ui.geometry.Offset(startX, size.height), strokeWidth = 2.dp.toPx()
+            start = Offset(startX, 0f),
+            end = Offset(startX, size.height),
+            strokeWidth = 2.dp.toPx()
         )
         drawLine(
             color = marginColor,
-            start = androidx.compose.ui.geometry.Offset(startX + 20f, 0f),
-            end = androidx.compose.ui.geometry.Offset(startX + 20f, size.height), strokeWidth = 2.dp.toPx()
+            start = Offset(startX + 20f, 0f),
+            end = Offset(startX + 20f, size.height),
+            strokeWidth = 2.dp.toPx()
         )
     }
 }

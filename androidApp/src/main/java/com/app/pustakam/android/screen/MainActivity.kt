@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -21,7 +20,7 @@ import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.screen.navigation.AppNavGraph
 import com.app.pustakam.android.screen.navigation.BottomBar
 import com.app.pustakam.android.screen.navigation.Route
-import com.app.pustakam.android.widgets.FAB.AddNewNoteFAB
+import com.app.pustakam.android.widgets.fabWidget.AddNewNoteFAB
 import com.app.pustakam.extensions.isNotnull
 
 class MainActivity : ComponentActivity() {

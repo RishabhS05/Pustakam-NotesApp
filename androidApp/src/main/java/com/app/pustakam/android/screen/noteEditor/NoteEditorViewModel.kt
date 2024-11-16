@@ -133,7 +133,6 @@ class NoteEditorViewModel : BaseViewModel() {
             }
         }
     }
-
     override suspend fun logoutUserForcefully() {
         createNoteUseCase.logoutUser()
     }
@@ -144,5 +143,9 @@ class NoteEditorViewModel : BaseViewModel() {
                 error = null, successMessage = null, isLoading = false
             )
         }
+    }
+
+    fun showDeleteAlert(value: Boolean) {
+_noteUiState.update { it.copy(showDeleteAlert = value) }
     }
 }
