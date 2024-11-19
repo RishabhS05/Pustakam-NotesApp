@@ -20,6 +20,8 @@
 		63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE22CEC839E00A4907C /* Any.ext.swift */; };
 		63C00BE62CEC925900A4907C /* BackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE52CEC925300A4907C /* BackButton.swift */; };
 		63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE82CEC942500A4907C /* RulledPage.swift */; };
+		63C00BED2CECC51900A4907C /* OverlayEditorButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BEC2CECC4E800A4907C /* OverlayEditorButtons.swift */; };
+		63C00BEF2CECC6FF00A4907C /* ActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BEE2CECC6F300A4907C /* ActionButton.swift */; };
 		63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0891B2CABD6AA008FD8CC /* LoginView.swift */; };
 		63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0891D2CABD6C2008FD8CC /* SignupView.swift */; };
 		63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089222CAC870A008FD8CC /* AvatarImageView.swift */; };
@@ -62,6 +64,8 @@
 		63C00BE22CEC839E00A4907C /* Any.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Any.ext.swift; sourceTree = "<group>"; };
 		63C00BE52CEC925300A4907C /* BackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackButton.swift; sourceTree = "<group>"; };
 		63C00BE82CEC942500A4907C /* RulledPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulledPage.swift; sourceTree = "<group>"; };
+		63C00BEC2CECC4E800A4907C /* OverlayEditorButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayEditorButtons.swift; sourceTree = "<group>"; };
+		63C00BEE2CECC6F300A4907C /* ActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionButton.swift; sourceTree = "<group>"; };
 		63D0891B2CABD6AA008FD8CC /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		63D0891D2CABD6C2008FD8CC /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		63D089222CAC870A008FD8CC /* AvatarImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageView.swift; sourceTree = "<group>"; };
@@ -153,6 +157,7 @@
 		63C00BE42CEC924C00A4907C /* button */ = {
 			isa = PBXGroup;
 			children = (
+				63C00BEE2CECC6F300A4907C /* ActionButton.swift */,
 				63C00BE52CEC925300A4907C /* BackButton.swift */,
 			);
 			path = button;
@@ -179,6 +184,7 @@
 		63D089182CABD636008FD8CC /* widgets */ = {
 			isa = PBXGroup;
 			children = (
+				63C00BEC2CECC4E800A4907C /* OverlayEditorButtons.swift */,
 				63C00BE72CEC941B00A4907C /* canvas */,
 				63C00BE42CEC924C00A4907C /* button */,
 				63682AAE2CE9114D00425C35 /* StaggaredList */,
@@ -406,7 +412,9 @@
 				63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */,
 				63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */,
 				63C00BE12CEB661900A4907C /* BaseHandler.swift in Sources */,
+				63C00BEF2CECC6FF00A4907C /* ActionButton.swift in Sources */,
 				63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */,
+				63C00BED2CECC51900A4907C /* OverlayEditorButtons.swift in Sources */,
 				63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */,
 				63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */,
 				63FD32A92CBEAEB20047ED10 /* SearchView.swift in Sources */,

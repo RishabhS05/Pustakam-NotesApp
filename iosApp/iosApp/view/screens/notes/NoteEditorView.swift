@@ -2,8 +2,7 @@
 import SwiftUI
 import shared
 
-
-class  NoteEditorHandler : BaseHandler ,ObservableObject {
+class NoteEditorHandler : BaseHandler ,ObservableObject {
     private func createNoteCall(noteRequest : NoteRequest)  async ->  BaseResult<BaseResponse<Note>?> {
           return await apiHandler (apiCall: {
               try await base.addNewNote(note:noteRequest)})
@@ -18,8 +17,7 @@ class  NoteEditorHandler : BaseHandler ,ObservableObject {
         if !noteRequest._id.isNotNilOrEmpty() {
             return await createNoteCall(noteRequest: noteRequest)
         }else {
-            guard note != nil && !FieldValidationKt.checkAnyUpdateOnNote(new: noteRequest,
-                                                                    old: note!) else { return nil }
+            guard note != nil && !FieldValidationKt.checkAnyUpdateOnNote(new: noteRequest,old: note!) else { return nil }
             return await updateNoteCall(oldNote: note!, updatedNoteRequest: noteRequest)
         }
     }
@@ -42,6 +40,7 @@ struct NoteEditorView : View {
     let marginColor = Color.red
     let fontSize: CGFloat = 18
     let lineSpacing: CGFloat = 28
+    
     init(note: Note? = nil) {
         self.note = note
         if note != nil {
@@ -72,7 +71,29 @@ struct NoteEditorView : View {
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
+            OverlayEditorButtons(
+                showDelete: note != nil,
+                      onSave: {  callCreateOrUpdate(action: {}) },
+                      onSaveAs: { print("Save As action") },
+                      onRecordVideo: { print("Record Video action") },
+                      onAddImage: { print("Add Image action") },
+                      onShare: { print("Share action") },
+                      onRecordMic: { print("Record Mic action") },
+                onDelete: { setAlert(message: "Do you want to delete this note? This action cannot be undone.") },
+                      onArrowButton: {}
+            ).frame(alignment: .bottomTrailing)
+                  .padding()
         }
+        .alert(isPresented: $errorField.showErrorAlert, content: {
+            return Alert(title: Text("").font(.headline.weight(.heavy)).foregroundColor(.red),
+                         message: Text(errorField.errorMessage),
+                         primaryButton: Alert.Button.default(Text("Cancel"), action: {
+                resetAlert()
+            }), secondaryButton: Alert.Button.default(Text("Confirm"), action: {
+                resetAlert()
+                callDelete(noteId: note?._id ?? "")
+            }))
+        })
         .padding(.horizontal,12)
         .navigationBarBackButtonHidden(true)
         .toolbar{
@@ -83,6 +104,31 @@ struct NoteEditorView : View {
             }
         }.onDisappear(){
             callCreateOrUpdate(action: {})
+        }
+    }
+    
+    private func setAlert(message : String) {
+        errorField.errorMessage = message
+        errorField.showErrorAlert = true
+    }
+    private func resetAlert(){
+        errorField.errorMessage = ""
+        errorField.showErrorAlert = false
+    }
+
+    private func callDelete(noteId : String){
+        guard noteId.isEmpty else { return }
+        Task {
+            isLoading = true
+          let apiResponse = await noteEditorHandler.deleteNoteCall(noteId: noteId)
+            isLoading = false
+            if (apiResponse.error != nil ){
+                errorField.errorMessage = (apiResponse.error as! NetworkError).getError()
+                errorField.showErrorAlert = apiResponse.isSuccessful == false
+            }
+            if apiResponse.isSuccessful{
+                dismiss()
+            }
         }
     }
     private func callCreateOrUpdate(action : @escaping () -> Void) {

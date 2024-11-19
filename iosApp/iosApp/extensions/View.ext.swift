@@ -26,3 +26,27 @@ struct OnFirstAppearModifier : ViewModifier{
         }
     }
 }
+
+
+
+extension View {
+    func swipe(
+        up: @escaping (() -> Void) = {},
+        down: @escaping (() -> Void) = {},
+        left: @escaping (() -> Void) = {},
+        right: @escaping (() -> Void) = {}
+    ) -> some View {
+        return self.gesture(DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onEnded({ value in
+                    print(value.translation)
+                if value.translation.width < 0 {
+                    print("left")
+                    left() }
+                if value.translation.width > 0 {
+                    print("right")
+                    right() }
+                if value.translation.height < 0 { up() }
+                if value.translation.height > 0 { down() }
+            }))
+    }
+}
