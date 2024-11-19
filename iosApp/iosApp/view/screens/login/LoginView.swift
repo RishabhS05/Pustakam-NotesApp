@@ -1,8 +1,8 @@
 import SwiftUI
 import shared
 
-class LoginHandler : IBaseHandler {
-    var base: BaseRepository = KoinHelper().getBaseRepository()
+class LoginHandler : BaseHandler {
+
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
         return   valmsg != ValidationError.none ?
@@ -77,7 +77,6 @@ struct LoginView: View {
                 router.navigate(to: .Home)
             }
         }
-        
     }
 }
 

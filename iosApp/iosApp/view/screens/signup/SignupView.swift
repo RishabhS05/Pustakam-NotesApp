@@ -2,9 +2,7 @@ import SwiftUI
 import SwiftUICore
 import shared
 
-class SignUpHandler: IBaseHandler {
-    var base: BaseRepository = KoinHelper().getBaseRepository()
-    @Published var isLoading: Bool = false
+class SignUpHandler: BaseHandler {
     func validateCred(req: RegisterReq) -> ErrorField? {
         let valmsg =
             FieldValidationKt.checkRegisterFieldsValidity(

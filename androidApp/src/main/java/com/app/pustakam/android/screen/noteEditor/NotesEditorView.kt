@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
-
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert

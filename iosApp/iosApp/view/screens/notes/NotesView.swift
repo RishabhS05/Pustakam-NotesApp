@@ -1,8 +1,7 @@
 import SwiftUI
 import shared
 
-class NotesHandler : IBaseHandler, ObservableObject {
-    var base: BaseRepository = KoinHelper().getBaseRepository()
+class NotesHandler : BaseHandler, ObservableObject {
     @Published var page: Int = 1
     @Published var notes = [Note]()
     @Published var isLoading : Bool = false
@@ -39,16 +38,17 @@ class NotesHandler : IBaseHandler, ObservableObject {
 struct NotesView: View {
     @StateObject private var notesHandler = NotesHandler()
     @EnvironmentObject var router: Router
-    private let columns  = [GridItem(.flexible()), GridItem(.flexible())]
+//    private let columns  = [GridItem(.flexible()), GridItem(.flexible())
+
     var body: some View {
         ZStack{
-            ScrollView {
-                LazyVGrid(columns: columns , spacing: 8) {
-                    ForEach(notesHandler.notes, id: \.self) {
-                        note in NoteView(note: note){}
-                    }
+            VStack {
+                    StaggeredGrid(columns: 2, items: notesHandler.notes, spacing:12) {
+                            note in NoteView(note: note){
+                                router.navigate(to: .NoteEditor(note: note))
+                            }
+                        }
                 }
-            }
             .navigationBarBackButtonHidden().padding(8)
             .onFirstAppear {
                 notesHandler.getNotesCall()
@@ -65,7 +65,7 @@ struct NotesView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        router.navigate(to: .NoteEditor)
+                        router.navigate(to: .NoteEditor(note: nil))
                     }) {
                         HStack {
                             Image(systemName: "pencil")
@@ -80,6 +80,8 @@ struct NotesView: View {
                     .padding(.horizontal,12).padding(.vertical,16) // Padding to keep the button away from screen edges
                 }
             }
+        }.onAppear{
+            
         }
     }
 }

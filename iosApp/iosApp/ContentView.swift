@@ -17,22 +17,17 @@ class  UserPreferenceWrapper : ObservableObject {
 
 struct AppView : View {
     @EnvironmentObject var router : Router
+    @Environment(\.dismiss) var dismiss
     @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
     var body: some View {
         LoginView()
             .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
                         if isAuthenticated == true {
+                            dismiss()
                             print("User is authenticated")
-                            router.navigate(to: .NoteEditor)
+                            router.navigate(to: .Home)
                         }
                     }
-//            .onAppear{
-//                print("UserPrefs \(userPreferenceWrapper.userPreference)")
-//                if (userPreferenceWrapper.userPreference?.isAuthenticated) == true  {
-//                    print("User is authenticated")
-//                    router.navigate(to: .Home)
-//                }
-//            }
     }
 }
 

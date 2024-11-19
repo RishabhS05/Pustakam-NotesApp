@@ -17,7 +17,7 @@ struct iOSApp: App {
                         switch destination {
                             case .Signup : SignupView()
                             case.Notes : NotesView()
-                            case.NoteEditor : NoteEditorView()
+                            case.NoteEditor(let note) : NoteEditorView(note: note)
                             case.Login : LoginView()
                             case .Notification : NotificationView()
                             case .Search : SearchView()
