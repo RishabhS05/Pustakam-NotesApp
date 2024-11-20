@@ -98,7 +98,7 @@ class NoteEditorViewModel : BaseViewModel() {
 
     private fun updateNote(updateNote: NoteRequest, note: Note) {
         if (checkAnyUpdateOnNote(new = updateNote, old = note)) {
-           val noteStatus = if (_noteUiState.value.noteStatus === NoteStatus.onBackPress)
+           val noteStatus = if (_noteUiState.value.noteStatus == NoteStatus.onBackPress)
                 NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
             changeNoteStatus(noteStatus)
             return

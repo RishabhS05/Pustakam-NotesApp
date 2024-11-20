@@ -182,7 +182,8 @@ fun NotesEditor(
             )
 
         }
-        OverLayEditorButtons(modifier = Modifier.align(alignment = Alignment.CenterEnd),
+        OverLayEditorButtons(modifier = Modifier
+            .align(alignment = Alignment.CenterEnd),
             showDelete = !id.isNullOrEmpty(),
             onArrowButton = {focusManager.clearFocus()},
             onSave = {

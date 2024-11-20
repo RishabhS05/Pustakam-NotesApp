@@ -8,6 +8,17 @@ class NotesHandler : BaseHandler, ObservableObject {
     func clear(){
         self.page = 1
     }
+    func getNotes(){
+        let notesList : Notes? = base.getNotes()
+        notes.removeAll()
+        if notesList != nil && notesList?.notes != nil && notesList?.notes != [] {
+            notesList!.notes!.forEach{ note in
+                self.notes.append(note as! Note)
+            }
+        } else {
+            getNotesCall()
+        }
+    }
     func getNotesCall() {
         Task {
             DispatchQueue.main.async { self.isLoading = true }
@@ -38,20 +49,18 @@ class NotesHandler : BaseHandler, ObservableObject {
 struct NotesView: View {
     @StateObject private var notesHandler = NotesHandler()
     @EnvironmentObject var router: Router
-//    private let columns  = [GridItem(.flexible()), GridItem(.flexible())
-
     var body: some View {
         ZStack{
             VStack {
-                    StaggeredGrid(columns: 2, items: notesHandler.notes, spacing:12) {
+                StaggeredGrid(columns: 2, items: notesHandler.notes, spacing:8) {
                             note in NoteView(note: note){
                                 router.navigate(to: .NoteEditor(note: note))
                             }
                         }
-                }
+            }.padding(.trailing,12)
             .navigationBarBackButtonHidden().padding(8)
-            .onFirstAppear {
-                notesHandler.getNotesCall()
+            .onAppear {
+                notesHandler.getNotes()
             }.onDisappear{
                 notesHandler.isLoading = false
             }
@@ -80,8 +89,6 @@ struct NotesView: View {
                     .padding(.horizontal,12).padding(.vertical,16) // Padding to keep the button away from screen edges
                 }
             }
-        }.onAppear{
-            
         }
     }
 }

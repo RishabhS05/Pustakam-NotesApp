@@ -13,12 +13,21 @@ class NoteEditorHandler : BaseHandler ,ObservableObject {
     }
     // making decision call update or create api
     func createOrUpdate(noteRequest : NoteRequest, note : Note? = nil ) async -> BaseResult<BaseResponse<Note>?>?{
-        guard noteRequest.title.isNotNilOrEmpty()  && noteRequest.description_.isNotNilOrEmpty()  else { return nil }
+        guard noteRequest.title.isNotNilOrEmpty() && noteRequest.description_.isNotNilOrEmpty()  else { return nil }
         if !noteRequest._id.isNotNilOrEmpty() {
             return await createNoteCall(noteRequest: noteRequest)
-        }else {
-            guard note != nil && !FieldValidationKt.checkAnyUpdateOnNote(new: noteRequest,old: note!) else { return nil }
-            return await updateNoteCall(oldNote: note!, updatedNoteRequest: noteRequest)
+        } else {
+            guard let note else { return nil }
+            
+            if FieldValidationKt.checkAnyUpdateOnNote(new: noteRequest ,old: note) {
+               print("equals")
+                return nil
+            }
+            
+            else {
+                print(" not equals")
+                return await updateNoteCall(oldNote: note, updatedNoteRequest: noteRequest)
+            }
         }
     }
     
@@ -90,8 +99,8 @@ struct NoteEditorView : View {
                          primaryButton: Alert.Button.default(Text("Cancel"), action: {
                 resetAlert()
             }), secondaryButton: Alert.Button.default(Text("Confirm"), action: {
+                callDelete(noteId: note?._id)
                 resetAlert()
-                callDelete(noteId: note?._id ?? "")
             }))
         })
         .padding(.horizontal,12)
@@ -116,11 +125,13 @@ struct NoteEditorView : View {
         errorField.showErrorAlert = false
     }
 
-    private func callDelete(noteId : String){
-        guard noteId.isEmpty else { return }
+    private func callDelete(noteId : String?){
+        guard noteId.isNotNilOrEmpty() else {
+            print("noteId is nil")
+            return }
         Task {
             isLoading = true
-          let apiResponse = await noteEditorHandler.deleteNoteCall(noteId: noteId)
+          let apiResponse = await noteEditorHandler.deleteNoteCall(noteId: noteId!)
             isLoading = false
             if (apiResponse.error != nil ){
                 errorField.errorMessage = (apiResponse.error as! NetworkError).getError()
