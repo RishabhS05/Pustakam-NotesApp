@@ -21,20 +21,6 @@ struct OverlayEditorButtons : View {
     var onArrowButton: () -> Void = {}
     var body: some View {
         VStack(alignment: .center) {
-                // Arrow Button
-                Button(action: {
-                    onArrowButton()
-                    withAnimation {
-                        showArrow.toggle()
-                        offset = showArrow ? 0 : -100 // Adjust offset if needed
-                    }
-                }) {
-                    Image(systemName: showArrow ? "arrow.left" : "arrow.right")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .foregroundColor(.brown)
-                }
               if showArrow {
                   VStack(spacing: 8) {
                       ActionButton(iconName: "mic.fill", action: {
@@ -74,9 +60,22 @@ struct OverlayEditorButtons : View {
                   .offset(x: offset)
                   .animation(.spring(), value: offset) // Smooth transition
               }
-              
+                // Arrow Button
+                Button(action: {
+                    onArrowButton()
+                    withAnimation {
+                        showArrow.toggle()
+                        offset = showArrow ? 0 : -100 // Adjust offset if needed
+                    }
+                }) {
+                    Image(systemName: showArrow ? "arrow.left" : "arrow.right")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 18, height: 18)
+                        .foregroundColor(.brown)
+                }
             
-        }.frame(maxWidth: .infinity,maxHeight: .infinity,alignment:.topTrailing)
+        }.frame(maxWidth: .infinity,maxHeight: .infinity,alignment:.bottomTrailing)
             .swipe(left : {
                 withAnimation {
                     showArrow.toggle()

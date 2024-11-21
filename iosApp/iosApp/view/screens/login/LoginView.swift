@@ -2,7 +2,7 @@ import SwiftUI
 import shared
 
 class LoginHandler : BaseHandler {
-
+    
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
         return   valmsg != ValidationError.none ?
@@ -18,11 +18,17 @@ class LoginHandler : BaseHandler {
 
 
 struct LoginView: View {
+    
     @State private var password : String = ""
     @State private var email : String = ""
     @State private var errorField : ErrorField = ErrorField()
     @State private var isLoading : Bool = false
     private let loginHandler = LoginHandler()
+    
+    private enum Fields {
+        case email, password
+    }
+    @FocusState private var focusedField: Fields?
     @EnvironmentObject var router: Router
     var body: some View {
         ZStack(alignment: .center){
@@ -30,15 +36,29 @@ struct LoginView: View {
                 TextField(
                     "Your Phone or Email",
                     text: $email
-                ).textFieldStyle(OutlineTextfieldStyle()) .padding(.horizontal, 24)
+                ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .email)
+                    .submitLabel(.next)
+                    .onSubmit{
+                        focusedField = .password
+                    }
+                    .padding(.horizontal, 24)
                 
                 SecureField(
                     "Passeord",
                     text: $password
-                ).textFieldStyle(OutlineTextfieldStyle()) .padding(.horizontal, 24)
+                ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .password)
+                    .padding(.horizontal, 24)
                     .padding(.vertical)
+                    .submitLabel(.done)
+                    .onSubmit{
+                        focusedField = nil
+                        login(email: email, password: password)
+                    }
                 
                 Button("Login"){
+                    
                     login(email: email, password: password)
                 }.buttonStyle(SigninButtonStyle())
                 
@@ -56,7 +76,7 @@ struct LoginView: View {
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
         }
-
+        
     }
     
     func login(email: String, password: String) {

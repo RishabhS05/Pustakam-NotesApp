@@ -84,7 +84,7 @@ struct NoteEditorView : View {
                 showDelete: note != nil,
                       onSave: {  callCreateOrUpdate(action: {}) },
                       onSaveAs: { print("Save As action") },
-                      onRecordVideo: { print("Record Video action") },
+                onRecordVideo: { router.navigate(to: .Camera) },
                       onAddImage: { print("Add Image action") },
                       onShare: { print("Share action") },
                       onRecordMic: { print("Record Mic action") },

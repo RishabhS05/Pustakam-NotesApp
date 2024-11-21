@@ -27,6 +27,10 @@ struct SignupView: View {
     @State private var errorField: ErrorField = ErrorField()
     @State private var imageUrl: String = ""
     @State private var isLoading: Bool = false
+    @FocusState private var focusedField: Fields?
+    private enum Fields {
+        case name, email, phone, password, confirmPasword
+    }
     private let signupHandle = SignUpHandler()
     @Environment(\.dismiss) var dismiss
     var body: some View {
@@ -37,22 +41,49 @@ struct SignupView: View {
                 "Your name",
                 text: $name
             ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .name)
+                    .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .email
+                            }
             TextField(
                 "Your email",
                 text: $email
             ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .email)
+                    .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .phone
+                            }
             TextField(
                 "Your Phone",
                 text: $phone
             ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .phone)
+                    .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .password
+                            }
             SecureField(
                 "Passeord",
                 text: $password
             ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .password)
+                    .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .confirmPasword
+                            }
             SecureField(
                 "Confirm Password",
                 text: $confirmPasword
             ).textFieldStyle(OutlineTextfieldStyle())
+                    .focused($focusedField, equals: .phone)
+                    .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
+                                signUpHandle()
+                            }
+                
             Button("Sign up") {
                 signUpHandle()
             }.buttonStyle(SigninButtonStyle())
@@ -75,7 +106,14 @@ struct SignupView: View {
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
-        }
+        } .navigationBarBackButtonHidden(true)
+        .toolbar{
+                ToolbarItem(placement: .topBarLeading){
+                    BackButton(action: {
+                        dismiss()
+                    })
+                }
+            }
     }
     func signUpHandle() {
         let user = RegisterReq(

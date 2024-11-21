@@ -22,6 +22,7 @@ struct iOSApp: App {
                             case .Notification : NotificationView()
                             case .Search : SearchView()
                             case .Home : HomeView()
+                            case .Camera : CameraContentView()
                             default: LoginView()
                         }
                     }
