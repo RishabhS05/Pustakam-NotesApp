@@ -114,6 +114,9 @@ struct SignupView: View {
                     })
                 }
             }
+        .onAppear{
+            focusedField = .name
+        }
     }
     func signUpHandle() {
         let user = RegisterReq(

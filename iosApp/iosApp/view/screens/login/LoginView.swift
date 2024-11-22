@@ -75,8 +75,9 @@ struct LoginView: View {
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
+        }.onAppear{
+            focusedField = .email
         }
-        
     }
     
     func login(email: String, password: String) {

@@ -9,15 +9,12 @@
 /* Begin PBXBuildFile section */
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
-		6345BFB12CEF358E00CC254C /* CameraPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB02CEF358400CC254C /* CameraPermission.swift */; };
+		630BA1762CF0CF7700D148C8 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1752CF0CF6A00D148C8 /* CameraView.swift */; };
+		630BA1782CF0CFA800D148C8 /* CameraContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1772CF0CF9B00D148C8 /* CameraContent.swift */; };
 		6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB22CEF35AA00CC254C /* MicPermission.swift */; };
 		6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB42CEF35D100CC254C /* StroagePermission.swift */; };
 		6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB82CEF363100CC254C /* LocationPermission.swift */; };
 		6345BFBB2CEF6CB500CC254C /* HardwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */; };
-		6345BFC02CEF714600CC254C /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFBF2CEF714000CC254C /* CameraManager.swift */; };
-		6345BFC22CEF761600CC254C /* CameraHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFC12CEF760E00CC254C /* CameraHandler.swift */; };
-		6345BFC42CEF775200CC254C /* CameraFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFC32CEF774900CC254C /* CameraFeedView.swift */; };
-		6345BFC62CEF78C500CC254C /* CameraContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFC52CEF78BA00CC254C /* CameraContentView.swift */; };
 		63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */; };
 		63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */; };
 		63682AB22CE9337400425C35 /* Note.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AB12CE9336500425C35 /* Note.ext.swift */; };
@@ -62,15 +59,12 @@
 /* Begin PBXFileReference section */
 		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
-		6345BFB02CEF358400CC254C /* CameraPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPermission.swift; sourceTree = "<group>"; };
+		630BA1752CF0CF6A00D148C8 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		630BA1772CF0CF9B00D148C8 /* CameraContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraContent.swift; sourceTree = "<group>"; };
 		6345BFB22CEF35AA00CC254C /* MicPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicPermission.swift; sourceTree = "<group>"; };
 		6345BFB42CEF35D100CC254C /* StroagePermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StroagePermission.swift; sourceTree = "<group>"; };
 		6345BFB82CEF363100CC254C /* LocationPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermission.swift; sourceTree = "<group>"; };
 		6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareManager.swift; sourceTree = "<group>"; };
-		6345BFBF2CEF714000CC254C /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
-		6345BFC12CEF760E00CC254C /* CameraHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraHandler.swift; sourceTree = "<group>"; };
-		6345BFC32CEF774900CC254C /* CameraFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraFeedView.swift; sourceTree = "<group>"; };
-		6345BFC52CEF78BA00CC254C /* CameraContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraContentView.swift; sourceTree = "<group>"; };
 		63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
 		63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaggeredGrid.swift; sourceTree = "<group>"; };
 		63682AB12CE9336500425C35 /* Note.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.ext.swift; sourceTree = "<group>"; };
@@ -153,11 +147,8 @@
 		6345BFBC2CEF704900CC254C /* camera */ = {
 			isa = PBXGroup;
 			children = (
-				6345BFC52CEF78BA00CC254C /* CameraContentView.swift */,
-				6345BFC32CEF774900CC254C /* CameraFeedView.swift */,
-				6345BFC12CEF760E00CC254C /* CameraHandler.swift */,
-				6345BFBF2CEF714000CC254C /* CameraManager.swift */,
-				6345BFB02CEF358400CC254C /* CameraPermission.swift */,
+				630BA1772CF0CF9B00D148C8 /* CameraContent.swift */,
+				630BA1752CF0CF6A00D148C8 /* CameraView.swift */,
 			);
 			path = camera;
 			sourceTree = "<group>";
@@ -443,26 +434,24 @@
 			files = (
 				63682AB22CE9337400425C35 /* Note.ext.swift in Sources */,
 				639BBEF92CDCB2C100E0E00D /* NoteEditorView.swift in Sources */,
+				630BA1762CF0CF7700D148C8 /* CameraView.swift in Sources */,
 				63D089272CAEA758008FD8CC /* SigninButton.swift in Sources */,
 				63D089252CAC92CA008FD8CC /* OutlineTextfieldStyle.swift in Sources */,
+				630BA1782CF0CFA800D148C8 /* CameraContent.swift in Sources */,
 				639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */,
 				63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */,
 				63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */,
 				63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */,
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
-				6345BFC02CEF714600CC254C /* CameraManager.swift in Sources */,
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
 				63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */,
-				6345BFC22CEF761600CC254C /* CameraHandler.swift in Sources */,
-				6345BFC42CEF775200CC254C /* CameraFeedView.swift in Sources */,
 				63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */,
 				63C00BE12CEB661900A4907C /* BaseHandler.swift in Sources */,
 				63C00BEF2CECC6FF00A4907C /* ActionButton.swift in Sources */,
 				63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */,
 				63C00BED2CECC51900A4907C /* OverlayEditorButtons.swift in Sources */,
 				63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */,
-				6345BFC62CEF78C500CC254C /* CameraContentView.swift in Sources */,
 				6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */,
 				6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */,
 				6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */,
@@ -476,7 +465,6 @@
 				63FD32A42CBEA2AD0047ED10 /* HomeView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 				63D089292CAEADA5008FD8CC /* NotesView.swift in Sources */,
-				6345BFB12CEF358E00CC254C /* CameraPermission.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

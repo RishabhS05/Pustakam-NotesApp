@@ -62,7 +62,10 @@ struct NoteEditorView : View {
         ZStack(alignment: .topLeading) {
                 // Draw ruled lines
             if isRulledEnabled {
-                RulledPage(lineColor: lineColor, marginColor: marginColor, fontSize: fontSize, lineSpacing: lineSpacing, leftpadding: leftpadding)
+                RulledPage(lineColor: lineColor, marginColor:
+                            marginColor, fontSize: fontSize,
+                           lineSpacing: lineSpacing,
+                           leftpadding: leftpadding)
                 .background(Color.white)
                 .ignoresSafeArea()
             }
