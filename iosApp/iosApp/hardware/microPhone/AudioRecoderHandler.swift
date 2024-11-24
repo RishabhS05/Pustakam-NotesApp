@@ -18,6 +18,11 @@ class AudioRecorder: ObservableObject {
     private var audioPlayer: AVAudioPlayer?
     var fileName = ""
     
+    private var timer: Timer?
+
+       @Published var normalizedPower: Float = 0.0
+       @Published var phase: Double = 0.0
+    
     /// Start Recording
     func startRecording() {
         let session = AVAudioSession.sharedInstance()
@@ -37,7 +42,9 @@ class AudioRecorder: ObservableObject {
             ]
             audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
             audioRecorder?.record()
+            audioRecorder?.isMeteringEnabled = true
             isRecording = true
+            startMonitoring()
         } catch {
             print("Failed to start recording: \(error)")
         }
@@ -49,6 +56,7 @@ class AudioRecorder: ObservableObject {
         audioFileURL = audioRecorder?.url
         audioRecorder = nil
         isRecording = false
+        stopMonitoring()
     }
     
     /// Save Recording with Custom Name
@@ -73,6 +81,7 @@ class AudioRecorder: ObservableObject {
         
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: fileURL)
+            audioPlayer?.prepareToPlay()
             audioPlayer?.play()
             isPlaying = true
         } catch {
@@ -91,10 +100,35 @@ class AudioRecorder: ObservableObject {
             isPlaying = true
         }
     }
+   
+    func startMonitoring() {
+          timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+              self.updateAudioLevel()
+          }
+      }
+
+      func stopMonitoring() {
+          timer?.invalidate()
+          timer = nil
+      }
+
+      private func updateAudioLevel() {
+          guard let audioRecorder = audioRecorder else { return }
+          audioRecorder.updateMeters()
+
+          // Get normalized power level (0.0 to 1.0)
+          let power = audioRecorder.averagePower(forChannel: 0)
+          normalizedPower = max(0, (power + 80) / 80) // Normalize the power to 0...1
+
+          // Update phase for wave animation
+          phase += 0.1
+      }
+    
     
     /// Stop Playback
     func stopPlayback() {
         audioPlayer?.stop()
         isPlaying = false
+        stopMonitoring()
     }
 }
