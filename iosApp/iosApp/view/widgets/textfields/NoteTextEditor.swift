@@ -27,7 +27,6 @@ struct NoteTextEditor: View {
                 .padding(.leading, leftpadding)
                 .accentColor(.brown)
                 .font(.system(size: fontSize))
-                .foregroundColor(.black)
                 .scrollContentBackground(.hidden)
             }
         

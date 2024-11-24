@@ -19,7 +19,7 @@ final class Router: ObservableObject {
         case Notification
         case Search
         case Home
-        case Camera
+        case Camera (onCapture : (CapturedMedia?) -> Void)
         
         func hash(into hasher: inout Hasher) {
             switch self {

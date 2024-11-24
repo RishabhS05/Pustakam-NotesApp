@@ -9,8 +9,13 @@
 /* Begin PBXBuildFile section */
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
-		630BA1762CF0CF7700D148C8 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1752CF0CF6A00D148C8 /* CameraView.swift */; };
-		630BA1782CF0CFA800D148C8 /* CameraContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1772CF0CF9B00D148C8 /* CameraContent.swift */; };
+		630BA1762CF0CF7700D148C8 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */; };
+		630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */; };
+		630BA17E2CF10ED800D148C8 /* CameraPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */; };
+		630BA1832CF1F57800D148C8 /* AudioPlayingWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1822CF1F55800D148C8 /* AudioPlayingWidget.swift */; };
+		630BA1852CF23E0700D148C8 /* AudioRecoderHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1842CF23DEA00D148C8 /* AudioRecoderHandler.swift */; };
+		630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1862CF2657700D148C8 /* Date.ext.swift */; };
+		630BA18B2CF2FD1B00D148C8 /* AudioRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA18A2CF2FD1B00D148C8 /* AudioRecorderView.swift */; };
 		6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB22CEF35AA00CC254C /* MicPermission.swift */; };
 		6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB42CEF35D100CC254C /* StroagePermission.swift */; };
 		6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB82CEF363100CC254C /* LocationPermission.swift */; };
@@ -59,8 +64,13 @@
 /* Begin PBXFileReference section */
 		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
-		630BA1752CF0CF6A00D148C8 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
-		630BA1772CF0CF9B00D148C8 /* CameraContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraContent.swift; sourceTree = "<group>"; };
+		630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
+		630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreview.swift; sourceTree = "<group>"; };
+		630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPermission.swift; sourceTree = "<group>"; };
+		630BA1822CF1F55800D148C8 /* AudioPlayingWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayingWidget.swift; sourceTree = "<group>"; };
+		630BA1842CF23DEA00D148C8 /* AudioRecoderHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecoderHandler.swift; sourceTree = "<group>"; };
+		630BA1862CF2657700D148C8 /* Date.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.ext.swift; sourceTree = "<group>"; };
+		630BA18A2CF2FD1B00D148C8 /* AudioRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderView.swift; sourceTree = "<group>"; };
 		6345BFB22CEF35AA00CC254C /* MicPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicPermission.swift; sourceTree = "<group>"; };
 		6345BFB42CEF35D100CC254C /* StroagePermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StroagePermission.swift; sourceTree = "<group>"; };
 		6345BFB82CEF363100CC254C /* LocationPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermission.swift; sourceTree = "<group>"; };
@@ -106,6 +116,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		630BA17F2CF195EA00D148C8 /* location */ = {
+			isa = PBXGroup;
+			children = (
+				6345BFB82CEF363100CC254C /* LocationPermission.swift */,
+			);
+			path = location;
+			sourceTree = "<group>";
+		};
+		630BA1802CF195F700D148C8 /* microPhone */ = {
+			isa = PBXGroup;
+			children = (
+				630BA18A2CF2FD1B00D148C8 /* AudioRecorderView.swift */,
+				630BA1842CF23DEA00D148C8 /* AudioRecoderHandler.swift */,
+				6345BFB22CEF35AA00CC254C /* MicPermission.swift */,
+			);
+			path = microPhone;
+			sourceTree = "<group>";
+		};
+		630BA1812CF1961500D148C8 /* stroage */ = {
+			isa = PBXGroup;
+			children = (
+				6345BFB42CEF35D100CC254C /* StroagePermission.swift */,
+			);
+			path = stroage;
+			sourceTree = "<group>";
+		};
 		6343B13F2CB4230100186B67 /* login */ = {
 			isa = PBXGroup;
 			children = (
@@ -135,11 +171,11 @@
 		6345BFAF2CEF357800CC254C /* hardware */ = {
 			isa = PBXGroup;
 			children = (
+				630BA1812CF1961500D148C8 /* stroage */,
+				630BA1802CF195F700D148C8 /* microPhone */,
+				630BA17F2CF195EA00D148C8 /* location */,
 				6345BFBC2CEF704900CC254C /* camera */,
 				6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */,
-				6345BFB82CEF363100CC254C /* LocationPermission.swift */,
-				6345BFB42CEF35D100CC254C /* StroagePermission.swift */,
-				6345BFB22CEF35AA00CC254C /* MicPermission.swift */,
 			);
 			path = hardware;
 			sourceTree = "<group>";
@@ -147,8 +183,9 @@
 		6345BFBC2CEF704900CC254C /* camera */ = {
 			isa = PBXGroup;
 			children = (
-				630BA1772CF0CF9B00D148C8 /* CameraContent.swift */,
-				630BA1752CF0CF6A00D148C8 /* CameraView.swift */,
+				630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */,
+				630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */,
+				630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */,
 			);
 			path = camera;
 			sourceTree = "<group>";
@@ -172,6 +209,7 @@
 		639BBEFA2CDD4A9100E0E00D /* extensions */ = {
 			isa = PBXGroup;
 			children = (
+				630BA1862CF2657700D148C8 /* Date.ext.swift */,
 				63C00BE22CEC839E00A4907C /* Any.ext.swift */,
 				63682AB12CE9336500425C35 /* Note.ext.swift */,
 				639BBEFB2CDD4A9B00E0E00D /* View.ext.swift */,
@@ -217,6 +255,7 @@
 		63D089182CABD636008FD8CC /* widgets */ = {
 			isa = PBXGroup;
 			children = (
+				630BA1822CF1F55800D148C8 /* AudioPlayingWidget.swift */,
 				63C00BEC2CECC4E800A4907C /* OverlayEditorButtons.swift */,
 				63C00BE72CEC941B00A4907C /* canvas */,
 				63C00BE42CEC924C00A4907C /* button */,
@@ -434,12 +473,14 @@
 			files = (
 				63682AB22CE9337400425C35 /* Note.ext.swift in Sources */,
 				639BBEF92CDCB2C100E0E00D /* NoteEditorView.swift in Sources */,
-				630BA1762CF0CF7700D148C8 /* CameraView.swift in Sources */,
+				630BA1762CF0CF7700D148C8 /* CameraCaptureView.swift in Sources */,
+				630BA17E2CF10ED800D148C8 /* CameraPermission.swift in Sources */,
 				63D089272CAEA758008FD8CC /* SigninButton.swift in Sources */,
 				63D089252CAC92CA008FD8CC /* OutlineTextfieldStyle.swift in Sources */,
-				630BA1782CF0CFA800D148C8 /* CameraContent.swift in Sources */,
+				630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */,
 				639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */,
 				63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */,
+				630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */,
 				63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */,
 				63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */,
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
@@ -453,11 +494,14 @@
 				63C00BED2CECC51900A4907C /* OverlayEditorButtons.swift in Sources */,
 				63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */,
 				6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */,
+				630BA18B2CF2FD1B00D148C8 /* AudioRecorderView.swift in Sources */,
+				630BA1832CF1F57800D148C8 /* AudioPlayingWidget.swift in Sources */,
 				6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */,
 				6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */,
 				63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */,
 				63FD32A92CBEAEB20047ED10 /* SearchView.swift in Sources */,
 				63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */,
+				630BA1852CF23E0700D148C8 /* AudioRecoderHandler.swift in Sources */,
 				639BBEF72CDCA68400E0E00D /* NoteView.swift in Sources */,
 				6345BFBB2CEF6CB500CC254C /* HardwareManager.swift in Sources */,
 				63FD32AB2CBEAEC50047ED10 /* NotificationView.swift in Sources */,
