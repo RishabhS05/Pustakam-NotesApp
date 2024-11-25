@@ -252,6 +252,38 @@ struct WaveShape: Shape {
     }
 }
 
+struct WaveProgressView: Shape {
+    var amplitude: CGFloat
+    var phase: CGFloat
+    var progress: CGFloat
+
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(phase, progress) }
+        set {
+            phase = newValue.first
+            progress = newValue.second
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let midY = rect.midY
+
+        for x in stride(from: 0, to: rect.width * progress, by: 1) {
+            let normalizedX = x / rect.width
+            let angle = normalizedX * .pi * 2 + phase
+            let y = midY + sin(angle) * amplitude * rect.height / 2
+            if x == 0 {
+                path.move(to: CGPoint(x: x, y: y))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+
+        return path
+    }
+}
+
 
     // pulse pattern
 struct PulseShape: Shape {
