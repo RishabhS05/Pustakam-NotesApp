@@ -1,7 +1,7 @@
 package com.app.pustakam.android.screen.login
 
 import com.app.pustakam.android.screen.AUTH
-import com.app.pustakam.android.screen.BaseViewModel
+import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.LoginUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.data.models.BaseResponse

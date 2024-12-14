@@ -1,6 +1,6 @@
 package com.app.pustakam.android.screen.notes.list
 
-import com.app.pustakam.android.screen.BaseViewModel
+import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode

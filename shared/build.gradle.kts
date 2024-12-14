@@ -32,9 +32,11 @@ kotlin {
             //put your multiplatform dependencies here
             implementation(libs.kotlinx.coroutines.core)
             api(libs.bundles.ktor)
+            api(libs.kotlinx.datetime)
             api(libs.datastore.preferences)
             api(libs.datastore)
             api(libs.koin)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

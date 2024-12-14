@@ -1,12 +1,10 @@
 package com.app.pustakam.android.screen.notes.list
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -28,7 +26,6 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
                 Lifecycle.Event.ON_RESUME -> {
                     notesViewModel.getNotes()
                 }
-
                 else -> {}
             }
         }
@@ -44,7 +41,7 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(notes.size) { index ->
-                    NoteCardView(note = notes[index]) { onNavigateNote(notes[index]) }
+                    NoteCardView(note = notes[index]) { onNavigateNote( notes[index]) }
                 }
             }
 

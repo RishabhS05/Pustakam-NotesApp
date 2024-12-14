@@ -45,6 +45,6 @@ data class NoteUIState(
     val showDeleteAlert : Boolean= false,
 
     val noteStatus : NoteStatus? = null,
-    val note : Note? =null
+    val note : Note? = null
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 

@@ -38,7 +38,7 @@ enum class NetworkError : Error {
     },
     SERVER_ERROR {
         override fun getError(): String {
-            return ""
+            return "Something went wrong!!"
         }
     },
     SERIALIZATION {

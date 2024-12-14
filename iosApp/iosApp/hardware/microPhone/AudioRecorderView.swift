@@ -12,11 +12,14 @@ import AVFoundation
 
 struct AudioRecorderView : View {
     @StateObject private var audioRecorder = AudioRecorder()
+    @StateObject private var audioLevelsMonitor = AudioLevelsMonitor()
+    
     @State private var elapsedTime: TimeInterval = 0.0
     @State private var timer: Timer? = nil
     @State private var showRenameSheet = false
     @State private var fileName = ""
     @State private var tempFileName = ""
+    
     let onDismiss: (() -> Void) = { }
     var body: some View {
         ZStack {
@@ -35,41 +38,15 @@ struct AudioRecorderView : View {
                 .font(.largeTitle.monospacedDigit())
                 .foregroundColor(.white)
                     // Real-time Wave Animation
-                ZStack {
-                    
-                    ForEach(0..<5, id: \.self) { i in
-                        PulseShape(
-                            amplitude: CGFloat(audioRecorder.normalizedPower) * (1 - CGFloat(i) * 0.2),
-                            phase: CGFloat(audioRecorder.phase + Double(i) * 0.5)
-                        )
-                        .stroke(lineWidth: 4)
-                        .foregroundColor(Color.gray.opacity(1 - Double(i) * 0.2))
-                    }
-                    GeometryReader { geometry in
-                        let midX = geometry.size.width / 2
-                        let midY = geometry.size.height / 2
-                        
-                        Path { path in
-                                // Y-axis
-                            path.move(to: CGPoint(x: midX, y: 0))
-                            path.addLine(to: CGPoint(x: midX, y: geometry.size.height))
-                            
-                                // X-axis
-                            path.move(to: CGPoint(x: 0, y: midY))
-                            path.addLine(to: CGPoint(x: geometry.size.width, y: midY))
-                        }
-                        .stroke(Color.red, lineWidth: 4)
-                    }
-                }
+                AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
                 .frame(height: 150)
                 .padding()
                 .background(LinearGradient(colors: [Color.green.opacity(0.4), Color.red.opacity(0.3)], startPoint: .top, endPoint: .bottom))
                 .cornerRadius(20)
-                .opacity(audioRecorder.isRecording ? 1 : 0)
                 .frame(height: 100)
                 
-                
-                    // Record Button
+                    
+                // Record Button
                 HStack {
                         // Play Button
                     Button(action: {
@@ -93,7 +70,7 @@ struct AudioRecorderView : View {
                         if audioRecorder.isRecording {
                             stopRecording()
                         } else {
-                            startRecording()
+                           startRecording()
                         }
                     }) {
                         Image(systemName: audioRecorder.isRecording  ? "stop.fill" : "mic.fill")
@@ -137,11 +114,14 @@ struct AudioRecorderView : View {
     private func startRecording() {
         audioRecorder.startRecording()
         audioRecorder.isRecording  = true
+        audioLevelsMonitor.startLevelsMonitoring()
         startTimer()
     }
         // Stop Recording Function
     private func stopRecording() {
         audioRecorder.stopRecording()
+        audioLevelsMonitor.stopLevelsMonitoring()
+        audioLevelsMonitor.loadAudioFile(url:audioRecorder.audioFileURL ?? nil)
         audioRecorder.isRecording  = false
         stopTimer()
         tempFileName = fileName
@@ -213,14 +193,23 @@ struct BarView: View {
     
     var body: some View {
         RoundedRectangle(cornerRadius: 2)
-            .fill(Color.black)
+            .fill(Color.red)
             .frame(width: 4, height: height * 100)
     }
 }
 
 
 
-
+    //                ZStack {
+    //
+    //                    ForEach(0..<5, id: \.self) { i in
+    //                        PulseShape(
+    //                            amplitude: CGFloat(audioRecorder.normalizedPower) * (1 - CGFloat(i) * 0.2),
+    //                            phase: CGFloat(audioRecorder.phase + Double(i) * 0.5)
+    //                        )
+    //                        .stroke(lineWidth: 4)
+    //                        .foregroundColor(Color.gray.opacity(1 - Double(i) * 0.2))
+    //                    }
 // wave pattern
 struct WaveShape: Shape {
     var amplitude: CGFloat

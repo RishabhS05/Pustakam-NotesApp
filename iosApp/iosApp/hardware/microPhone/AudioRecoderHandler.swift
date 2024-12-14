@@ -1,32 +1,21 @@
-    //
-    //  audioRecoderHandler.swift
-    //  iosApp
-    //
-    //  Created by Rishabh Shrivastava on 23/11/24.
-    //  Copyright © 2024 orgName. All rights reserved.
-    //
-
 import Foundation
 import AVFoundation
 
 class AudioRecorder: ObservableObject {
     @Published var isRecording = false
     @Published var isPlaying = false
+    @Published var normalizedPower: Float = 0.0
+    @Published var phase: Double = 0.0
     var audioFileURL: URL?
-    let microphonePermission = MicPermission()
     private var audioRecorder: AVAudioRecorder?
     private var audioPlayer: AVAudioPlayer?
     var fileName = ""
     
     private var timer: Timer?
-
-       @Published var normalizedPower: Float = 0.0
-       @Published var phase: Double = 0.0
     
     /// Start Recording
     func startRecording() {
         let session = AVAudioSession.sharedInstance()
-
         do {
             fileName = "\(Date().toString(dateFormat: "dd-MM-YYYY-HH:mm:ss")).m4a"
             try session.setCategory(.playAndRecord, mode: .default,options: [.defaultToSpeaker])
@@ -44,7 +33,7 @@ class AudioRecorder: ObservableObject {
             audioRecorder?.record()
             audioRecorder?.isMeteringEnabled = true
             isRecording = true
-            startMonitoring()
+            startTimerMonitoring()
         } catch {
             print("Failed to start recording: \(error)")
         }
@@ -56,20 +45,24 @@ class AudioRecorder: ObservableObject {
         audioFileURL = audioRecorder?.url
         audioRecorder = nil
         isRecording = false
-        stopMonitoring()
+        stopTimerMonitoring()
     }
     
     /// Save Recording with Custom Name
     func saveRecording(withName name: String) {
+        
         guard let originalURL = audioFileURL else { return }
         
         let documentsDir = FileManager.default.urls(for: .documentDirectory,
                                                     in: .userDomainMask).first!
         let newFileURL = documentsDir.appendingPathComponent(name)
+        
         do {
+            
             try FileManager.default.moveItem(at: originalURL, to: newFileURL)
             audioFileURL = newFileURL
-            print(audioFileURL)
+            print(audioFileURL ?? "")
+            
         } catch {
             print("Failed to save file: \(error)")
         }
@@ -101,13 +94,13 @@ class AudioRecorder: ObservableObject {
         }
     }
    
-    func startMonitoring() {
+    func startTimerMonitoring() {
           timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
               self.updateAudioLevel()
           }
       }
 
-      func stopMonitoring() {
+      func stopTimerMonitoring() {
           timer?.invalidate()
           timer = nil
       }
@@ -123,12 +116,10 @@ class AudioRecorder: ObservableObject {
           // Update phase for wave animation
           phase += 0.1
       }
-    
-    
+
     /// Stop Playback
     func stopPlayback() {
         audioPlayer?.stop()
         isPlaying = false
-        stopMonitoring()
     }
 }

@@ -4,8 +4,7 @@ import SwiftUI
 @main
 struct iOSApp: App {
     
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
     @ObservedObject var router = Router()
     var body: some Scene {
        

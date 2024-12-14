@@ -1,6 +1,6 @@
 package com.app.pustakam.android.screen.signup
 
-import com.app.pustakam.android.usecases.BaseUseCase
+import com.app.pustakam.android.screen.base.BaseUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.RegisterReq
 import com.app.pustakam.data.models.response.User

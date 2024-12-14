@@ -1,6 +1,7 @@
 [versions]
 agp = "8.3.2"
 kotlin = "2.0.0"
+datetime = "0.6.1"
 kotlinxCoroutinesCore = "1.8.1"
 ktor = "2.3.12"
 compose = "1.7.2"
@@ -39,6 +40,7 @@ ktor-client-auth = {module = "io.ktor: ktor-client-auth", version.ref = "ktor" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-datetime={module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime"}
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose" , version.ref = "navigationCompose" }
  #DI
 koin-android ={ module ="io.insert-koin:koin-android", version.ref = "koin"}

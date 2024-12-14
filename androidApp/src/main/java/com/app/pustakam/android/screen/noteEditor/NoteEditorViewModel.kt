@@ -1,34 +1,33 @@
 package com.app.pustakam.android.screen.noteEditor
 
-import com.app.pustakam.android.screen.BaseViewModel
+import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.android.screen.notes.CreateNoteUseCase
+import com.app.pustakam.android.screen.notes.CreateORUpdateNoteUseCase
 import com.app.pustakam.android.screen.notes.DeleteNoteUseCase
 import com.app.pustakam.android.screen.notes.ReadNoteUseCase
-import com.app.pustakam.android.screen.notes.UpdateNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.request.NoteRequest
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
-import com.app.pustakam.util.checkAnyUpdateOnNote
 import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 class NoteEditorViewModel : BaseViewModel() {
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
-    private val updateNoteUseCase = UpdateNoteUseCase()
-    private val createNoteUseCase = CreateNoteUseCase()
+    private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
     fun changeNoteStatus(status: NoteStatus?){
         _noteUiState.update {
             it.copy( noteStatus = status,
@@ -72,41 +71,22 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
-    fun readFromDataBase(id: String) {
-        val note = readNoteUseCase.invoke(id)
-        if (note.isNotnull()) {
-            _noteUiState.update { it.copy(isLoading = false, note = note, isSetupValues = true) }
-        } else {
+    fun readFromDataBase(id: String?) {
             makeAWish(NOTES_CODES.READ) {
-                readNoteUseCase.invoke(id, callApi = true)
+                readNoteUseCase.invoke(id!!)
             }
-        }
     }
-
-    fun createOrUpdate(id: String?, title: String?, body: String?, note: Note? = null) {
-        if(title.isNullOrEmpty() && body.isNullOrEmpty()) return
-        val createOrUpdateNote = NoteRequest(title = title, description = body, _id = id)
-        if (!id.isNullOrEmpty() && note.isNotnull()) updateNote(createOrUpdateNote, note!!)
-        else createNote(createOrUpdateNote)
+    fun createNewNote(categoryId : String = ""): Note{
+        val currentDateTime = Clock.System.todayIn(TimeZone.UTC).toString()
+        return Note( title = "", createdAt = currentDateTime, updatedAt = currentDateTime,
+            isSynced = false,
+            categoryId = categoryId, content = emptyList())
     }
+     // call make a wish api
+     fun createOrUpdateNote(createNote: Note) {
 
-    private fun createNote(createNote: NoteRequest) {
         makeAWish(NOTES_CODES.INSERT) {
-            createNoteUseCase.invoke(createNote)
-        }
-    }
-
-    private fun updateNote(updateNote: NoteRequest, note: Note) {
-        if (checkAnyUpdateOnNote(new = updateNote, old = note)) {
-           val noteStatus = if (_noteUiState.value.noteStatus == NoteStatus.onBackPress)
-                NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
-            changeNoteStatus(noteStatus)
-            return
-        }
-
-        log_d("Loading", "Calling Update Api ")
-        makeAWish(NOTES_CODES.UPDATE) {
-            updateNoteUseCase.invoke(updateNote)
+            createUpdateNoteUseCase.invoke(createNote)
         }
     }
 
@@ -134,7 +114,7 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
     override suspend fun logoutUserForcefully() {
-        createNoteUseCase.logoutUser()
+        createUpdateNoteUseCase.logoutUser()
     }
 
     override fun clearError() {

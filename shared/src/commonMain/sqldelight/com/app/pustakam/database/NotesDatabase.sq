@@ -2,19 +2,77 @@ CREATE TABLE Notes (
  id TEXT NOT NULL PRIMARY KEY,
  categoryId TEXT,
  title TEXT,
- description TEXT,
  createdAt TEXT,
  updatedAt TEXT
 );
 
+CREATE TABLE NoteContent(
+id TEXT NOT NULL PRIMARY KEY,
+noteId TEXT NOT NULL REFERENCES Notes(id) ON DELETE CASCADE ,
+type TEXT NOT NULL,
+position INTEGER,
+createdAt TEXT,
+updatedAt TEXT,
+localPath TEXT,
+url TEXT,
+text TEXT,
+lat  REAL,
+long REAL,
+address TEXT,
+duration INTEGER
+);
+
 insertOrUpdateNote:
-INSERT OR REPLACE INTO Notes(id,  categoryId, title, description, createdAt,updatedAt)
-VALUES(?,?,?,?,?,?);
+INSERT INTO Notes(id,  categoryId, title, createdAt,updatedAt)
+VALUES(?,?,?,?,?);
+
+insertNoteContentById:
+INSERT INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address,duration )
+VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ? );
+
+updateNotesById:
+UPDATE Notes
+SET title = ?, updatedAt = ?
+WHERE id = ?;
+
+updateNoteContentById:
+UPDATE NoteContent
+SET type = ?, position = ?, text = ?, url = ?, lat = ?, long = ?
+WHERE id = ?;
+
+deleteNoteContentById:
+DELETE FROM NoteContent
+WHERE id = ?;
+
+selectAllNotesContent:
+SELECT * FROM NoteContent
+WHERE noteId = ?
+ORDER BY position ASC;
+
+
+SELECT * FROM NoteContent
+WHERE id = ?;
 
 selectAll:
 SELECT * FROM Notes;
-selectById:
-SELECT * FROM Notes WHERE id =? ;
-deleteById:
-DELETE FROM Notes WHERE  id = ?;
 
+selectById:
+SELECT * FROM Notes WHERE id = ? ;
+
+deleteById :
+DELETE FROM Notes WHERE  id = ? ;
+
+
+selectWithAllContent:
+SELECT
+    Notes.*,
+    NoteContent.*,
+    NoteContent.id AS contentId
+FROM
+    Notes
+LEFT JOIN
+    NoteContent
+ON
+    Notes.id = NoteContent.noteId
+ORDER BY
+    Notes.createdAt DESC, NoteContent.position ASC;

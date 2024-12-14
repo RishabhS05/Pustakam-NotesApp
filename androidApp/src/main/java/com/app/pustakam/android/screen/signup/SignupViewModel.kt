@@ -1,7 +1,7 @@
 package com.app.pustakam.android.screen.signup
 
 import com.app.pustakam.android.screen.AUTH
-import com.app.pustakam.android.screen.BaseViewModel
+import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.PROFILE
 import com.app.pustakam.android.screen.SignupUIState
 import com.app.pustakam.android.screen.TaskCode

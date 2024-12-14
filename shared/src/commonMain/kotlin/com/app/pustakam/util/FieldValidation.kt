@@ -8,6 +8,7 @@ import com.app.pustakam.extensions.isValidEmail
 import com.app.pustakam.extensions.isValidName
 import com.app.pustakam.extensions.isValidPassword
 import com.app.pustakam.extensions.isValidPhone
+import io.ktor.http.HttpHeaders.Date
 
 
 fun isPasswordEqualsToConfirmPassword(password: String?, confirmPassword : String? ) = !confirmPassword.isNullOrEmpty() && !password.isNullOrEmpty() && password == confirmPassword
@@ -27,4 +28,3 @@ fun checkRegisterFieldsValidity(req : RegisterReq) : ValidationError
     else ->  ValidationError.NONE
 }
 
-fun checkAnyUpdateOnNote(new : NoteRequest, old : Note ): Boolean = new.title == old.title && new.description == old.description

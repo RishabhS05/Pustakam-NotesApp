@@ -3,7 +3,7 @@ package com.app.pustakam.data.network
 import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.request.NoteRequest
+
 import com.app.pustakam.data.models.request.RegisterReq
 import com.app.pustakam.data.models.response.DeleteDataModel
 import com.app.pustakam.data.models.response.User
@@ -47,7 +47,8 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
                 }
             }
         }
-    suspend fun getNote(userId : String, noteId :String): Result<BaseResponse<Note>, Error> = baseApiCall <BaseResponse<Note>, NetworkError>  {
+    suspend fun getNote(userId : String, noteId :String): Result<BaseResponse<Note>, Error> =
+        baseApiCall <BaseResponse<Note>, NetworkError>  {
         httpClient.get(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
             headers.apply {
                 val token = userPrefs.getAuthToken() ?: ""
@@ -55,7 +56,8 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
             }
         }
     }
- suspend fun updateNote(userId: String,note: NoteRequest): Result<BaseResponse<Note>, Error> = baseApiCall<BaseResponse<Note>, NetworkError> {
+ suspend fun updateNote(userId: String,note: Note): Result<BaseResponse<Note>, Error> =
+     baseApiCall<BaseResponse<Note>, NetworkError> {
      httpClient.post(urlString = "${ApiRoute.NOTES.getName()}/$userId/${note._id}"){
          contentType(ContentType.Application.Json)
          headers.apply {
@@ -65,7 +67,8 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
          setBody(note)
      }
  }
-    suspend fun deleteNote(userId: String,noteId: String) : Result<BaseResponse<DeleteDataModel>, Error> = baseApiCall<BaseResponse<DeleteDataModel>, NetworkError> {
+    suspend fun deleteNote(userId: String,noteId: String) : Result<BaseResponse<DeleteDataModel>, Error> =
+        baseApiCall<BaseResponse<DeleteDataModel>, NetworkError> {
         httpClient.delete(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
             contentType(ContentType.Application.Json)
             headers.apply {
@@ -74,7 +77,8 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
             }
         }
     }
-    suspend fun addNewNote(userId: String,note : NoteRequest) : Result<BaseResponse<Note>, Error> = baseApiCall<BaseResponse<Note>, NetworkError> {
+    suspend fun addNewNote(userId: String,note : Note) : Result<BaseResponse<Note>, Error> =
+        baseApiCall<BaseResponse<Note>, NetworkError> {
         httpClient.post(urlString = "${ApiRoute.NOTES.getName()}/$userId") {
             contentType(ContentType.Application.Json)
             headers.apply {

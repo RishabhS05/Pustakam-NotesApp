@@ -115,7 +115,8 @@ struct NoteEditorView: View {
             .frame(alignment: .bottomTrailing)
             .padding()
         }.sheet(isPresented: $showRecorder){
-            AudioRecorderView()
+          AudioRecorderView()
+
         }
         
         .alert(isPresented: $errorField.showErrorAlert) {

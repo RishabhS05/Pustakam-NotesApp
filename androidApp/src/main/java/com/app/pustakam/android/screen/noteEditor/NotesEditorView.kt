@@ -43,7 +43,7 @@ import com.app.pustakam.extensions.isNotnull
 
 @Composable
 fun NotesEditorView(
-    id: String? = "",
+    id: String? = null,
     onBack: () -> Unit = {},
 ) {
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
@@ -56,13 +56,12 @@ fun NotesEditor(
     noteEditorViewModel: NoteEditorViewModel = viewModel()
 ) {
     // Note content state
-    val textState = remember { mutableStateOf("") }
     val textTitleState = remember { mutableStateOf("") }
     val isRuledEnabledState = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     BackHandler {
-    /**  block direct exit as my scope is getting distroyed */
+    /**  block direct exit as my scope is getting distroyed  */
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
 
@@ -87,7 +86,8 @@ fun NotesEditor(
         when (event) {
             Lifecycle.Event.ON_RESUME -> {
                 noteEditorViewModel.changeNoteStatus(null)
-                if (!id.isNullOrEmpty()) noteEditorViewModel.readFromDataBase(id) }
+                noteEditorViewModel.readFromDataBase(id)
+            }
             else -> {}
         }
     }
@@ -95,18 +95,12 @@ fun NotesEditor(
         focusRequester.requestFocus()
         if (appState.note.isNotnull() && appState.isSetupValues) {
             textTitleState.value = appState.note!!.title.toString()
-            textState.value = appState.note.description.toString()
             appState.isSetupValues = false
         }
     }
     when(appState.noteStatus){
         NoteStatus.onBackPress ->{
-            noteEditorViewModel.createOrUpdate(
-                id = id,
-                title = textTitleState.value,
-                body = textState.value,
-                note = appState.note
-            )
+            noteEditorViewModel.createOrUpdateNote(createNote = appState.note!! )
         }
         NoteStatus.onSaveCompletedExit -> {onBack()}
         else -> {}
@@ -153,45 +147,14 @@ fun NotesEditor(
                         .focusRequester(focusRequester)
                         .padding(top = 2.dp)
                 )
-            TextField(
-                value = textState.value, onValueChange = {
-                    textState.value = it
-                },
-                placeholder = {
-                    Text(
-                        "Hi, whats in your mind take a quick note, before it get lost.",
-                        modifier = Modifier.padding(start = paddingLeft),
-                        style = TextStyle(
-                            color = Color.Gray, fontSize = 14.sp, lineHeight = 32.sp
-                        )
-                    )
-                }, textStyle = TextStyle(
-                    color = Color.Black, fontSize = 18.sp, lineHeight = 32.sp
-                ), colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    cursorColor = colorScheme.tertiary,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                }),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxSize()
-            )
-
         }
         OverLayEditorButtons(modifier = Modifier
             .align(alignment = Alignment.CenterEnd),
             showDelete = !id.isNullOrEmpty(),
             onArrowButton = {focusManager.clearFocus()},
             onSave = {
-                noteEditorViewModel.createOrUpdate(
-                    id = id,
-                    title = textTitleState.value,
-                    body = textState.value,
-                    note = appState.note
+                noteEditorViewModel.createOrUpdateNote(
+                    createNote = appState.note!!
                 )
             }, onDelete = {
                 noteEditorViewModel.showDeleteAlert(true)

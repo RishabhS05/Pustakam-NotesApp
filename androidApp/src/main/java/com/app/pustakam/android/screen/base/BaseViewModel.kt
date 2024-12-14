@@ -1,15 +1,14 @@
-package com.app.pustakam.android.screen
+package com.app.pustakam.android.screen.base
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.data.models.BaseResponse
 import kotlinx.coroutines.flow.Flow
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 
