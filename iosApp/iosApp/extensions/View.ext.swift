@@ -1,10 +1,4 @@
-//
-//  View.ext.swift
-//  iosApp
-//
-//  Created by Rishabh Shrivastava on 08/11/24.
-//  Copyright © 2024 orgName. All rights reserved.
-//
+
 import SwiftUI
 
 extension View {

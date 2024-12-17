@@ -9,6 +9,7 @@ import com.app.pustakam.util.Result
 import com.app.pustakam.util.log_d
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.statement.HttpResponse
 import io.ktor.util.network.UnresolvedAddressException
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,8 @@ abstract class BaseClient(val userPrefs : IAppPreferences ) {
     ) : Result<T, Error> = flow {
            val response : HttpResponse = try {
                actualApiCall.invoke()
-           } catch (e: UnresolvedAddressException) {
+           }
+           catch (e: UnresolvedAddressException) {
                log_d("Error", "$e")
                emit(Result.Error(NetworkError.NO_INTERNET))
                return@flow
@@ -36,6 +38,11 @@ abstract class BaseClient(val userPrefs : IAppPreferences ) {
                emit( Result.Error(NetworkError.SERIALIZATION))
                return@flow
            }
+        catch (e: ConnectTimeoutException){
+            log_d("Error", "$e")
+            emit( Result.Error(NetworkError.CONNECTION_FAILED))
+            return@flow
+        }
         log_d("auth"," ${response.headers["authorization"]}")
         if(userPrefs.getAuthToken().isNullOrEmpty()) {
            val token = response.headers["authorization"].toString()

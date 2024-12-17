@@ -16,12 +16,17 @@ import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
+import com.app.pustakam.util.UniqueIdGenerator
 import com.app.pustakam.util.log_d
+import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -121,8 +126,9 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
         }
     }
     /** delete a note data from local db */
-    override suspend fun deleteNoteByIdFromDb(id: String): Result<BaseResponse<Boolean>, Error> {
-       val success =  notesDao.deleteByIdFromDb(id)
+    override suspend fun deleteNoteByIdFromDb(id: String?): Result<BaseResponse<Boolean>, Error> {
+        if (id.isNullOrEmpty()) Result.Error(error = NetworkError.NOT_FOUND)
+       val success =  notesDao.deleteByIdFromDb(id!!)
       return  if(success){
             val response = BaseResponse(data = success, isSuccessful = true, isFromDb = true)
             Result.Success(response)
@@ -134,20 +140,22 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     override suspend fun getNotesFromDb( page: Int ): Result<BaseResponse<Notes?>, Error> {
          val notes  = notesDao.selectAllNotesFromDb()
         return if (notes.notes?.isNotEmpty() == true){
-         val response = BaseResponse<Notes?>(data = notes , isSuccessful = true,
+         val response = BaseResponse<Notes?>(data = notes ,
+             isSuccessful = true,
              isFromDb = true)
-          Result.Success(response)
+            Result.Success(response)
         }else {
             Result.Error(error = NetworkError.SERVER_ERROR)
         }
     }
     /** get a note data from local db */
-    override suspend fun getNoteByIdFromDb(id: String): Result<BaseResponse<Note?>, Error> {
+    override suspend fun getNoteByIdFromDb(id: String?): Result<BaseResponse<Note?>, Error> {
+        if(id.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
          val note = notesDao.selectNoteById(id)
         return if(note.isNotnull()) {
             val response = BaseResponse<Note?>(data = note , isSuccessful = true,
                 isFromDb = true)
-           return Result.Success(response)
+            Result.Success(response)
         } else {
             Result.Error(error = NetworkError.NOT_FOUND)
         }
@@ -186,7 +194,10 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
      * - read from local db
      * - call read api from server
      * */
-    suspend fun getANote(id : String ): Result<BaseResponse<Note?>, Error> {
+    suspend fun getANote(id : String?): Result<BaseResponse<Note?>, Error> {
+        if (id.isNullOrEmpty()){
+            return Result.Success(BaseResponse(data = createNewEmptyNote(),
+                isFromDb = false, isSuccessful = false ))}
        return getNoteByIdFromDb(id).onSuccess {
            getNoteApi(id)
        }
@@ -198,6 +209,14 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     suspend fun getAllNotes(page: Int = 0 ): Result<BaseResponse<Notes?>, Error> {
         return getNotesFromDb(page).onSuccess {
             getNotesForUserApi(page)
+        }.onError {
+            getNotesForUserApi(page)
         }
+    }
+
+    private fun createNewEmptyNote(): Note  {
+        val date = UniqueIdGenerator.getCurrentTimestamp().toString()
+        val id = UniqueIdGenerator.generateUniqueId()
+        return Note(_id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
     }
 }

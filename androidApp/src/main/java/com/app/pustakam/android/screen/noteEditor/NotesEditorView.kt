@@ -15,7 +15,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.widgets.LoadingUI
@@ -56,7 +56,6 @@ fun NotesEditor(
     noteEditorViewModel: NoteEditorViewModel = viewModel()
 ) {
     // Note content state
-    val textTitleState = remember { mutableStateOf("") }
     val isRuledEnabledState = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -65,7 +64,7 @@ fun NotesEditor(
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
 
-    val appState = noteEditorViewModel.noteUIState.collectAsState().value.apply {
+    val appState = noteEditorViewModel.noteUIState.collectAsStateWithLifecycle().value.apply {
         when {
             isLoading -> LoadingUI()
             error.isNotnull() -> SnackBarUi(error = error!!) {
@@ -87,20 +86,14 @@ fun NotesEditor(
             Lifecycle.Event.ON_RESUME -> {
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
+                focusRequester.requestFocus()
             }
             else -> {}
         }
     }
-    LaunchedEffect(appState.note, appState.isSetupValues) {
-        focusRequester.requestFocus()
-        if (appState.note.isNotnull() && appState.isSetupValues) {
-            textTitleState.value = appState.note!!.title.toString()
-            appState.isSetupValues = false
-        }
-    }
     when(appState.noteStatus){
         NoteStatus.onBackPress ->{
-            noteEditorViewModel.createOrUpdateNote(createNote = appState.note!! )
+            noteEditorViewModel.createOrUpdateNote()
         }
         NoteStatus.onSaveCompletedExit -> {onBack()}
         else -> {}
@@ -115,7 +108,7 @@ fun NotesEditor(
         if (isRuledEnabledState.value) RuledPage()
         Column {
                 TextField(
-                    value = textTitleState.value,
+                    value = noteEditorViewModel.textTitleState.value,
                     placeholder = {
                         Text(
                             "Title : Keep your thoughts alive.",
@@ -134,7 +127,7 @@ fun NotesEditor(
                         cursorColor = colorScheme.tertiary
                     ),
                     onValueChange = {
-                        textTitleState.value = it
+                        noteEditorViewModel.textTitleState.value = it
                     },
                     textStyle = TextStyle(
                         color = Color.Black, fontSize = 24.sp
@@ -151,11 +144,10 @@ fun NotesEditor(
         OverLayEditorButtons(modifier = Modifier
             .align(alignment = Alignment.CenterEnd),
             showDelete = !id.isNullOrEmpty(),
+            onAddTextField = {} ,
             onArrowButton = {focusManager.clearFocus()},
             onSave = {
-                noteEditorViewModel.createOrUpdateNote(
-                    createNote = appState.note!!
-                )
+                noteEditorViewModel.createOrUpdateNote()
             }, onDelete = {
                 noteEditorViewModel.showDeleteAlert(true)
             }
@@ -170,7 +162,6 @@ fun RuledPage() {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val lineSpacing = 35.dp.toPx()
         val startX = 80.dp.toPx()
-
         var y = lineSpacing + 80
         while (y < size.height) {
             drawLine(

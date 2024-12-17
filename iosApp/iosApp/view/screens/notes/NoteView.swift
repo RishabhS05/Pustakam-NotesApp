@@ -9,7 +9,7 @@ struct NoteView : View {
                 .font(.system(size: 17, weight: .bold))
                 .padding(8)
                 .lineLimit(3)
-            Text(note.description_ ?? "")
+            Text("Updated at : \(note.updatedAt ?? "")")
                 .font(.system(size: 14, weight: .regular))
                 .padding(4)
                 .lineLimit(5)

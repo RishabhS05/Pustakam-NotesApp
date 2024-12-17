@@ -43,7 +43,6 @@ data class NoteUIState(
     override val successMessage: String? = null,
     var isSetupValues:Boolean = false,
     val showDeleteAlert : Boolean= false,
-
     val noteStatus : NoteStatus? = null,
     val note : Note? = null
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)

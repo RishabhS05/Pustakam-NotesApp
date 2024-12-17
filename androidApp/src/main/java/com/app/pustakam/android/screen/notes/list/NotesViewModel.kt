@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.notes.list
 
+import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
@@ -11,13 +12,26 @@ import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 class NotesViewModel : BaseViewModel() {
-    private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false, isNextPage = false))
-    val notesUIState: StateFlow<NotesUIState> = _notesUiState.asStateFlow()
+    private var hasLoaded = false
+    private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
+        isNextPage = true))
+    val notesUIState = _notesUiState.onStart {
+        if(!hasLoaded){
+            callGetNotes()
+            hasLoaded = true
+        }
+    }.stateIn(viewModelScope,
+        SharingStarted.WhileSubscribed(5000L),
+        _notesUiState.value
+    )
     private val getNotesUseCase = GetNotesUseCase()
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         when (taskCode) {
@@ -57,22 +71,7 @@ class NotesViewModel : BaseViewModel() {
     }
 
 
-    fun getNotes() {
-        val notes = getNotesUseCase.invoke()
-        if (!notes?.notes.isNullOrEmpty()) {
-            _notesUiState.update {
-                it.notes.apply {
-                    clear()
-                    addAll(notes?.notes!!)
-                }
-                it.copy(notes = it.notes)
-            }
-        } else {
-            callGetNotesApi()
-        }
-    }
-
-    private fun callGetNotesApi() {
+    fun callGetNotes() {
         if (!_notesUiState.value.isNextPage) return
         makeAWish(NOTES_CODES.GET_NOTES) {
             getNotesUseCase.invoke(page = _notesUiState.value.page)

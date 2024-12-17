@@ -1,6 +1,12 @@
 package com.app.pustakam.util
 
 enum class NetworkError : Error {
+
+    CONNECTION_FAILED {
+        override fun getError(): String {
+            return "Server Connection Falied"
+        }
+    },
     NOT_FOUND {
         override fun getError(): String {
             return "No Record found"
@@ -23,7 +29,7 @@ enum class NetworkError : Error {
     },
     TOO_MANY_REQUESTS {
         override fun getError(): String {
-            return ""
+            return "Too many requests"
         }
     },
     NO_INTERNET {
@@ -43,19 +49,21 @@ enum class NetworkError : Error {
     },
     SERIALIZATION {
         override fun getError(): String {
-            return ""
+            return "Serialization"
         }
     },
     UNKNOWN {
         override fun getError(): String {
             return ""
         }
+
     };
 
     abstract fun getError(): String
 }
 
 enum class ValidationError : Error {
+
     NAME {
         override fun getError(): String = "Enter a your name"
     },
@@ -70,7 +78,7 @@ enum class ValidationError : Error {
     },
     PASSWORD_NOT_MATCHED {
         override fun getError(): String ="Password did not matched"
-    } ,
+    },
     NONE {
         override fun getError(): String ="SuccessFul"
     };

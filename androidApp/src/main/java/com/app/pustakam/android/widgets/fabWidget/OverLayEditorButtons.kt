@@ -32,6 +32,7 @@ fun OverLayEditorButtons(
     modifier: Modifier = Modifier,
     offset: Animatable<Float, AnimationVector1D> = remember { Animatable(initialValue = 0f) },
     showDelete : Boolean = false,
+    onAddTextField : ()-> Unit ={},
     onSave: () -> Unit = {},
     onSaveAs: () -> Unit = {},
     onRecordVideo: () -> Unit = {},
@@ -151,6 +152,19 @@ fun OverLayEditorButtons(
                 ) {
                     Icon(
                         Icons.Default.Share, contentDescription = "Share",
+                        modifier = iconModifier
+                    )
+                }
+                Card(
+                    onClick = {  onArrowButton()
+                      onAddTextField()
+                    },
+                    colors = cardColors,
+                    elevation = CardDefaults.elevatedCardElevation()
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.text_fields),
+                        contentDescription = "Add new text note",
                         modifier = iconModifier
                     )
                 }

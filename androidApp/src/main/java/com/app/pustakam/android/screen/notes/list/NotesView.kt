@@ -9,9 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.screen.notes.single.NoteCardView
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
@@ -21,14 +19,14 @@ import com.app.pustakam.extensions.isNotnull
 fun NotesView(onNavigateNote: (note: Note) -> Unit) {
     val notesViewModel: NotesViewModel = viewModel()
     notesViewModel.notesUIState.collectAsState().value.apply {
-        OnLifecycleEvent { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                    notesViewModel.getNotes()
-                }
-                else -> {}
-            }
-        }
+//        OnLifecycleEvent { _, event ->
+//            when (event) {
+//                Lifecycle.Event.ON_RESUME -> {
+//
+//                }
+//                else -> {}
+//            }
+//        }
         when {
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 notesViewModel.clearError()
@@ -44,7 +42,6 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
                     NoteCardView(note = notes[index]) { onNavigateNote( notes[index]) }
                 }
             }
-
             isLoading -> LoadingUI()
         }
     }

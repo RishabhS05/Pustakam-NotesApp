@@ -10,12 +10,8 @@ object UniqueIdGenerator {
         return "$timestamp-$uuid"
     }
 
-    private fun getCurrentTimestamp(): Long {
+     fun getCurrentTimestamp(): Long {
         return Clock.System.now().toEpochMilliseconds()
-    }
-
-    private fun generateUUID(): String {
-        return generateUUID()  // Fully supported in KMM.
     }
 }
 expect fun generateUUID() : String

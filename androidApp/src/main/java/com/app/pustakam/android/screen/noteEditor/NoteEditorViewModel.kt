@@ -1,5 +1,7 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NoteUIState
@@ -28,13 +30,13 @@ class NoteEditorViewModel : BaseViewModel() {
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
+    val textTitleState =  mutableStateOf("")
     fun changeNoteStatus(status: NoteStatus?){
         _noteUiState.update {
             it.copy( noteStatus = status,
                 isLoading = true)
         }
     }
-
     override fun onLoading(taskCode: TaskCode) {
         _noteUiState.update {
             it.copy(isLoading = true)
@@ -56,6 +58,7 @@ class NoteEditorViewModel : BaseViewModel() {
             }
             NOTES_CODES.READ -> {
                 val note = result.data.data as Note
+                if(!noteUIState.value.isSetupValues) textTitleState.value = note.title ?: ""
                 _noteUiState.update {
                     it.copy(
                         isLoading = false, note = note, isSetupValues = true,
@@ -71,22 +74,24 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
+    fun updateNoteObject(){
+        val note = _noteUiState.value.note?.copy(
+            title = textTitleState.value
+            )
+        _noteUiState.update {
+            it.copy(note = note)
+        }
+    }
     fun readFromDataBase(id: String?) {
             makeAWish(NOTES_CODES.READ) {
-                readNoteUseCase.invoke(id!!)
+                readNoteUseCase.invoke(id)
             }
     }
-    fun createNewNote(categoryId : String = ""): Note{
-        val currentDateTime = Clock.System.todayIn(TimeZone.UTC).toString()
-        return Note( title = "", createdAt = currentDateTime, updatedAt = currentDateTime,
-            isSynced = false,
-            categoryId = categoryId, content = emptyList())
-    }
      // call make a wish api
-     fun createOrUpdateNote(createNote: Note) {
-
+     fun createOrUpdateNote() {
+         updateNoteObject()
         makeAWish(NOTES_CODES.INSERT) {
-            createUpdateNoteUseCase.invoke(createNote)
+            createUpdateNoteUseCase.invoke(_noteUiState.value.note!!)
         }
     }
 

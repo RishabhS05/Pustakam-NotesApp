@@ -38,15 +38,6 @@ fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit 
                     fontWeight = FontWeight.Bold,
                 )
             )
-            Text(
-                note.description ?: "",
-                modifier = Modifier
-                    .padding(8.dp),
-                style = TextStyle(
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            )
         }
     }
 }
@@ -59,25 +50,7 @@ private fun NotesPreview() {
         title = "Hare Rama Hare Rama",
         updatedAt = "",
         createdAt = "",
-        url = null,
-        description = "LazyVerticalStaggeredGrid(\n" +
-                "    columns = StaggeredGridCells.Fixed(3),\n" +
-                "    verticalItemSpacing = 4.dp,\n" +
-                "    horizontalArrangement = Arrangement.spacedBy(4.dp),\n" +
-                "    content = {\n" +
-                "        items(randomSizedPhotos) { photo ->\n" +
-                "            AsyncImage(\n" +
-                "                model = photo,\n" +
-                "                contentScale = ContentScale.Crop,\n" +
-                "                contentDescription = null,\n" +
-                "                modifier = Modifier\n" +
-                "                    .fillMaxWidth()\n" +
-                "                    .wrapContentHeight()\n" +
-                "            )\n" +
-                "        }\n" +
-                "    },\n" +
-                "    modifier = Modifier.fillMaxSize()\n" +
-                ")\n"
+        categoryId = ""
     )
     NoteCardView(note = note)
 }

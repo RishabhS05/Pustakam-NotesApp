@@ -47,6 +47,10 @@ struct OverlayEditorButtons : View {
                           onArrowButton()
                           onShare()
                       })
+                      ActionButton(iconName: "square.and.arrow.up", action: {
+                          onArrowButton()
+                          onShare()
+                      })
                       if showDelete {
                           ActionButton(iconName: "trash.fill", action: {
                               onArrowButton()

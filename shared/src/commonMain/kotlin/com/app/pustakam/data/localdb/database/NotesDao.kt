@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 class NotesDao(private val sharedDb: SqlDriver) {
     private val database = NotesDatabase(sharedDb)
     private val queries = database.notesDatabaseQueries
-  suspend  fun selectAllNotesFromDb(): Notes {
+  suspend fun selectAllNotesFromDb(): Notes {
       val rows  =  queries.selectWithAllContent().executeAsList()
         val notes: List<Note> = rows.groupBy { it.noteId }.map{(noteId, noteRows)->
             val noteMetadata = noteRows.first()
@@ -101,7 +101,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                 }
             }
             Note(
-                _id = noteMetadata.noteId!!,
+                _id = noteId,
                 title = noteMetadata.title ?: "",
                 createdAt = noteMetadata.createdAt,
                 updatedAt = noteMetadata.updatedAt,
@@ -224,7 +224,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
             categoryId = note.categoryId,
         )
            database.transaction {
-               note.content.forEach { content ->
+               note.content?.forEach { content ->
                    CoroutineScope(Dispatchers.IO).launch {
                        insertOrUpdateNotesContent(content)
                    }
