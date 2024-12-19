@@ -3,12 +3,14 @@ package com.app.pustakam.data.models.response.notes
 
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.UniqueIdGenerator
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Note(
-    val _id: String? ,
-    var title: String? ,
+    @SerialName("_id")
+    val id: String?,
+    var title: String?,
     var updatedAt: String?,
     var createdAt: String?,
     var categoryId: String? ="",
@@ -20,7 +22,7 @@ data class Note(
     }
 
     override fun hashCode(): Int {
-       return  31 * ( _id.hashCode()
+       return  31 * ( id.hashCode()
         + updatedAt.hashCode()
         + createdAt.hashCode()
         + title.hashCode()
@@ -35,6 +37,7 @@ sealed class NoteContentModel {
     abstract val updatedAt: String?
     abstract val createdAt: String?
     abstract val type: ContentType
+    @SerialName("_id")
     abstract val id: String
     abstract val noteId : String
     override fun hashCode(): Int {
@@ -57,7 +60,7 @@ sealed class NoteContentModel {
         return true
     }
     @Serializable
-    data class Text(
+    data class TextContent(
         val text: String,
         override val position: Long,
         override val updatedAt: String?,
@@ -67,7 +70,7 @@ sealed class NoteContentModel {
         override val noteId: String = UniqueIdGenerator.generateUniqueId(),
     ) : NoteContentModel()
     @Serializable
-    data class Image(
+    data class ImageContent(
         val url: String,
         override val position: Long, override val updatedAt: String?,
         override val createdAt: String?,
@@ -77,7 +80,7 @@ sealed class NoteContentModel {
         override val noteId: String = UniqueIdGenerator.generateUniqueId(),
     ) : NoteContentModel()
     @Serializable
-    data class Video(
+    data class VideoContent(
         val url: String,
         override val position: Long,
         override val updatedAt: String?,
@@ -89,19 +92,20 @@ sealed class NoteContentModel {
         override val noteId: String =  UniqueIdGenerator.generateUniqueId(),
     ) : NoteContentModel()
     @Serializable
-    data class Audio(
-        val url: String,
+    data class AudioContent(
         override val position: Long,
         override val updatedAt: String?,
         override val createdAt: String?,
-        val duration: Long,
-        override val type: ContentType = ContentType.AUDIO,
-        val localPath: String? = null,
         override val id: String,
+        override val type: ContentType = ContentType.AUDIO,
         override val noteId: String = UniqueIdGenerator.generateUniqueId(),
+        val duration: Long,
+        val localPath: String? = null,
+        val url: String,
+
     ) : NoteContentModel()
     @Serializable
-    data class Doc(
+    data class DocContent(
         val url: String, override val position: Long,
         override val updatedAt: String?,
         override val createdAt: String?,

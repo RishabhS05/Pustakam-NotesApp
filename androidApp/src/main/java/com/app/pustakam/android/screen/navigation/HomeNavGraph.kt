@@ -19,7 +19,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
             route = Route.Notes
         ) {
             NotesView(onNavigateNote = {
-                navController.navigate(Route.NotesEditor+"/${it._id}")
+                navController.navigate(Route.NotesEditor+"/${it.id}")
             })
         }
         composable(

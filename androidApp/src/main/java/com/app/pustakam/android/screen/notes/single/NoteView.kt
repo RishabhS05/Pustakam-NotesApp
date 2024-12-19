@@ -46,7 +46,7 @@ fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit 
 @Composable
 private fun NotesPreview() {
     val note: Note = Note(
-        _id = "1",
+        id = "1",
         title = "Hare Rama Hare Rama",
         updatedAt = "",
         createdAt = "",

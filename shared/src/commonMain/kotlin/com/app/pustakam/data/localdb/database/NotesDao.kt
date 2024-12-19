@@ -13,110 +13,107 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 
-
-
-
 class NotesDao(private val sharedDb: SqlDriver) {
     private val database = NotesDatabase(sharedDb)
     private val queries = database.notesDatabaseQueries
   suspend fun selectAllNotesFromDb(): Notes {
-      val rows  =  queries.selectWithAllContent().executeAsList()
-        val notes: List<Note> = rows.groupBy { it.noteId }.map{(noteId, noteRows)->
-            val noteMetadata = noteRows.first()
-            val contents = noteRows.filter { it.contentId != null }.map { content ->
-                when (content.type) {
-                    ContentType.TEXT.name ->
-                        NoteContentModel.Text(
-                            id = content.contentId!!,
-                            noteId = content.noteId!!,
-                            text = content.text!!,
-                            position = content.position!!,
-                            createdAt = content.createdAt,
-                            updatedAt = content.updatedAt
-                        )
+      val notesWithContent = arrayListOf<Note>()
+      val results  =  queries.selectWithAllContent().executeAsList()
+      val grouped = results.groupBy { it.noteId }
+      grouped.forEach { (_, rows) ->
+          val note = rows.first()
+          notesWithContent.add(
+              Note(
+                  id = note.noteId,
+                  categoryId = note.categoryId,
+                  title = note.title,
+                  createdAt = note.noteCreatedAt,
+                  updatedAt = note.noteUpdatedAt,
+                  content = rows.mapNotNull { row ->
+                      if (row.contentId != null) {
+                          when (row.type) {
+                              ContentType.TEXT.name ->
+                                  NoteContentModel.TextContent(
+                                      id = row.contentId,
+                                      noteId = row.noteId,
+                                      text =  row.text!!,
+                                      position = row.position!!,
+                                      createdAt = row.contentCreatedAt,
+                                      updatedAt = row.contentUpdatedAt,
+                                  )
 
-                    ContentType.IMAGE.name -> NoteContentModel.Image(
-                        id = content.contentId!!,
-                        noteId = content.noteId!!,
-                        url = content.url!!,
-                        position = content.position!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt,
-                        localPath = content.localPath
-                    )
+                              ContentType.IMAGE.name -> NoteContentModel.ImageContent(
+                                  id = row.contentId,
+                                  noteId = row.noteId,
+                                  url = row.url!!,
+                                  position = row.position!!,
+                                  createdAt = row.contentCreatedAt,
+                                  updatedAt = row.contentUpdatedAt,
+                                  localPath = row.localPath
+                              )
 
-                    ContentType.VIDEO.name -> NoteContentModel.Video(
-                        id = content.contentId!!,
-                        noteId = content.noteId!!,
-                        url = content.url!!,
-                        localPath = content.localPath,
-                        position = content.position!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt,
-                        duration = content.duration!!,
-                    )
+                              ContentType.VIDEO.name -> NoteContentModel.VideoContent(
+                                  id = row.contentId,
+                                  noteId = row.noteId,
+                                  url = row.url!!,
+                                  localPath = row.localPath,
+                                  position = row.position!!,
+                                  createdAt = row.contentCreatedAt,
+                                  updatedAt = row.contentUpdatedAt,
+                                  duration = row.duration!!,
+                              )
 
-                    ContentType.AUDIO.name -> NoteContentModel.Audio(
-                        id =content.contentId!!,
-                        noteId = content.noteId!!,
-                        url = content.url!!,
-                        localPath = content.localPath,
-                        position = content.position!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt,
-                        duration = content.duration!!
-                    )
+                              ContentType.AUDIO.name -> NoteContentModel.AudioContent(
+                                  id  = row.contentId,
+                                  noteId = row.noteId,
+                                  url = row.url!!,
+                                  localPath = row.localPath,
+                                  position = row.position!!,
+                                  createdAt = row.contentCreatedAt,
+                                  updatedAt = row.contentUpdatedAt,
+                                  duration = row.duration!!
+                              )
 
-                    ContentType.DOCX.name -> NoteContentModel.Doc(
-                        id = content.contentId!!,
-                        noteId = content.noteId!!,
-                        url = content.url!!,
-                        localPath = content.localPath,
-                        position = content.position!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt,
-                    )
+                              ContentType.DOCX.name -> NoteContentModel.DocContent(
+                                  id = row.contentId,
+                                  noteId = row.noteId,
+                                  url = row.url!!,
+                                  localPath = row.localPath,
+                                  position = row.position!!,
+                                  createdAt = row.contentCreatedAt,
+                                  updatedAt = row.contentUpdatedAt,
+                              )
 
-                    ContentType.LINK.name -> NoteContentModel.Link(
-                        url = content.url!!,
-                        id = content.contentId!!,
-                        noteId = content.noteId!!,
-                        position = content.position!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt,
-                    )
+                              ContentType.LINK.name -> NoteContentModel.Link(
+                                  url = row.url!!,
+                                  id = row.contentId,
+                                  noteId = row.noteId,
+                                  position = row.position!!,
+                                  createdAt = row.contentCreatedAt,
+                                  updatedAt = row.contentUpdatedAt,
+                              )
 
-                    ContentType.LOCATION.name -> NoteContentModel.Location(
-                        latitude = content.lat!!,
-                        longitude = content.long!!,
-                        address = content.address,
-                        position = content.position!!,
-                        id = content.contentId!!,
-                        noteId = content.noteId!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt,
-                    )
+                              ContentType.LOCATION.name -> NoteContentModel.Location(
+                                  latitude = row.lat!!,
+                                  longitude = row.long!!,
+                                  address = row.address,
+                                  position = row.position!!,
+                                  id = row.contentId,
+                                  noteId = row.noteId,
+                                  createdAt = row.contentCreatedAt,
+                                  updatedAt = row.contentUpdatedAt,
+                              )
+                              else -> null
+                          }
+                      } else null
+                  }
+              )
+          )
+      }
 
-                    else -> throw IllegalArgumentException("Unknown content type: ${content.type}")
-                }
-            }
-            Note(
-                _id = noteId,
-                title = noteMetadata.title ?: "",
-                createdAt = noteMetadata.createdAt,
-                updatedAt = noteMetadata.updatedAt,
-                categoryId = noteMetadata.categoryId,
-                content = contents
-            )
-
-        }
-        val arrayListNotes: ArrayList<Note> = if (notes.isNotEmpty()) notes as ArrayList<Note> else ArrayList()
-        arrayListNotes.forEach {
-            log_d("Notes ", it)
-        }
         return Notes(
-            notes = arrayListNotes,
-            count = notes.size, page = 0
+            notes = notesWithContent,
+            count = notesWithContent.size, page = 0
         )
     }
 
@@ -142,10 +139,10 @@ class NotesDao(private val sharedDb: SqlDriver) {
         when (noteContent.type) {
 
             ContentType.TEXT -> {
-             text = (noteContent as? NoteContentModel.Text)?.text ?: ""
+             text = (noteContent as? NoteContentModel.TextContent)?.text ?: ""
             }
             ContentType.AUDIO -> {
-               val content =  (noteContent as? NoteContentModel.Audio)
+               val content =  (noteContent as? NoteContentModel.AudioContent)
                 if (content != null) {
                     url = content.url
                     localPath = content.localPath
@@ -153,7 +150,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                 }
             }
             ContentType.VIDEO -> {
-               val content =  (noteContent as? NoteContentModel.Video)
+               val content =  (noteContent as? NoteContentModel.VideoContent)
                 if (content != null) {
                     url = content.url
                     localPath = content.localPath
@@ -169,7 +166,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                }
            }
            ContentType.IMAGE -> {
-             val content  =  (noteContent as? NoteContentModel.Image)
+             val content  =  (noteContent as? NoteContentModel.ImageContent)
                if (content != null) {
                    url = content.url
                    localPath = content.localPath
@@ -182,7 +179,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                }
            }
             ContentType.DOCX -> {
-             val content =   (noteContent as? NoteContentModel.Doc)
+             val content =   (noteContent as? NoteContentModel.DocContent)
                 if (content != null) {
                     url = content.url
                     localPath = content.localPath
@@ -217,7 +214,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
    suspend fun insertOrUpdateNoteFromDb(note: Note) : Note {
         log_d("insert", note)
         queries.insertOrUpdateNote(
-            id = note._id!!,
+            id = note.id!!,
             title = note.title,
             updatedAt = note.updatedAt,
             createdAt = note.createdAt,
@@ -235,9 +232,95 @@ class NotesDao(private val sharedDb: SqlDriver) {
        return note
     }
     suspend fun selectNoteById(id: String): Note? {
-        val noteRow = queries.selectById(id).executeAsOneOrNull() ?: return null
-        val contents = queries.selectAllNotesContent(id).executeAsList()
-        return noteMapper(noteRow, contents)
+        val rows = queries.selectById(id).executeAsList()
+        val noteWithContent = rows.firstOrNull()?.let { note ->
+            Note(
+                id = note.noteId,
+                categoryId = note.categoryId,
+                title = note.title,
+                createdAt = note.noteCreatedAt,
+                updatedAt = note.noteUpdatedAt,
+                content = rows.mapNotNull { row ->
+                    if (row.contentId != null) {
+                        when (row.type) {
+                            ContentType.TEXT.name ->
+                                NoteContentModel.TextContent(
+                                    id = row.contentId,
+                                    noteId = row.noteId,
+                                    text =  row.text!!,
+                                    position = row.position!!,
+                                    createdAt = row.contentCreatedAt,
+                                    updatedAt = row.contentUpdatedAt,
+                                )
+
+                            ContentType.IMAGE.name -> NoteContentModel.ImageContent(
+                                id = row.contentId,
+                                noteId = row.noteId,
+                                url = row.url!!,
+                                position = row.position!!,
+                                createdAt = row.contentCreatedAt,
+                                updatedAt = row.contentUpdatedAt,
+                                localPath = row.localPath
+                            )
+
+                            ContentType.VIDEO.name -> NoteContentModel.VideoContent(
+                                id = row.contentId,
+                                noteId = row.noteId,
+                                url = row.url!!,
+                                localPath = row.localPath,
+                                position = row.position!!,
+                                createdAt = row.contentCreatedAt,
+                                updatedAt = row.contentUpdatedAt,
+                                duration = row.duration!!,
+                            )
+
+                            ContentType.AUDIO.name -> NoteContentModel.AudioContent(
+                                id  = row.contentId,
+                                noteId = row.noteId,
+                                url = row.url!!,
+                                localPath = row.localPath,
+                                position = row.position!!,
+                                createdAt = row.contentCreatedAt,
+                                updatedAt = row.contentUpdatedAt,
+                                duration = row.duration!!
+                            )
+
+                            ContentType.DOCX.name -> NoteContentModel.DocContent(
+                                id = row.contentId,
+                                noteId = row.noteId,
+                                url = row.url!!,
+                                localPath = row.localPath,
+                                position = row.position!!,
+                                createdAt = row.contentCreatedAt,
+                                updatedAt = row.contentUpdatedAt,
+                            )
+
+                            ContentType.LINK.name -> NoteContentModel.Link(
+                                url = row.url!!,
+                                id = row.contentId,
+                                noteId = row.noteId,
+                                position = row.position!!,
+                                createdAt = row.contentCreatedAt,
+                                updatedAt = row.contentUpdatedAt,
+                            )
+
+                            ContentType.LOCATION.name -> NoteContentModel.Location(
+                                latitude = row.lat!!,
+                                longitude = row.long!!,
+                                address = row.address,
+                                position = row.position!!,
+                                id = row.contentId,
+                                noteId = row.noteId,
+                                createdAt = row.contentCreatedAt,
+                                updatedAt = row.contentUpdatedAt,
+                            )
+                            else -> null
+                        }
+                    } else null
+                }
+            )
+        }
+        return noteWithContent
     }
     private fun noteMapper(
         note: com.app.pustakam.database.Notes,
@@ -246,7 +329,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
         val contents = contentRows?.map { content ->
             when (content.type) {
                 ContentType.TEXT.name ->
-                    NoteContentModel.Text(
+                    NoteContentModel.TextContent(
                         id = content.id,
                         noteId = content.noteId,
                         text = content.text!!,
@@ -255,7 +338,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                         updatedAt = content.updatedAt
                     )
 
-                ContentType.IMAGE.name -> NoteContentModel.Image(
+                ContentType.IMAGE.name -> NoteContentModel.ImageContent(
                     id = content.id,
                     noteId = content.noteId,
                     url = content.url!!,
@@ -265,7 +348,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                     localPath = content.localPath
                 )
 
-                ContentType.VIDEO.name -> NoteContentModel.Video(
+                ContentType.VIDEO.name -> NoteContentModel.VideoContent(
                     id = content.id,
                     noteId = content.noteId,
                     url = content.url!!,
@@ -276,7 +359,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                     duration = content.duration!!,
                 )
 
-                ContentType.AUDIO.name -> NoteContentModel.Audio(
+                ContentType.AUDIO.name -> NoteContentModel.AudioContent(
                     id = content.id,
                     noteId = content.noteId,
                     url = content.url!!,
@@ -287,7 +370,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                     duration = content.duration!!
                 )
 
-                ContentType.DOCX.name -> NoteContentModel.Doc(
+                ContentType.DOCX.name -> NoteContentModel.DocContent(
                     id = content.id,
                     noteId = content.noteId,
                     url = content.url!!,
@@ -321,7 +404,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
         }
 
         return Note(
-            _id = note.id,
+            id = note.id,
             title = note.title,
             createdAt = note.createdAt,
             updatedAt = note.updatedAt,

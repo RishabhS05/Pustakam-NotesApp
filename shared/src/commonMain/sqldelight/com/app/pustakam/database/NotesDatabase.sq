@@ -57,7 +57,28 @@ selectAll:
 SELECT * FROM Notes;
 
 selectById:
-SELECT * FROM Notes WHERE id = ? ;
+SELECT
+    Notes.id AS noteId,
+    Notes.categoryId,
+    Notes.title,
+    Notes.createdAt AS noteCreatedAt,
+    Notes.updatedAt AS noteUpdatedAt,
+    NoteContent.id AS contentId,
+    NoteContent.type,
+    NoteContent.position,
+    NoteContent.createdAt AS contentCreatedAt,
+    NoteContent.updatedAt AS contentUpdatedAt,
+    NoteContent.localPath,
+    NoteContent.url,
+    NoteContent.text,
+    NoteContent.lat,
+    NoteContent.long,
+    NoteContent.address,
+    NoteContent.duration
+FROM Notes
+LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
+WHERE Notes.id = ?
+ORDER BY NoteContent.position;
 
 deleteById :
 DELETE FROM Notes WHERE  id = ? ;
@@ -65,14 +86,23 @@ DELETE FROM Notes WHERE  id = ? ;
 
 selectWithAllContent:
 SELECT
-    Notes.*,
-    NoteContent.*,
-    NoteContent.id AS contentId
-FROM
-    Notes
-LEFT JOIN
-    NoteContent
-ON
-    Notes.id = NoteContent.noteId
-ORDER BY
-    Notes.createdAt DESC, NoteContent.position ASC;
+    Notes.id AS noteId,
+    Notes.categoryId,
+    Notes.title,
+    Notes.createdAt AS noteCreatedAt,
+    Notes.updatedAt AS noteUpdatedAt,
+    NoteContent.id AS contentId,
+    NoteContent.type,
+    NoteContent.position,
+    NoteContent.createdAt AS contentCreatedAt,
+    NoteContent.updatedAt AS contentUpdatedAt,
+    NoteContent.localPath,
+    NoteContent.url,
+    NoteContent.text,
+    NoteContent.lat,
+    NoteContent.long,
+    NoteContent.address,
+    NoteContent.duration
+FROM Notes
+LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
+ORDER BY Notes.id, NoteContent.position;

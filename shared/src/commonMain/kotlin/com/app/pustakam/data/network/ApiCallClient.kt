@@ -58,7 +58,7 @@ class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
     }
  suspend fun updateNote(userId: String,note: Note): Result<BaseResponse<Note>, Error> =
      baseApiCall<BaseResponse<Note>, NetworkError> {
-     httpClient.post(urlString = "${ApiRoute.NOTES.getName()}/$userId/${note._id}"){
+     httpClient.post(urlString = "${ApiRoute.NOTES.getName()}/$userId/${note.id}"){
          contentType(ContentType.Application.Json)
          headers.apply {
              val token = userPrefs.getAuthToken()?:""

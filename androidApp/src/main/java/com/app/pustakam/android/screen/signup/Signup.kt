@@ -11,7 +11,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,10 +28,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
-import com.app.pustakam.android.widgets.IconLoad
+import com.app.pustakam.android.widgets.CircleIconLoad
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.POutLinedTextFieldColors
 import com.app.pustakam.android.widgets.PrimaryFilledButton
@@ -53,7 +53,7 @@ fun SignUpView(onNavigate: () -> Unit) {
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
-    registerViewModel.signupUIState.collectAsState().value.apply {
+    registerViewModel.signupUIState.collectAsStateWithLifecycle().value.apply {
         when {
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 registerViewModel.clearError()
@@ -68,7 +68,7 @@ fun SignUpView(onNavigate: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        IconLoad(
+        CircleIconLoad(
             placeHolderDrawable = R.drawable.avatar, url = "https://picsum.photos/seed/picsum/200/300", modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
         ) {}
 

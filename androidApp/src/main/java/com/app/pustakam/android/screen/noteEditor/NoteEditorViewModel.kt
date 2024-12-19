@@ -30,7 +30,6 @@ class NoteEditorViewModel : BaseViewModel() {
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
-    val textTitleState =  mutableStateOf("")
     fun changeNoteStatus(status: NoteStatus?){
         _noteUiState.update {
             it.copy( noteStatus = status,
@@ -48,7 +47,7 @@ class NoteEditorViewModel : BaseViewModel() {
                 log_d("Loading", "Getting Update data")
                 val note = result.data.data as Note
                 _noteUiState.update {
-                    val noteStatus = if (it.noteStatus === NoteStatus.onBackPress)
+                    val noteStatus = if (it.noteStatus == NoteStatus.onBackPress)
                         NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
                     it.copy(
                         isLoading = false, note = note,
@@ -58,9 +57,11 @@ class NoteEditorViewModel : BaseViewModel() {
             }
             NOTES_CODES.READ -> {
                 val note = result.data.data as Note
-                if(!noteUIState.value.isSetupValues) textTitleState.value = note.title ?: ""
+                if(!noteUIState.value.isSetupValues)
                 _noteUiState.update {
+                    it.titleTextState.value = note.title ?: ""
                     it.copy(
+                        titleTextState = it.titleTextState ,
                         isLoading = false, note = note, isSetupValues = true,
                     )
                 }
@@ -76,7 +77,7 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun updateNoteObject(){
         val note = _noteUiState.value.note?.copy(
-            title = textTitleState.value
+            title = _noteUiState.value.titleTextState.value
             )
         _noteUiState.update {
             it.copy(note = note)

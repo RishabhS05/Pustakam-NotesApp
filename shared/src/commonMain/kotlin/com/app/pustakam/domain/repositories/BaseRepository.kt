@@ -24,9 +24,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -139,14 +136,11 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     /** get notes data from local db */
     override suspend fun getNotesFromDb( page: Int ): Result<BaseResponse<Notes?>, Error> {
          val notes  = notesDao.selectAllNotesFromDb()
-        return if (notes.notes?.isNotEmpty() == true){
-         val response = BaseResponse<Notes?>(data = notes ,
-             isSuccessful = true,
-             isFromDb = true)
-            Result.Success(response)
-        }else {
-            Result.Error(error = NetworkError.SERVER_ERROR)
-        }
+        val response = BaseResponse<Notes?>(data = notes ,
+            isSuccessful = true,
+            isFromDb = true)
+        return  Result.Success(response)
+
     }
     /** get a note data from local db */
     override suspend fun getNoteByIdFromDb(id: String?): Result<BaseResponse<Note?>, Error> {
@@ -174,7 +168,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     // step 4 again update the local db with sync data.
     */
     suspend fun insertOrUpdateNote(note : Note ) : Result<BaseResponse<Note?>, Error>{
-        val existingNote =  notesDao.selectNoteById(note._id!!)
+        val existingNote =  notesDao.selectNoteById(note.id!!)
           return insertUpdateFromDb(note).onSuccess {
               if(existingNote != null ) {
                   updateNoteApi(note)
@@ -217,6 +211,6 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     private fun createNewEmptyNote(): Note  {
         val date = UniqueIdGenerator.getCurrentTimestamp().toString()
         val id = UniqueIdGenerator.generateUniqueId()
-        return Note(_id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
+        return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
     }
 }

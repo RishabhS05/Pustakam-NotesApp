@@ -1,5 +1,7 @@
 package com.app.pustakam.android.screen
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import com.app.pustakam.android.screen.noteEditor.NoteStatus
 import com.app.pustakam.data.models.response.notes.Note
 
@@ -38,12 +40,14 @@ data class NotesUIState(
     val notes: ArrayList<Note> = arrayListOf()
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 data class NoteUIState(
-    override val isLoading: Boolean,
+    override val isLoading: Boolean =false,
     override val error: String? =null,
     override val successMessage: String? = null,
     var isSetupValues:Boolean = false,
     val showDeleteAlert : Boolean= false,
-    val noteStatus : NoteStatus? = null,
-    val note : Note? = null
+    val showDeleteButton : Boolean = false,
+    val noteStatus : NoteStatus? = NoteStatus.OnEditingMode,
+    val note : Note? = null,
+    val titleTextState :MutableState<String>  = mutableStateOf(""),
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
