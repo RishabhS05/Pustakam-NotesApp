@@ -17,25 +17,17 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.pustakam.android.theme.typography
+import darkTheme
+import lightTheme
+import shapes
 
 @Composable
 fun MyApplicationTheme(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val lightTheme = lightColorScheme(
-        primary = Color(0xFFFFFFFF),
-        secondary = Color(0xFF9D8563),
-        tertiary = Color(0xFFF5BF4F),
-        outline = Color(0xFF9D8563),
-        background = Color(0xFFFFFFFF)
-    )
-    var darkTheme = darkColorScheme(
-        primary = Color(0xFFFFFFFF),
-        secondary = Color(0xFF9D8563),
-        tertiary = Color(0xFFF5BF4F),
-        outline = Color(0xFF9D8563),
-    )
+
     val colorScheme = when {
         //dynamic ui
 //        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ->{
@@ -46,19 +38,8 @@ fun MyApplicationTheme(
         else -> lightTheme
     }
     val extendedColorScheme = if (isDarkTheme) extendedDark else extendedLight
-    val typography = Typography(
-        titleLarge = TextStyle(fontSize = 20.sp),
-        bodyMedium = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 16.sp,
-        )
-    )
-    val shapes = Shapes(
-        small = RoundedCornerShape(4.dp),
-        medium = RoundedCornerShape(4.dp),
-        large = RoundedCornerShape(0.dp)
-    )
+
+
 
     CompositionLocalProvider(
         LocalExColorScheme provides extendedColorScheme

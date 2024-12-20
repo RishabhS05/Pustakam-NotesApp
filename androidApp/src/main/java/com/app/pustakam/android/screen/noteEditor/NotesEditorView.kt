@@ -7,10 +7,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -43,6 +45,7 @@ import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.database.NoteContent
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
 
@@ -104,6 +107,7 @@ fun NotesEditor(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
+    val contents = arrayListOf(NoteContentModel)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -142,16 +146,22 @@ fun NotesEditor(
                         focusManager.moveFocus(FocusDirection.Down)
                     }),
                     modifier = Modifier
+                        .fillMaxWidth()
                         .focusRequester(focusRequester)
                         .padding(top = 2.dp)
                 )
+            HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
         }
         OverLayEditorButtons(modifier = Modifier
             .align(alignment = Alignment.CenterEnd),
             showDelete = state.showDeleteButton,
             onAddTextField = {} ,
             onArrowButton = {focusManager.clearFocus()},
-            onSave = onSave, onDelete = onDelete
+            onSave = onSave, onDelete = onDelete,
+            onRecordVideo = {},
+            onRecordMic = {},
+            onSaveAs = {},
+            onAddImage = {},
         )
     }
 }
@@ -162,6 +172,7 @@ fun SpawnWidget(
 when (content.type){
     ContentType.TEXT -> {
         val content = content as NoteContentModel.TextContent
+
         TextField(value = content.text, onValueChange = {
 
         })

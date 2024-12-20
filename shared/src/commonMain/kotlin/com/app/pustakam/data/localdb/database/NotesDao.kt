@@ -4,7 +4,6 @@ import app.cash.sqldelight.db.SqlDriver
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.database.NoteContent
 import com.app.pustakam.database.NotesDatabase
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.log_d
@@ -16,7 +15,9 @@ import kotlinx.coroutines.launch
 class NotesDao(private val sharedDb: SqlDriver) {
     private val database = NotesDatabase(sharedDb)
     private val queries = database.notesDatabaseQueries
-  suspend fun selectAllNotesFromDb(): Notes {
+  suspend fun selectAllNotesFromDb(limit : Int = 10, page : Int = 0): Notes {
+//      val offset = (page - 1) * limit
+//      limit.toLong(), offset.toLong()
       val notesWithContent = arrayListOf<Note>()
       val results  =  queries.selectWithAllContent().executeAsList()
       val grouped = results.groupBy { it.noteId }
@@ -202,13 +203,12 @@ class NotesDao(private val sharedDb: SqlDriver) {
             lat = lat,
             address = address,
         )
-
     }
 
     suspend fun deleteByIdFromDb(id: String) : Boolean {
         queries.deleteById(id)
         val note  = selectNoteById(id)
-        return note==null
+        return note== null
     }
 
    suspend fun insertOrUpdateNoteFromDb(note: Note) : Note {
@@ -321,96 +321,6 @@ class NotesDao(private val sharedDb: SqlDriver) {
             )
         }
         return noteWithContent
-    }
-    private fun noteMapper(
-        note: com.app.pustakam.database.Notes,
-        contentRows: List<NoteContent>?
-    ): Note {
-        val contents = contentRows?.map { content ->
-            when (content.type) {
-                ContentType.TEXT.name ->
-                    NoteContentModel.TextContent(
-                        id = content.id,
-                        noteId = content.noteId,
-                        text = content.text!!,
-                        position = content.position!!,
-                        createdAt = content.createdAt,
-                        updatedAt = content.updatedAt
-                    )
-
-                ContentType.IMAGE.name -> NoteContentModel.ImageContent(
-                    id = content.id,
-                    noteId = content.noteId,
-                    url = content.url!!,
-                    position = content.position!!,
-                    createdAt = content.createdAt,
-                    updatedAt = content.updatedAt,
-                    localPath = content.localPath
-                )
-
-                ContentType.VIDEO.name -> NoteContentModel.VideoContent(
-                    id = content.id,
-                    noteId = content.noteId,
-                    url = content.url!!,
-                    localPath = content.localPath,
-                    position = content.position!!,
-                    createdAt = content.createdAt,
-                    updatedAt = content.updatedAt,
-                    duration = content.duration!!,
-                )
-
-                ContentType.AUDIO.name -> NoteContentModel.AudioContent(
-                    id = content.id,
-                    noteId = content.noteId,
-                    url = content.url!!,
-                    localPath = content.localPath,
-                    position = content.position!!,
-                    createdAt = content.createdAt,
-                    updatedAt = content.updatedAt,
-                    duration = content.duration!!
-                )
-
-                ContentType.DOCX.name -> NoteContentModel.DocContent(
-                    id = content.id,
-                    noteId = content.noteId,
-                    url = content.url!!,
-                    localPath = content.localPath,
-                    position = content.position!!,
-                    createdAt = content.createdAt,
-                    updatedAt = content.updatedAt,
-                )
-
-                ContentType.LINK.name -> NoteContentModel.Link(
-                    url = content.url!!,
-                    id = content.id,
-                    noteId = content.noteId,
-                    position = content.position!!,
-                    createdAt = content.createdAt,
-                    updatedAt = content.updatedAt,
-                )
-
-                ContentType.LOCATION.name -> NoteContentModel.Location(
-                    latitude = content.lat!!,
-                    longitude = content.long!!,
-                    address = content.address,
-                    position = content.position!!,
-                    id = content.id,
-                    noteId = content.noteId,
-                    createdAt = content.createdAt,
-                    updatedAt = content.updatedAt,
-                )
-                else -> throw IllegalArgumentException("Unknown content type: ${content.type}")
-            }
-        }
-
-        return Note(
-            id = note.id,
-            title = note.title,
-            createdAt = note.createdAt,
-            updatedAt = note.updatedAt,
-            categoryId = note.categoryId,
-            content = contents ?: emptyList()
-        )
     }
 }
 

@@ -135,7 +135,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
 
     /** get notes data from local db */
     override suspend fun getNotesFromDb( page: Int ): Result<BaseResponse<Notes?>, Error> {
-         val notes  = notesDao.selectAllNotesFromDb()
+         val notes  = notesDao.selectAllNotesFromDb(page)
         val response = BaseResponse<Notes?>(data = notes ,
             isSuccessful = true,
             isFromDb = true)
@@ -200,7 +200,8 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
      * - read from local db
      * - call read api from server
      * */
-    suspend fun getAllNotes(page: Int = 0 ): Result<BaseResponse<Notes?>, Error> {
+    suspend fun getAllNotes(page: Int = 0): Result<BaseResponse<Notes?>, Error> {
+
         return getNotesFromDb(page).onSuccess {
             getNotesForUserApi(page)
         }.onError {
