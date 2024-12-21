@@ -39,13 +39,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.OnLifecycleEvent
+import com.app.pustakam.android.screen.PermissionRequiredScreen
+import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.database.NoteContent
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
 
@@ -78,7 +79,7 @@ fun NotesEditorView(
             }}
     OnLifecycleEvent { _ , event ->
         when (event) {
-            Lifecycle.Event.ON_RESUME -> {
+            Lifecycle.Event.ON_CREATE -> {
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
@@ -93,7 +94,10 @@ fun NotesEditorView(
 
     NotesEditor(state = state,
         onSave =  noteEditorViewModel::createOrUpdateNote,
-        onDelete = {noteEditorViewModel.showDeleteAlert(true)}
+        onDelete = {noteEditorViewModel.showDeleteAlert(true)},
+        onPermissionCheck = { permissions ->
+            noteEditorViewModel.preparePermissionDialog(permissions)
+        }
     )
 }
 @Composable
@@ -101,6 +105,7 @@ fun NotesEditor(
     state : NoteUIState,
     onDelete: () -> Unit = {},
     onSave : () -> Unit = {},
+    onPermissionCheck : (permissions : List<String> )-> Unit = {}
 ) {
     // Note content state
     val isRuledEnabledState = remember { mutableStateOf(false) }
@@ -111,21 +116,17 @@ fun NotesEditor(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
             .padding(4.dp)
     ) {
         if (isRuledEnabledState.value) RuledPage()
         Column {
                 TextField(
                     value = state.titleTextState.value,
+                    textStyle = typography.titleLarge,
                     placeholder = {
                         Text(
                             "Title : Keep your thoughts alive.",
                             modifier = Modifier.padding(start = paddingLeft),
-                            style = TextStyle(
-                                color = Color.Gray,
-                                fontSize = 18.sp,
-                            )
                         )
                     },
                     colors = TextFieldDefaults.colors(
@@ -138,9 +139,6 @@ fun NotesEditor(
                     onValueChange = {
                         state.titleTextState.value = it
                     },
-                    textStyle = TextStyle(
-                        color = Color.Black, fontSize = 24.sp
-                    ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = {
                         focusManager.moveFocus(FocusDirection.Down)
@@ -152,16 +150,36 @@ fun NotesEditor(
                 )
             HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
         }
+        if(state.showPermissionAlert) {
+            PermissionRequiredScreen(permissions = state.permissions) {}
+        }
         OverLayEditorButtons(modifier = Modifier
             .align(alignment = Alignment.CenterEnd),
             showDelete = state.showDeleteButton,
             onAddTextField = {} ,
             onArrowButton = {focusManager.clearFocus()},
             onSave = onSave, onDelete = onDelete,
-            onRecordVideo = {},
-            onRecordMic = {},
+            onRecordVideo = {
+                val permissions = listOf(android.Manifest.permission.CAMERA,
+                    android.Manifest.permission.RECORD_AUDIO,
+                    if (android.os.Build.VERSION.SDK_INT >=
+                        android.os.Build.VERSION_CODES.TIRAMISU) {
+                        android.Manifest.permission.READ_MEDIA_VIDEO
+                    } else {
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE
+                    }
+                    )
+                onPermissionCheck(permissions)
+            },
+            onRecordMic = {
+                val permissions = listOf(android.Manifest.permission.RECORD_AUDIO)
+                onPermissionCheck(permissions)
+            },
             onSaveAs = {},
-            onAddImage = {},
+            onAddImage = {
+                val permissions = listOf(android.Manifest.permission.CAMERA)
+                onPermissionCheck(permissions)
+            },
         )
     }
 }
@@ -172,9 +190,7 @@ fun SpawnWidget(
 when (content.type){
     ContentType.TEXT -> {
         val content = content as NoteContentModel.TextContent
-
         TextField(value = content.text, onValueChange = {
-
         })
     }
     ContentType.IMAGE -> {

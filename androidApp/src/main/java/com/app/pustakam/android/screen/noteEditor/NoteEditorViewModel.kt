@@ -134,4 +134,10 @@ class NoteEditorViewModel : BaseViewModel() {
     fun showDeleteAlert(value: Boolean) {
 _noteUiState.update { it.copy(showDeleteAlert = value) }
     }
+
+    fun preparePermissionDialog(permissions: List<String>) {
+        _noteUiState.update {
+            it.copy(permissions = permissions, showPermissionAlert =  true)
+        }
+    }
 }

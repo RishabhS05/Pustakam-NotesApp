@@ -3,7 +3,7 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 val shapes = Shapes(
-    small = RoundedCornerShape(percent = 50),
-    medium = RoundedCornerShape(20.dp),
+    small = RoundedCornerShape(percent = 20),
+    medium = RoundedCornerShape(10.dp),
     large = RoundedCornerShape(0.dp)
 )

@@ -15,18 +15,21 @@ datastore = "1.1.1"
 compiler = "3.2.0-alpha11"
 koin = "3.5.0"
 sqldelight ="2.0.0"
+permissions = "0.32.0"
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 #compose
 coil = { module = "io.coil-kt:coil-compose", version.ref= "coil" }
 coil-svg = {module = "io.coil-kt:coil-svg", version.ref= "coil" }
 
+android-hardware-permission = {module = "com.google.accompanist:accompanist-permissions", version.ref = "permissions" }
 compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
 compose-viewmodel= {module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodelCompose"}
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+
 #Ktor
 kotlinx-coroutines-core-v181 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

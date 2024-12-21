@@ -49,5 +49,7 @@ data class NoteUIState(
     val noteStatus : NoteStatus? = NoteStatus.OnEditingMode,
     val note : Note? = null,
     val titleTextState :MutableState<String>  = mutableStateOf(""),
+    var showPermissionAlert : Boolean = false,
+    var permissions : List<String> = listOf(),
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 

@@ -1,7 +1,6 @@
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
-//
 //val Shadow11 = Color(0xff001787)
 //val Shadow10 = Color(0xff00119e)
 //val Shadow9 = Color(0xff0009b3)
@@ -74,15 +73,51 @@ import androidx.compose.ui.graphics.Color
 
 val lightTheme = lightColorScheme(
     primary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFFFFFFF),
+    onPrimary =  Color(0xFFE4E9F3),
+    onPrimaryContainer = Color(0xFF171E2A),
+
     secondary = Color(0xFF9D8563),
+    onSecondaryContainer = Color(0xFF3B2415),
+    onSecondary = Color(0xFFEDF1FA),
+
     tertiary = Color(0xFFF5BF4F),
+    tertiaryContainer =  Color(0xFF9D8563),
+    onTertiary = Color(0xffe1cbb1),
+    onTertiaryContainer = Color(0xFFF5BF4F) ,
+
     outline = Color(0xFF9D8563),
     background = Color.White,
+    onBackground =Color(0xffffffff),
+    onSurface = Color(0xFF000000),
+
+    onError = Color(0xFFB3261E),
+    onErrorContainer = Color(0xFF852221),
+    errorContainer = Color(0xFFFFCCBC),
+    error = Color(0xFFBF360C)
 )
 var darkTheme = darkColorScheme(
     primary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFF301E14),
+    onPrimary =  Color(0xFF171E2A),
+    onPrimaryContainer = Color(0xFFFFFFFF),
+
     secondary = Color(0xFF9D8563),
+    secondaryContainer = Color(0xff693F26),
+    onSecondary = Color(0xFF914704),
+    onSecondaryContainer = Color(0xFFe4ca9e),
+
     tertiary = Color(0xFFF5BF4F),
+    tertiaryContainer =  Color(0xFF9D8563),
+    onTertiary = Color(0xFFdd8519),
+    onTertiaryContainer = Color(0xFFF5BF4F),
     outline = Color(0xFF9D8563),
-    onSurface = Color(0xFF121212),
+
+    onSurface = Color(0xFFFFCC80),
+    onError = Color(0xFFB3261E),
+    onErrorContainer = Color(0xFFFF9E80),
+    onBackground = Color(0xFFFFFFFF),
+    background = Color(0xFF301E14),
+    errorContainer = Color(0xFFE64A19),
+    error = Color(0xFFBF360C)
 )
