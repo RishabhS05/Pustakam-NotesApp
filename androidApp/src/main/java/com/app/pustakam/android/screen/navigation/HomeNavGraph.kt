@@ -11,6 +11,7 @@ import com.app.pustakam.android.screen.search.SearchView
 
 
 fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
+
     navigation(
         route = Route.Home,
         startDestination = Route.Notes,

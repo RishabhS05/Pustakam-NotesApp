@@ -2,8 +2,10 @@ package com.app.pustakam.android.screen
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.noteEditor.NoteStatus
 import com.app.pustakam.data.models.response.notes.Note
+import com.app.pustakam.util.ContentType
 
 open class BaseUIState (open val isLoading : Boolean,
                         open val error : String? = null,
@@ -49,7 +51,7 @@ data class NoteUIState(
     val noteStatus : NoteStatus? = NoteStatus.OnEditingMode,
     val note : Note? = null,
     val titleTextState :MutableState<String>  = mutableStateOf(""),
-    var showPermissionAlert : Boolean = false,
-    var permissions : List<String> = listOf(),
+    val contentType : ContentType? = null,
+    val permissions : List<NeededPermission> = listOf(),
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 

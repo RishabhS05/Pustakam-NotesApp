@@ -15,7 +15,7 @@ data class Note(
     var createdAt: String?,
     var categoryId: String? ="",
     var isSynced : Boolean? = false,
-    var content: List<NoteContentModel>? = emptyList()
+    var content: MutableList<NoteContentModel>? = mutableListOf()
 ) {
     override fun equals(other: Any?): Boolean {
         return other === this
@@ -43,7 +43,7 @@ sealed class NoteContentModel {
     override fun hashCode(): Int {
         return  31 * (updatedAt.hashCode() + createdAt.hashCode() + position.hashCode())
     }
-
+  private fun getTimeStamp() : String = "${UniqueIdGenerator.getCurrentTimestamp()}"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
@@ -63,73 +63,73 @@ sealed class NoteContentModel {
     data class TextContent(
         val text: String,
         override val position: Long,
-        override val updatedAt: String?,
-        override val createdAt: String?,
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
+        override val createdAt: String?= "${UniqueIdGenerator.getCurrentTimestamp()}",
         override val type: ContentType = ContentType.TEXT,
-        override val id: String,
-        override val noteId: String = UniqueIdGenerator.generateUniqueId(),
+        override val id: String = UniqueIdGenerator.generateUniqueId(),
+        override val noteId: String ,
     ) : NoteContentModel()
     @Serializable
     data class ImageContent(
         val url: String,
-        override val position: Long, override val updatedAt: String?,
-        override val createdAt: String?,
+        override val position: Long, 
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
+        override val createdAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
         override val type: ContentType = ContentType.IMAGE,
         val localPath: String? = null,
-        override val id: String,
-        override val noteId: String = UniqueIdGenerator.generateUniqueId(),
+        override val id: String = UniqueIdGenerator.generateUniqueId(),
+        override val noteId: String ,
     ) : NoteContentModel()
     @Serializable
     data class VideoContent(
         val url: String,
         override val position: Long,
-        override val updatedAt: String?,
-        override val createdAt: String?,
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
+        override val createdAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
         val duration: Long,
         override val type: ContentType = ContentType.VIDEO,
         val localPath: String? = null,
-        override val id: String,
-        override val noteId: String =  UniqueIdGenerator.generateUniqueId(),
+        override val id: String =  UniqueIdGenerator.generateUniqueId(),
+        override val noteId: String ,
     ) : NoteContentModel()
     @Serializable
     data class AudioContent(
         override val position: Long,
-        override val updatedAt: String?,
-        override val createdAt: String?,
-        override val id: String,
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}" ,
+        override val createdAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
+        override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val type: ContentType = ContentType.AUDIO,
-        override val noteId: String = UniqueIdGenerator.generateUniqueId(),
+        override val noteId: String,
         val duration: Long,
         val localPath: String? = null,
         val url: String,
-
     ) : NoteContentModel()
     @Serializable
     data class DocContent(
         val url: String, override val position: Long,
-        override val updatedAt: String?,
-        override val createdAt: String?,
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
+        override val createdAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
         override val type: ContentType = ContentType.DOCX,
         val localPath: String? = null,
-        override val id: String,
-        override val noteId: String = UniqueIdGenerator.generateUniqueId(),
+        override val id: String = UniqueIdGenerator.generateUniqueId(),
+        override val noteId: String ,
     ) : NoteContentModel()
     @Serializable
     data class Link(
         val url: String,
         override val position: Long,
-        override val updatedAt: String?,
-        override val createdAt: String?,
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}" ,
+        override val createdAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
         override val type: ContentType = ContentType.LINK,
-        override val id: String,
-        override val noteId: String= UniqueIdGenerator.generateUniqueId()
+        override val id: String = UniqueIdGenerator.generateUniqueId(),
+        override val noteId: String
     ) : NoteContentModel()
 
     data class Location(
         val latitude: Double, val longitude: Double, val address: String?,
         override val position: Long,
-        override val updatedAt: String?,
-        override val createdAt: String?,
+        override val updatedAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
+        override val createdAt: String? = "${UniqueIdGenerator.getCurrentTimestamp()}",
         override val type: ContentType = ContentType.LOCATION,
         override val id: String,
         override val noteId: String = UniqueIdGenerator.generateUniqueId()

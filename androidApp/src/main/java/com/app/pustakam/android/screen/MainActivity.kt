@@ -64,11 +64,12 @@ fun AppUi(navController: NavHostController = rememberNavController()) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     Scaffold(topBar = {
-        if (currentRoute.isNotnull() && navController.shouldShowTopBar) TopAppBar(title = {
+        if (currentRoute.isNotnull() && navController.shouldShowTopBar)
+            TopAppBar(title = {
             Text(text = currentRoute!!, textAlign = TextAlign.Center)
         })
     }, bottomBar = { if (navController.shouldShowBottomBar)
-        BottomBar(navController = navController) },
+        BottomBar(navController = navController)},
         floatingActionButton = {
             if(navController.shouldShowFloatingButton){
                 when(currentRoute){

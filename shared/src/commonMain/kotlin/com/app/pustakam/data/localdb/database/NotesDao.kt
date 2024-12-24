@@ -107,7 +107,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                               else -> null
                           }
                       } else null
-                  }
+                  }.toMutableList()
               )
           )
       }
@@ -317,7 +317,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                             else -> null
                         }
                     } else null
-                }
+                }.toMutableList()
             )
         }
         return noteWithContent

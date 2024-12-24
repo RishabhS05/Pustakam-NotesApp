@@ -1,4 +1,7 @@
 package com.app.pustakam.android.permission
+
+import android.Manifest
+
 enum class NeededPermission(
     val permission: String,
     val title: String,
@@ -6,34 +9,34 @@ enum class NeededPermission(
     val permanentlyDeniedDescription: String,
 ) {
     COARSE_LOCATION(
-        permission = android.Manifest.permission.ACCESS_COARSE_LOCATION,
+        permission = Manifest.permission.ACCESS_COARSE_LOCATION,
         title = "Approximate Location Permission",
         description = "This permission is needed to get your approximate location. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
     ),
 
     READ_CALENDAR(
-        permission = android.Manifest.permission.READ_CALENDAR,
+        permission = Manifest.permission.READ_CALENDAR,
         title = "Read Calendar Permission",
         description = "This permission is needed to read your calendar. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to read your calendar. Please grant the permission in app settings.",
     ),
 
     READ_CONTACTS(
-        permission = android.Manifest.permission.READ_CONTACTS,
+        permission = Manifest.permission.READ_CONTACTS,
         title = "Read Contacts Permission",
         description = "This permission is needed to read your contacts. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to read your contacts. Please grant the permission in app settings.",
     ),
 
     RECORD_AUDIO(
-        permission = android.Manifest.permission.RECORD_AUDIO,
+        permission = Manifest.permission.RECORD_AUDIO,
         title = "Record Audio permission",
         description = "This permission is needed to access your microphone. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to access your microphone. Please grant the permission in app settings.",
     ),
     CAMERA(
-        permission = android.Manifest.permission.CAMERA,
+        permission = Manifest.permission.CAMERA,
         title = "Camera permission",
         description = "This permission is needed to access your camera. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to access your microphone. Please grant the permission in app settings.",

@@ -33,15 +33,10 @@ import orange80
 fun OverLayEditorButtons(
     modifier: Modifier = Modifier,
     offset: Animatable<Float, AnimationVector1D> = remember { Animatable(initialValue = 0f) },
-    showDelete : Boolean = false,
     onAddTextField : ()-> Unit ={},
-    onSave: () -> Unit = {},
-    onSaveAs: () -> Unit = {},
     onRecordVideo: () -> Unit = {},
     onAddImage: () -> Unit = {},
-    onShare: () -> Unit = {},
     onRecordMic: () -> Unit = {},
-    onDelete: ()-> Unit ={},
     onArrowButton: ()-> Unit ={}
 ) {
     var showArrow = remember { mutableStateOf(false) }
@@ -107,53 +102,14 @@ fun OverLayEditorButtons(
                 Card(
                     onClick = {
                         onArrowButton()
-                        onRecordVideo() },
-                    colors = cardColors,
-                    elevation = cardElevation
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_video_file),
-                        contentDescription = "Save",
-                        modifier = iconModifier
-                    )
-                }
-                Card(
-                    onClick = {
-                        onArrowButton()
-                        onSave()
+                        onRecordVideo()
                               },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_save),
-                        contentDescription = "Save",
-                        modifier = iconModifier
-                    )
-                }
-
-                Card(
-                    onClick = {
-                        onArrowButton()
-                        onSaveAs() },
-                    colors = cardColors,
-                    elevation = cardElevation
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_save_as),
-                        contentDescription = "Save as",
-                        modifier = iconModifier
-                    )
-                }
-                Card(
-                    onClick = {
-                        onArrowButton()
-                        onShare() },
-                    colors = cardColors,
-                    elevation = CardDefaults.elevatedCardElevation()
-                ) {
-                    Icon(
-                        Icons.Default.Share, contentDescription = "Share",
+                        painter = painterResource(id = R.drawable.ic_video_file),
+                        contentDescription = "Save a  Video",
                         modifier = iconModifier
                     )
                 }
@@ -167,20 +123,6 @@ fun OverLayEditorButtons(
                     Icon(
                         painter = painterResource(id = R.drawable.text_fields),
                         contentDescription = "Add new text note",
-                        modifier = iconModifier
-                    )
-                }
-                if(showDelete)
-                Card(
-                    onClick = {  onArrowButton()
-                        onDelete()
-                              },
-                    colors = cardColors,
-                    elevation = CardDefaults.elevatedCardElevation()
-                ) {
-                    Icon(
-                        Icons.Filled.Delete,  tint = Color(0xFFC62828),
-                        contentDescription = "Delete a note",
                         modifier = iconModifier
                     )
                 }

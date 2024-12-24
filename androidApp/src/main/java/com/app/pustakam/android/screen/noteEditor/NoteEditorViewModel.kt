@@ -1,7 +1,7 @@
 package com.app.pustakam.android.screen.noteEditor
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import android.graphics.Camera
+import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NoteUIState
@@ -11,7 +11,10 @@ import com.app.pustakam.android.screen.notes.DeleteNoteUseCase
 import com.app.pustakam.android.screen.notes.ReadNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
+import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.util.ContentType
+import com.app.pustakam.util.ContentType.*
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -20,9 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 
 class NoteEditorViewModel : BaseViewModel() {
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
@@ -30,6 +30,7 @@ class NoteEditorViewModel : BaseViewModel() {
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
+
     fun changeNoteStatus(status: NoteStatus?){
         _noteUiState.update {
             it.copy( noteStatus = status,
@@ -84,6 +85,9 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
     fun readFromDataBase(id: String?) {
+        if(id.isNotnull()) _noteUiState.update {
+            it.copy(showDeleteButton = true)
+        }
             makeAWish(NOTES_CODES.READ) {
                 readNoteUseCase.invoke(id)
             }
@@ -134,11 +138,72 @@ class NoteEditorViewModel : BaseViewModel() {
     fun showDeleteAlert(value: Boolean) {
 _noteUiState.update { it.copy(showDeleteAlert = value) }
     }
-
-    fun preparePermissionDialog(permissions: List<String>) {
+    fun getPermissions(contentType: ContentType?) = when (contentType){
+        VIDEO -> listOf(NeededPermission.CAMERA,NeededPermission.RECORD_AUDIO)
+        AUDIO -> listOf(NeededPermission.RECORD_AUDIO)
+        IMAGE-> listOf(NeededPermission.CAMERA)
+        LOCATION -> listOf(NeededPermission.COARSE_LOCATION)
+        else -> emptyList()
+    }
+    fun preparePermissionDialog(contentType: ContentType? = null){
+        val permission = getPermissions(contentType)
         _noteUiState.update {
-            it.copy(permissions = permissions, showPermissionAlert =  true)
+            it.copy(permissions = permission, contentType = contentType)
         }
     }
 
+    fun prepareInitialContent(contentType : ContentType) {
+        val note = _noteUiState.value.note
+        val  position : Long = note?.content?.count()?.toLong() ?: 0
+        val noteId = note?.id!!
+        when (contentType){
+            TEXT -> {
+                _noteUiState.update {
+                    it.note?.content?.add(
+                        NoteContentModel.TextContent(text = "",
+                        position = position, noteId = noteId))
+                    it.copy(note = it.note)
+                }
+            }
+            IMAGE -> {
+                _noteUiState.update {
+                    it.note?.content?.add(
+                        NoteContentModel.ImageContent(url = "",
+                            position = position, noteId = noteId))
+                    it.copy(note = it.note)
+                }
+            }
+            VIDEO -> {
+                _noteUiState.update {
+                    it.note?.content?.add(
+                        NoteContentModel.VideoContent(url = "",
+                            position = position, noteId = noteId,
+                            localPath = "",
+                            duration = 0))
+                    it.copy(note = it.note)
+                }
+            }
+            AUDIO -> {
+                _noteUiState.update {
+                    it.note?.content?.add(
+                        NoteContentModel.AudioContent(url = "",
+                            position = position, noteId = noteId,
+                            localPath = "",
+                            duration = 0))
+                    it.copy(note = it.note)
+                }
+            }
+            LINK ->  _noteUiState.update {
+                it.note?.content?.add(
+                    NoteContentModel.Link(url = "", position = position, noteId = noteId,))
+                it.copy(note = it.note)
+            }
+            DOCX -> {}
+            LOCATION -> {}
+            PDF -> {}
+            GIF -> {}
+        }
+
+
+    }
 }
