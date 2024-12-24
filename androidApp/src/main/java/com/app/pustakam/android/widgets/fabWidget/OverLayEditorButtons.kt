@@ -26,6 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
+import orange50
+import orange80
 
 @Composable
 fun OverLayEditorButtons(
@@ -44,21 +46,21 @@ fun OverLayEditorButtons(
 ) {
     var showArrow = remember { mutableStateOf(false) }
     val cardColors = CardDefaults.cardColors(
-        contentColor = colorScheme.primary,
+        contentColor = orange80,
         containerColor = colorScheme.secondary
     )
     val iconModifier = Modifier.padding(6.dp)
-    val icon = if (showArrow.value) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight
+    val icon = if (showArrow.value) Icons.AutoMirrored.Filled.KeyboardArrowLeft
+    else Icons.AutoMirrored.Filled.KeyboardArrowRight
     val cardElevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
     if (showArrow.value)
         Card(
             modifier = modifier,
             shape = CardDefaults.elevatedShape,
             elevation = CardDefaults.cardElevation(),
-            colors = CardDefaults.cardColors(containerColor = Color.LightGray.copy(alpha = 0.4f))
+            colors = CardDefaults.cardColors(containerColor = orange50.copy(alpha = 0.4f))
         ) {
             Icon(icon,
-                tint = colorScheme.secondary,
                 contentDescription = "",
                 modifier = Modifier
                     .padding(start = 4.dp, top = 4.dp)

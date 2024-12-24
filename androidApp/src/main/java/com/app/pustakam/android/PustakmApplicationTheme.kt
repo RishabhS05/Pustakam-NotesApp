@@ -1,13 +1,17 @@
 package com.app.pustakam.android
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
 import com.app.pustakam.android.theme.typography
 import darkTheme
@@ -19,7 +23,7 @@ fun MyApplicationTheme(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-
+val context = LocalContext.current
     val colorScheme = when {
         //dynamic ui
 //        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ->{

@@ -33,7 +33,7 @@ fun BottomBar(
                     BadgedBox(badge = { }) { }
 
                     Icon(
-                        imageVector = (if (item.route == currentRoute) item.selectedIcon else item.unselectedIcon)!!,
+                        imageVector = (if (item.route == currentRoute) item.selectedIcon else item.unselectedIcon),
                         contentDescription = item.title
                     )
                 },

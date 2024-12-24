@@ -41,7 +41,6 @@ val NavController.shouldShowBottomBar
         Route.Search,
         Route.Notification,
         -> true
-
         else -> false
     }
 val NavController.shouldShowTopBar
@@ -50,7 +49,6 @@ val NavController.shouldShowTopBar
         Route.Search,
         Route.Notification,
         -> true
-
         Route.Login, Route.Signup -> false
         else -> false
     }

@@ -2,7 +2,6 @@ package com.app.pustakam.android.screen.noteEditor
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,18 +27,16 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.OnLifecycleEvent
-import com.app.pustakam.android.screen.PermissionRequiredScreen
+import com.app.pustakam.android.screen.Permissions
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
@@ -61,51 +58,63 @@ fun NotesEditorView(
         /**  block direct exit as my scope is getting distroyed  */
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
-    val state  = noteEditorViewModel.noteUIState.collectAsStateWithLifecycle().value.apply {
-        when {
+    val state = noteEditorViewModel.noteUIState
+        .collectAsStateWithLifecycle().value.apply {
+            when {
                 isLoading -> LoadingUI()
                 error.isNotnull() -> SnackBarUi(error = error!!) {
                     noteEditorViewModel.clearError()
                 }
+
+                showPermissionAlert -> Permissions()
                 showDeleteAlert ->
-                    DeleteNoteAlert(noteTitle = if(!note?.title.isNullOrEmpty()) note?.title!! else "",
+                    DeleteNoteAlert(noteTitle = if (!note?.title.isNullOrEmpty()) note?.title!! else "",
                         onConfirm = {
-                            noteEditorViewModel.deleteNote(noteId = id!! )
+                            noteEditorViewModel.deleteNote(noteId = id!!)
                             noteEditorViewModel.showDeleteAlert(false)
                         }
                     ) {
                         noteEditorViewModel.showDeleteAlert(false)
                     }
-            }}
-    OnLifecycleEvent { _ , event ->
+            }
+        }
+    OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
+
             else -> {}
         }
     }
-    when(state.noteStatus){
-        NoteStatus.onBackPress -> { noteEditorViewModel.createOrUpdateNote() }
-        NoteStatus.onSaveCompletedExit -> { onBack() }
+    when (state.noteStatus) {
+        NoteStatus.onBackPress -> {
+            noteEditorViewModel.createOrUpdateNote()
+        }
+
+        NoteStatus.onSaveCompletedExit -> {
+            onBack()
+        }
+
         else -> {}
     }
 
     NotesEditor(state = state,
-        onSave =  noteEditorViewModel::createOrUpdateNote,
-        onDelete = {noteEditorViewModel.showDeleteAlert(true)},
+        onSave = noteEditorViewModel::createOrUpdateNote,
+        onDelete = { noteEditorViewModel.showDeleteAlert(true) },
         onPermissionCheck = { permissions ->
             noteEditorViewModel.preparePermissionDialog(permissions)
         }
     )
 }
+
 @Composable
 fun NotesEditor(
-    state : NoteUIState,
+    state: NoteUIState,
     onDelete: () -> Unit = {},
-    onSave : () -> Unit = {},
-    onPermissionCheck : (permissions : List<String> )-> Unit = {}
+    onSave: () -> Unit = {},
+    onPermissionCheck: (permissions: List<String>) -> Unit = {}
 ) {
     // Note content state
     val isRuledEnabledState = remember { mutableStateOf(false) }
@@ -117,58 +126,59 @@ fun NotesEditor(
         modifier = Modifier
             .fillMaxSize()
             .padding(4.dp)
+
     ) {
         if (isRuledEnabledState.value) RuledPage()
         Column {
-                TextField(
-                    value = state.titleTextState.value,
-                    textStyle = typography.titleLarge,
-                    placeholder = {
-                        Text(
-                            "Title : Keep your thoughts alive.",
-                            modifier = Modifier.padding(start = paddingLeft),
-                        )
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = colorScheme.tertiary
-                    ),
-                    onValueChange = {
-                        state.titleTextState.value = it
-                    },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = {
-                        focusManager.moveFocus(FocusDirection.Down)
-                    }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                        .padding(top = 2.dp)
-                )
+            TextField(
+                value = state.titleTextState.value,
+                textStyle = typography.titleLarge,
+                placeholder = {
+                    Text(
+                        "Title : Keep your thoughts alive.",
+                        modifier = Modifier.padding(start = paddingLeft),
+                    )
+                },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = colorScheme.tertiary
+                ),
+                onValueChange = {
+                    state.titleTextState.value = it
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = {
+                    focusManager.moveFocus(FocusDirection.Down)
+                }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .padding(top = 2.dp)
+            )
             HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
         }
-        if(state.showPermissionAlert) {
-            PermissionRequiredScreen(permissions = state.permissions) {}
-        }
-        OverLayEditorButtons(modifier = Modifier
-            .align(alignment = Alignment.CenterEnd),
+        OverLayEditorButtons(
+            modifier = Modifier
+                .align(alignment = Alignment.CenterEnd),
             showDelete = state.showDeleteButton,
-            onAddTextField = {} ,
-            onArrowButton = {focusManager.clearFocus()},
+            onAddTextField = {},
+            onArrowButton = { focusManager.clearFocus() },
             onSave = onSave, onDelete = onDelete,
             onRecordVideo = {
-                val permissions = listOf(android.Manifest.permission.CAMERA,
+                val permissions = listOf(
+                    android.Manifest.permission.CAMERA,
                     android.Manifest.permission.RECORD_AUDIO,
                     if (android.os.Build.VERSION.SDK_INT >=
-                        android.os.Build.VERSION_CODES.TIRAMISU) {
+                        android.os.Build.VERSION_CODES.TIRAMISU
+                    ) {
                         android.Manifest.permission.READ_MEDIA_VIDEO
                     } else {
                         android.Manifest.permission.READ_EXTERNAL_STORAGE
                     }
-                    )
+                )
                 onPermissionCheck(permissions)
             },
             onRecordMic = {
@@ -183,49 +193,63 @@ fun NotesEditor(
         )
     }
 }
+
 @Composable
 fun SpawnWidget(
     modifier: Modifier = Modifier,
-    content : NoteContentModel) {
-when (content.type){
-    ContentType.TEXT -> {
-        val content = content as NoteContentModel.TextContent
-        TextField(value = content.text, onValueChange = {
-        })
-    }
-    ContentType.IMAGE -> {
-        val content = content as NoteContentModel.ImageContent
-        Card {
-            LoadImage(url =content.url, modifier = Modifier)
+    content: NoteContentModel
+) {
+    when (content.type) {
+        ContentType.TEXT -> {
+            val content = content as NoteContentModel.TextContent
+            TextField(value = content.text, onValueChange = {
+            })
         }
 
-    }
-    ContentType.VIDEO -> {
-        val content = content as NoteContentModel.VideoContent
-        Card {
+        ContentType.IMAGE -> {
+            val content = content as NoteContentModel.ImageContent
+            val path = content.localPath ?: content.url
+            Card {
+                LoadImage(url = path, modifier = Modifier)
+            }
 
         }
-    }
-    ContentType.AUDIO -> {
-        val content = content as NoteContentModel.AudioContent
 
-    }
-    ContentType.LINK -> {
-        val content = content as NoteContentModel.Link
-        Text(content.url, modifier = Modifier.clickable {
+        ContentType.VIDEO -> {
+            val content = content as NoteContentModel.VideoContent
+            val path = content.localPath ?: content.url
+            Card {
 
-        })
+            }
+        }
+
+        ContentType.AUDIO -> {
+            val content = content as NoteContentModel.AudioContent
+            val path = content.localPath ?: content.url
+
+        }
+
+        ContentType.LINK -> {
+            val content = content as NoteContentModel.Link
+            Text(content.url, modifier = Modifier.clickable {
+
+            })
+        }
+
+        ContentType.DOCX -> {
+            val content = content as NoteContentModel.DocContent
+            val path = content.localPath ?: content.url
+        }
+
+        ContentType.LOCATION -> {
+            val content = content as NoteContentModel.Location
+        }
+
+        ContentType.PDF -> {}
+        ContentType.GIF -> {}
     }
-    ContentType.DOCX -> {
-        val content = content as NoteContentModel.DocContent
-    }
-    ContentType.LOCATION -> {
-        val content = content as NoteContentModel.Location
-    }
-    ContentType.PDF -> {}
-    ContentType.GIF -> {}
 }
-}
+
 @Composable
 fun RuledPage() {
     val lineColor = Color.LightGray

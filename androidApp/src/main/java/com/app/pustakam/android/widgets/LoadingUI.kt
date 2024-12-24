@@ -15,10 +15,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LoadingUI(modifier: Modifier = Modifier, alignment: Alignment = Alignment.Center) {
     Box(modifier = modifier
-        .fillMaxSize()
-        .background(color = Color.LightGray)) {
+        .fillMaxSize()) {
         CircularProgressIndicator(
-            strokeWidth = 4.dp, color = MaterialTheme.colorScheme.secondary, trackColor = MaterialTheme.colorScheme.primary, strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap, modifier = Modifier.align(alignment)
+            strokeWidth = 6.dp, color = MaterialTheme.colorScheme.primary, trackColor = MaterialTheme.colorScheme.secondary, strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap, modifier = Modifier.align(alignment)
         )
     }
 }

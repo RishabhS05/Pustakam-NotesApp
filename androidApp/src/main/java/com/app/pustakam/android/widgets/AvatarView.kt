@@ -50,7 +50,8 @@ fun CircleIconLoad(url: String? = null,
 
 
 @Composable
-fun LoadImage( url: String,  placeHolderDrawable: Int = R.drawable.avatar,
+fun LoadImage( url: String,
+               placeHolderDrawable: Int = R.drawable.ic_add_photo,
                modifier: Modifier = Modifier,
                ) {
     AsyncImage(
@@ -68,7 +69,7 @@ fun LoadImage( url: String,  placeHolderDrawable: Int = R.drawable.avatar,
 @Preview
 @Composable
 private fun LoadImagePrev() {
-    LoadImage(placeHolderDrawable = R.drawable.avatar, url = "https://picsum.photos/seed/picsum/200/300", modifier = Modifier.padding(top = 20.dp, bottom = 8.dp))
+    LoadImage(placeHolderDrawable = R.drawable.avatar, url = "https://picsum.photos/seed/picsum/200/300", modifier = Modifier)
 }
 @Preview
 @Composable

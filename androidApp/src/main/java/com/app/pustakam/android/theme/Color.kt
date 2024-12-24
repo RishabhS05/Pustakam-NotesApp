@@ -1,123 +1,126 @@
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-//val Shadow11 = Color(0xff001787)
-//val Shadow10 = Color(0xff00119e)
-//val Shadow9 = Color(0xff0009b3)
-//val Shadow8 = Color(0xff0200c7)
-//val Shadow7 = Color(0xff0e00d7)
-//val Shadow6 = Color(0xff2a13e4)
-//val Shadow5 = Color(0xff4b30ed)
-//val Shadow4 = Color(0xff7057f5)
-//val Shadow3 = Color(0xff9b86fa)
-//val Shadow2 = Color(0xffc8bbfd)
-//val Shadow1 = Color(0xffded6fe)
-//val Shadow0 = Color(0xfff4f2ff)
-//
-//val Ocean11 = Color(0xff005687)
-//val Ocean10 = Color(0xff006d9e)
-//val Ocean9 = Color(0xff0087b3)
-//val Ocean8 = Color(0xff00a1c7)
-//val Ocean7 = Color(0xff00b9d7)
-//val Ocean6 = Color(0xff13d0e4)
-//val Ocean5 = Color(0xff30e2ed)
-//val Ocean4 = Color(0xff57eff5)
-//val Ocean3 = Color(0xff86f7fa)
-//val Ocean2 = Color(0xffbbfdfd)
-//val Ocean1 = Color(0xffd6fefe)
-//val Ocean0 = Color(0xfff2ffff)
-//
-//val Lavender11 = Color(0xff170085)
-//val Lavender10 = Color(0xff23009e)
-//val Lavender9 = Color(0xff3300b3)
-//val Lavender8 = Color(0xff4400c7)
-//val Lavender7 = Color(0xff5500d7)
-//val Lavender6 = Color(0xff6f13e4)
-//val Lavender5 = Color(0xff8a30ed)
-//val Lavender4 = Color(0xffa557f5)
-//val Lavender3 = Color(0xffc186fa)
-//val Lavender2 = Color(0xffdebbfd)
-//val Lavender1 = Color(0xffebd6fe)
-//val Lavender0 = Color(0xfff9f2ff)
-//
-//val Rose11 = Color(0xff7f0054)
-//val Rose10 = Color(0xff97005c)
-//val Rose9 = Color(0xffaf0060)
-//val Rose8 = Color(0xffc30060)
-//val Rose7 = Color(0xffd4005d)
-//val Rose6 = Color(0xffe21365)
-//val Rose5 = Color(0xffec3074)
-//val Rose4 = Color(0xfff4568b)
-//val Rose3 = Color(0xfff985aa)
-//val Rose2 = Color(0xfffdbbcf)
-//val Rose1 = Color(0xfffed6e2)
-//val Rose0 = Color(0xfffff2f6)
-//
-//val Neutral8 = Color(0xff121212)
-//val Neutral7 = Color(0xde000000)
-//val Neutral6 = Color(0x99000000)
-//val Neutral5 = Color(0x61000000)
-//val Neutral4 = Color(0x1f000000)
-//val Neutral3 = Color(0x1fffffff)
-//val Neutral2 = Color(0x61ffffff)
-//val Neutral1 = Color(0xbdffffff)
-//val Neutral0 = Color(0xffffffff)
-//
-//val FunctionalRed = Color(0xffd00036)
-//val FunctionalRedDark = Color(0xffea6d7e)
-//val FunctionalGreen = Color(0xff52c41a)
-//val FunctionalGrey = Color(0xfff6f6f6)
-//val FunctionalDarkGrey = Color(0xff2e2e2e)
-//
-//const val AlphaNearOpaque = 0.95f
+
+//darkbrown
+val DarkBrown0 = Color(0xFF382320)
+val DarkBrown1 = Color(0xFF321f1c)
+val DarkBrown2 = Color(0xFF2b1b19)
+val DarkBrown3 = Color(0xFF251715)
+val DarkBrown4 = Color(0xFF1f1412)
+val DarkBrown5 = Color(0xFF19100e)
+val DarkBrown6 = Color(0xFF130c0b)
+val DarkBrown7 = Color(0xFF0c0807)
+
+//brown
+val brown0 = Color(0XFF9e6225)
+val brown1 = Color(0XFFab6a28)
+val brown2 = Color(0XFFb8722b)
+val brown3= Color(0XFFc57a2f)
+val brown4 = Color(0XFFcf8336)
+val brown5 = Color(0XFFd28b43)
+val brown6 = Color(0XFFd59350)
+val brown7 = Color(0XFFd38f49)
+val brown8 = Color(0XFFe0af7e)
+val brown9 = Color(0XFFe3b78b)
+val brown10 = Color(0XFFe6c098)
+val brown11 = Color(0XFFe9c8a6)
+val brown12 = Color(0XFFeed4b9)
+val brown13 = Color(0XFFf0e4e0)
+val baseWhite = Color(0xFFFFFFFF)
+
+
+//orange
+val orange10 = Color (0xFF3e1202)
+val orange20 = Color (0xFF6d1f04)
+val orange30 = Color (0xFFcc3b08)
+val orange40 = Color (0xFFf76e3e)
+val orange50 = Color (0xFFf9926d)
+val orange80 = Color (0xFFfbb59c)
+val orange90 = Color (0xFFfcd8cc)
+
+val Black = Color(0xFF000000)
+val OffWhite = Color(0xFFDED8E1)
+val OffWhite2 = Color(0xFFFEF7FF)
+val Gray = Color(0xFF1D1B20)
+val Gray2 = Color(0xFF79747E)
+val Gray3 = Color(0xFF151219)
+val Gray4 = Color(0xFF3A383F)
+
+val earthtyDarker = Color(0xFF523D35)
+val earthyLight = Color(0xFFBBA58F)
+val earthyLight2 = Color(0xFFE7DACD)
+val earthyGrayLight3= Color(0xFFEFEFE9)
+val earthBrown1 = Color(0xFFA68A64)
+val earthBrown = Color(0xFF936639)
+val earthGreenDark10 = Color(0xFF7F4F24)
+val earthGreenDark11 = Color(0xFF582E0E)
+
+
+
+
+
+
 
 val lightTheme = lightColorScheme(
-    primary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFFFFFFF),
-    onPrimary =  Color(0xFFE4E9F3),
-    onPrimaryContainer = Color(0xFF171E2A),
+    primary = earthyLight, // dark
+    primaryContainer = brown10, //light
+    onPrimary =  earthyLight2, // light or white
+    onPrimaryContainer = DarkBrown3, // darker
+    inversePrimary = brown0,// dark
 
-    secondary = Color(0xFF9D8563),
-    onSecondaryContainer = Color(0xFF3B2415),
-    onSecondary = Color(0xFFEDF1FA),
+    secondary = earthBrown, //another dark
+    secondaryContainer = brown11,// light
+    onSecondaryContainer = earthGreenDark10,
+    onSecondary = earthGreenDark11,
+    outline = earthBrown1,
+    outlineVariant = brown13,
+    background = OffWhite2,
+    onBackground = Gray,
 
-    tertiary = Color(0xFFF5BF4F),
-    tertiaryContainer =  Color(0xFF9D8563),
-    onTertiary = Color(0xffe1cbb1),
-    onTertiaryContainer = Color(0xFFF5BF4F) ,
-
-    outline = Color(0xFF9D8563),
-    background = Color.White,
-    onBackground =Color(0xffffffff),
-    onSurface = Color(0xFF000000),
-
-    onError = Color(0xFFB3261E),
-    onErrorContainer = Color(0xFF852221),
-    errorContainer = Color(0xFFFFCCBC),
-    error = Color(0xFFBF360C)
+    surface = earthyLight,
+    onSurface = earthtyDarker,
+    surfaceContainer = earthyLight,
+    surfaceTint = DarkBrown4,
+    surfaceVariant =  earthyGrayLight3,
+    surfaceDim = OffWhite,
+    surfaceBright = OffWhite2,
+    scrim = Black,
+    onError = orange90,
+    onErrorContainer = orange80,
+    errorContainer = orange10,
+    error = orange80,
 )
 var darkTheme = darkColorScheme(
-    primary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF301E14),
-    onPrimary =  Color(0xFF171E2A),
-    onPrimaryContainer = Color(0xFFFFFFFF),
+    primary = brown8 , //light
+    primaryContainer = DarkBrown4, //darker then primary color
+    onPrimary =  brown11,// darker or black
+    onPrimaryContainer = brown11, // lighter then primary
 
-    secondary = Color(0xFF9D8563),
-    secondaryContainer = Color(0xff693F26),
-    onSecondary = Color(0xFF914704),
-    onSecondaryContainer = Color(0xFFe4ca9e),
+    secondary = DarkBrown0, // other then primary same shade
+    secondaryContainer = DarkBrown3, //lighter then onSecondary
+    onSecondary = DarkBrown4 ,// darker
+    onSecondaryContainer = brown13, // same as onPrimaryContainer shade might different
 
-    tertiary = Color(0xFFF5BF4F),
-    tertiaryContainer =  Color(0xFF9D8563),
-    onTertiary = Color(0xFFdd8519),
-    onTertiaryContainer = Color(0xFFF5BF4F),
-    outline = Color(0xFF9D8563),
+    inversePrimary = brown12, // darker then primary or opposite
 
-    onSurface = Color(0xFFFFCC80),
-    onError = Color(0xFFB3261E),
-    onErrorContainer = Color(0xFFFF9E80),
-    onBackground = Color(0xFFFFFFFF),
-    background = Color(0xFF301E14),
-    errorContainer = Color(0xFFE64A19),
-    error = Color(0xFFBF360C)
+    onSurface = brown13, //light
+    surface = DarkBrown4, //darker
+
+    onSurfaceVariant = brown12,
+    surfaceTint = brown13,
+    surfaceVariant =  DarkBrown3, //  mild light then surface
+
+    surfaceDim = Gray3,
+    outline = Gray2,
+    surfaceBright = Gray4,
+    scrim = Black,
+    background = Gray3,
+
+    onBackground = OffWhite,
+    error = orange40,
+    errorContainer = orange90,
+    onError = orange20,
+    onErrorContainer = orange80,
 )

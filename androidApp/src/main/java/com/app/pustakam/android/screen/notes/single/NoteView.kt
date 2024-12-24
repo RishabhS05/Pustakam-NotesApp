@@ -1,6 +1,9 @@
 package com.app.pustakam.android.screen.notes.single
 
+
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -8,18 +11,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.data.models.response.notes.Note
+import orange80
+
 
 @Composable
 fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit = {}) {
+    val brush = Brush.verticalGradient(listOf(orange80
+        ,orange80))
     Card(shape = CardDefaults.outlinedShape,
         modifier = modifier
             .fillMaxWidth(0.5f)
@@ -27,17 +35,23 @@ fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit 
             .wrapContentHeight()
             .clickable { onClick() }
             .padding(4.dp)
+
     ) {
-        Column {
-            Text(
-                note.title.toString(),
-                modifier = Modifier
-                    .padding(8.dp),
-                style = TextStyle(
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(brush)
+        ) {
+            Column {
+                Text(
+                    note.title.toString(),
+                    style = MaterialTheme.typography.
+                    labelLarge.copy(color =
+                    colorScheme.onSecondary),
+                    modifier = Modifier
+                        .padding(12.dp)
                 )
-            )
+            }
         }
     }
 }
@@ -45,12 +59,15 @@ fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit 
 @Preview
 @Composable
 private fun NotesPreview() {
-    val note: Note = Note(
-        id = "1",
-        title = "Hare Rama Hare Rama",
-        updatedAt = "",
-        createdAt = "",
-        categoryId = ""
-    )
-    NoteCardView(note = note)
+    MyApplicationTheme {
+        val note: Note = Note(
+            id = "1",
+            title = "Hare Rama Hare Rama",
+            updatedAt = "",
+            createdAt = "",
+            categoryId = ""
+        )
+        NoteCardView(note = note)
+    }
+
 }

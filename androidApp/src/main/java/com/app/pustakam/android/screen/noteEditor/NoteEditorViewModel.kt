@@ -140,4 +140,5 @@ _noteUiState.update { it.copy(showDeleteAlert = value) }
             it.copy(permissions = permissions, showPermissionAlert =  true)
         }
     }
+
 }
