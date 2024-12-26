@@ -1,8 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -27,7 +25,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -79,10 +76,10 @@ fun NotesEditorView(
                 error.isNotnull() -> SnackBarUi(error = error!!) {
                     noteEditorViewModel.clearError()
                 }
-                contentType.isNotnull() -> {
-                    AskPermissions(permissionsRequired = permissions) {
-                        print("All permission are granted")
-                    }
+                showPermissionAlert == true -> {
+                    AskPermissions(permissionsRequired = permissions,
+                        onDismiss = { noteEditorViewModel.showPermissionAlert(null)},
+                        onGrantPermission = { noteEditorViewModel.showPermissionAlert(null) })
                 }
                 showDeleteAlert ->
                     DeleteNoteAlert(noteTitle = if (!note?.title.isNullOrEmpty()) note?.title!! else "",
@@ -90,8 +87,7 @@ fun NotesEditorView(
                             noteEditorViewModel.deleteNote(noteId = id!!)
                             noteEditorViewModel.showDeleteAlert(false)
                         }
-                    ) {
-                        noteEditorViewModel.showDeleteAlert(false)
+                    ) { noteEditorViewModel.showDeleteAlert(false)
                     }
             }
         }

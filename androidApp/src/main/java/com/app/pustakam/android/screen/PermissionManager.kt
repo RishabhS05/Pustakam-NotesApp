@@ -23,9 +23,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,28 +46,32 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun AskSinglePermission(requiredPermission : NeededPermission){
+fun AskSinglePermission(requiredPermission : NeededPermission, onGrantPermission: () -> Unit, onDismiss: () -> Unit){
     val activity = LocalContext.current as Activity
-    val permissionDialog = remember {
-        mutableStateListOf<NeededPermission>()
-    }
+    var permissionDialog by remember { mutableStateOf<NeededPermission?>(requiredPermission) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (!isGranted)
-                permissionDialog.add(requiredPermission)
+                permissionDialog = requiredPermission
+            else permissionDialog = null
         }
     )
 
     PermissionAlertDialog(
         neededPermission = requiredPermission,
-        onDismiss = { permissionDialog.remove(requiredPermission) },
+        onDismiss = {
+            permissionDialog = null
+            onDismiss()
+                    },
         onOkClick = {
-            permissionDialog.remove(requiredPermission)
+            permissionDialog= null
             permissionLauncher.launch(requiredPermission.permission)
+            onDismiss()
         },
         onGoToAppSettingsClick = {
-            permissionDialog.remove(requiredPermission)
+            permissionDialog= null
+            onGrantPermission()
             activity.goToAppSetting()
         },
         isPermissionDeclined = !activity.shouldShowRequestPermissionRationale(requiredPermission.permission)
@@ -75,18 +82,19 @@ fun AskSinglePermission(requiredPermission : NeededPermission){
 fun AskPermissions(
     permissionsRequired: List<NeededPermission>,
     onGrantPermission: () -> Unit,
+    onDismiss: () -> Unit
 ) {
+    if(permissionsRequired.size==1){
+        AskSinglePermission(permissionsRequired[0],onGrantPermission= onGrantPermission,onDismiss=onDismiss)
+        return
+    }
+
     val activity = LocalContext.current as Activity
     val permissionDialog = remember { mutableStateListOf<NeededPermission>() }
     val permissionsString =  permissionsRequired.map { it.permission }.toTypedArray()
     val multiplePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissions ->
-            val deniedPermission = permissions.entries
-                .firstOrNull { !it.value }
-                ?.key
-                ?.let { deniedKey -> getNeededPermission(deniedKey) }
-            deniedPermission?.let { permissionDialog.add(it) }
         }
     )
     if (hasPermissions(context = activity, permissions = permissionsRequired)) {

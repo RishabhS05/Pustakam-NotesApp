@@ -30,7 +30,6 @@ class NoteEditorViewModel : BaseViewModel() {
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
-
     fun changeNoteStatus(status: NoteStatus?){
         _noteUiState.update {
             it.copy( noteStatus = status,
@@ -136,7 +135,7 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     fun showDeleteAlert(value: Boolean) {
-_noteUiState.update { it.copy(showDeleteAlert = value) }
+ _noteUiState.update { it.copy(showDeleteAlert = value) }
     }
     fun getPermissions(contentType: ContentType?) = when (contentType){
         VIDEO -> listOf(NeededPermission.CAMERA,NeededPermission.RECORD_AUDIO)
@@ -148,7 +147,7 @@ _noteUiState.update { it.copy(showDeleteAlert = value) }
     fun preparePermissionDialog(contentType: ContentType? = null){
         val permission = getPermissions(contentType)
         _noteUiState.update {
-            it.copy(permissions = permission, contentType = contentType)
+            it.copy(permissions = permission, contentType = contentType, showPermissionAlert = true )
         }
     }
 
@@ -206,4 +205,11 @@ _noteUiState.update { it.copy(showDeleteAlert = value) }
 
 
     }
+
+    fun showPermissionAlert(value: Boolean?) {
+        _noteUiState.update {
+            it.copy(showPermissionAlert = value)
+        }
+    }
+
 }
