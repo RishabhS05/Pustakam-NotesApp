@@ -46,7 +46,7 @@ import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.OnLifecycleEvent
-import com.app.pustakam.android.screen.AskPermissions
+import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
@@ -65,6 +65,17 @@ fun NotesEditorView(
     onBack: () -> Unit = {},
 ) {
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
+    OnLifecycleEvent { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_CREATE -> {
+                noteEditorViewModel.changeNoteStatus(null)
+                noteEditorViewModel.readFromDataBase(id)
+            }
+
+            else -> {}
+        }
+    }
+
     BackHandler {
         /**  block direct exit as my scope is getting distroyed  */
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
@@ -78,7 +89,9 @@ fun NotesEditorView(
                 }
                 showPermissionAlert == true -> {
                     AskPermissions(permissionsRequired = permissions,
-                        onDismiss = { noteEditorViewModel.showPermissionAlert(null)},
+                        onDismiss = {
+                            noteEditorViewModel.showPermissionAlert(null)
+                                    },
                         onGrantPermission = { noteEditorViewModel.showPermissionAlert(null) })
                 }
                 showDeleteAlert ->
@@ -91,16 +104,7 @@ fun NotesEditorView(
                     }
             }
         }
-    OnLifecycleEvent { _, event ->
-        when (event) {
-            Lifecycle.Event.ON_CREATE -> {
-                noteEditorViewModel.changeNoteStatus(null)
-                noteEditorViewModel.readFromDataBase(id)
-            }
 
-            else -> {}
-        }
-    }
     when (state.noteStatus) {
         NoteStatus.onBackPress -> {
             noteEditorViewModel.createOrUpdateNote()

@@ -46,6 +46,6 @@ enum class NeededPermission(
         return if (isPermanentDenied) this.permanentlyDeniedDescription else this.description
     }
 }
-fun getNeededPermission(permission: String): NeededPermission {
-    return NeededPermission.entries.find { it.permission == permission } ?: throw IllegalArgumentException("Permission $permission is not supported")
-}
+//fun getNeededPermission(permission: String): NeededPermission {
+//    return NeededPermission.entries.find { it.permission == permission } ?: throw IllegalArgumentException("Permission $permission is not supported")
+//}
