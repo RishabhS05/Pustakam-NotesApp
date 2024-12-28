@@ -52,7 +52,6 @@ fun AskSinglePermission(requiredPermission: NeededPermission, onGrantPermission:
     )
 }
 
-
 @Composable
 fun AskPermissions(
     permissionsRequired: List<NeededPermission>,
@@ -60,12 +59,23 @@ fun AskPermissions(
     onDismiss: () -> Unit,
 ) {
     val activity = LocalContext.current as Activity
+    /**Add Permission Dialog for added all the permissions */
     val permissionDialog = remember { mutableStateListOf<NeededPermission>().apply { addAll(permissionsRequired) } }
+    /** convert all the permission into array */
     val permissionsString = permissionsRequired.map { it.permission }.toTypedArray()
+   /** launch multiple permission */
     val multiplePermissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { permissions ->
+        onResult = {
         // some time it does not called we need to trigger manually
     })
+    // launch the permissions dialog
+    LaunchedEffect(key1 = Unit) {
+        multiplePermissionLauncher.launch(permissionsString)
+    }
+    /** check all the permissions granted or not
+     * -if granted -> call hardware launch
+     * -if not -> call show premission dialog
+     * */
     if (hasPermissions(context = activity, permissions = permissionsRequired)) {
         onGrantPermission()
         return
@@ -76,12 +86,12 @@ fun AskPermissions(
             }
         }
     }
+
+    // if all the dialogs displayed it will reset the trigger
     if (permissionDialog.isEmpty()) {
         onDismiss()
     }
-    LaunchedEffect(key1 = Unit) {
-        multiplePermissionLauncher.launch(permissionsString)
-    }
+    // Display dialogs
     permissionDialog.forEach { permission ->
         PermissionAlertDialog(neededPermission = permission, onDismiss = {
             permissionDialog.remove(permission)
@@ -96,10 +106,14 @@ fun AskPermissions(
     }
 }
 
+/**
+ * Check for the single permission granted */
 fun hasPermission(context: Context, permission: String): Boolean {
     return ActivityCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }
 
+/**
+ * Check for the permissions granted */
 fun hasPermissions(context: Context, permissions: List<NeededPermission>): Boolean {
     val permissionsString = permissions.map { it.permission }
     return permissionsString.all { hasPermission(context = context, it) }

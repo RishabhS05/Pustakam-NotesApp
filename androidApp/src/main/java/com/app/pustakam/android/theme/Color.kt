@@ -1,6 +1,6 @@
+
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 //darkbrown
@@ -57,12 +57,6 @@ val earthBrown = Color(0xFF936639)
 val earthGreenDark10 = Color(0xFF7F4F24)
 val earthGreenDark11 = Color(0xFF582E0E)
 
-
-
-
-
-
-
 val lightTheme = lightColorScheme(
     primary = earthyLight, // dark
     primaryContainer = brown10, //light
@@ -92,10 +86,11 @@ val lightTheme = lightColorScheme(
     errorContainer = orange10,
     error = orange80,
 )
+
 var darkTheme = darkColorScheme(
     primary = brown8 , //light
     primaryContainer = DarkBrown4, //darker then primary color
-    onPrimary =  brown11,// darker or black
+    onPrimary = brown13,// darker or black
     onPrimaryContainer = brown11, // lighter then primary
 
     secondary = DarkBrown0, // other then primary same shade
@@ -124,3 +119,5 @@ var darkTheme = darkColorScheme(
     onError = orange20,
     onErrorContainer = orange80,
 )
+
+
