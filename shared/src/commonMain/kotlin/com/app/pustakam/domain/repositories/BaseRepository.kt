@@ -17,6 +17,7 @@ import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.UniqueIdGenerator
+import com.app.pustakam.util.getCurrentTimestamp
 import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
@@ -210,7 +211,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     }
 
     private fun createNewEmptyNote(): Note  {
-        val date = UniqueIdGenerator.getCurrentTimestamp().toString()
+        val date = getCurrentTimestamp().toString()
         val id = UniqueIdGenerator.generateUniqueId()
         return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
     }

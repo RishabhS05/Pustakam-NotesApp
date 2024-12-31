@@ -20,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
@@ -105,9 +104,7 @@ fun LoginView(onNavigateToHome: () -> Unit, onNavigateToSignUp: () -> Unit) {
     }
 }
 
-@Preview(
-    device = "id:pixel_5", showBackground = true, backgroundColor = 0xFFFFFFFF
-)
+@Preview
 @Composable
 private fun LoginPre() {
     MyApplicationTheme {}

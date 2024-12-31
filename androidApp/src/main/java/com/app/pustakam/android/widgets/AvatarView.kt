@@ -1,10 +1,10 @@
 package com.app.pustakam.android.widgets
 
+import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
 
 @Composable
@@ -66,13 +67,25 @@ fun LoadImage( url: String,
     )
 }
 
-@Preview
+@Preview("default")
+@Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview("large font", fontScale = 2f)
 @Composable
 private fun LoadImagePrev() {
-    LoadImage(placeHolderDrawable = R.drawable.avatar, url = "https://picsum.photos/seed/picsum/200/300", modifier = Modifier)
+    MyApplicationTheme {
+        LoadImage(url = "https://picsum.photos/seed/picsum/200/300", modifier = Modifier)
+    }
 }
-@Preview
+
+@Preview("default")
+@Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview("large font", fontScale = 2f)
 @Composable
-private fun SignUp() {
-    CircleIconLoad(placeHolderDrawable =  R.drawable.avatar){}
+private fun NoteEditorPreview() {
+  /** App Theme */
+    MyApplicationTheme {
+      /** View */
+        CircleIconLoad(placeHolderDrawable =  R.drawable.avatar){}
+
+    }
 }

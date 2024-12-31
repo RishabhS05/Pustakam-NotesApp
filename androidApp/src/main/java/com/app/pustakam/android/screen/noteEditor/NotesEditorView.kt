@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -51,10 +54,12 @@ import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
+import com.app.pustakam.android.widgets.textField.NoteTextField
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
 
 
@@ -65,6 +70,8 @@ fun NotesEditorView(
     onBack: () -> Unit = {},
 ) {
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
+    val focusManager = LocalFocusManager.current
+
     OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
@@ -92,7 +99,10 @@ fun NotesEditorView(
                         onDismiss = {
                             noteEditorViewModel.showPermissionAlert(null)
                                     },
-                        onGrantPermission = { noteEditorViewModel.showPermissionAlert(null) })
+                        onGrantPermission = {
+                            noteEditorViewModel.showPermissionAlert(null)
+                            noteEditorViewModel.prepareInitialContent()
+                        })
                 }
                 showDeleteAlert ->
                     DeleteNoteAlert(noteTitle = if (!note?.title.isNullOrEmpty()) note?.title!! else "",
@@ -100,7 +110,8 @@ fun NotesEditorView(
                             noteEditorViewModel.deleteNote(noteId = id!!)
                             noteEditorViewModel.showDeleteAlert(false)
                         }
-                    ) { noteEditorViewModel.showDeleteAlert(false)
+                    ) {
+                        noteEditorViewModel.showDeleteAlert(false)
                     }
             }
         }
@@ -112,13 +123,16 @@ fun NotesEditorView(
         NoteStatus.onSaveCompletedExit -> {
             onBack()
         }
-
         else -> {}
     }
-    val focusManager = LocalFocusManager.current
+
     NotesEditor(state = state,
         topBar = {
-            TopAppBar(title = { /*TODO*/ },
+            TopAppBar(title = {
+                state.note?.updatedAt?.let { Text(it.toLocalFormat(),
+                    style = typography.titleMedium)
+                }
+            },
                 actions = {
                     IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
                         Icon(
@@ -143,7 +157,7 @@ fun NotesEditorView(
                         noteEditorViewModel.showDeleteAlert(true)
                     }) {
                         Icon(
-                            Icons.Filled.Delete, tint = Color(0xFFC62828),
+                            Icons.Default.Delete, tint = Color(0xFFC62828),
                             contentDescription = "Delete a note",
                         )
                     }
@@ -152,10 +166,10 @@ fun NotesEditorView(
         onButtonOverLays = {
             Box(Modifier.fillMaxSize()) {
                 OverLayEditorButtons(
-                    modifier = Modifier
-                        .align(alignment = Alignment.CenterEnd),
+                    modifier = Modifier.align(alignment = Alignment.CenterEnd),
                     onAddTextField = {
-                        noteEditorViewModel.prepareInitialContent(ContentType.TEXT)
+                        noteEditorViewModel.setContentType(contentType = ContentType.TEXT)
+                        noteEditorViewModel.prepareInitialContent()
                     },
                     onArrowButton = { focusManager.clearFocus() },
                     onRecordVideo = {
@@ -172,7 +186,8 @@ fun NotesEditorView(
         }
     )
 }
-
+@Composable
+fun rememberFocusRequester() = remember {  FocusRequester()  }
 @Composable
 fun NotesEditor(
     state: NoteUIState,
@@ -181,7 +196,7 @@ fun NotesEditor(
 ) {
     // Note content state
     val isRuledEnabledState = remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
+    val focusRequester = rememberFocusRequester()
     val focusManager = LocalFocusManager.current
     val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
     Scaffold(topBar = topBar)
@@ -223,34 +238,39 @@ fun NotesEditor(
                         .padding(top = 2.dp)
                 )
                 HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
+                RenderContents(content =  state.note?.content)
             }
             onButtonOverLays()
         }
     }
 
 }
-
 @Composable
-fun SpawnWidget(
+fun RenderContents(content : List<NoteContentModel>?){
+    LazyColumn{
+        content?.let {
+            itemsIndexed(it.sortedBy { it.position.inc()}){ index, content->
+                RenderWidget(content= content)
+            }
+        }
+    }
+}
+@Composable
+fun RenderWidget(
     modifier: Modifier = Modifier,
     content: NoteContentModel
 ) {
     when (content.type) {
         ContentType.TEXT -> {
-            val content = content as NoteContentModel.TextContent
-            TextField(value = content.text, onValueChange = {
-            })
+            NoteTextField(noteContentModel =  content as NoteContentModel.TextContent)
         }
-
         ContentType.IMAGE -> {
             val content = content as NoteContentModel.ImageContent
             val path = content.localPath ?: content.url
             Card {
                 LoadImage(url = path, modifier = Modifier)
             }
-
         }
-
         ContentType.VIDEO -> {
             val content = content as NoteContentModel.VideoContent
             val path = content.localPath ?: content.url
@@ -318,7 +338,9 @@ fun RuledPage() {
 }
 
 
-@Preview
+@Preview("default")
+@Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview("large font", fontScale = 2f)
 @Composable
 private fun NoteEditorPreview() {
     MyApplicationTheme {

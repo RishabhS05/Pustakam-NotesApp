@@ -1,14 +1,13 @@
 package com.app.pustakam.android.screen.navigation
 
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.app.pustakam.android.screen.login.LoginView
 import com.app.pustakam.android.screen.signup.SignUpView
 
 fun NavGraphBuilder.AuthNavGraph(
-    navController: NavHostController
+    navController: PustakmNavController
 ) {
     navigation(
         route = Route.Authentication,
@@ -19,13 +18,10 @@ fun NavGraphBuilder.AuthNavGraph(
         ) {
             LoginView(
                 onNavigateToHome = {
-                    navController.clearBackStack<Screen.Authentication>()
-                    navController.navigate(Route.Home) {
-                        launchSingleTop =true
-                    }
+                    navController.goToHomeScreen()
                 },
                 onNavigateToSignUp = {
-                    navController.navigate(Route.Signup)
+                    navController.navigateTo(Route.Signup)
                 },
             )
         }
@@ -33,7 +29,7 @@ fun NavGraphBuilder.AuthNavGraph(
             route = Route.Signup
         ) {
             SignUpView(onNavigate = {
-                navController.navigateUp()
+                navController.upPress()
             })
         }
     }

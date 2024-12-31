@@ -51,7 +51,7 @@ struct NoteEditorView: View {
         self.note = note
         if note != nil {
             _title = State(initialValue: note!.title ?? "")
-            _noteContent = State(initialValue: note!.description_ ?? "")
+    
         }
     }
     var body: some View {

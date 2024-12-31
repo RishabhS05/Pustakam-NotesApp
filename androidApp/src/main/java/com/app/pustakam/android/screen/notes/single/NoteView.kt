@@ -1,6 +1,7 @@
 package com.app.pustakam.android.screen.notes.single
 
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -56,7 +57,10 @@ fun NoteCardView(modifier: Modifier = Modifier, note: Note, onClick: () -> Unit 
     }
 }
 
-@Preview
+@Preview("default")
+@Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview("large font", fontScale = 2f)
+
 @Composable
 private fun NotesPreview() {
     MyApplicationTheme {
@@ -67,7 +71,10 @@ private fun NotesPreview() {
             createdAt = "",
             categoryId = ""
         )
-        NoteCardView(note = note)
+        Box(modifier =  Modifier.fillMaxWidth()) {
+            NoteCardView(note = note)
+        }
+
     }
 
 }

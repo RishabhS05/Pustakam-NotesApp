@@ -9,21 +9,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun BottomBar(
-    navController: NavHostController = rememberNavController(),
+    navController: PustakmNavController = rememberPustakmNavController(),
 ) {
-    val navigationScreen = listOf(
-      Screen.HomeScreen.NotesScreen, Screen.HomeScreen.SearchScreen, Screen.HomeScreen.NotificationScreen
-    )
+
     NavigationBar {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
-        navigationScreen.forEach { item ->
+        val currentRoute = navController.currentRoute()
+        navController.navigationScreen.forEach { item ->
             NavigationBarItem(
                 selected = currentRoute == item.route,
                 label = {
@@ -38,15 +33,7 @@ fun BottomBar(
                     )
                 },
                 onClick = {
-                    navController.navigate(item.route) {
-                        if (item.route != navController.currentDestination?.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
+                    navController.navigateToBottomBarRoute(item.route)
                 },
             )
         }

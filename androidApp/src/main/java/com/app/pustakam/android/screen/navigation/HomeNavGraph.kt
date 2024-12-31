@@ -1,7 +1,6 @@
 package com.app.pustakam.android.screen.navigation
 
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.app.pustakam.android.screen.noteEditor.NotesEditorView
@@ -10,7 +9,7 @@ import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
 
 
-fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
+fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
 
     navigation(
         route = Route.Home,
@@ -20,14 +19,14 @@ fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
             route = Route.Notes
         ) {
             NotesView(onNavigateNote = {
-                navController.navigate(Route.NotesEditor+"/${it.id}")
+                navController.navigateTo(Route.NotesEditor+"/${it.id}")
             })
         }
         composable(
             route = Route.NotesEditor
         ) {
             NotesEditorView( onBack = {
-                navController.navigateUp()
+                navController.upPress()
             })
         }
         composable(
@@ -35,7 +34,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: NavHostController){
         ) {
            val noteId =  it.arguments?.getString("noteId") ?: ""
             NotesEditorView(id = noteId, onBack = {
-                navController.navigateUp()
+                navController.upPress()
             })
         }
         composable(
