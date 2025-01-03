@@ -5,6 +5,7 @@ import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
+import com.app.pustakam.android.screen.noteEditor.OnNoteUpdate
 import com.app.pustakam.android.screen.notes.GetNotesUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Notes

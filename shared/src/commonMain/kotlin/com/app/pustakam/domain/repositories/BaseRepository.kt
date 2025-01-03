@@ -192,7 +192,8 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     suspend fun getANote(id : String?): Result<BaseResponse<Note?>, Error> {
         if (id.isNullOrEmpty()){
             return Result.Success(BaseResponse(data = createNewEmptyNote(),
-                isFromDb = false, isSuccessful = false ))}
+                isFromDb = false, isSuccessful = false ))
+        }
        return getNoteByIdFromDb(id).onSuccess {
            getNoteApi(id)
        }

@@ -1,7 +1,6 @@
 package com.app.pustakam.util
 
 import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.request.NoteRequest
 import com.app.pustakam.data.models.request.RegisterReq
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.extensions.isValidEmail

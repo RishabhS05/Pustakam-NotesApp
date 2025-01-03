@@ -16,7 +16,7 @@ data class Note(
     var createdAt: String?,
     var categoryId: String? ="",
     var isSynced : Boolean? = false,
-    var content: MutableList<NoteContentModel>? = mutableListOf()
+    var content: ArrayList<NoteContentModel>? = arrayListOf()
 ) {
     override fun equals(other: Any?): Boolean {
         return other === this
@@ -42,7 +42,7 @@ sealed class NoteContentModel {
     abstract val id: String
     abstract val noteId : String
     override fun hashCode(): Int {
-        return  31 * (updatedAt.hashCode() + createdAt.hashCode() + position.hashCode())
+        return  31 * (updatedAt.hashCode() + createdAt.hashCode() + position.hashCode()+ type.hashCode())
     }
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -59,9 +59,9 @@ sealed class NoteContentModel {
 
         return true
     }
-    @Serializable
+
     data class TextContent(
-        val text: String = "",
+        var text: String = "",
         override val position: Long,
         override val updatedAt: String? = "${getCurrentTimestamp()}",
         override val createdAt: String?= "${getCurrentTimestamp()}",
@@ -69,7 +69,7 @@ sealed class NoteContentModel {
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val noteId: String ,
     ) : NoteContentModel()
-    @Serializable
+
     data class ImageContent(
         val url: String="",
         override val position: Long, 

@@ -81,10 +81,10 @@ val lightTheme = lightColorScheme(
     surfaceDim = OffWhite,
     surfaceBright = OffWhite2,
     scrim = Black,
-    onError = orange90,
+    onError = orange20,
     onErrorContainer = orange80,
     errorContainer = orange10,
-    error = orange80,
+    error = orange30,
 )
 
 var darkTheme = darkColorScheme(
@@ -114,7 +114,7 @@ var darkTheme = darkColorScheme(
     background = Gray3,
 
     onBackground = OffWhite,
-    error = orange40,
+    error = orange30,
     errorContainer = orange90,
     onError = orange20,
     onErrorContainer = orange80,

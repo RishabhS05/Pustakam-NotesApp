@@ -15,7 +15,10 @@ fun LoadingUI(modifier: Modifier = Modifier, alignment: Alignment = Alignment.Ce
     Box(modifier = modifier
         .fillMaxSize()) {
         CircularProgressIndicator(
-            strokeWidth = 6.dp, color = MaterialTheme.colorScheme.primary, trackColor = MaterialTheme.colorScheme.secondary, strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap, modifier = Modifier.align(alignment)
+            strokeWidth = 6.dp, color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.secondary,
+            strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
+            modifier = Modifier.align(alignment)
         )
     }
 }

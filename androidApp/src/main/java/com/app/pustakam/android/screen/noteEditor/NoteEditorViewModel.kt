@@ -1,7 +1,9 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import androidx.compose.runtime.mutableStateListOf
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.NOTES_CODES
+import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
@@ -15,11 +17,9 @@ import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.ContentType.AUDIO
 import com.app.pustakam.util.ContentType.DOCX
-import com.app.pustakam.util.ContentType.GIF
 import com.app.pustakam.util.ContentType.IMAGE
 import com.app.pustakam.util.ContentType.LINK
 import com.app.pustakam.util.ContentType.LOCATION
-import com.app.pustakam.util.ContentType.PDF
 import com.app.pustakam.util.ContentType.TEXT
 import com.app.pustakam.util.ContentType.VIDEO
 import com.app.pustakam.util.Error
@@ -30,48 +30,46 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+interface OnNoteUpdate {
+    fun onUpdateNote()
+}
+class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
 
-class NoteEditorViewModel : BaseViewModel() {
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
+    private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
+    val noteContentUiState : StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
 
-    fun changeNoteStatus(status: NoteStatus?) {
-        _noteUiState.update {
-            it.copy(
-                noteStatus = status, isLoading = true
-            )
-        }
-    }
+        //default methods
     override fun onLoading(taskCode: TaskCode) {
         _noteUiState.update {
-            it.copy(isLoading = true)
+            it.copy(isLoading = true, successMessage = "")
         }
     }
-
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         when (taskCode) {
-            NOTES_CODES.INSERT, NOTES_CODES.UPDATE -> {
+            NOTES_CODES.INSERT -> {
                 log_d("Loading", "Getting Update data")
                 val note = result.data.data as Note
                 _noteUiState.update {
                     val noteStatus = if (it.noteStatus == NoteStatus.onBackPress)
                         NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
-                    it.copy(
-                        isLoading = false, note = note, isSetupValues = true, noteStatus = noteStatus
-                    )
+                    it.copy(noteStatus = noteStatus)
                 }
+                _noteContentUiState.update { it.copy(note= note, isAllSetupDone = true)}
             }
 
             NOTES_CODES.READ -> {
                 val note = result.data.data as Note
-                if (!noteUIState.value.isSetupValues) _noteUiState.update {
+                if (!noteContentUiState.value.isAllSetupDone) _noteContentUiState.update {
                     it.titleTextState.value = note.title ?: ""
                     it.copy(
-                        titleTextState = it.titleTextState,
-                        isLoading = false, note = note, isSetupValues = true,
+                        titleTextState = it.titleTextState, note = note,
+                        isAllSetupDone = true,
+                        contents =  if(note.content.isNotnull())  mutableStateListOf(*note.content!!.toTypedArray()) else mutableStateListOf()
                     )
                 }
             }
@@ -79,48 +77,12 @@ class NoteEditorViewModel : BaseViewModel() {
             NOTES_CODES.DELETE -> {
                 _noteUiState.update {
                     it.copy(
-                        isLoading = false, noteStatus = NoteStatus.onSaveCompletedExit
+                        isLoading = false, noteStatus = NoteStatus.exit
                     )
                 }
             }
         }
     }
-
-    fun updateNoteObject() {
-        val note = _noteUiState.value.note?.copy(
-            title = _noteUiState.value.titleTextState.value
-        )
-        _noteUiState.update {
-            it.copy(note = note)
-        }
-    }
-
-    fun readFromDataBase(id: String?) {
-        if (!id.isNullOrEmpty()) _noteUiState.update {
-            it.copy(showDeleteButton = true)
-        }
-        makeAWish(NOTES_CODES.READ) {
-            readNoteUseCase.invoke(id)
-        }
-    }
-
-    // call make a wish api
-    fun createOrUpdateNote() {
-        if(_noteUiState.value.titleTextState.value.isEmpty()){
-            if(_noteUiState.value.note?.content?.isEmpty() == true) return
-        }
-        updateNoteObject()
-        makeAWish(NOTES_CODES.INSERT) {
-            createUpdateNoteUseCase.invoke(_noteUiState.value.note!!)
-        }
-    }
-
-    fun deleteNote(noteId: String) {
-        makeAWish(NOTES_CODES.DELETE) {
-            deleteNoteUseCase.invoke(noteId)
-        }
-    }
-
     override fun onFailure(taskCode: TaskCode, error: Error) {
         when (taskCode) {
             NOTES_CODES.READ -> {
@@ -136,11 +98,9 @@ class NoteEditorViewModel : BaseViewModel() {
             }
         }
     }
-
     override suspend fun logoutUserForcefully() {
         createUpdateNoteUseCase.logoutUser()
     }
-
     override fun clearError() {
         _noteUiState.update {
             it.copy(
@@ -149,10 +109,73 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
-    fun showDeleteAlert(value: Boolean) {
-        _noteUiState.update { it.copy(showDeleteAlert = value) }
+    /** CRUD operations on Notes */
+
+    // call make a wish api
+    fun createOrUpdateNote() {
+        if(_noteContentUiState.value.titleTextState.value.isEmpty()){
+            if(_noteContentUiState.value.note?.content?.isEmpty() == true) {
+                changeNoteStatus(NoteStatus.exit)
+                return
+            }
+        }
+        updateNoteObject()
+        makeAWish(NOTES_CODES.INSERT) {
+            createUpdateNoteUseCase.invoke(_noteContentUiState.value.note!!)
+        }
+    }
+    fun readFromDataBase(id: String?) {
+        if (!id.isNullOrEmpty()) _noteUiState.update {
+            it.copy(showDeleteButton = true)
+        }
+        makeAWish(NOTES_CODES.READ) {
+            readNoteUseCase.invoke(id)
+        }
+    }
+    fun deleteNote(noteId: String) {
+        makeAWish(NOTES_CODES.DELETE) {
+            deleteNoteUseCase.invoke(noteId)
+        }
+    }
+    private fun updateNoteObject() {
+        val note = _noteContentUiState.value.note?.copy(
+            title = _noteContentUiState.value.titleTextState.value
+        )
+        _noteContentUiState.update {
+            it.copy(note = note)
+        }
     }
 
+    /** UI State methods */
+
+    //action status methods
+    fun changeNoteStatus(status: NoteStatus?) {
+        _noteUiState.update {
+            it.copy(
+                noteStatus = status, isLoading = true
+            )
+        }
+    }
+    fun setContentType(contentType: ContentType) {
+        _noteUiState.update {
+            it.copy(contentType = contentType )
+        }
+    }
+
+    //dialog trigger methods
+    fun showDeleteAlertBox(value: Boolean) {
+        // some time it doesn't update a single value
+        _noteUiState.update { it.copy(showDeleteAlert = value, isLoading = false) }
+    }
+    fun showPermissionAlert(value: Boolean?) {
+        _noteUiState.update {
+            it.copy(showPermissionAlert = value)
+        }
+    }
+
+
+
+    //hardware permission logic
    private fun getPermissions(contentType: ContentType?) = when (contentType) {
         VIDEO -> listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO)
         AUDIO -> listOf(NeededPermission.RECORD_AUDIO)
@@ -160,7 +183,7 @@ class NoteEditorViewModel : BaseViewModel() {
         LOCATION -> listOf(NeededPermission.COARSE_LOCATION)
         else -> emptyList()
     }
-
+    // permission dialog setup
     fun preparePermissionDialog(contentType: ContentType? = null) {
         val permission = getPermissions(contentType)
         _noteUiState.update {
@@ -168,11 +191,15 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
-    fun prepareInitialContent() {
+    /**content logic
+     * Add new content to the note content list
+     * by selecting it type on the bases of user selection
+     * */
+    fun addNewContent() {
         val contentType = _noteUiState.value.contentType
-        val note = _noteUiState.value.note
+        val note = _noteContentUiState.value.note
         val position: Long = note?.content?.count()?.toLong() ?: 0
-        val noteId = note?.id!!
+        val noteId = note?.id?: ""
         val content: NoteContentModel
         when (contentType) {
             TEXT -> {
@@ -203,37 +230,26 @@ class NoteEditorViewModel : BaseViewModel() {
                 content = NoteContentModel.Location(position = position, noteId = noteId)
             }
 
-            PDF -> {
-                content = NoteContentModel.Location(position = position, noteId = noteId)
-            }
-
-            DOCX -> {
-                content = NoteContentModel.Location(position = position, noteId = noteId)
-            }
-
-            GIF -> {
-                content = NoteContentModel.Location(position = position, noteId = noteId)
-            }
-
             else -> {
                 content = NoteContentModel.Location(position = position, noteId = noteId)
             }
         }
-        _noteUiState.update {
+
+        _noteContentUiState.update {
             it.note?.content?.add(content)
-            it.copy(note = it.note)
+            it.contents?.add(content)
+                 it.copy(note= it.note, contents= it.contents, isAllSetupDone = true )
         }
     }
+    fun updateTextContent(index: Int, updatedContent: NoteContentModel.TextContent) {
 
-    fun showPermissionAlert(value: Boolean?) {
-        _noteUiState.update {
-            it.copy(showPermissionAlert = value)
-        }
+        noteContentUiState.value.contents?.set(index, updatedContent)
+    }
+    fun removeTextContent(index: Int) {
+        noteContentUiState.value.contents?.removeAt(index)
     }
 
-    fun setContentType(contentType: ContentType) {
-        _noteUiState.update {
-            it.copy(contentType = contentType )
-        }
+    override fun onUpdateNote() {
+
     }
 }
