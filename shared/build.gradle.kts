@@ -74,6 +74,7 @@ android {
 }
 dependencies {
     implementation(libs.androidx.compiler)
+    implementation(libs.bundles.media3)
 }
 sqldelight {
     databases {

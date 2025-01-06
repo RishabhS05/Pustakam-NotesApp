@@ -7,11 +7,11 @@ plugins {
 
 android {
     namespace = "com.app.pustakam.android"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig {
         applicationId = "com.app.pustakam.android"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.compose.viewmodel)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.bundles.media3)
     debugImplementation(libs.compose.ui.tooling)
 
 }
