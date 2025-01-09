@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android)
             api(libs.bundles.koinAndroid)
+            api(libs.bundles.media3)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -74,7 +75,6 @@ android {
 }
 dependencies {
     implementation(libs.androidx.compiler)
-    implementation(libs.bundles.media3)
 }
 sqldelight {
     databases {

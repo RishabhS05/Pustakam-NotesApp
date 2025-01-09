@@ -1,6 +1,9 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import android.app.Activity
+import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
+import com.app.pustakam.android.extension.createFileWithFolders
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NoteContentUiState
@@ -25,20 +28,24 @@ import com.app.pustakam.util.ContentType.VIDEO
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
+import com.app.pustakam.util.getCurrentTimestamp
 import com.app.pustakam.util.log_d
+import com.app.pustakam.util.log_i
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-interface OnNoteUpdate {
-    fun onUpdateNote()
-}
-class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
+
+//sealed interface NoteEditorAction{
+//    data class
+//}
+class NoteEditorViewModel : BaseViewModel() {
 
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState : StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
+
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
@@ -112,6 +119,8 @@ class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
     /** CRUD operations on Notes */
 
     // call make a wish api
+
+
     fun createOrUpdateNote() {
         if(_noteContentUiState.value.titleTextState.value.isEmpty()){
             if(_noteContentUiState.value.note?.content?.isEmpty() == true) {
@@ -138,12 +147,9 @@ class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
         }
     }
     private fun updateNoteObject() {
-        val note = _noteContentUiState.value.note?.copy(
+      _noteContentUiState.value.note?.copy(
             title = _noteContentUiState.value.titleTextState.value
         )
-        _noteContentUiState.update {
-            it.copy(note = note)
-        }
     }
 
     /** UI State methods */
@@ -187,7 +193,7 @@ class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
     fun preparePermissionDialog(contentType: ContentType? = null) {
         val permission = getPermissions(contentType)
         _noteUiState.update {
-            it.copy(permissions = permission, contentType = contentType, showPermissionAlert = true)
+            it.copy(permissions = permission, contentType = contentType, showPermissionAlert = true, isLoading = false)
         }
     }
 
@@ -195,27 +201,33 @@ class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
      * Add new content to the note content list
      * by selecting it type on the bases of user selection
      * */
-    fun addNewContent() {
-        val contentType = _noteUiState.value.contentType
+    fun addNewContent(context : Context) {
+        val contentType = _noteUiState.value.contentType!!
         val note = _noteContentUiState.value.note
         val position: Long = note?.content?.count()?.toLong() ?: 0
         val noteId = note?.id?: ""
         val content: NoteContentModel
+        val folderName = "/${contentType.name.lowercase()}/${noteId}"
+        val fileName = "${getCurrentTimestamp()}${contentType.getExt()}"
+        val file = createFileWithFolders(context as Activity,folderName,fileName)
+
+        log_i("${file.absolutePath} is succefully created")
+
         when (contentType) {
             TEXT -> {
-                content = NoteContentModel.TextContent(position = position, noteId = noteId)
+                content = NoteContentModel.TextContent(position = position, noteId = noteId,)
             }
 
             IMAGE -> {
-                content = NoteContentModel.ImageContent(position = position, noteId = noteId)
+                content = NoteContentModel.ImageContent(position = position, noteId = noteId, localPath = file.absolutePath)
             }
 
             VIDEO -> {
-                content = NoteContentModel.VideoContent(position = position, noteId = noteId)
+                content = NoteContentModel.VideoContent(position = position, noteId = noteId, localPath = file.absolutePath)
             }
 
             AUDIO -> {
-                content = NoteContentModel.AudioContent(position = position, noteId = noteId)
+                content = NoteContentModel.AudioContent(position = position, noteId = noteId, localPath = file.absolutePath)
             }
 
             LINK -> {
@@ -241,15 +253,20 @@ class NoteEditorViewModel : BaseViewModel(), OnNoteUpdate {
                  it.copy(note= it.note, contents= it.contents, isAllSetupDone = true )
         }
     }
-    fun updateTextContent(index: Int, updatedContent: NoteContentModel.TextContent) {
-
-        noteContentUiState.value.contents?.set(index, updatedContent)
-    }
-    fun removeTextContent(index: Int) {
-        noteContentUiState.value.contents?.removeAt(index)
-    }
-
-    override fun onUpdateNote() {
+    fun updateContent(index: Int, updatedContent: NoteContentModel) {
+        _noteContentUiState.update {
+        it.contents.set(index, updatedContent)
+            it.note?.content?.set(index, updatedContent)
+            it.copy(note =  it.note)
+        }
 
     }
+    fun removeContent(index: Int) {
+        _noteContentUiState.update {
+            it.contents.removeAt(index)
+            it.note?.content?.removeAt(index)
+            it.copy(note =  it.note)
+        }
+    }
+
 }

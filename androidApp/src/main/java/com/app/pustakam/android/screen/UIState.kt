@@ -32,8 +32,7 @@ data class SignupUIState(override val isLoading: Boolean,
                          override val successMessage: String? = null,
                          val isRegistered : Boolean = false,
                          val imageUrl : String? = null
-):
-    BaseUIState(isLoading = isLoading, error= error , successMessage = successMessage)
+): BaseUIState(isLoading = isLoading, error= error , successMessage = successMessage)
 
 data class NotesUIState(
     override val isLoading: Boolean,
@@ -44,6 +43,7 @@ data class NotesUIState(
     val isNextPage : Boolean = true,
     val notes: ArrayList<Note> = arrayListOf()
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
+
 data class NoteUIState(
     override val isLoading: Boolean =false,
     override val error: String? =null,

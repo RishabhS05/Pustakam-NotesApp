@@ -38,6 +38,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -56,6 +57,8 @@ import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
+import com.app.pustakam.android.widgets.audio.AudioPlayView
+import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.textField.NoteTextField
 import com.app.pustakam.data.models.response.notes.NoteContentModel
@@ -63,6 +66,9 @@ import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
 import kotlinx.coroutines.flow.MutableStateFlow
+
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +79,7 @@ fun NotesEditorView(
 ) {
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
@@ -89,39 +96,40 @@ fun NotesEditorView(
     }
     val state = noteEditorViewModel.noteContentUiState.collectAsStateWithLifecycle()
     val stateEditor = noteEditorViewModel.noteUIState.collectAsStateWithLifecycle().value.apply {
-            when {
-                isLoading -> LoadingUI()
-                error.isNotnull() -> SnackBarUi(error = error!!) {
-                    noteEditorViewModel.clearError()
-                }
+        when {
+            isLoading -> LoadingUI()
+            error.isNotnull() -> SnackBarUi(error = error!!) {
+                noteEditorViewModel.clearError()
+            }
+            showPermissionAlert == true -> {
+                AskPermissions(permissionsRequired = permissions, onDismiss = {
+                    noteEditorViewModel.showPermissionAlert(null)
+                }, onGrantPermission = {
+                    noteEditorViewModel.showPermissionAlert(null)
+                    noteEditorViewModel.addNewContent(context)
+                })
+            }
 
-                showPermissionAlert == true -> {
-                    AskPermissions(permissionsRequired = permissions, onDismiss = {
-                        noteEditorViewModel.showPermissionAlert(null)
-                    }, onGrantPermission = {
-                        noteEditorViewModel.showPermissionAlert(null)
-                        noteEditorViewModel.addNewContent()
-                    })
-                }
-
-                showDeleteAlert -> {
-                    DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
-                        noteEditorViewModel.deleteNote(noteId = id!!)
-                        noteEditorViewModel.showDeleteAlertBox(false)
-                    }) {
-                        noteEditorViewModel.showDeleteAlertBox(false)
-                    }
+            showDeleteAlert -> {
+                DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
+                    noteEditorViewModel.deleteNote(noteId = id!!)
+                    noteEditorViewModel.showDeleteAlertBox(false)
+                }) {
+                    noteEditorViewModel.showDeleteAlertBox(false)
                 }
             }
         }
-    when (stateEditor.noteStatus) {
-        NoteStatus.onBackPress -> noteEditorViewModel.createOrUpdateNote()
-        NoteStatus.onSaveCompletedExit, NoteStatus.exit -> onBack()
-        else -> {}
+    }.also {
+        when (it.noteStatus) {
+            NoteStatus.onBackPress -> noteEditorViewModel.createOrUpdateNote()
+            NoteStatus.onSaveCompletedExit, NoteStatus.exit -> onBack()
+            else -> {}
+        }
+
     }
 
-    NotesEditor(state = state,
-        topBar = {
+
+    NotesEditor(state = state, topBar = {
         TopAppBar(title = {
             state.value.note?.updatedAt?.let {
                 Text(
@@ -156,14 +164,13 @@ fun NotesEditorView(
                 )
             }
         })
-    },
-        onButtonOverLays = {
+    }, onButtonOverLays = {
         Box(Modifier.fillMaxSize()) {
             OverLayEditorButtons(
                 modifier = Modifier.align(alignment = Alignment.CenterEnd),
                 onAddTextField = {
                     noteEditorViewModel.setContentType(contentType = ContentType.TEXT)
-                    noteEditorViewModel.addNewContent()
+                    noteEditorViewModel.addNewContent(context)
                 },
                 onArrowButton = { focusManager.clearFocus() },
                 onRecordVideo = {
@@ -177,19 +184,16 @@ fun NotesEditorView(
                 },
             )
         }
-    },
-        contentList = {
-            LazyColumn {
-                state.value.contents?.let {
-                    itemsIndexed(it.sortedBy { it.position.inc() }) { index, contentValue ->
-                        RenderWidget(content = contentValue, onTextUpdate = { text ->
-                            val textContent = (contentValue as NoteContentModel.TextContent)
-                            textContent.text = text
-                            noteEditorViewModel.updateTextContent(index,textContent)
-                        })
-                    }
+    }, contentList = {
+        LazyColumn {
+            state.value.contents.let {
+                itemsIndexed(it.sortedBy { it.position.inc() }) { index, contentValue ->
+                    RenderWidget(content = contentValue, onUpdate = { value ->
+                        noteEditorViewModel.updateContent(index, value)
+                    })
                 }
             }
+        }
     })
 }
 
@@ -202,7 +206,7 @@ fun NotesEditor(
     topBar: @Composable () -> Unit,
     contentList: @Composable () -> Unit,
     onButtonOverLays: @Composable () -> Unit,
-    ) {
+) {
     // Note content state
     val isRuledEnabledState = remember { mutableStateOf(false) }
     val focusRequester = rememberFocusRequester()
@@ -215,23 +219,16 @@ fun NotesEditor(
         ) {
             if (isRuledEnabledState.value) RuledPage()
             Column {
-                TextField(value = state.value.titleTextState.value,
-                    textStyle = typography.titleLarge,
-                    placeholder = {
+                TextField(value = state.value.titleTextState.value, textStyle = typography.titleLarge, placeholder = {
                     Text(
                         "Title : Keep your thoughts alive.",
                         modifier = Modifier.padding(start = paddingLeft),
                     )
                 }, colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = colorScheme.tertiary
+                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, cursorColor = colorScheme.tertiary
                 ), onValueChange = {
                     state.value.titleTextState.value = it
-                }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = {
+                }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), keyboardActions = KeyboardActions(onNext = {
                     focusManager.moveFocus(FocusDirection.Down)
                 }), modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).padding(top = 2.dp)
                 )
@@ -243,19 +240,18 @@ fun NotesEditor(
     }
 
 }
+
 @Composable
 fun RenderWidget(
     modifier: Modifier = Modifier,
     content: NoteContentModel,
-    onTextUpdate: (text: String) -> Unit,
+    onUpdate: (content: NoteContentModel) -> Unit,
 ) {
     when (content.type) {
         ContentType.TEXT -> {
-            NoteTextField(
-                noteContentModel = (content as NoteContentModel.TextContent), onUpdate = {
-                    onTextUpdate(it)
-                }
-            )
+            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent), onUpdate = {
+                onUpdate(content.copy(text = it))
+            })
         }
 
         ContentType.IMAGE -> {
@@ -270,13 +266,19 @@ fun RenderWidget(
             val contentVideo = content as NoteContentModel.VideoContent
             val path = contentVideo.localPath ?: contentVideo.url
             Card {
-
             }
         }
 
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.AudioContent
-            val path = contentAudio.localPath ?: contentAudio.url
+            if (contentAudio.isRecorded) {
+                AudioPlayView()
+            } else {
+                AudioRecording(contentAudio, onStop = { onUpdate(it)})
+                {
+
+                }
+            }
         }
 
         ContentType.LINK -> {
@@ -333,7 +335,6 @@ private fun NoteEditorPreview() {
         val state = MutableStateFlow(NoteContentUiState()).collectAsStateWithLifecycle()
         NotesEditor(state = state, topBar = {}, onButtonOverLays = {
             OverLayEditorButtons()
-        }, contentList = {
-        })
+        }, contentList = {})
     }
 }

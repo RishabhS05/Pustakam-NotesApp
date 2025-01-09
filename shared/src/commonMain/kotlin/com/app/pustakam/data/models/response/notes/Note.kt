@@ -80,7 +80,6 @@ sealed class NoteContentModel {
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val noteId: String ,
     ) : NoteContentModel()
-    @Serializable
     data class VideoContent(
         val url: String= "",
         override val position: Long,
@@ -92,7 +91,7 @@ sealed class NoteContentModel {
         override val id: String =  UniqueIdGenerator.generateUniqueId(),
         override val noteId: String ,
     ) : NoteContentModel()
-    @Serializable
+
     data class AudioContent(
         override val position: Long,
         override val updatedAt: String? = "${getCurrentTimestamp()}" ,
@@ -100,11 +99,11 @@ sealed class NoteContentModel {
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val type: ContentType = ContentType.AUDIO,
         override val noteId: String,
-        val duration: Long=0,
+        val isRecorded:Boolean = false,
+        val duration: Long = 0,
         val localPath: String? = null,
         val url: String = "",
     ) : NoteContentModel()
-    @Serializable
     data class DocContent(
         val url: String ="",
         override val position: Long,
@@ -115,7 +114,7 @@ sealed class NoteContentModel {
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val noteId: String ,
     ) : NoteContentModel()
-    @Serializable
+
     data class Link(
         val url: String ="",
         override val position: Long,

@@ -2,8 +2,8 @@ package com.app.pustakam.android.hardware.audio
 
 import java.io.File
 
-interface IPlayerRecorder {
-    fun start()
+interface IAudioPlayer {
+    fun start(outputFile : File)
     fun stop()
     fun pause()
     fun resume()

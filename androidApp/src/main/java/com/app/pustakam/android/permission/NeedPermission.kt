@@ -1,6 +1,8 @@
 package com.app.pustakam.android.permission
 
 import android.Manifest
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 enum class NeededPermission(
     val permission: String,
@@ -39,9 +41,16 @@ enum class NeededPermission(
         permission = Manifest.permission.CAMERA,
         title = "Camera permission",
         description = "This permission is needed to access your camera. Please grant the permission.",
-        permanentlyDeniedDescription = "This permission is needed to access your microphone. Please grant the permission in app settings.",
-    )
-    ;
+        permanentlyDeniedDescription = "This permission is needed to access your camera. Please grant the permission in app settings.",
+    ),
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    POST_NOTIFICATIONS(
+        permission = Manifest.permission.POST_NOTIFICATIONS,
+        title = "Post Notification Permission",
+        description =  "This permission is needed to show you the Notifications. Please grant the permission.",
+        permanentlyDeniedDescription = "This permission is needed for Showing Notifications. Please grant the permission in app settings."
+    );
+
     fun permissionTextProvider(isPermanentDenied: Boolean): String {
         return if (isPermanentDenied) this.permanentlyDeniedDescription else this.description
     }

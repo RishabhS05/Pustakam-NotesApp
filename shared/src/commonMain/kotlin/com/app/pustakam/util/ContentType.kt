@@ -1,5 +1,15 @@
 package com.app.pustakam.util
 
 enum class ContentType {
-    TEXT, IMAGE, VIDEO, AUDIO, LINK, DOCX, LOCATION, PDF, GIF
+    TEXT{}, IMAGE{
+        override fun getExt() = ".png"
+    }
+    , VIDEO{
+        override fun getExt() = ".wav"
+    }
+    , AUDIO{
+        override fun getExt() = ".mp3"
+    }
+    , LINK, DOCX, LOCATION, PDF, GIF;
+   open fun getExt() = ""
 }
