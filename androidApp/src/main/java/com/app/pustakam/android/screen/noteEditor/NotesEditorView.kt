@@ -57,7 +57,7 @@ import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
-import com.app.pustakam.android.widgets.audio.AudioPlayView
+import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.textField.NoteTextField
@@ -66,10 +66,6 @@ import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
 import kotlinx.coroutines.flow.MutableStateFlow
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,10 +183,12 @@ fun NotesEditorView(
     }, contentList = {
         LazyColumn {
             state.value.contents.let {
-                itemsIndexed(it.sortedBy { it.position.inc() }) { index, contentValue ->
+                itemsIndexed(it.sortedBy { content -> content.position.inc() }) { index, contentValue ->
                     RenderWidget(content = contentValue, onUpdate = { value ->
                         noteEditorViewModel.updateContent(index, value)
-                    })
+                    }){value->
+                        noteEditorViewModel.removeContent(value)
+                    }
                 }
             }
         }
@@ -219,7 +217,8 @@ fun NotesEditor(
         ) {
             if (isRuledEnabledState.value) RuledPage()
             Column {
-                TextField(value = state.value.titleTextState.value, textStyle = typography.titleLarge, placeholder = {
+                TextField(value = state.value.titleTextState.value,
+                    textStyle = typography.titleLarge, placeholder = {
                     Text(
                         "Title : Keep your thoughts alive.",
                         modifier = Modifier.padding(start = paddingLeft),
@@ -246,6 +245,7 @@ fun RenderWidget(
     modifier: Modifier = Modifier,
     content: NoteContentModel,
     onUpdate: (content: NoteContentModel) -> Unit,
+    onDelete:  (content: NoteContentModel) -> Unit,
 ) {
     when (content.type) {
         ContentType.TEXT -> {
@@ -261,23 +261,21 @@ fun RenderWidget(
                 LoadImage(url = path, modifier = Modifier)
             }
         }
-
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.VideoContent
             val path = contentVideo.localPath ?: contentVideo.url
+
             Card {
+
             }
         }
 
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.AudioContent
             if (contentAudio.isRecorded) {
-                AudioPlayView()
+                AudioPlayerUIState(noteContentModel = contentAudio, onDelete = onDelete)
             } else {
-                AudioRecording(contentAudio, onStop = { onUpdate(it)})
-                {
-
-                }
+                AudioRecording(contentAudio, onStop = { onUpdate(it) }, onDelete= onDelete)
             }
         }
 

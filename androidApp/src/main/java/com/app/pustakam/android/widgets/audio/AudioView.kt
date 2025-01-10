@@ -5,12 +5,11 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,13 +21,16 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,70 +38,75 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
+import com.app.pustakam.android.hardware.audio.AudioMode
+import com.app.pustakam.android.hardware.audio.AudioPlayingIntent
+import com.app.pustakam.android.hardware.audio.AudioRecordingIntent
 import com.app.pustakam.android.hardware.audio.AudioState
 import com.app.pustakam.android.hardware.audio.AudioViewModel
+import com.app.pustakam.android.hardware.audio.PlayMediaViewModel
 import com.app.pustakam.android.theme.typography
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import androidx.compose.runtime.State
-import androidx.compose.ui.graphics.Color
-import com.app.pustakam.android.hardware.audio.AudioMode
-import com.app.pustakam.android.hardware.audio.AudioRecordingIntent
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
+import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.extensions.getReadableDuration
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
 @Composable
-fun AudioRecording(noteContentModel: NoteContentModel.AudioContent,
-                   onStop:(NoteContentModel.AudioContent)-> Unit = {} ,
-                   onDelete: (NoteContentModel.AudioContent) -> Unit = {}){
-    val viewModel : AudioViewModel = viewModel()
+fun AudioRecording(
+    noteContentModel: NoteContentModel.AudioContent, onStop: (NoteContentModel.AudioContent) -> Unit = {}, onDelete: (NoteContentModel.AudioContent) -> Unit = {}
+) {
+    val viewModel: AudioViewModel = viewModel()
     viewModel.updateContent(noteContentModel)
     val state = viewModel.state.collectAsStateWithLifecycle()
     state.value.apply {
-        when{
+        when {
             showDeleteDialog -> {
-                DeleteNoteAlert(noteTitle = "Recording",
-                    onConfirm = {
-                        viewModel.handleIntent(AudioRecordingIntent.DeleteRecordingIntent)
-                        viewModel.showDeleteAlert(false)
-                        state.value.noteContentModel?.let { onDelete(it) }
-                    }) {
+                DeleteNoteAlert(noteTitle = "Recording", onConfirm = {
+                    viewModel.handleIntent(AudioRecordingIntent.DeleteRecordingIntent)
+                    viewModel.showDeleteAlert(false)
+                    state.value.noteContentModel?.let { onDelete(it) }
+                }) {
                     viewModel.showDeleteAlert(false)
                 }
             }
+
             audioMode == AudioMode.stop -> state.value.noteContentModel?.let { onStop(it) }
         }
     }
-    AudioRecordView(state = state, onAction =
-    viewModel::handleIntent,onDelete= {
+    AudioRecordView(state = state, onAction = viewModel::handleIntent, onDelete = {
         viewModel.showDeleteAlert(true)
-    } )
+    })
 }
+
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun AudioRecordView(state : State<AudioState>,onAction : (AudioRecordingIntent) -> Unit, onDelete:()-> Unit) {
-    val iconModifier  =Modifier.size(28.dp)
+fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -> Unit, onDelete: () -> Unit) {
+    val iconModifier = Modifier.size(28.dp)
+    var elapsedTime = remember { mutableLongStateOf(0) }
     val isRecording = state.value.audioMode == AudioMode.start || state.value.audioMode == AudioMode.resume
-    Card {
+    Card(modifier = Modifier.padding(12.dp)) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 4.dp)
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_mic), contentDescription = "mic",
+                painter = painterResource(R.drawable.ic_mic),
+                contentDescription = "mic",
                 tint = Color.White,
-                modifier = Modifier.padding(4.dp).background(color =  colorScheme.error, shape = RoundedCornerShape(100)).padding(4.dp)
+                modifier = Modifier.padding(4.dp).background(color = colorScheme.error,
+                    shape = RoundedCornerShape(100)).padding(4.dp)
             )
             RecordingTimer(
                 isTimerRunning = isRecording,
+                elapsedTime = elapsedTime,
                 modifier = Modifier.padding(horizontal = 6.dp)
             )
             IconButton(onClick = {
                 if (!isRecording) {
                     onAction(AudioRecordingIntent.StartRecordingIntent)
                 } else {
-                   onAction(AudioRecordingIntent.StopRecordingIntent)
+                    onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.value))
                 }
             }) {
                 val drawable = if (isRecording) R.drawable.ic_stop else R.drawable.ic_record
@@ -108,61 +115,108 @@ fun AudioRecordView(state : State<AudioState>,onAction : (AudioRecordingIntent) 
 
             IconButton(onClick = {
                 if (isRecording) {
-                  onAction(AudioRecordingIntent.PauseRecordingIntent)
+                    onAction(AudioRecordingIntent.PauseRecordingIntent)
                 } else {
-                  onAction(AudioRecordingIntent.ResumeRecordingIntent)
+                    onAction(AudioRecordingIntent.ResumeRecordingIntent)
                 }
             }) {
                 val drawable = if (state.value.audioMode == AudioMode.pause) R.drawable.ic_play else R.drawable.ic_pause
-                Icon(painter = painterResource(drawable), contentDescription = "",modifier = iconModifier)
+                Icon(painter = painterResource(drawable), contentDescription = "", modifier = iconModifier)
             }
-            IconButton(onClick = onDelete) {
+            IconButton(onClick = {
+               onAction(AudioRecordingIntent.StopRecordingIntent(elapsedTime.value))
+                onDelete()
+            }) {
                 Icon(Icons.Default.Delete, contentDescription = "", tint = colorScheme.error, modifier = iconModifier)
             }
         }
     }
 }
 
-@Composable
-fun AudioPlayView() {
-    var isPlaying by remember { mutableStateOf(true) }
-    var currentProgress by remember { mutableStateOf(60f) }
-    var currentTime by remember { mutableStateOf(0L) }
-    var timeLapsed by remember { mutableStateOf(0L) }
-    val onProgress: (Float) -> Unit = {
-        currentProgress = it
-    }
 
-    Card {
-        Column(modifier = Modifier.requiredWidth(180.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween
+@Composable
+fun AudioPlayerUIState(
+    noteContentModel: NoteContentModel.AudioContent, onDelete: (NoteContentModel.AudioContent) -> Unit = {}
+) {
+    val viewModel: PlayMediaViewModel = viewModel()
+    viewModel.updateContent(noteContentModel)
+    val state = viewModel.state.collectAsStateWithLifecycle()
+    state.value.apply {
+        when {
+            showDeleteDialog -> {
+                DeleteNoteAlert(noteTitle = "Recording", onConfirm = {
+                    viewModel.onPlayingIntent(AudioPlayingIntent.DeleteRecordingIntent)
+                    viewModel.showDeleteAlert(false)
+                    state.value.noteContentModel?.let { onDelete(it) }
+                }) {
+                    viewModel.showDeleteAlert(false)
+                }
+            }
+        }
+    }
+    AudioPlayView(state = state, onAction = viewModel::onPlayingIntent, onDelete = {
+        viewModel.onPlayingIntent(AudioPlayingIntent.PauseIntent)
+        viewModel.showDeleteAlert(true)
+    }, onSeek = {})
+}
+
+@Composable
+fun AudioPlayView(
+    state: State<AudioState>, onAction: (AudioPlayingIntent) -> Unit, onDelete: () -> Unit = {}, onSeek: (Float) -> Unit = {}
+) {
+    val totalDuration = state.value.noteContentModel!!.duration
+    var isPlaying by remember { mutableStateOf(state.value.audioMode == AudioMode.playing) }
+    var currentProgress = remember { mutableLongStateOf(0) }
+    val progress = remember(currentProgress) {
+        if (totalDuration > 0) currentProgress.value / totalDuration else 0f
+    }
+    val iconModifier = Modifier.size(30.dp)
+    Card(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier) {
+            Box(
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp).fillMaxWidth(),
             ) {
                 Text(
-                    "7min", style = typography.labelSmall, modifier = Modifier.padding(horizontal = 6.dp)
+                    totalDuration.getReadableDuration(), style = typography.labelSmall, modifier = Modifier.align(Alignment.TopStart)
+                )
+                RecordingTimer(
+                    isTimerRunning = isPlaying, style = typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter), elapsedTime = currentProgress
                 )
                 Text(
-                    "00:00", style = typography.labelSmall, modifier = Modifier.padding(horizontal = 6.dp)
+                    "00:00", style = typography.labelSmall, modifier = Modifier.align(Alignment.TopEnd).padding(horizontal = 6.dp)
                 )
             }
-            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
-                Icon(painter = painterResource(R.drawable.ic_mic), contentDescription = "mic")
-                Text("00:00", style = typography.bodyMedium, modifier = Modifier.padding(horizontal = 6.dp))
-                Spacer(modifier = Modifier)
+            Row(
+                verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp)
+            ) {
+                Slider(
+                    modifier = Modifier.weight(0.5f).padding(horizontal = 6.dp).padding(bottom = 6.dp),
+                    value = progress.toFloat(),
+                    valueRange = 0f..1f,
+                    onValueChange = { newValue ->
+                        val newPosition = (newValue * totalDuration).toLong()
+                        onSeek(newPosition.toFloat())
+                    },
+                )
                 IconButton(onClick = {
                     isPlaying = !isPlaying
                     if (isPlaying) {
-//                    audioRecorder.start()
+                        onAction(AudioPlayingIntent.PauseIntent)
                     } else {
-//                    player.stop()
+                        onAction(AudioPlayingIntent.PlayIntent)
                     }
                 }) {
                     val drawable = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-                    Icon(painter = painterResource(drawable), contentDescription = "", tint = colorScheme.onPrimaryContainer)
+                    Icon(
+                        painter = painterResource(drawable), contentDescription = "", tint = colorScheme.onPrimaryContainer, modifier = iconModifier
+                    )
                 }
-//                    CircularProgressIndicator(progress = { currentProgress }, modifier = Modifier.width(38.dp).align(alignment = Alignment.Center), color = colorScheme.secondary, trackColor = colorScheme.primary)
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete, contentDescription = "", tint = colorScheme.error, modifier = iconModifier
+                    )
+                }
             }
-            Slider(modifier = Modifier.padding(horizontal = 6.dp), value = currentProgress, onValueChange = { onProgress(it) }, valueRange = 0f..100f)
         }
 
     }
@@ -185,7 +239,7 @@ private fun AudioRecordingPreview() {
 @Composable
 private fun AudioPlayerPreview() {
     MyApplicationTheme {
-        val audioRecorder = (LocalContext.current)
-        AudioPlayView()
+        val state = MutableStateFlow(AudioState())
+        AudioPlayView(state = state.collectAsStateWithLifecycle(), onAction = {}, onSeek = {})
     }
 }

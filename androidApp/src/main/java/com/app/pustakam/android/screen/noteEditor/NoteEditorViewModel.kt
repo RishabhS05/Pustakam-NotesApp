@@ -36,9 +36,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-//sealed interface NoteEditorAction{
-//    data class
-//}
 class NoteEditorViewModel : BaseViewModel() {
 
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
@@ -49,7 +46,6 @@ class NoteEditorViewModel : BaseViewModel() {
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
-
         //default methods
     override fun onLoading(taskCode: TaskCode) {
         _noteUiState.update {
@@ -119,8 +115,6 @@ class NoteEditorViewModel : BaseViewModel() {
     /** CRUD operations on Notes */
 
     // call make a wish api
-
-
     fun createOrUpdateNote() {
         if(_noteContentUiState.value.titleTextState.value.isEmpty()){
             if(_noteContentUiState.value.note?.content?.isEmpty() == true) {
@@ -152,19 +146,18 @@ class NoteEditorViewModel : BaseViewModel() {
         )
     }
 
-    /** UI State methods */
 
     //action status methods
     fun changeNoteStatus(status: NoteStatus?) {
         _noteUiState.update {
             it.copy(
-                noteStatus = status, isLoading = true
+                noteStatus = status, isLoading = false
             )
         }
     }
     fun setContentType(contentType: ContentType) {
         _noteUiState.update {
-            it.copy(contentType = contentType )
+            it.copy(contentType = contentType, isLoading = true )
         }
     }
 
@@ -178,8 +171,6 @@ class NoteEditorViewModel : BaseViewModel() {
             it.copy(showPermissionAlert = value)
         }
     }
-
-
 
     //hardware permission logic
    private fun getPermissions(contentType: ContentType?) = when (contentType) {
@@ -261,12 +252,11 @@ class NoteEditorViewModel : BaseViewModel() {
         }
 
     }
-    fun removeContent(index: Int) {
+    fun removeContent(value: NoteContentModel) {
         _noteContentUiState.update {
-            it.contents.removeAt(index)
-            it.note?.content?.removeAt(index)
+            it.contents.remove(value)
+            it.note?.content?.remove(value)
             it.copy(note =  it.note)
         }
     }
-
 }

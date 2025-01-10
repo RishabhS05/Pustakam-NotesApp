@@ -5,7 +5,9 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import com.app.pustakam.android.hardware.audio.AudioPlayer
 import com.app.pustakam.android.hardware.audio.AudioRecorder
+import com.app.pustakam.android.hardware.audio.IAudioPlayer
 import com.app.pustakam.android.hardware.audio.IAudioRecorder
 import com.app.pustakam.android.notification.AppNotificationManager
 import org.koin.android.ext.koin.androidApplication
@@ -25,5 +27,6 @@ fun getAndroidSpecifics(): Module =
            .build()
        }
        single <AppNotificationManager> { AppNotificationManager(get()) }
-       single <IAudioRecorder>{ AudioRecorder(get())  }
+       single <IAudioRecorder>{ AudioRecorder(get())}
+       single <IAudioPlayer>{ AudioPlayer()  }
    }

@@ -42,7 +42,7 @@ sealed class NoteContentModel {
     abstract val id: String
     abstract val noteId : String
     override fun hashCode(): Int {
-        return  31 * (updatedAt.hashCode() + createdAt.hashCode() + position.hashCode()+ type.hashCode())
+        return  31 * (updatedAt.hashCode() + createdAt.hashCode() + position.hashCode() + type.hashCode() +id.hashCode()+ noteId.hashCode())
     }
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -82,6 +82,7 @@ sealed class NoteContentModel {
     ) : NoteContentModel()
     data class VideoContent(
         val url: String= "",
+        val title : String= "",
         override val position: Long,
         override val updatedAt: String? = "${getCurrentTimestamp()}",
         override val createdAt: String? = "${getCurrentTimestamp()}",
@@ -103,6 +104,7 @@ sealed class NoteContentModel {
         val duration: Long = 0,
         val localPath: String? = null,
         val url: String = "",
+        val title: String = "",
     ) : NoteContentModel()
     data class DocContent(
         val url: String ="",

@@ -80,25 +80,30 @@ open class MediaLibrarySessionCallback(context: Context) :
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
-        if (CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_ON == customCommand.customAction) {
-            // Enable shuffling.
-            session.player.shuffleModeEnabled = true
-            // Change the custom layout to contain the `Disable shuffling` command.
-            session.setCustomLayout(
-                session.mediaNotificationControllerInfo!!,
-                ImmutableList.of(customLayoutCommandButtons[1]),
-            )
-            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-        } else if (CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_OFF == customCommand.customAction) {
-            // Disable shuffling.
-            session.player.shuffleModeEnabled = false
-            // Change the custom layout to contain the `Enable shuffling` command.
-            session.setCustomLayout(
+//        if (CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_ON == customCommand.customAction) {
+//            // Enable shuffling.
+//            session.player.shuffleModeEnabled = true
+//            // Change the custom layout to contain the `Disable shuffling` command.
+//            session.setCustomLayout(
+//                session.mediaNotificationControllerInfo!!,
+//                ImmutableList.of(customLayoutCommandButtons[1]),
+//            )
+//            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+//        } else if (CUSTOM_COMMAND_TOGGLE_SHUFFLE_MODE_OFF == customCommand.customAction) {
+//            // Disable shuffling.
+//            session.player.shuffleModeEnabled = false
+//            // Change the custom layout to contain the `Enable shuffling` command.
+//            session.setCustomLayout(
+//                session.mediaNotificationControllerInfo!!,
+//                ImmutableList.of(customLayoutCommandButtons[0]),
+//            )
+//            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+//        }
+                    session.setCustomLayout(
                 session.mediaNotificationControllerInfo!!,
                 ImmutableList.of(customLayoutCommandButtons[0]),
             )
-            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-        }
+
         return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
     }
 

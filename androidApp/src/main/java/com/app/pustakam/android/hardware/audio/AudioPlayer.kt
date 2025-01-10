@@ -1,30 +1,38 @@
 package com.app.pustakam.android.hardware.audio
 
 import androidx.media3.exoplayer.ExoPlayer
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+
 import java.io.File
 
-class AudioPlayer : IAudioPlayer{
-    private var exoPlayer : ExoPlayer? = null
-    init {
-        exoPlayer = configurePlayer()
-    }
+class AudioPlayer : IAudioPlayer, KoinComponent{
+    private var exoPlayer : ExoPlayer = get<ExoPlayer>()
     override fun start(outputFile: File) {
-        TODO("Not yet implemented")
+       exoPlayer.play()
     }
 
     override fun stop() {
-        TODO("Not yet implemented")
+        exoPlayer.stop()
     }
 
     override fun pause() {
-        TODO("Not yet implemented")
+        exoPlayer.pause()
     }
 
-    override fun resume() {
-        TODO("Not yet implemented")
+    override fun seekTo(progress :Long) {
+        exoPlayer.seekTo(progress)
     }
-   private fun configurePlayer() : ExoPlayer =
-       TODO("Not yet implemented")
-       exoPlayer !!
 
+    override fun seekNext() {
+       exoPlayer.seekToNext()
+    }
+
+    override fun seekForward() {
+        exoPlayer.seekForward()
+    }
+
+    override fun seekBackward() {
+        exoPlayer.seekBack()
+    }
 }

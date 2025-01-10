@@ -6,5 +6,8 @@ interface IAudioPlayer {
     fun start(outputFile : File)
     fun stop()
     fun pause()
-    fun resume()
+    fun seekTo(progress: Long)
+    fun seekNext()
+    fun seekForward()
+    fun seekBackward()
 }
