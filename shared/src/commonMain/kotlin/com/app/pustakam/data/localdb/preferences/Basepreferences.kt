@@ -83,9 +83,11 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         }
     }
     private fun mapAppPreferences(preferences: Preferences): UserPreference {
-        val userId = preferences[USER_ID] ?: ""
+        val userId = preferences[USER_ID] ?: "UserID!2333q3w3"
         val token = preferences[TOKEN] ?: ""
         val isAuthenticated = preferences[IS_USER_AUTHENTIC] ?: false
-        return UserPreference(userId = userId, token = token, isAuthenticated = isAuthenticated)
+        return UserPreference(userId = userId, token = token, isAuthenticated = true
+//        isAuthenticated
+        )
     }
 }

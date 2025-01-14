@@ -16,7 +16,8 @@ fun AppNavGraph(navHostController: PustakmNavController = rememberPustakmNavCont
     val appViewModel: AppViewModel = viewModel()
    val user = appViewModel.authState
        .collectAsStateWithLifecycle(initialValue = UserPreference()).value
-    val route = if (user.isAuthenticated) Route.Home else Route.Authentication
+    val route = Route.Home
+//        if (user.isAuthenticated) Route.Home else Route.Authentication
     NavHost(
         navController = navHostController.navController,
         startDestination = route,

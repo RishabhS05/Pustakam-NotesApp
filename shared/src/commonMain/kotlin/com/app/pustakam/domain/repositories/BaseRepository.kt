@@ -171,9 +171,9 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     suspend fun insertOrUpdateNote(note : Note ) : Result<BaseResponse<Note?>, Error>{
         val existingNote =  notesDao.selectNoteById(note.id!!)
           return insertUpdateFromDb(note).onSuccess {
-              if(existingNote != null ) {
-                  updateNoteApi(note)
-              }else upsertNewNoteApi(note)
+//              if(existingNote != null ) {
+//                  updateNoteApi(note)
+//              }else upsertNewNoteApi(note)
           }
     }
     /** method for decision logic
@@ -182,7 +182,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
      * */
     suspend fun deleteNote(id : String): Result<BaseResponse<Boolean>, Error> {
        return deleteNoteByIdFromDb(id).onSuccess {
-           deleteNoteApi(id)
+           //deleteNoteApi(id)
         }
     }
     /** method for decision logic (A note)
@@ -195,7 +195,7 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
                 isFromDb = false, isSuccessful = false ))
         }
        return getNoteByIdFromDb(id).onSuccess {
-           getNoteApi(id)
+//           getNoteApi(id)
        }
     }
     /** method for decision logic (\notes)
@@ -205,9 +205,9 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     suspend fun getAllNotes(page: Int = 0): Result<BaseResponse<Notes?>, Error> {
 
         return getNotesFromDb(page).onSuccess {
-            getNotesForUserApi(page)
+//            getNotesForUserApi(page)
         }.onError {
-            getNotesForUserApi(page)
+//            getNotesForUserApi(page)
         }
     }
 

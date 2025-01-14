@@ -20,7 +20,6 @@ fun MyApplicationTheme(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-val context = LocalContext.current
     val colorScheme = when {
         //dynamic ui
 //        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ->{

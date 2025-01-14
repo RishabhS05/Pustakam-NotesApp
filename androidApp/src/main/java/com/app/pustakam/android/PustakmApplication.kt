@@ -6,7 +6,6 @@ import com.app.pustakam.koinDI.initKoin
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 
-import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 
 class PustakmApplication : Application(){

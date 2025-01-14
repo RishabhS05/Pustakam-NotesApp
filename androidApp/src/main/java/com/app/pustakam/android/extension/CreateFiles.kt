@@ -10,10 +10,11 @@ fun createFileWithFolders(context: Activity, folderPath : String, fileName : Str
     try{
         val baseDir = File(context.filesDir,folderPath)
         if (!baseDir.exists()) {
-            baseDir.mkdirs()
+            if (!baseDir.mkdirs()) {
             throw IOException("Failed to create directories: ${baseDir.absolutePath}")
+            }
         }
-        file = File(baseDir, fileName)
+        file = File(baseDir.absolutePath, fileName)
         if (!file.exists()) {
             try {
                 file.createNewFile()

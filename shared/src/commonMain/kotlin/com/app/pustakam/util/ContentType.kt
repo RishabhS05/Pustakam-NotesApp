@@ -5,7 +5,7 @@ enum class ContentType {
         override fun getExt() = ".png"
     }
     , VIDEO{
-        override fun getExt() = ".wav"
+        override fun getExt() = ".mp4"
     }
     , AUDIO{
         override fun getExt() = ".mp3"

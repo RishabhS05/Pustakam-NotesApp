@@ -19,6 +19,8 @@ abstract class BaseUseCase : KoinComponent {
          emit(Result.Loading)
          emit(apiCall())
     }.flowOn(Dispatchers.IO)
+
+
     suspend fun logoutUser(){
         repository.userLogout()
     }

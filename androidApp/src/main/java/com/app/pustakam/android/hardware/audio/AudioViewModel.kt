@@ -1,8 +1,10 @@
 package com.app.pustakam.android.hardware.audio
 
 import androidx.lifecycle.ViewModel
+import androidx.media3.common.MediaItem
 import com.app.pustakam.android.services.mediaPlayerServices.MediaItemTree
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.extensions.isNotnull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,10 +18,6 @@ data class AudioState(
     val audioMode : AudioMode= AudioMode.none,
     val noteContentModel: NoteContentModel.AudioContent? = null
 )
-
-fun NoteContentModel.AudioContent.toMediaItem() : MediaItemTree? {
-    return null
-}
 
 enum class AudioMode {
     start ,stop, playing, resume, pause, none
@@ -50,7 +48,8 @@ class AudioViewModel : ViewModel(), KoinComponent {
 
             AudioRecordingIntent.ResumeRecordingIntent -> resumeRecording()
 
-            AudioRecordingIntent.StartRecordingIntent -> _audioState.value.noteContentModel?.let { startRecording(it) }
+            AudioRecordingIntent.StartRecordingIntent ->
+                _audioState.value.noteContentModel?.let { startRecording(it) }
 
            is AudioRecordingIntent.StopRecordingIntent ->{
                stopRecording(audioRecordingIntent.duration)
@@ -111,12 +110,30 @@ class PlayMediaViewModel: ViewModel(),KoinComponent {
             AudioPlayingIntent.DeleteRecordingIntent -> deleteMedia()
         }
     }
-    private fun play(){}
+    private fun play(){
+        if(_audioState.value.noteContentModel?.localPath.isNotnull()){
+            player.play(_audioState.value.noteContentModel?.localPath!!)
+            _audioState.update {
+                it.copy(audioMode = AudioMode.playing)
+            }
+        }
+    }
     private fun seekTo(){}
     private fun seekNext(){}
-    private fun stopPlaying() {}
-    private fun resumePlaying(){}
-    private fun restartPlaying(){}
+    private fun stopPlaying() {
+        _audioState.update {
+            it.copy(audioMode = AudioMode.pause)
+        }
+        player.stop()
+    }
+    private fun resumePlaying(){
+        _audioState.update {
+            it.copy(audioMode = AudioMode.resume)
+        }
+    }
+    private fun restartPlaying(){
+
+    }
     private fun deleteMedia() {
         _audioState.value.file?.delete()
     }
@@ -129,4 +146,8 @@ class PlayMediaViewModel: ViewModel(),KoinComponent {
         _audioState.update { it.copy(showDeleteDialog = value) }
     }
 
+    override fun onCleared() {
+        player.dispose()
+        super.onCleared()
+    }
 }

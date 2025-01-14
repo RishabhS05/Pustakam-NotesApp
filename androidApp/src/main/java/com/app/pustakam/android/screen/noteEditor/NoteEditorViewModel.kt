@@ -198,50 +198,60 @@ class NoteEditorViewModel : BaseViewModel() {
         val position: Long = note?.content?.count()?.toLong() ?: 0
         val noteId = note?.id?: ""
         val content: NoteContentModel
-        val folderName = "/${contentType.name.lowercase()}/${noteId}"
+        val folderName = "${contentType.name.lowercase()}/${getCurrentTimestamp()}"
         val fileName = "${getCurrentTimestamp()}${contentType.getExt()}"
-        val file = createFileWithFolders(context as Activity,folderName,fileName)
+        val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
 
-        log_i("${file.absolutePath} is succefully created")
+        log_i("${filePath} is succefully created")
 
         when (contentType) {
             TEXT -> {
-                content = NoteContentModel.TextContent(position = position, noteId = noteId,)
+                content = NoteContentModel.TextContent(position = position,
+                    noteId = noteId,)
             }
 
             IMAGE -> {
-                content = NoteContentModel.ImageContent(position = position, noteId = noteId, localPath = file.absolutePath)
+                content = NoteContentModel.ImageContent(position = position,
+                    noteId = noteId, localPath = filePath)
             }
 
             VIDEO -> {
-                content = NoteContentModel.VideoContent(position = position, noteId = noteId, localPath = file.absolutePath)
+                content = NoteContentModel.VideoContent(position = position,
+                    noteId = noteId, localPath = filePath)
             }
 
             AUDIO -> {
-                content = NoteContentModel.AudioContent(position = position, noteId = noteId, localPath = file.absolutePath)
+                content = NoteContentModel.AudioContent(position = position,
+                    noteId = noteId, localPath = filePath)
             }
 
             LINK -> {
-                content = NoteContentModel.Link(position = position, noteId = noteId)
+                content = NoteContentModel.Link(position = position,
+                    noteId = noteId)
             }
 
             DOCX -> {
-                content = NoteContentModel.DocContent(position = position, noteId = noteId)
+                content = NoteContentModel.DocContent(position = position,
+                    noteId = noteId)
             }
 
             LOCATION -> {
-                content = NoteContentModel.Location(position = position, noteId = noteId)
+                content = NoteContentModel.Location(position = position,
+                    noteId = noteId)
             }
 
             else -> {
-                content = NoteContentModel.Location(position = position, noteId = noteId)
+                content = NoteContentModel.Location(position = position,
+                    noteId = noteId)
             }
         }
 
         _noteContentUiState.update {
             it.note?.content?.add(content)
-            it.contents?.add(content)
-                 it.copy(note= it.note, contents= it.contents, isAllSetupDone = true )
+            it.contents.add(content)
+                 it.copy(note= it.note,
+                     contents= it.contents,
+                     isAllSetupDone = true )
         }
     }
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
