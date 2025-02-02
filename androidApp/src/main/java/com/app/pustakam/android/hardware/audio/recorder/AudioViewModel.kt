@@ -1,10 +1,8 @@
-package com.app.pustakam.android.hardware.audio
+package com.app.pustakam.android.hardware.audio.recorder
 
 import androidx.lifecycle.ViewModel
-import androidx.media3.common.MediaItem
-import com.app.pustakam.android.services.mediaPlayerServices.MediaItemTree
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,10 +13,9 @@ import java.io.File
 data class AudioState(
     val file: File? = null,
     val showDeleteDialog : Boolean = false,
-    val audioMode : AudioMode= AudioMode.none,
+    val audioMode : AudioMode = AudioMode.none,
     val noteContentModel: NoteContentModel.AudioContent? = null
 )
-
 enum class AudioMode {
     start ,stop, playing, resume, pause, none
 }
@@ -29,6 +26,7 @@ sealed interface AudioRecordingIntent {
     data object ResumeRecordingIntent : AudioRecordingIntent
     data object DeleteRecordingIntent : AudioRecordingIntent
 }
+
 
 class AudioViewModel : ViewModel(), KoinComponent {
     private val _audioState = MutableStateFlow(AudioState())
@@ -63,10 +61,10 @@ class AudioViewModel : ViewModel(), KoinComponent {
         with(audioRecorder) { file?.let { start(it) } }
     }
 
-  private  fun stopRecording(duration: Long) {
+  private fun stopRecording(duration: Long) {
         audioRecorder.stop()
         _audioState.update { it.copy(audioMode = AudioMode.stop,
-            noteContentModel = it.noteContentModel?.copy(isRecorded = true, duration = duration),) }
+            noteContentModel = it.noteContentModel?.copy(duration = duration),) }
     }
 
    private fun pauseRecording() {
@@ -84,70 +82,3 @@ class AudioViewModel : ViewModel(), KoinComponent {
     }
 }
 
-sealed interface AudioPlayingIntent{
-    data object PlayIntent : AudioPlayingIntent
-    data object ResumeIntent : AudioPlayingIntent
-    data object RestartIntent : AudioPlayingIntent
-    data object SeekToIntent : AudioPlayingIntent
-    data object SeekNextIntent : AudioPlayingIntent
-    data object StopIntent : AudioPlayingIntent
-    data object PauseIntent : AudioPlayingIntent
-    data object DeleteRecordingIntent : AudioPlayingIntent
-}
-class PlayMediaViewModel: ViewModel(),KoinComponent {
-    private val _audioState = MutableStateFlow(AudioState())
-    val state = _audioState.asStateFlow()
-    private val player: IAudioPlayer = get<IAudioPlayer>()
-    fun onPlayingIntent(audioPlayingIntent: AudioPlayingIntent){
-        when(audioPlayingIntent){
-            AudioPlayingIntent.PauseIntent -> stopPlaying()
-            AudioPlayingIntent.PlayIntent -> play()
-            AudioPlayingIntent.RestartIntent -> restartPlaying()
-            AudioPlayingIntent.ResumeIntent -> resumePlaying()
-            AudioPlayingIntent.SeekNextIntent -> seekNext()
-            AudioPlayingIntent.SeekToIntent -> seekTo()
-            AudioPlayingIntent.StopIntent -> stopPlaying()
-            AudioPlayingIntent.DeleteRecordingIntent -> deleteMedia()
-        }
-    }
-    private fun play(){
-        if(_audioState.value.noteContentModel?.localPath.isNotnull()){
-            player.play(_audioState.value.noteContentModel?.localPath!!)
-            _audioState.update {
-                it.copy(audioMode = AudioMode.playing)
-            }
-        }
-    }
-    private fun seekTo(){}
-    private fun seekNext(){}
-    private fun stopPlaying() {
-        _audioState.update {
-            it.copy(audioMode = AudioMode.pause)
-        }
-        player.stop()
-    }
-    private fun resumePlaying(){
-        _audioState.update {
-            it.copy(audioMode = AudioMode.resume)
-        }
-    }
-    private fun restartPlaying(){
-
-    }
-    private fun deleteMedia() {
-        _audioState.value.file?.delete()
-    }
-
-    fun updateContent(noteContentModel: NoteContentModel.AudioContent){
-        _audioState.update { it.copy(noteContentModel = noteContentModel) }
-    }
-
-    fun showDeleteAlert(value: Boolean) {
-        _audioState.update { it.copy(showDeleteDialog = value) }
-    }
-
-    override fun onCleared() {
-        player.dispose()
-        super.onCleared()
-    }
-}

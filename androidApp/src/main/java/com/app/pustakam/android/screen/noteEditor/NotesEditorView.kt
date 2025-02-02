@@ -82,7 +82,6 @@ fun NotesEditorView(
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
-
             else -> {}
         }
     }
@@ -272,8 +271,8 @@ fun RenderWidget(
 
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.AudioContent
-            if (contentAudio.isRecorded) {
-                AudioPlayerUIState(noteContentModel = contentAudio, onDelete = onDelete)
+            if (contentAudio.duration > 0) {
+                AudioPlayerUIState(onDelete = onDelete)
             } else {
                 AudioRecording(contentAudio, onStop = { onUpdate(it) }, onDelete= onDelete)
             }

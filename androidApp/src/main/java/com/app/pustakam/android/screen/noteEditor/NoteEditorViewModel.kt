@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
@@ -16,6 +17,7 @@ import com.app.pustakam.android.screen.notes.ReadNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.ContentType.AUDIO
@@ -36,16 +38,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class NoteEditorViewModel : BaseViewModel() {
+import org.koin.core.component.get
 
+class NoteEditorViewModel : BaseViewModel() {
+    private val noteContentRepository  = get<NoteContentRepository>()
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState : StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
-
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
+
         //default methods
     override fun onLoading(taskCode: TaskCode) {
         _noteUiState.update {
@@ -62,6 +66,7 @@ class NoteEditorViewModel : BaseViewModel() {
                         NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
                     it.copy(noteStatus = noteStatus)
                 }
+
                 _noteContentUiState.update { it.copy(note= note, isAllSetupDone = true)}
             }
 
@@ -75,6 +80,7 @@ class NoteEditorViewModel : BaseViewModel() {
                         contents =  if(note.content.isNotnull())  mutableStateListOf(*note.content!!.toTypedArray()) else mutableStateListOf()
                     )
                 }
+                noteContentRepository.addAllNoteContent(note)
             }
 
             NOTES_CODES.DELETE -> {
@@ -173,12 +179,13 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     //hardware permission logic
+   @SuppressLint("NewApi")
    private fun getPermissions(contentType: ContentType?) = when (contentType) {
         VIDEO -> listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO)
         AUDIO -> listOf(NeededPermission.RECORD_AUDIO)
         IMAGE -> listOf(NeededPermission.CAMERA)
         LOCATION -> listOf(NeededPermission.COARSE_LOCATION)
-        else -> emptyList()
+        else -> listOf(NeededPermission.POST_NOTIFICATIONS)
     }
     // permission dialog setup
     fun preparePermissionDialog(contentType: ContentType? = null) {
@@ -201,7 +208,6 @@ class NoteEditorViewModel : BaseViewModel() {
         val folderName = "${contentType.name.lowercase()}/${getCurrentTimestamp()}"
         val fileName = "${getCurrentTimestamp()}${contentType.getExt()}"
         val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
-
         log_i("${filePath} is succefully created")
 
         when (contentType) {
@@ -245,7 +251,6 @@ class NoteEditorViewModel : BaseViewModel() {
                     noteId = noteId)
             }
         }
-
         _noteContentUiState.update {
             it.note?.content?.add(content)
             it.contents.add(content)
@@ -253,6 +258,7 @@ class NoteEditorViewModel : BaseViewModel() {
                      contents= it.contents,
                      isAllSetupDone = true )
         }
+        if(content.isMediaFile()) noteContentRepository.addNoteContent(content)
     }
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
         _noteContentUiState.update {
@@ -260,7 +266,7 @@ class NoteEditorViewModel : BaseViewModel() {
             it.note?.content?.set(index, updatedContent)
             it.copy(note =  it.note)
         }
-
+        if(updatedContent.isMediaFile()) noteContentRepository.updateNoteContent(index,updatedContent)
     }
     fun removeContent(value: NoteContentModel) {
         _noteContentUiState.update {
@@ -268,5 +274,10 @@ class NoteEditorViewModel : BaseViewModel() {
             it.note?.content?.remove(value)
             it.copy(note =  it.note)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        noteContentRepository.clear()
     }
 }

@@ -27,7 +27,7 @@ INSERT OR REPLACE INTO Notes(id,  categoryId, title, createdAt,updatedAt)
 VALUES(?,?,?,?,?);
 
 insertNoteContentById:
-INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address,duration )
+INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration )
 VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ? );
 
 updateNotesById:

@@ -14,6 +14,7 @@ class PustakmApplication : Application(){
         initKoin{
             androidLogger(level = Level.INFO)
             androidContext(this@PustakmApplication)
-        }.modules(getAndroidSpecifics())
+            modules(getAndroidSpecifics())
+        }
     }
 }

@@ -100,11 +100,10 @@ sealed class NoteContentModel {
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val type: ContentType = ContentType.AUDIO,
         override val noteId: String,
-        val isRecorded:Boolean = false,
         val duration: Long = 0,
         val localPath: String? = null,
         val url: String = "",
-        val title: String = "",
+        val title: String = "Audio",
     ) : NoteContentModel()
     data class DocContent(
         val url: String ="",
@@ -138,4 +137,5 @@ sealed class NoteContentModel {
         override val id: String= UniqueIdGenerator.generateUniqueId(),
         override val noteId: String
     ) : NoteContentModel()
+    fun isMediaFile() : Boolean = this.type == ContentType.VIDEO|| this.type == ContentType.AUDIO
 }

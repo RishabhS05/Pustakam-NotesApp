@@ -1,7 +1,10 @@
 package com.app.pustakam.android.widgets.audio
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
+import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,19 +32,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.util.UnstableApi
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
-import com.app.pustakam.android.hardware.audio.AudioMode
-import com.app.pustakam.android.hardware.audio.AudioPlayingIntent
-import com.app.pustakam.android.hardware.audio.AudioRecordingIntent
-import com.app.pustakam.android.hardware.audio.AudioState
-import com.app.pustakam.android.hardware.audio.AudioViewModel
-import com.app.pustakam.android.hardware.audio.PlayMediaViewModel
+import com.app.pustakam.android.extension.startServiceWrapper
+import com.app.pustakam.android.hardware.audio.player.AudioPlayingIntent
+import com.app.pustakam.android.hardware.audio.player.AudioUiState
+import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
+import com.app.pustakam.android.hardware.audio.recorder.AudioMode
+
+import com.app.pustakam.android.hardware.audio.recorder.AudioRecordingIntent
+import com.app.pustakam.android.hardware.audio.recorder.AudioState
+import com.app.pustakam.android.hardware.audio.recorder.AudioViewModel
+import com.app.pustakam.android.screen.OnLifecycleEvent
+import com.app.pustakam.android.services.mediaSessionService.PustakmMediaPlayerService
+
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.data.models.response.notes.NoteContentModel
@@ -55,7 +67,14 @@ fun AudioRecording(
     noteContentModel: NoteContentModel.AudioContent, onStop: (NoteContentModel.AudioContent) -> Unit = {}, onDelete: (NoteContentModel.AudioContent) -> Unit = {}
 ) {
     val viewModel: AudioViewModel = viewModel()
-    viewModel.updateContent(noteContentModel)
+    OnLifecycleEvent{ _, event ->
+        when(event){
+            Lifecycle.Event.ON_CREATE -> {
+                viewModel.updateContent(noteContentModel)
+            }
+            else->{}
+        }
+    }
     val state = viewModel.state.collectAsStateWithLifecycle()
     state.value.apply {
         when {
@@ -134,11 +153,9 @@ fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -
 
 
 @Composable
-fun AudioPlayerUIState(
-    noteContentModel: NoteContentModel.AudioContent, onDelete: (NoteContentModel.AudioContent) -> Unit = {}
+fun AudioPlayerUIState(onDelete: (NoteContentModel) -> Unit = {}
 ) {
     val viewModel: PlayMediaViewModel = viewModel()
-    viewModel.updateContent(noteContentModel)
     val state = viewModel.state.collectAsStateWithLifecycle()
     state.value.apply {
         when {
@@ -146,7 +163,7 @@ fun AudioPlayerUIState(
                 DeleteNoteAlert(noteTitle = "Recording", onConfirm = {
                     viewModel.onPlayingIntent(AudioPlayingIntent.DeleteRecordingIntent)
                     viewModel.showDeleteAlert(false)
-                    state.value.noteContentModel?.let { onDelete(it) }
+                    state.value.currentPlayingAudio?.let { onDelete(it) }
                 }) {
                     viewModel.showDeleteAlert(false)
                 }
@@ -154,21 +171,19 @@ fun AudioPlayerUIState(
         }
     }
     AudioPlayView(state = state, onAction = viewModel::onPlayingIntent, onDelete = {
-        viewModel.onPlayingIntent(AudioPlayingIntent.PauseIntent)
+        viewModel.onPlayingIntent(AudioPlayingIntent.PlayOrPauseIntent)
         viewModel.showDeleteAlert(true)
     }, onSeek = {})
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun AudioPlayView(
-    state: State<AudioState>, onAction: (AudioPlayingIntent) -> Unit, onDelete: () -> Unit = {}, onSeek: (Float) -> Unit = {}
+    state: State<AudioUiState>, onAction: (AudioPlayingIntent) -> Unit, onDelete: () -> Unit = {}, onSeek: (Float) -> Unit = {}
 ) {
-    val totalDuration = state.value.noteContentModel!!.duration
-    var isPlaying by remember { mutableStateOf(state.value.audioMode == AudioMode.playing) }
-    val currentProgress = remember { mutableLongStateOf(0) }
-    val progress = remember(currentProgress) {
-        if (totalDuration > 0) currentProgress.longValue / totalDuration else 0f
-    }
+    val stateValue = state.value
+    val totalDuration = stateValue.duration
+    val activity = LocalContext.current as Activity
     val iconModifier = Modifier.size(30.dp)
     Card(modifier = Modifier.padding(12.dp)) {
         Column(modifier = Modifier) {
@@ -178,11 +193,11 @@ fun AudioPlayView(
                 Text(
                     totalDuration.getReadableDuration(), style = typography.labelSmall, modifier = Modifier.align(Alignment.TopStart)
                 )
-                RecordingTimer(
-                    isTimerRunning = isPlaying, style = typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter), elapsedTime = currentProgress
+                Text("${stateValue.progress}",
+                    style = typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter)
                 )
                 Text(
-                   totalDuration.timerRemaining(currentProgress.longValue), style = typography.labelSmall, modifier = Modifier.align(Alignment.TopEnd).padding(horizontal = 6.dp)
+                   totalDuration.timerRemaining(stateValue.progress), style = typography.labelSmall, modifier = Modifier.align(Alignment.TopEnd).padding(horizontal = 6.dp)
                 )
             }
             Row(
@@ -190,7 +205,7 @@ fun AudioPlayView(
             ) {
                 Slider(
                     modifier = Modifier.weight(0.5f).padding(horizontal = 6.dp).padding(bottom = 6.dp),
-                    value = progress.toFloat(),
+                    value = stateValue.progress.toFloat(),
                     valueRange = 0f..1f,
                     onValueChange = { newValue ->
                         val newPosition = (newValue * totalDuration).toLong()
@@ -198,14 +213,10 @@ fun AudioPlayView(
                     },
                 )
                 IconButton(onClick = {
-                    if (!isPlaying) {
-                        onAction(AudioPlayingIntent.PlayIntent)
-                    } else {
-                        onAction(AudioPlayingIntent.PauseIntent)
-                    }
-                    isPlaying = !isPlaying
+                    if(!stateValue.isServiceIsRunning)  activity.startServiceWrapper(Intent(activity, PustakmMediaPlayerService::class.java))
+                    onAction(AudioPlayingIntent.PlayOrPauseIntent)
                 }) {
-                    val drawable = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+                    val drawable = if (stateValue.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
                     Icon(
                         painter = painterResource(drawable), contentDescription = "",
                         tint = colorScheme.onPrimaryContainer, modifier = iconModifier
@@ -239,9 +250,9 @@ private fun AudioRecordingPreview() {
 @Composable
 private fun AudioPlayerPreview() {
     MyApplicationTheme {
-        val state = MutableStateFlow(AudioState(
-            noteContentModel = NoteContentModel.AudioContent(position = 1, noteId = "")
-        ))
+        val state = MutableStateFlow(
+            AudioUiState()
+        )
         AudioPlayView(state = state.collectAsStateWithLifecycle(), onAction = {}, onSeek = {})
     }
 }

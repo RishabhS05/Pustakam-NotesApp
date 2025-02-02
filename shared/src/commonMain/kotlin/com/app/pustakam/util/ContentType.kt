@@ -1,7 +1,8 @@
 package com.app.pustakam.util
 
 enum class ContentType {
-    TEXT{}, IMAGE{
+    TEXT{},
+    IMAGE{
         override fun getExt() = ".png"
     }
     , VIDEO{

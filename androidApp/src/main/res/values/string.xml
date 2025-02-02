@@ -8,4 +8,6 @@
     <string name="notification_channel_name">Playback cannot be resumed</string>
     <string name="exo_controls_shuffle_off_description">Suffle off</string>
     <string name="exo_controls_shuffle_on_description">Shuffle on</string>
+    <string name="media_notification_channel" />
+    <string name="media_notification_channel_description" />
 </resources>

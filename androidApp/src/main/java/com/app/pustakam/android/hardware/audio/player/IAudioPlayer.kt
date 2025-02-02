@@ -1,7 +1,5 @@
-package com.app.pustakam.android.hardware.audio
+package com.app.pustakam.android.hardware.audio.player
 
-
-import java.io.File
 
 interface IAudioPlayer {
     fun play(outputFile : String)
