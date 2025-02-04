@@ -222,12 +222,12 @@ class NoteEditorViewModel : BaseViewModel() {
             }
 
             VIDEO -> {
-                content = NoteContentModel.VideoContent(position = position,
+                content = NoteContentModel.MediaContent(position = position,
                     noteId = noteId, localPath = filePath)
             }
 
             AUDIO -> {
-                content = NoteContentModel.AudioContent(position = position,
+                content = NoteContentModel.MediaContent(position = position,
                     noteId = noteId, localPath = filePath)
             }
 

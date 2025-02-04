@@ -53,7 +53,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                   localPath = row.localPath
                               )
 
-                              ContentType.VIDEO.name -> NoteContentModel.VideoContent(
+                              ContentType.VIDEO.name -> NoteContentModel.MediaContent(
                                   id = row.contentId,
                                   noteId = row.noteId,
                                   url = row.url!!,
@@ -64,7 +64,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                   duration = row.duration!!,
                               )
 
-                              ContentType.AUDIO.name -> NoteContentModel.AudioContent(
+                              ContentType.AUDIO.name -> NoteContentModel.MediaContent(
                                   id  = row.contentId,
                                   noteId = row.noteId,
                                   url = row.url!!,
@@ -143,7 +143,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
              text = (noteContent as? NoteContentModel.TextContent)?.text ?: ""
             }
             ContentType.AUDIO -> {
-               val content =  (noteContent as? NoteContentModel.AudioContent)
+               val content =  (noteContent as? NoteContentModel.MediaContent)
                 if (content != null) {
                     url = content.url
                     localPath = content.localPath
@@ -151,7 +151,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                 }
             }
             ContentType.VIDEO -> {
-               val content =  (noteContent as? NoteContentModel.VideoContent)
+               val content =  (noteContent as? NoteContentModel.MediaContent)
                 if (content != null) {
                     url = content.url
                     localPath = content.localPath
@@ -263,7 +263,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                 localPath = row.localPath
                             )
 
-                            ContentType.VIDEO.name -> NoteContentModel.VideoContent(
+                            ContentType.VIDEO.name -> NoteContentModel.MediaContent(
                                 id = row.contentId,
                                 noteId = row.noteId,
                                 url = row.url!!,
@@ -274,7 +274,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                 duration = row.duration!!,
                             )
 
-                            ContentType.AUDIO.name -> NoteContentModel.AudioContent(
+                            ContentType.AUDIO.name -> NoteContentModel.MediaContent(
                                 id  = row.contentId,
                                 noteId = row.noteId,
                                 url = row.url!!,

@@ -6,14 +6,12 @@ import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.session.MediaSession
-import com.app.pustakam.android.hardware.audio.player.AudioPlayer
+
 import com.app.pustakam.android.hardware.audio.recorder.AudioRecorder
-import com.app.pustakam.android.hardware.audio.player.IAudioPlayer
 import com.app.pustakam.android.hardware.audio.recorder.IAudioRecorder
 import com.app.pustakam.android.services.mediaSessionService.MediaNotificationManager
 import com.app.pustakam.android.services.mediaSessionService.MediaServiceListener
-import org.koin.android.ext.koin.androidContext
+
 
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -33,7 +31,6 @@ fun getAndroidSpecifics(): Module =
            .build()
        }
        single <IAudioRecorder>{ AudioRecorder(get()) }
-       single <IAudioPlayer>{ AudioPlayer()  }
        single <MediaNotificationManager> {  MediaNotificationManager(
            context =  get(),
            exoPlayer = get()

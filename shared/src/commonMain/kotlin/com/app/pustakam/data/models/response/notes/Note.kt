@@ -80,20 +80,20 @@ sealed class NoteContentModel {
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val noteId: String ,
     ) : NoteContentModel()
-    data class VideoContent(
-        val url: String= "",
-        val title : String= "",
-        override val position: Long,
-        override val updatedAt: String? = "${getCurrentTimestamp()}",
-        override val createdAt: String? = "${getCurrentTimestamp()}",
-        val duration: Long = 0,
-        override val type: ContentType = ContentType.VIDEO,
-        val localPath: String? = null,
-        override val id: String =  UniqueIdGenerator.generateUniqueId(),
-        override val noteId: String ,
-    ) : NoteContentModel()
+//    data class VideoContent(
+//        val url: String= "",
+//        val title : String= "",
+//        override val position: Long,
+//        override val updatedAt: String? = "${getCurrentTimestamp()}",
+//        override val createdAt: String? = "${getCurrentTimestamp()}",
+//        val duration: Long = 0,
+//        override val type: ContentType = ContentType.VIDEO,
+//        val localPath: String? = null,
+//        override val id: String =  UniqueIdGenerator.generateUniqueId(),
+//        override val noteId: String ,
+//    ) : NoteContentModel()
 
-    data class AudioContent(
+    data class MediaContent(
         override val position: Long,
         override val updatedAt: String? = "${getCurrentTimestamp()}" ,
         override val createdAt: String? = "${getCurrentTimestamp()}",

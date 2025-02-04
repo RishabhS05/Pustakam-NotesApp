@@ -159,14 +159,14 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
             )
         }
         when {
-            noteContentModel is NoteContentModel.AudioContent-> {
+            noteContentModel is NoteContentModel.MediaContent-> {
                 val mediaItem = MediaItem.Builder().setMediaId(noteContentModel.id)
                     .setUri(noteContentModel.localPath)
                     .setTag(noteContentModel.title)
                     .build()
                 mediaServiceListener.addMediaItem(media = mediaItem)
             }
-            noteContentModel is NoteContentModel.VideoContent -> {
+            noteContentModel is NoteContentModel.MediaContent -> {
                 val mediaItem = MediaItem.Builder().setMediaId(noteContentModel.id)
                     .setUri(noteContentModel.localPath)
                     .setTag(noteContentModel.title)

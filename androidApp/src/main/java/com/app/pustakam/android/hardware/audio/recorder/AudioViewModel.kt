@@ -2,7 +2,6 @@ package com.app.pustakam.android.hardware.audio.recorder
 
 import androidx.lifecycle.ViewModel
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -14,7 +13,7 @@ data class AudioState(
     val file: File? = null,
     val showDeleteDialog : Boolean = false,
     val audioMode : AudioMode = AudioMode.none,
-    val noteContentModel: NoteContentModel.AudioContent? = null
+    val noteContentModel: NoteContentModel.MediaContent? = null
 )
 enum class AudioMode {
     start ,stop, playing, resume, pause, none
@@ -32,7 +31,7 @@ class AudioViewModel : ViewModel(), KoinComponent {
     private val _audioState = MutableStateFlow(AudioState())
     val state = _audioState.asStateFlow()
     private val audioRecorder = get<IAudioRecorder>()
-    fun updateContent(noteContentModel: NoteContentModel.AudioContent){
+    fun updateContent(noteContentModel: NoteContentModel.MediaContent){
         _audioState.update { it.copy(noteContentModel = noteContentModel) }
     }
     fun showDeleteAlert( value : Boolean){
@@ -55,7 +54,7 @@ class AudioViewModel : ViewModel(), KoinComponent {
         }
     }
 
-  private fun startRecording(noteContentModel: NoteContentModel.AudioContent) {
+  private fun startRecording(noteContentModel: NoteContentModel.MediaContent) {
         val file = noteContentModel.localPath?.let { File(it) }
         _audioState.update { it.copy(file = file, audioMode = AudioMode.start) }
         with(audioRecorder) { file?.let { start(it) } }

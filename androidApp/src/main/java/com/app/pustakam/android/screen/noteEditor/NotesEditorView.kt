@@ -261,7 +261,7 @@ fun RenderWidget(
             }
         }
         ContentType.VIDEO -> {
-            val contentVideo = content as NoteContentModel.VideoContent
+            val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
 
             Card {
@@ -270,7 +270,7 @@ fun RenderWidget(
         }
 
         ContentType.AUDIO -> {
-            val contentAudio = content as NoteContentModel.AudioContent
+            val contentAudio = content as NoteContentModel.MediaContent
             if (contentAudio.duration > 0) {
                 AudioPlayerUIState(onDelete = onDelete)
             } else {

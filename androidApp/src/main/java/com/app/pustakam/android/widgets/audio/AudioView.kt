@@ -24,11 +24,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,7 +61,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun AudioRecording(
-    noteContentModel: NoteContentModel.AudioContent, onStop: (NoteContentModel.AudioContent) -> Unit = {}, onDelete: (NoteContentModel.AudioContent) -> Unit = {}
+    noteContentModel: NoteContentModel.MediaContent, onStop: (NoteContentModel.MediaContent) -> Unit = {}, onDelete: (NoteContentModel.MediaContent) -> Unit = {}
 ) {
     val viewModel: AudioViewModel = viewModel()
     OnLifecycleEvent{ _, event ->
