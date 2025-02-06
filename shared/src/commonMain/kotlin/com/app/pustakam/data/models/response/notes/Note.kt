@@ -70,16 +70,17 @@ sealed class NoteContentModel {
         override val noteId: String ,
     ) : NoteContentModel()
 
-    data class ImageContent(
-        val url: String="",
-        override val position: Long, 
-        override val updatedAt: String? = "${getCurrentTimestamp()}",
-        override val createdAt: String? = "${getCurrentTimestamp()}",
-        override val type: ContentType = ContentType.IMAGE,
-        val localPath: String? = null,
-        override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val noteId: String ,
-    ) : NoteContentModel()
+//    data class ImageContent(
+//        val url: String="",
+//        override val position: Long,
+//        override val updatedAt: String? = "${getCurrentTimestamp()}",
+//        override val createdAt: String? = "${getCurrentTimestamp()}",
+//        override val type: ContentType = ContentType.IMAGE,
+//        val localPath: String? = null,
+//        override val id: String = UniqueIdGenerator.generateUniqueId(),
+//        override val noteId: String ,
+//    ) : NoteContentModel()
+
 //    data class VideoContent(
 //        val url: String= "",
 //        val title : String= "",
@@ -105,16 +106,16 @@ sealed class NoteContentModel {
         val url: String = "",
         val title: String = "Audio",
     ) : NoteContentModel()
-    data class DocContent(
-        val url: String ="",
-        override val position: Long,
-        override val updatedAt: String? = "${getCurrentTimestamp()}",
-        override val createdAt: String? = "${getCurrentTimestamp()}",
-        override val type: ContentType = ContentType.DOCX,
-        val localPath: String? = null,
-        override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val noteId: String ,
-    ) : NoteContentModel()
+//    data class DocContent(
+//        val url: String ="",
+//        override val position: Long,
+//        override val updatedAt: String? = "${getCurrentTimestamp()}",
+//        override val createdAt: String? = "${getCurrentTimestamp()}",
+//        override val type: ContentType = ContentType.DOCX,
+//        val localPath: String? = null,
+//        override val id: String = UniqueIdGenerator.generateUniqueId(),
+//        override val noteId: String ,
+//    ) : NoteContentModel()
 
     data class Link(
         val url: String ="",
@@ -137,5 +138,5 @@ sealed class NoteContentModel {
         override val id: String= UniqueIdGenerator.generateUniqueId(),
         override val noteId: String
     ) : NoteContentModel()
-    fun isMediaFile() : Boolean = this.type == ContentType.VIDEO|| this.type == ContentType.AUDIO
+    fun isMediaFile() : Boolean = this is MediaContent
 }

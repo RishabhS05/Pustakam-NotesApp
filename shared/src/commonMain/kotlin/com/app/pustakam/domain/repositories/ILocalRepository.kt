@@ -10,4 +10,5 @@ interface ILocalRepository {
     suspend  fun deleteNoteByIdFromDb(id : String?) : Result<BaseResponse<Boolean>, Error>
     suspend  fun getNotesFromDb(page: Int) : Result<BaseResponse<Notes?>, Error>
     suspend fun getNoteByIdFromDb(id :String?) : Result<BaseResponse<Note?>, Error>
+    suspend fun deleteNoteContentFromDb(id :String? ) : Result<BaseResponse<Boolean>, Error>
 }

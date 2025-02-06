@@ -31,9 +31,10 @@ class NotesDao(private val sharedDb: SqlDriver) {
                   createdAt = note.noteCreatedAt,
                   updatedAt = note.noteUpdatedAt,
                   content = rows.mapNotNull { row ->
-                      if (row.contentId != null) {
-                          when (row.type) {
-                              ContentType.TEXT.name ->
+                      if (row.contentId != null&& !row.type.isNullOrEmpty()) {
+                          val type = ContentType.valueOf(row.type)
+                          when (type) {
+                              ContentType.TEXT ->
                                   NoteContentModel.TextContent(
                                       id = row.contentId,
                                       noteId = row.noteId,
@@ -42,50 +43,19 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                       createdAt = row.contentCreatedAt,
                                       updatedAt = row.contentUpdatedAt,
                                   )
-
-                              ContentType.IMAGE.name -> NoteContentModel.ImageContent(
+                              ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO  ->
+                                  NoteContentModel.MediaContent(
                                   id = row.contentId,
                                   noteId = row.noteId,
                                   url = row.url!!,
                                   position = row.position!!,
                                   createdAt = row.contentCreatedAt,
                                   updatedAt = row.contentUpdatedAt,
-                                  localPath = row.localPath
+                                  localPath = row.localPath, duration = row.duration?:0,
+                                  type =  type
                               )
 
-                              ContentType.VIDEO.name -> NoteContentModel.MediaContent(
-                                  id = row.contentId,
-                                  noteId = row.noteId,
-                                  url = row.url!!,
-                                  localPath = row.localPath,
-                                  position = row.position!!,
-                                  createdAt = row.contentCreatedAt,
-                                  updatedAt = row.contentUpdatedAt,
-                                  duration = row.duration!!,
-                              )
-
-                              ContentType.AUDIO.name -> NoteContentModel.MediaContent(
-                                  id  = row.contentId,
-                                  noteId = row.noteId,
-                                  url = row.url!!,
-                                  localPath = row.localPath,
-                                  position = row.position!!,
-                                  createdAt = row.contentCreatedAt,
-                                  updatedAt = row.contentUpdatedAt,
-                                  duration = row.duration!!
-                              )
-
-                              ContentType.DOCX.name -> NoteContentModel.DocContent(
-                                  id = row.contentId,
-                                  noteId = row.noteId,
-                                  url = row.url!!,
-                                  localPath = row.localPath,
-                                  position = row.position!!,
-                                  createdAt = row.contentCreatedAt,
-                                  updatedAt = row.contentUpdatedAt,
-                              )
-
-                              ContentType.LINK.name -> NoteContentModel.Link(
+                              ContentType.LINK -> NoteContentModel.Link(
                                   url = row.url!!,
                                   id = row.contentId,
                                   noteId = row.noteId,
@@ -94,7 +64,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                   updatedAt = row.contentUpdatedAt,
                               )
 
-                              ContentType.LOCATION.name -> NoteContentModel.Location(
+                              ContentType.LOCATION -> NoteContentModel.Location(
                                   latitude = row.lat!!,
                                   longitude = row.long!!,
                                   address = row.address,
@@ -138,11 +108,10 @@ class NotesDao(private val sharedDb: SqlDriver) {
         var long: Double? = null
         var lat: Double? = null
         when (noteContent.type) {
-
             ContentType.TEXT -> {
              text = (noteContent as? NoteContentModel.TextContent)?.text ?: ""
             }
-            ContentType.AUDIO -> {
+            ContentType.VIDEO, ContentType.AUDIO -> {
                val content =  (noteContent as? NoteContentModel.MediaContent)
                 if (content != null) {
                     url = content.url
@@ -150,15 +119,14 @@ class NotesDao(private val sharedDb: SqlDriver) {
                     duration = content.duration
                 }
             }
-            ContentType.VIDEO -> {
-               val content =  (noteContent as? NoteContentModel.MediaContent)
+            ContentType.IMAGE, ContentType.DOCX -> {
+                val content  =  (noteContent as? NoteContentModel.MediaContent)
                 if (content != null) {
                     url = content.url
                     localPath = content.localPath
-                    duration = content.duration
                 }
             }
-           ContentType.LOCATION->{
+           ContentType.LOCATION-> {
               val content =  (noteContent as? NoteContentModel.Location)
                if (content != null) {
                    address = content.address
@@ -166,26 +134,13 @@ class NotesDao(private val sharedDb: SqlDriver) {
                    long = content.longitude
                }
            }
-           ContentType.IMAGE -> {
-             val content  =  (noteContent as? NoteContentModel.ImageContent)
-               if (content != null) {
-                   url = content.url
-                   localPath = content.localPath
-               }
-           }
+
            ContentType.LINK -> {
               val content =  (noteContent as? NoteContentModel.Link)
                if (content != null) {
                    url = content.url
                }
            }
-            ContentType.DOCX -> {
-             val content =   (noteContent as? NoteContentModel.DocContent)
-                if (content != null) {
-                    url = content.url
-                    localPath = content.localPath
-                }
-            }
             else -> {}
         }
       val insertedRow  = queries.insertNoteContentById(
@@ -204,6 +159,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
             address = address,
         )
     }
+    suspend fun  deleteNoteContentById(id : String)= queries.deleteNoteContentById(id)
 
     suspend fun deleteByIdFromDb(id: String) : Boolean {
         queries.deleteById(id)
@@ -241,9 +197,10 @@ class NotesDao(private val sharedDb: SqlDriver) {
                 createdAt = note.noteCreatedAt,
                 updatedAt = note.noteUpdatedAt,
                 content = rows.mapNotNull { row ->
-                    if (row.contentId != null) {
-                        when (row.type) {
-                            ContentType.TEXT.name ->
+                    if (row.contentId != null&&!row.type.isNullOrEmpty()) {
+                        val type = ContentType.valueOf(row.type)
+                        when (type) {
+                            ContentType.TEXT ->
                                 NoteContentModel.TextContent(
                                     id = row.contentId,
                                     noteId = row.noteId,
@@ -253,17 +210,8 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                     updatedAt = row.contentUpdatedAt,
                                 )
 
-                            ContentType.IMAGE.name -> NoteContentModel.ImageContent(
-                                id = row.contentId,
-                                noteId = row.noteId,
-                                url = row.url!!,
-                                position = row.position!!,
-                                createdAt = row.contentCreatedAt,
-                                updatedAt = row.contentUpdatedAt,
-                                localPath = row.localPath
-                            )
-
-                            ContentType.VIDEO.name -> NoteContentModel.MediaContent(
+                            ContentType.IMAGE,ContentType.DOCX,
+                            ContentType.VIDEO , ContentType.AUDIO -> NoteContentModel.MediaContent(
                                 id = row.contentId,
                                 noteId = row.noteId,
                                 url = row.url!!,
@@ -271,31 +219,11 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                 position = row.position!!,
                                 createdAt = row.contentCreatedAt,
                                 updatedAt = row.contentUpdatedAt,
-                                duration = row.duration!!,
+                                duration = row.duration?:0,
+                                type = type
                             )
 
-                            ContentType.AUDIO.name -> NoteContentModel.MediaContent(
-                                id  = row.contentId,
-                                noteId = row.noteId,
-                                url = row.url!!,
-                                localPath = row.localPath,
-                                position = row.position!!,
-                                createdAt = row.contentCreatedAt,
-                                updatedAt = row.contentUpdatedAt,
-                                duration = row.duration!!
-                            )
-
-                            ContentType.DOCX.name -> NoteContentModel.DocContent(
-                                id = row.contentId,
-                                noteId = row.noteId,
-                                url = row.url!!,
-                                localPath = row.localPath,
-                                position = row.position!!,
-                                createdAt = row.contentCreatedAt,
-                                updatedAt = row.contentUpdatedAt,
-                            )
-
-                            ContentType.LINK.name -> NoteContentModel.Link(
+                            ContentType.LINK-> NoteContentModel.Link(
                                 url = row.url!!,
                                 id = row.contentId,
                                 noteId = row.noteId,
@@ -304,7 +232,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                 updatedAt = row.contentUpdatedAt,
                             )
 
-                            ContentType.LOCATION.name -> NoteContentModel.Location(
+                            ContentType.LOCATION -> NoteContentModel.Location(
                                 latitude = row.lat!!,
                                 longitude = row.long!!,
                                 address = row.address,

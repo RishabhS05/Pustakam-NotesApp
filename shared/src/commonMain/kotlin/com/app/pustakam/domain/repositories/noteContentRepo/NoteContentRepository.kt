@@ -9,21 +9,26 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 class NoteContentRepository {
-    private val _selectedNote = MutableStateFlow<MutableList<NoteContentModel>>(
+    private val _selectedNote = MutableStateFlow<MutableList<NoteContentModel.MediaContent>>(
         value = mutableListOf()
     )
-    val selectedNote: SharedFlow<MutableList<NoteContentModel>> = _selectedNote.asSharedFlow()
-    fun addNoteContent(note: NoteContentModel) {
+    val selectedNote: SharedFlow<MutableList<NoteContentModel.MediaContent>> = _selectedNote.asSharedFlow()
+    fun addNoteContent(note: NoteContentModel.MediaContent) {
         _selectedNote.value.add(note)
     }
-    fun updateNoteContent(index : Int ,note: NoteContentModel){
+    fun getIndexOfMedia(id : String ): Int{
+        return _selectedNote.value.indexOfFirst { id == it.id }
+    }
+    fun updateNoteContent(note: NoteContentModel.MediaContent){
         _selectedNote.apply {
-            this.value.set(index,note)
+            val indexof = this.value.indexOf(note)
+            if (indexof == -1) addNoteContent(note) else
+                this.value[indexof] = note
         }
     }
 
     fun addAllNoteContent(note: Note){
-        _selectedNote.value = note.content?.filter { it.type == ContentType.AUDIO || it.type == ContentType.VIDEO}
+        _selectedNote.value = note.content?.filterIsInstance<NoteContentModel.MediaContent>()
             ?.sortedBy { it.position }?.toMutableList()?: mutableListOf()
     }
     fun clear(){

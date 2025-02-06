@@ -42,6 +42,7 @@ init {
                 player.seekTo(0)
                 player.playWhenReady = false
                 player.stop()
+                player.release()
             }
         }
     }

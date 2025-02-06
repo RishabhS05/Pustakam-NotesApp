@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -49,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
+import com.app.pustakam.android.extension.deleteFile
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
@@ -106,7 +108,20 @@ fun NotesEditorView(
             }
 
             showDeleteAlert -> {
-                DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
+                if (deleteNoteContentId.isNotnull()){
+                    DeleteNoteAlert(noteTitle ="Recorded Note", onConfirm = {
+
+
+                        noteEditorViewModel.removeContent(value = deleteNoteContentId!!)
+                        (context as Activity)
+                    }) {
+                        noteEditorViewModel.showDeleteAlertBox(false, null)
+                    }
+                }
+                else
+                DeleteNoteAlert(noteTitle =
+                if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty())
+                    noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
                     noteEditorViewModel.deleteNote(noteId = id!!)
                     noteEditorViewModel.showDeleteAlertBox(false)
                 }) {
@@ -186,7 +201,7 @@ fun NotesEditorView(
                     RenderWidget(content = contentValue, onUpdate = { value ->
                         noteEditorViewModel.updateContent(index, value)
                     }){value->
-                        noteEditorViewModel.removeContent(value)
+                        noteEditorViewModel.showDeleteAlertBox(true, deleteNoteContentId = value.id)
                     }
                 }
             }
@@ -248,13 +263,12 @@ fun RenderWidget(
 ) {
     when (content.type) {
         ContentType.TEXT -> {
-            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent), onUpdate = {
-                onUpdate(content.copy(text = it))
-            })
+            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent),
+                onUpdate = { onUpdate(content.copy(text = it)) })
         }
 
         ContentType.IMAGE -> {
-            val contentImage = content as NoteContentModel.ImageContent
+            val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
             Card {
                 LoadImage(url = path, modifier = Modifier)
@@ -263,7 +277,6 @@ fun RenderWidget(
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
-
             Card {
 
             }
@@ -271,8 +284,8 @@ fun RenderWidget(
 
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.MediaContent
-            if (contentAudio.duration > 0) {
-                AudioPlayerUIState(onDelete = onDelete)
+            if (contentAudio.duration > 0) {// todo temp logic
+                AudioPlayerUIState(contentAudio,onDelete = onDelete)
             } else {
                 AudioRecording(contentAudio, onStop = { onUpdate(it) }, onDelete= onDelete)
             }
@@ -286,7 +299,7 @@ fun RenderWidget(
         }
 
         ContentType.DOCX -> {
-            val contentDoc = content as NoteContentModel.DocContent
+            val contentDoc = content as NoteContentModel.MediaContent
             val path = contentDoc.localPath ?: contentDoc.url
         }
 

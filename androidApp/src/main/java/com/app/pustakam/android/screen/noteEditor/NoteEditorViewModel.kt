@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
+import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.extension.createFileWithFolders
+import com.app.pustakam.android.extension.deleteFile
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NoteContentUiState
@@ -12,6 +14,7 @@ import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.notes.CreateORUpdateNoteUseCase
+import com.app.pustakam.android.screen.notes.DeleteNoteContentUseCase
 import com.app.pustakam.android.screen.notes.DeleteNoteUseCase
 import com.app.pustakam.android.screen.notes.ReadNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
@@ -37,6 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 import org.koin.core.component.get
 
@@ -48,6 +52,7 @@ class NoteEditorViewModel : BaseViewModel() {
     val noteContentUiState : StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
+    private val deleteNoteContentUseCase = DeleteNoteContentUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
 
         //default methods
@@ -168,9 +173,9 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     //dialog trigger methods
-    fun showDeleteAlertBox(value: Boolean) {
+    fun showDeleteAlertBox(value: Boolean, deleteNoteContentId : String? = null ) {
         // some time it doesn't update a single value
-        _noteUiState.update { it.copy(showDeleteAlert = value, isLoading = false) }
+        _noteUiState.update { it.copy(showDeleteAlert = value, deleteNoteContentId = deleteNoteContentId, isLoading = false) }
     }
     fun showPermissionAlert(value: Boolean?) {
         _noteUiState.update {
@@ -217,13 +222,13 @@ class NoteEditorViewModel : BaseViewModel() {
             }
 
             IMAGE -> {
-                content = NoteContentModel.ImageContent(position = position,
-                    noteId = noteId, localPath = filePath)
+                content = NoteContentModel.MediaContent(position = position,
+                    noteId = noteId, localPath = filePath, type = IMAGE)
             }
 
             VIDEO -> {
                 content = NoteContentModel.MediaContent(position = position,
-                    noteId = noteId, localPath = filePath)
+                    noteId = noteId, localPath = filePath, type = VIDEO)
             }
 
             AUDIO -> {
@@ -237,8 +242,8 @@ class NoteEditorViewModel : BaseViewModel() {
             }
 
             DOCX -> {
-                content = NoteContentModel.DocContent(position = position,
-                    noteId = noteId)
+                content = NoteContentModel.MediaContent(position = position,
+                    noteId = noteId, type = DOCX)
             }
 
             LOCATION -> {
@@ -258,22 +263,32 @@ class NoteEditorViewModel : BaseViewModel() {
                      contents= it.contents,
                      isAllSetupDone = true )
         }
-        if(content.isMediaFile()) noteContentRepository.addNoteContent(content)
+        if(content.isMediaFile()) noteContentRepository.addNoteContent(content as NoteContentModel.MediaContent)
     }
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
         _noteContentUiState.update {
-        it.contents.set(index, updatedContent)
+            it.contents[index] = updatedContent
             it.note?.content?.set(index, updatedContent)
             it.copy(note =  it.note)
         }
-        if(updatedContent.isMediaFile()) noteContentRepository.updateNoteContent(index,updatedContent)
+        if(updatedContent.isMediaFile()) noteContentRepository.updateNoteContent(updatedContent as NoteContentModel.MediaContent)
     }
-    fun removeContent(value: NoteContentModel) {
+    fun removeContent(value: String) {
+        val find = _noteContentUiState.value.contents.find { value == it.id }
+        if(find?.isMediaFile() == true){
+            find as NoteContentModel.MediaContent
+            find.localPath?.let { deleteFile(filePath = it) }
+        }
+        viewModelScope.launch {
+            deleteNoteContentUseCase.invoke(value)
+        }
+
         _noteContentUiState.update {
-            it.contents.remove(value)
-            it.note?.content?.remove(value)
+            it.contents.remove(find)
+            it.note?.content?.remove(find)
             it.copy(note =  it.note)
         }
+        showDeleteAlertBox(false , null )
     }
 
     override fun onCleared() {

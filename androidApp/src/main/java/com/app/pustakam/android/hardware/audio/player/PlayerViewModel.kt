@@ -2,13 +2,16 @@ package com.app.pustakam.android.hardware.audio.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.MediaItem
+import com.app.pustakam.android.extension.toMediaItem
+import com.app.pustakam.android.hardware.audio.recorder.AudioLifecycle
 import com.app.pustakam.android.services.mediaSessionService.MediaServiceListener
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
+import com.app.pustakam.extensions.getReadableDuration
 import com.app.pustakam.extensions.getTimerFormatedString
+import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.extensions.timerRemaining
 import kotlinx.coroutines.flow.MutableStateFlow
-
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
@@ -16,175 +19,197 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 
-sealed interface AudioPlayingIntent{
-    data object PlayOrPauseIntent : AudioPlayingIntent
-    data object ResumeIntent : AudioPlayingIntent
-    data object RestartIntent : AudioPlayingIntent
-    data class SeekToIntent(val position : Float) : AudioPlayingIntent
-    data object SeekNextIntent : AudioPlayingIntent
+sealed interface AudioPlayingIntent {
+    data class PlayOrPauseIntent(val mediaId: String) : AudioPlayingIntent
+    data class ResumeIntent(val mediaId: String) : AudioPlayingIntent
+    data class RestartIntent(val mediaId: String) : AudioPlayingIntent
+    data class SeekToIntent(val position: Float, val mediaId: String) : AudioPlayingIntent
+    data class SeekNextIntent(val mediaId: String) : AudioPlayingIntent
     data object StopIntent : AudioPlayingIntent
-    data object DeleteRecordingIntent : AudioPlayingIntent
-    data class SelectedAudioChange(val index : Int) : AudioPlayingIntent
-    data class UpdateProgress(val newProgress : Float) : AudioPlayingIntent
+    data class SelectedAudioChange(val mediaId: String) : AudioPlayingIntent
+    data class UpdateProgress(val newProgress: Float, val mediaId: String) : AudioPlayingIntent
     data object Backward : AudioPlayingIntent
     data object Forward : AudioPlayingIntent
 
 }
 
-sealed class PlayerUiState {
-    data object Initial : PlayerUiState()
-    data class Ready(val duration: Long) : PlayerUiState()
-    data class Progress(val progress: Long) : PlayerUiState()
-    data class Buffering(val progress: Long) : PlayerUiState()
-    data class Playing(val isPlaying: Boolean) : PlayerUiState()
-    data class CurrentPlaying(val mediaItemIndex: Int) : PlayerUiState()
+sealed class PlayerState {
+    data object Initial : PlayerState()
+    data class Ready(val duration: Long,val mediaId: String?) : PlayerState()
+    data class Progress(val progress: Long,val mediaId: String?) : PlayerState()
+    data class Buffering(val progress: Long,val mediaId: String?) : PlayerState()
+    data class Playing(val isPlaying: Boolean,val mediaId: String?) : PlayerState()
+    data class CurrentPlaying(val mediaId: String) : PlayerState()
+
 }
 
 data class AudioUiState(
-    val duration : Long = 0,
-    val progress: Long = 0,
-    val timerRemaining : String = "--:--",
-    val isPlaying : Boolean = false ,
-    val isServiceIsRunning : Boolean = false,
-    val currentPlayingAudio : NoteContentModel? = null,
-    val showDeleteDialog : Boolean = false,
-    val contentList:MutableList<NoteContentModel> = mutableListOf()
+    val isServiceIsRunning: Boolean = false,
+    val isPlaying : Boolean = false,
+    val currentPlayingId: String? = null,
+    val showDeleteDialog: Boolean = false,
+    val mediaStates: Map<String, PlayerUiState> = emptyMap(),
 )
-@Suppress("IMPLICIT_CAST_TO_ANY")
+
+data class PlayerUiState(
+    val progress: Float = 0f,
+    val duration: Long = 0,
+    val timeRemaining: String = "--:--",
+    val totalDuration: String = "--:--",
+    val timeElapsed: String = "--:--",
+    val isPlaying:  Boolean = false,
+    val noteContent: NoteContentModel.MediaContent? = null,
+)
+
 class PlayMediaViewModel : ViewModel(), KoinComponent {
     private val noteRepository = get<NoteContentRepository>()
     private val mediaServiceListener = get<MediaServiceListener>()
-    private  val _playerUiState  = MutableStateFlow(AudioUiState())
+    private val _playerUiState = MutableStateFlow(AudioUiState())
     val state = _playerUiState.asStateFlow()
+
     init {
         viewModelScope.launch {
-            noteRepository.selectedNote.collectLatest {notesContents->
-            if(notesContents.isNotEmpty()) {
-                _playerUiState.update {
-                    it.copy(contentList = notesContents,)
+            noteRepository.selectedNote.collectLatest { notesContents ->
+                if (notesContents.isNotEmpty()) {
+                    mediaServiceListener.addMediaItemList(notesContents.map { it.toMediaItem() })
+                    val map = notesContents.map {
+                        it.id to PlayerUiState(
+                            noteContent = it, duration = it.duration, totalDuration = it.duration.getReadableDuration(), progress = 0f
+                        )
+                    }.toMap()
+                    _playerUiState.update { it.copy(mediaStates = map) }
                 }
-                updateContent(noteContentModel = notesContents[0])
-            }
             }
         }
     }
+
     init {
         viewModelScope.launch {
-            mediaServiceListener.audioState.collectLatest {
-                when (it) {
-                    PlayerUiState.Initial -> {}
-                    is PlayerUiState.Buffering -> progressCalculation(it.progress)
-                    is PlayerUiState.Playing ->  _playerUiState.update { it.copy(isPlaying = it.isPlaying) }
-                    is PlayerUiState.Progress -> progressCalculation(it.progress)
-                    is PlayerUiState.CurrentPlaying -> { selectedAudioChanged(it.mediaItemIndex) }
-                    is PlayerUiState.Ready -> {
-                        _playerUiState.update { it.copy(duration = it.duration) }
+            mediaServiceListener.audioState.collectLatest { playerState ->
+                when (playerState) {
+                    PlayerState.Initial -> {}
+
+                    is PlayerState.CurrentPlaying -> {
+                        _playerUiState.update { it1 -> it1.copy(currentPlayingId = playerState.mediaId) }
+                    }
+                    is PlayerState.Buffering -> {
+                        calculateTimeline(playerState.progress, playerState.mediaId)
+                    }
+                    is PlayerState.Playing -> { if(playerState.mediaId.isNullOrEmpty()) return@collectLatest
+                        _playerUiState.update {
+                        it.copy(
+                            currentPlayingId = playerState.mediaId,
+                            mediaStates = state.value.mediaStates + (playerState.mediaId to state.value.mediaStates[playerState.mediaId]!!.copy( isPlaying = playerState.isPlaying
+                            ))
+                        )
+                    } }
+
+                    is PlayerState.Progress -> {
+                          calculateTimeline(playerState.progress, playerState.mediaId)
+                    }
+
+                    is PlayerState.Ready -> {
+
                     }
                 }
             }
         }
     }
+    private fun calculateTimeline(currentProgress: Long, mediaId : String?) {
+        if (mediaId.isNullOrEmpty()) return
+        val playingMedia  = getNoteContentPlayerState(mediaId)
+        if(playingMedia.isNotnull()) {
+            val progress =
+                if (currentProgress > 0) ((currentProgress.toFloat() / playingMedia!!.duration.toFloat()) * 100f)
+                else 0f
 
-
-    private fun progressCalculation(currentProgress: Long) {
-       val  progress =
-            if (currentProgress > 0) ((currentProgress.toFloat() / _playerUiState.value.duration.toFloat()) * 100f)
-            else 0f
-        _playerUiState.update { it.copy(
-            progress =  progress.toLong(),
-            timerRemaining = currentProgress.getTimerFormatedString()
-            ) }
-    }
-    fun onPlayingIntent(audioPlayingIntent: AudioPlayingIntent){
-        viewModelScope.launch {
-        when (audioPlayingIntent) {
-            AudioPlayingIntent.PlayOrPauseIntent -> play()
-            AudioPlayingIntent.RestartIntent -> restartPlaying()
-            AudioPlayingIntent.ResumeIntent -> resumePlaying()
-            AudioPlayingIntent.SeekNextIntent -> seekNext()
-            is AudioPlayingIntent.SeekToIntent -> { seekTo(audioPlayingIntent.position) }
-            AudioPlayingIntent.StopIntent -> stopPlaying()
-            AudioPlayingIntent.DeleteRecordingIntent -> deleteMedia()
-            AudioPlayingIntent.Backward -> backward()
-            AudioPlayingIntent.Forward -> forward()
-            is AudioPlayingIntent.SelectedAudioChange -> selectedAudioChanged(audioPlayingIntent.index)
-            is AudioPlayingIntent.UpdateProgress -> updateProgress(audioPlayingIntent.newProgress)
+            _playerUiState.update {
+                it.copy(
+                    currentPlayingId = mediaId,
+                    mediaStates = state.value.mediaStates + (mediaId to state.value.mediaStates[mediaId]!!.copy(progress = progress,
+                      timeRemaining = playingMedia!!.duration.timerRemaining(currentProgress), timeElapsed = currentProgress.getTimerFormatedString()
+                        ))
+                )
+            }
         }
-    } }
-    private suspend fun  selectedAudioChanged(index : Int){
-        _playerUiState.update { it.copy(currentPlayingAudio = it.contentList[index]) }
     }
 
-    private suspend fun backward(){
+    /** media events triggered by view model */
+    fun onPlayingIntent(audioPlayingIntent: AudioPlayingIntent) {
+        viewModelScope.launch {
+            when (audioPlayingIntent) {
+                is AudioPlayingIntent.PlayOrPauseIntent -> play(audioPlayingIntent.mediaId)
+                is AudioPlayingIntent.RestartIntent -> restartPlaying(audioPlayingIntent.mediaId)
+                is AudioPlayingIntent.ResumeIntent -> resumePlaying(audioPlayingIntent.mediaId)
+                is AudioPlayingIntent.SeekNextIntent -> seekNext(audioPlayingIntent.mediaId)
+                is AudioPlayingIntent.SeekToIntent -> seekTo(audioPlayingIntent.position, audioPlayingIntent.mediaId)
+                is AudioPlayingIntent.StopIntent -> stopPlaying()
+                AudioPlayingIntent.Backward -> backward()
+                AudioPlayingIntent.Forward -> forward()
+                is AudioPlayingIntent.SelectedAudioChange -> selectionAudioId(audioPlayingIntent.mediaId)
+                is AudioPlayingIntent.UpdateProgress -> updateProgress(audioPlayingIntent.newProgress, audioPlayingIntent.mediaId)
+            }
+        }
+    }
+
+    private suspend fun selectionAudioId(id: String) {
+        val indexOf = noteRepository.getIndexOfMedia(id)
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.SelectedAudioChange(id), indexOf)
+        _playerUiState.update {
+            it.copy(
+                currentPlayingId = id,
+            )
+        }
+    }
+    private suspend fun backward() {
         mediaServiceListener.onPlayerEvents(AudioPlayingIntent.Backward)
     }
 
-    private suspend fun  forward(){
+    private suspend fun forward() {
         mediaServiceListener.onPlayerEvents(AudioPlayingIntent.Forward)
     }
-    private suspend fun updateProgress(newProgress: Float){
-        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.UpdateProgress(newProgress))
-        _playerUiState.update { it.copy(progress = newProgress.toLong()) }
+
+    private suspend fun updateProgress(newProgress: Float, mediaId: String) {
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.UpdateProgress(newProgress, mediaId))
+        _playerUiState.update { it.copy( currentPlayingId = mediaId) }
     }
 
-    private suspend fun play(){
-        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.PlayOrPauseIntent)
-        _playerUiState.update { it.copy(isPlaying = true, isServiceIsRunning =  true) }
+    private suspend fun play(mediaId: String) {
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.PlayOrPauseIntent(mediaId))
+        _playerUiState.update { it.copy(isServiceIsRunning = true, currentPlayingId = mediaId) }
     }
 
-    private suspend fun seekTo(position: Float) {
-        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.SeekToIntent(position))
-        _playerUiState.update { it.copy() }
+    private suspend fun seekTo(position: Float, mediaId: String) {
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.SeekToIntent(position,mediaId),)
+        _playerUiState.update { it.copy( currentPlayingId = mediaId) }
     }
-    private suspend fun seekNext(){
-        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.SeekNextIntent)
+
+    private suspend fun seekNext(mediaId: String) {
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.SeekNextIntent(mediaId))
+        _playerUiState.update { it.copy( currentPlayingId = mediaId) }
     }
+
     private suspend fun stopPlaying() {
         mediaServiceListener.onPlayerEvents(AudioPlayingIntent.StopIntent)
     }
-    private suspend fun resumePlaying(){
-        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.ResumeIntent)
-    }
-    private suspend fun restartPlaying(){
-        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.RestartIntent)
-    }
-    private suspend fun deleteMedia() {
-//        _audioState.value.file?.delete()
+
+    private suspend fun resumePlaying(mediaId: String) {
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.ResumeIntent(mediaId))
+        _playerUiState.update { it.copy( currentPlayingId = mediaId) }
     }
 
-    fun updateContent(noteContentModel: NoteContentModel){
-        _playerUiState.update {
-            it.copy(currentPlayingAudio=  noteContentModel,
-            contentList = it.contentList
-            )
-        }
-        when {
-            noteContentModel is NoteContentModel.MediaContent-> {
-                val mediaItem = MediaItem.Builder().setMediaId(noteContentModel.id)
-                    .setUri(noteContentModel.localPath)
-                    .setTag(noteContentModel.title)
-                    .build()
-                mediaServiceListener.addMediaItem(media = mediaItem)
-            }
-            noteContentModel is NoteContentModel.MediaContent -> {
-                val mediaItem = MediaItem.Builder().setMediaId(noteContentModel.id)
-                    .setUri(noteContentModel.localPath)
-                    .setTag(noteContentModel.title)
-                    .build()
-                mediaServiceListener.addMediaItem(media = mediaItem)
-            }
-        }
-    }
-
-    fun showDeleteAlert(value: Boolean) {
-        _playerUiState.update { it.copy(showDeleteDialog = value) }
+    private suspend fun restartPlaying(mediaId: String) {
+        mediaServiceListener.onPlayerEvents(AudioPlayingIntent.RestartIntent(mediaId))
+        _playerUiState.update { it.copy( currentPlayingId = mediaId) }
     }
 
     override fun onCleared() {
-        _playerUiState.update { it.copy(isPlaying = false, isServiceIsRunning =  false) }
+        _playerUiState.update { it.copy(isServiceIsRunning = false) }
         viewModelScope.launch {
             mediaServiceListener.onPlayerEvents(AudioPlayingIntent.StopIntent)
         }
         super.onCleared()
     }
+
+    fun getNoteContentPlayerState(id: String): PlayerUiState? = _playerUiState.value.mediaStates[id]
 }

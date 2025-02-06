@@ -12,18 +12,17 @@ import java.io.File
 data class AudioState(
     val file: File? = null,
     val showDeleteDialog : Boolean = false,
-    val audioMode : AudioMode = AudioMode.none,
+    val audioLifecycle : AudioLifecycle = AudioLifecycle.idle,
     val noteContentModel: NoteContentModel.MediaContent? = null
 )
-enum class AudioMode {
-    start ,stop, playing, resume, pause, none
+enum class AudioLifecycle {
+    start ,stop, playing, resume, pause, idle
 }
 sealed interface AudioRecordingIntent {
     data object StartRecordingIntent : AudioRecordingIntent
     data class StopRecordingIntent(val duration : Long) : AudioRecordingIntent
     data object PauseRecordingIntent : AudioRecordingIntent
     data object ResumeRecordingIntent : AudioRecordingIntent
-    data object DeleteRecordingIntent : AudioRecordingIntent
 }
 
 
@@ -39,8 +38,6 @@ class AudioViewModel : ViewModel(), KoinComponent {
     }
     fun handleIntent(audioRecordingIntent: AudioRecordingIntent) {
         when (audioRecordingIntent) {
-            AudioRecordingIntent.DeleteRecordingIntent -> deleteRecording()
-
             AudioRecordingIntent.PauseRecordingIntent -> pauseRecording()
 
             AudioRecordingIntent.ResumeRecordingIntent -> resumeRecording()
@@ -56,28 +53,23 @@ class AudioViewModel : ViewModel(), KoinComponent {
 
   private fun startRecording(noteContentModel: NoteContentModel.MediaContent) {
         val file = noteContentModel.localPath?.let { File(it) }
-        _audioState.update { it.copy(file = file, audioMode = AudioMode.start) }
+        _audioState.update { it.copy(file = file, audioLifecycle = AudioLifecycle.start) }
         with(audioRecorder) { file?.let { start(it) } }
     }
 
   private fun stopRecording(duration: Long) {
         audioRecorder.stop()
-        _audioState.update { it.copy(audioMode = AudioMode.stop,
+        _audioState.update { it.copy(audioLifecycle = AudioLifecycle.stop,
             noteContentModel = it.noteContentModel?.copy(duration = duration),) }
     }
 
    private fun pauseRecording() {
-       _audioState.update { it.copy(audioMode = AudioMode.pause) }
+       _audioState.update { it.copy(audioLifecycle = AudioLifecycle.pause) }
         audioRecorder.pause()
     }
-
-   private fun deleteRecording() {
-        _audioState.value.file?.delete()
-    }
-
     private fun resumeRecording() {
         audioRecorder.resume()
-        _audioState.update { it.copy(audioMode = AudioMode.resume) }
+        _audioState.update { it.copy(audioLifecycle = AudioLifecycle.resume) }
     }
 }
 

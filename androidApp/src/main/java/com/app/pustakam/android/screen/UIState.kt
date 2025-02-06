@@ -50,6 +50,7 @@ data class NoteUIState(
     override val successMessage: String? = null,
     val showDeleteAlert : Boolean= false,
     val showDeleteButton : Boolean = false,
+    val deleteNoteContentId : String?= null,
     val noteStatus : NoteStatus? = NoteStatus.OnEditingMode,
     val contentType : ContentType? = null,
     val showPermissionAlert  : Boolean? = null,

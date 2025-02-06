@@ -21,3 +21,8 @@ class GetNotesUseCase : BaseUseCase() {
     suspend operator fun invoke(page : Int) =
         getBaseApiCall{ repository.getAllNotes(page) }
 }
+
+class DeleteNoteContentUseCase : BaseUseCase() {
+    suspend operator  fun invoke(id : String?)
+            = getBaseApiCall{ repository.deleteNoteContentFromDb(id ?: "") }
+}

@@ -10,6 +10,7 @@ import com.app.pustakam.data.models.request.RegisterReq
 import com.app.pustakam.data.models.response.DeleteDataModel
 import com.app.pustakam.data.models.response.User
 import com.app.pustakam.data.models.response.notes.Note
+import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.data.network.ApiCallClient
 import com.app.pustakam.extensions.isNotnull
@@ -156,6 +157,14 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
         }
     }
 
+    /** methods for deleting note content from db
+     * */
+    override suspend fun deleteNoteContentFromDb(id: String?): Result<BaseResponse<Boolean>, Error> {
+        if (id.isNullOrEmpty()) Result.Error(error = NetworkError.NOT_FOUND)
+            notesDao.deleteNoteContentById(id!!)
+        return Result.Success(BaseResponse(data = true, isSuccessful = true))
+    }
+
     /** methods for decision logic
      * - call local db methods or
      * - call api for server
@@ -210,7 +219,8 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
 //            getNotesForUserApi(page)
         }
     }
-
+    /** create an blank note
+     */
     private fun createNewEmptyNote(): Note  {
         val date = getCurrentTimestamp().toString()
         val id = UniqueIdGenerator.generateUniqueId()

@@ -27,3 +27,10 @@ fun createFileWithFolders(context: Activity, folderPath : String, fileName : Str
     }
     return file
 }
+
+fun deleteFile(filePath : String){
+    val file = File(filePath)
+    if (file.exists() && file.isFile) {
+        file.delete()
+    }
+}
