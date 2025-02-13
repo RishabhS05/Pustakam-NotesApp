@@ -140,9 +140,9 @@ class MediaServiceListener(
             startProgressUpdate()
         }
     }
-    private suspend fun startProgressUpdate( ) = job.run {
+    private suspend fun startProgressUpdate() = job.run {
         while (true) {
-         delay(500)
+         delay(1000)
             _audioState.value = PlayerState.Progress(exoPlayer.currentPosition,getId())
         }
     }
@@ -150,5 +150,7 @@ class MediaServiceListener(
         job?.cancel()
         _audioState.value = PlayerState.Playing(isPlaying = false, mediaId = getId())
     }
+
+    //always call getId method to update the data otherwise ui will cause issues
 private fun getId() = media[exoPlayer.currentMediaItemIndex].mediaId
 }

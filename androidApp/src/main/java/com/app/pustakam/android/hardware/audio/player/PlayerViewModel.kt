@@ -7,9 +7,10 @@ import com.app.pustakam.android.services.mediaSessionService.MediaPlayingEvent
 import com.app.pustakam.android.services.mediaSessionService.MediaServiceListener
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
-import com.app.pustakam.extensions.getReadableDuration
+import com.app.pustakam.extensions.getReadableHMS
 import com.app.pustakam.extensions.getTimerFormatedString
 import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.extensions.readableTimer
 import com.app.pustakam.extensions.timerRemaining
 import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,10 +78,10 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
                     val map = notesContents.map {
                         it.id to PlayerUiState(
                             noteContent = it, duration = it.duration,
-                            totalDuration = it.duration.getReadableDuration(),
+                            totalDuration =it.duration.getReadableHMS(),
                             progress = 0f,
-                            timeRemaining = it.duration.timerRemaining(0),
-                            timeElapsed = (0).toLong().getTimerFormatedString()
+                            timeRemaining = it.duration.getTimerFormatedString(),
+                            timeElapsed = (0).toLong().readableTimer()
                         )
                     }.toMap()
                     _playerUiState.update { it.copy(mediaStates = map) }
@@ -134,16 +135,18 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
             val progress =
                 if (currentProgress > 0) ((currentProgress.toFloat() / playingMedia!!.duration.toFloat()) * 100f)
                 else 0f
+
+//           val timeValue =  currentProgress*playingMedia!!.duration.toFloat()
             _playerUiState.update {
                 it.copy(
                     currentPlayingId = mediaId,
                     mediaStates = state.value.mediaStates + (mediaId to state.value.mediaStates[mediaId]!!.copy(progress = progress,
                         timeRemaining = playingMedia!!.duration.timerRemaining(currentProgress),
-                        timeElapsed = currentProgress.getTimerFormatedString()
+                        timeElapsed = currentProgress.readableTimer()
                         ))
                 )
             }
-            log_d("log calculate : $mediaId : progress $progress currentProgress ",  currentProgress)
+            log_d("log calculate : $mediaId : duration ${playingMedia!!.duration} progress $progress currentProgress ",  currentProgress)
         }
     }
 
