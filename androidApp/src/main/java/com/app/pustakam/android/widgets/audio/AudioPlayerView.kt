@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,10 +32,9 @@ import androidx.media3.common.util.UnstableApi
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
 import com.app.pustakam.android.extension.startServiceWrapper
-import com.app.pustakam.android.hardware.audio.player.AudioPlayingIntent
+import com.app.pustakam.android.hardware.audio.player.AudioPlayingUIEvent
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
-import com.app.pustakam.android.hardware.audio.recorder.AudioLifecycle
 import com.app.pustakam.android.services.mediaSessionService.PustakmMediaPlayerService
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.data.models.response.notes.NoteContentModel
@@ -45,25 +45,29 @@ import com.app.pustakam.data.models.response.notes.NoteContentModel
 fun AudioPlayerUIState(
     noteContentModel: NoteContentModel.MediaContent, onDelete: (NoteContentModel) -> Unit = {}
 ) {
+    val noteContent = remember { noteContentModel }
     val viewModel: PlayMediaViewModel = viewModel()
     val localContext = LocalContext.current as Activity
     val state = viewModel.state.collectAsStateWithLifecycle()
-    val mediaState = state.value.mediaStates[noteContentModel.id] ?: PlayerUiState()
-    AudioPlayView(state = mediaState, onDelete = {
-        viewModel.onPlayingIntent(AudioPlayingIntent.PlayOrPauseIntent(noteContentModel.id))
-        onDelete(noteContentModel)
-    }, onSeek = {
-        viewModel.onPlayingIntent(AudioPlayingIntent.SeekToIntent(it, noteContentModel.id))
-    }, onPlay = {
-        if (!state.value.isServiceIsRunning) localContext.startServiceWrapper(Intent(localContext, PustakmMediaPlayerService::class.java))
-        viewModel.onPlayingIntent(AudioPlayingIntent.SelectedAudioChange(noteContentModel.id))
-    })
+    val mediaState = state.value.mediaStates[noteContent.id] ?: PlayerUiState(noteContent = noteContent)
+
+    if (mediaState.noteContent.position == noteContent.position) {
+        AudioPlayView(state = mediaState, onDelete = {
+            viewModel.onPlayingIntent(AudioPlayingUIEvent.PlayOrPauseUIEvent(mediaId = noteContent.id))
+            onDelete(noteContentModel)
+        }, onSeek = {
+            viewModel.onPlayingIntent(AudioPlayingUIEvent.SeekToUIEvent(it, noteContent.id))
+        }, onPlay = {
+            if (!state.value.isServiceIsRunning) localContext.startServiceWrapper(Intent(localContext, PustakmMediaPlayerService::class.java))
+            viewModel.onPlayingIntent(AudioPlayingUIEvent.SelectedAudioChange(noteContent.id))
+        })
+    }
 }
 
 @OptIn(UnstableApi::class)
 @Composable
 fun AudioPlayView(
-    state: PlayerUiState, onDelete: () -> Unit = {}, onPlay: () -> Unit = {}, onSeek: (Float) -> Unit = {}
+    state: PlayerUiState, onDelete: () -> Unit = {}, onPlay: () -> Unit = {}, onSeek: (Float) -> Unit = {},
 ) {
 
     val iconModifier = Modifier.size(30.dp)
@@ -89,7 +93,7 @@ fun AudioPlayView(
                     modifier = Modifier.weight(0.5f).padding(horizontal = 6.dp).padding(bottom = 6.dp),
                     value = state.progress,
                     valueRange = 0f..100f,
-                    onValueChange = { newValue ->
+                    onValueChange = {newValue ->
                         onSeek(newValue)
                     },
                 )

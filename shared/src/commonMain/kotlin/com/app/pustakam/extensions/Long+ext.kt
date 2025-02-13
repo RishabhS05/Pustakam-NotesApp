@@ -1,5 +1,7 @@
 package com.app.pustakam.extensions
 
+import kotlin.time.DurationUnit
+
 fun Long.getTimerFormatedString() : String{
     val hours = this / 3600
     val minutes = (this % 3600) / 60
@@ -10,7 +12,7 @@ fun Long.getTimerFormatedString() : String{
     return format
 }
 //calculate time with fprmated string
-fun Long.getSliderPosition(duration: Long) : Long = ((this*duration)/100)
+fun Long.getSliderPosition(duration: Long) : Long = ((this * duration )/100)
 fun Long.getReadableDuration() : String {
     val hours = this / 3600
     val minutes = (this % 3600) / 60
@@ -25,4 +27,5 @@ fun Long.getReadableDuration() : String {
     }
     return format
 }
-fun Long.timerRemaining(currentValue : Long) : String = (this-currentValue).getTimerFormatedString()
+
+fun Long.timerRemaining(currentValue : Long) : String = (this - currentValue).getTimerFormatedString()
