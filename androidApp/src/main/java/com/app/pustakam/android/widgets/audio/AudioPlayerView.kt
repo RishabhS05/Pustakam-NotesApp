@@ -1,27 +1,34 @@
+@file:kotlin.OptIn(ExperimentalMaterial3Api::class)
+
 package com.app.pustakam.android.widgets.audio
 
 import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.annotation.OptIn
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -70,17 +77,18 @@ fun AudioPlayView(
     state: PlayerUiState, onDelete: () -> Unit = {}, onPlay: () -> Unit = {}, onSeek: (Float) -> Unit = {},
 ) {
 
-    val iconModifier = Modifier.size(30.dp)
-    Card(modifier = Modifier.padding(12.dp)) {
+    val iconModifier = Modifier.size(28.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+    Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier) {
             Box(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp).fillMaxWidth(),
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp).fillMaxWidth(),
             ) {
                 Text(
                     state.totalDuration, style = typography.labelSmall, modifier = Modifier.align(Alignment.TopStart)
                 )
                 Text(
-                    state.timeElapsed, style = typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter)
+                    state.timeElapsed, style = typography.labelMedium, modifier = Modifier.align(Alignment.TopCenter)
                 )
                 Text(
                     state.timeRemaining, style = typography.labelSmall, modifier = Modifier.align(Alignment.TopEnd).padding(horizontal = 6.dp)
@@ -96,6 +104,19 @@ fun AudioPlayView(
                     onValueChange = {newValue ->
                         onSeek(newValue)
                     },
+                    interactionSource = interactionSource,
+                    track = { sliderPositions ->
+                        SliderDefaults.Track(
+                            sliderState = sliderPositions,
+                            modifier = Modifier.height(8.dp),
+                        )
+                    },
+                    thumb = {
+                        SliderDefaults.Thumb(
+                            modifier = Modifier.scale(scaleX = 0.5f, scaleY =1f),
+                            interactionSource = interactionSource,
+                        )
+                    }
                 )
                 IconButton(onClick = onPlay) {
                     val drawable = if (state.isPlaying) R.drawable.ic_pause else R.drawable.ic_play

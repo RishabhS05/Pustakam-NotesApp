@@ -100,9 +100,16 @@ val typography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp
     ),
-    labelSmall = TextStyle(
+    labelMedium = TextStyle(
         fontFamily = Montserrat,
         fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        lineHeight = 16.sp,
+        letterSpacing = 1.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = Montserrat,
+        fontSize = 10.sp,
         fontWeight = FontWeight.SemiBold,
         lineHeight = 16.sp,
         letterSpacing = 1.sp

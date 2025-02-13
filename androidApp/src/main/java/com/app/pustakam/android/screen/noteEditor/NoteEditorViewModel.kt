@@ -213,8 +213,6 @@ class NoteEditorViewModel : BaseViewModel() {
         val folderName = "${contentType.name.lowercase()}/${getCurrentTimestamp()}"
         val fileName = "${getCurrentTimestamp()}${contentType.getExt()}"
         val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
-        log_i("${filePath} is succefully created")
-
         when (contentType) {
             TEXT -> {
                 content = NoteContentModel.TextContent(position = position,
@@ -233,7 +231,7 @@ class NoteEditorViewModel : BaseViewModel() {
 
             AUDIO -> {
                 content = NoteContentModel.MediaContent(position = position,
-                    noteId = noteId, localPath = filePath)
+                    noteId = noteId, localPath = filePath , type = AUDIO)
             }
 
             LINK -> {
@@ -263,7 +261,7 @@ class NoteEditorViewModel : BaseViewModel() {
                      contents= it.contents,
                      isAllSetupDone = true )
         }
-        if(content.isMediaFile()) noteContentRepository.addNoteContent(content as NoteContentModel.MediaContent)
+//        if(content.isMediaFile()) noteContentRepository.addNoteContent(content as NoteContentModel.MediaContent)
     }
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
         _noteContentUiState.update {

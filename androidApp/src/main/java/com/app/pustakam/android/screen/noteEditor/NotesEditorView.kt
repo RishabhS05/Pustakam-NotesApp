@@ -110,8 +110,6 @@ fun NotesEditorView(
             showDeleteAlert -> {
                 if (deleteNoteContentId.isNotnull()){
                     DeleteNoteAlert(noteTitle ="Recorded Note", onConfirm = {
-
-
                         noteEditorViewModel.removeContent(value = deleteNoteContentId!!)
                         (context as Activity)
                     }) {

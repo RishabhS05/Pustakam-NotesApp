@@ -95,7 +95,6 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
             mediaServiceListener.audioState.collectLatest { playerState ->
                 when (playerState) {
                     PlayerState.Initial -> {}
-
                     is PlayerState.CurrentPlaying -> {
                         _playerUiState.update { it1 -> it1.copy(currentPlayingId = playerState.mediaId) }
                     }
@@ -110,7 +109,6 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
                             ))
                         )
                     } }
-
                     is PlayerState.Progress -> {
                           calculateTimeline(playerState.progress, playerState.mediaId)
                     }
