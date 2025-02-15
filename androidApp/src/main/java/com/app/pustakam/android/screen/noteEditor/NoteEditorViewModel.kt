@@ -261,7 +261,6 @@ class NoteEditorViewModel : BaseViewModel() {
                      contents= it.contents,
                      isAllSetupDone = true )
         }
-//        if(content.isMediaFile()) noteContentRepository.addNoteContent(content as NoteContentModel.MediaContent)
     }
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
         _noteContentUiState.update {

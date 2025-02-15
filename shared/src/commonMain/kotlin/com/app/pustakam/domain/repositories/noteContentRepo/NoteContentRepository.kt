@@ -7,23 +7,22 @@ import com.app.pustakam.util.ContentType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.update
 
 class NoteContentRepository {
-    private val _selectedNote = MutableStateFlow<MutableList<NoteContentModel.MediaContent>>(
+    private val _selectedNote = MutableStateFlow<List<NoteContentModel.MediaContent>>(
         value = mutableListOf()
     )
-    val selectedNote: SharedFlow<MutableList<NoteContentModel.MediaContent>> = _selectedNote.asSharedFlow()
-    fun addNoteContent(note: NoteContentModel.MediaContent) {
-        _selectedNote.value.add(note)
-    }
+    val selectedNote: SharedFlow<List<NoteContentModel.MediaContent>> = _selectedNote.asSharedFlow()
     fun getIndexOfMedia(id : String ): Int{
         return _selectedNote.value.indexOfFirst { id == it.id }
     }
     fun updateNoteContent(note: NoteContentModel.MediaContent){
-        _selectedNote.apply {
-            val indexof = this.value.indexOf(note)
-            if (indexof == -1) addNoteContent(note) else
-                this.value[indexof] = note
+        _selectedNote.update { currentList ->
+            val newList = currentList.toMutableList()
+            val indexof = newList.indexOf(note)
+            if (indexof == -1) newList.add(note) else newList[indexof] = note
+            newList.toList() // Ensure immutable list
         }
     }
 
@@ -32,6 +31,6 @@ class NoteContentRepository {
             ?.sortedBy { it.position }?.toMutableList()?: mutableListOf()
     }
     fun clear(){
-        _selectedNote.value.clear()
+        _selectedNote.value.toMutableList().clear()
     }
 }

@@ -51,6 +51,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
 import com.app.pustakam.android.extension.deleteFile
+import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
+import com.app.pustakam.android.hardware.audio.recorder.AudioViewModel
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
