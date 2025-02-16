@@ -98,7 +98,7 @@ fun AudioPlayView(
                 verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp)
             ) {
                 Slider(
-                    modifier = Modifier.weight(0.5f).padding(horizontal = 6.dp).padding(bottom = 6.dp),
+                    modifier = Modifier.weight(0.5f).padding(horizontal = 6.dp).padding(bottom = 4.dp),
                     value = state.progress,
                     valueRange = 0f..100f,
                     onValueChange = {newValue ->
@@ -142,7 +142,8 @@ fun AudioPlayView(
 private fun AudioPlayerPreview() {
     MyApplicationTheme {
         val state = PlayerUiState(
-            totalDuration = "00 sec", progress = 10f, timeRemaining = "00:20", timeElapsed = "00:20", duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "", duration = 100, position = 1)
+            totalDuration = "00 sec", progress = 10f, timeRemaining = "00:20", timeElapsed = "00:20",
+            duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "", duration = 100, position = 1)
         )
         AudioPlayView(state = state)
     }

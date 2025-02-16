@@ -52,7 +52,7 @@ fun OverLayEditorButtons(
             elevation = CardDefaults.cardElevation(),
             colors = CardDefaults.cardColors(containerColor = orange50.copy(alpha = 0.4f))
         ) {
-            Icon(icon,
+            Icon(icon, tint = colorScheme.inverseSurface,
                 contentDescription = "",
                 modifier = Modifier
                     .padding(start = 4.dp, top = 4.dp)
@@ -128,7 +128,7 @@ fun OverLayEditorButtons(
         }
     else
         Icon(icon, contentDescription = "",
-            tint = colorScheme.secondary,
+            tint = colorScheme.inverseSurface,
             modifier = modifier
                 .padding(8.dp)
                 .clickable {
