@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "Pustakam"
 include(":androidApp")
 include(":shared")
+include(":camerax")

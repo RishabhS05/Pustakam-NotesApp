@@ -3,6 +3,8 @@ package com.app.pustakam.android.screen.noteEditor
 import android.app.Activity
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.camera.view.CameraController
+import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -50,9 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
-import com.app.pustakam.android.extension.deleteFile
-import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
-import com.app.pustakam.android.hardware.audio.recorder.AudioViewModel
+import com.app.pustakam.android.hardware.camera.CameraPreview
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
@@ -86,6 +86,7 @@ fun NotesEditorView(
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
+
             else -> {}
         }
     }
@@ -94,34 +95,39 @@ fun NotesEditorView(
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
     val state = noteEditorViewModel.noteContentUiState.collectAsStateWithLifecycle()
+    val controller = remember {
+        LifecycleCameraController(context).apply {
+            setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.VIDEO_CAPTURE)
+        }
+    }
     val stateEditor = noteEditorViewModel.noteUIState.collectAsStateWithLifecycle().value.apply {
         when {
             isLoading -> LoadingUI()
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 noteEditorViewModel.clearError()
             }
+
             showPermissionAlert == true -> {
                 AskPermissions(permissionsRequired = permissions, onDismiss = {
                     noteEditorViewModel.showPermissionAlert(null)
                 }, onGrantPermission = {
                     noteEditorViewModel.showPermissionAlert(null)
                     noteEditorViewModel.addNewContent(context)
+                    if (contentType == ContentType.IMAGE || contentType == ContentType.VIDEO) {
+                        noteEditorViewModel.enablePreviewCamera(true)
+                    }
                 })
             }
 
             showDeleteAlert -> {
-                if (deleteNoteContentId.isNotnull()){
-                    DeleteNoteAlert(noteTitle ="Recorded Note", onConfirm = {
+                if (deleteNoteContentId.isNotnull()) {
+                    DeleteNoteAlert(noteTitle = "Recorded Note", onConfirm = {
                         noteEditorViewModel.removeContent(value = deleteNoteContentId!!)
                         (context as Activity)
                     }) {
                         noteEditorViewModel.showDeleteAlertBox(false, null)
                     }
-                }
-                else
-                DeleteNoteAlert(noteTitle =
-                if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty())
-                    noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
+                } else DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
                     noteEditorViewModel.deleteNote(noteId = id!!)
                     noteEditorViewModel.showDeleteAlertBox(false)
                 }) {
@@ -137,9 +143,10 @@ fun NotesEditorView(
         }
 
     }
-
-
-    NotesEditor(state = state, topBar = {
+    if (stateEditor.previewCameraScreen) Box(modifier = Modifier.fillMaxSize()) {
+        CameraPreview(controller = controller, modifier = Modifier.matchParentSize())
+    }
+    else NotesEditor(state = state, topBar = {
         TopAppBar(title = {
             state.value.note?.updatedAt?.let {
                 Text(
@@ -200,13 +207,15 @@ fun NotesEditorView(
                 itemsIndexed(it.sortedBy { content -> content.position.inc() }) { index, contentValue ->
                     RenderWidget(content = contentValue, onUpdate = { value ->
                         noteEditorViewModel.updateContent(index, value)
-                    }){value->
+                    }) { value ->
                         noteEditorViewModel.showDeleteAlertBox(true, deleteNoteContentId = value.id)
                     }
                 }
             }
         }
     })
+
+
 }
 
 @Composable
@@ -231,8 +240,7 @@ fun NotesEditor(
         ) {
             if (isRuledEnabledState.value) RuledPage()
             Column {
-                TextField(value = state.value.titleTextState.value,
-                    textStyle = typography.titleLarge, placeholder = {
+                TextField(value = state.value.titleTextState.value, textStyle = typography.titleLarge, placeholder = {
                     Text(
                         "Title : Keep your thoughts alive.",
                         modifier = Modifier.padding(start = paddingLeft),
@@ -259,12 +267,11 @@ fun RenderWidget(
     modifier: Modifier = Modifier,
     content: NoteContentModel,
     onUpdate: (content: NoteContentModel) -> Unit,
-    onDelete:  (content: NoteContentModel) -> Unit,
+    onDelete: (content: NoteContentModel) -> Unit,
 ) {
     when (content.type) {
         ContentType.TEXT -> {
-            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent),
-                onUpdate = { onUpdate(content.copy(text = it)) })
+            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent), onUpdate = { onUpdate(content.copy(text = it)) })
         }
 
         ContentType.IMAGE -> {
@@ -274,6 +281,7 @@ fun RenderWidget(
                 LoadImage(url = path, modifier = Modifier)
             }
         }
+
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
@@ -285,9 +293,9 @@ fun RenderWidget(
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.MediaContent
             if (contentAudio.duration > 0) {// todo temp logic
-                AudioPlayerUIState(contentAudio,onDelete = onDelete)
+                AudioPlayerUIState(contentAudio, onDelete = onDelete)
             } else {
-                AudioRecording(contentAudio, onStop = { onUpdate(it) }, onDelete= onDelete)
+                AudioRecording(contentAudio, onStop = { onUpdate(it) }, onDelete = onDelete)
             }
         }
 

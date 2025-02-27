@@ -47,15 +47,17 @@ dependencies {
         }
     }
     implementation(projects.shared)
+//    implementation(projects.camerax)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.compose.ui)
     implementation(libs.coil.svg)
     implementation(libs.coil)
     implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.material3)
+    implementation(libs.bundles.material3)
     implementation(libs.compose.viewmodel)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.bundles.media3)
+    implementation(libs.bundles.camerax)
     debugImplementation(libs.compose.ui.tooling)
 }

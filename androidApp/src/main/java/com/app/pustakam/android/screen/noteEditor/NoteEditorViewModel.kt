@@ -199,6 +199,9 @@ class NoteEditorViewModel : BaseViewModel() {
             it.copy(permissions = permission, contentType = contentType, showPermissionAlert = true, isLoading = false)
         }
     }
+    fun enablePreviewCamera(value : Boolean){
+        _noteUiState.update { it.copy(previewCameraScreen = value, isLoading = false) }
+    }
 
     /**content logic
      * Add new content to the note content list

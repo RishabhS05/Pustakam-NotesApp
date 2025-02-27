@@ -55,6 +55,7 @@ data class NoteUIState(
     val contentType : ContentType? = null,
     val showPermissionAlert  : Boolean? = null,
     val permissions : List<NeededPermission> = listOf(),
+    val previewCameraScreen : Boolean = false,
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
 data class NoteContentUiState(
