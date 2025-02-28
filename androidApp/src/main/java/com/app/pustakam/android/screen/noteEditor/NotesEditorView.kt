@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
 import com.app.pustakam.android.hardware.camera.CameraPreview
+import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
@@ -79,6 +80,7 @@ fun NotesEditorView(
 ) {
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
     val focusManager = LocalFocusManager.current
+    val imageViewModel: ImageDataViewModel = viewModel<ImageDataViewModel>()
     val context = LocalContext.current
     OnLifecycleEvent { _, event ->
         when (event) {
@@ -144,7 +146,8 @@ fun NotesEditorView(
 
     }
     if (stateEditor.previewCameraScreen) Box(modifier = Modifier.fillMaxSize()) {
-        CameraPreview(controller = controller, modifier = Modifier.matchParentSize())
+        CameraPreview(controller = controller, imageViewModel,
+            modifier = Modifier.matchParentSize())
     }
     else NotesEditor(state = state, topBar = {
         TopAppBar(title = {

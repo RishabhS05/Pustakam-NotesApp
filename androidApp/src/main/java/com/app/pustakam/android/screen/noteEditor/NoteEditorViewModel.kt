@@ -213,43 +213,28 @@ class NoteEditorViewModel : BaseViewModel() {
         val position: Long = note?.content?.count()?.toLong() ?: 0
         val noteId = note?.id?: ""
         val content: NoteContentModel
-        val folderName = "${contentType.name.lowercase()}/${getCurrentTimestamp()}"
-        val fileName = "${getCurrentTimestamp()}${contentType.getExt()}"
-        val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
         when (contentType) {
             TEXT -> {
                 content = NoteContentModel.TextContent(position = position,
                     noteId = noteId,)
             }
-
-            IMAGE -> {
-                content = NoteContentModel.MediaContent(position = position,
-                    noteId = noteId, localPath = filePath, type = IMAGE)
-            }
-
-            VIDEO -> {
-                content = NoteContentModel.MediaContent(position = position,
-                    noteId = noteId, localPath = filePath, type = VIDEO)
-            }
-
-            AUDIO -> {
-                content = NoteContentModel.MediaContent(position = position,
-                    noteId = noteId, localPath = filePath , type = AUDIO)
-            }
-
             LINK -> {
                 content = NoteContentModel.Link(position = position,
-                    noteId = noteId)
-            }
-
-            DOCX -> {
-                content = NoteContentModel.MediaContent(position = position,
-                    noteId = noteId, type = DOCX)
+                    noteId = noteId, )
             }
 
             LOCATION -> {
                 content = NoteContentModel.Location(position = position,
                     noteId = noteId)
+            }
+
+            AUDIO ,DOCX,VIDEO,IMAGE-> {
+                val folderName = "${contentType.name.lowercase()}/${getCurrentTimestamp()}"
+                val fileName = "${getCurrentTimestamp()}${contentType.getExt()}"
+                val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
+                content = NoteContentModel.MediaContent(position = position,
+                    title = "$contentType-$position",
+                    noteId = noteId, localPath = filePath , type = contentType)
             }
 
             else -> {

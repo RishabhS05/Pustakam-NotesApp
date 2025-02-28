@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -45,7 +44,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.permission.hasPermission
 import com.app.pustakam.android.permission.hasPermissions
@@ -56,12 +54,14 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraPreview(
-    controller: LifecycleCameraController, modifier: Modifier = Modifier
+    controller: LifecycleCameraController,
+    imageViewModel: ImageDataViewModel,
+    modifier: Modifier = Modifier
 ) {
     val lifecycle = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val imageViewModel: ImageDataViewModel = viewModel<ImageDataViewModel>()
+
     val bitmapsState by imageViewModel.bitmaps.collectAsStateWithLifecycle()
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(scaffoldState = scaffoldState, sheetContent = {
@@ -80,7 +80,7 @@ fun CameraPreview(
                 Icon(imageVector = Icons.Default.Cameraswitch, contentDescription = "Camera Switch")
             }
             Row(
-                modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 IconButton(onClick = {
                     takePhoto(controller, context, onPhotoTaken = imageViewModel::onTakePhoto)
@@ -160,9 +160,4 @@ fun takePhoto(
         }
     })
 
-}
-
-fun openGallery(
-
-) {
 }
