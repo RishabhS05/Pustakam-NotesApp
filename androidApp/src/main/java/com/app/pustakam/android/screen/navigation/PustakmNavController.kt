@@ -21,6 +21,7 @@ object Route {
     const val Notes = "NOTES"
     const val NotesEditor = "NOTES_EDITOR"
     const val Authentication = "AUTH"
+    const val CameraPreview = "CAMERA_PREVIEW"
 }
 @Stable
 class PustakmNavController(
@@ -30,6 +31,7 @@ class PustakmNavController(
         Screen.HomeScreen.NotesScreen,
         Screen.HomeScreen.SearchScreen,
         Screen.HomeScreen.NotificationScreen
+
     )
     val shouldShowBottomBar
         get() = when (navController.currentBackStackEntry?.destination?.route) {

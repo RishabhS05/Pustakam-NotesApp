@@ -1,8 +1,11 @@
 package com.app.pustakam.android.screen.navigation
 
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.app.pustakam.android.hardware.camera.CameraPreviewScreen
+import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.screen.noteEditor.NotesEditorView
 import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
@@ -25,17 +28,15 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         composable(
             route = Route.NotesEditor
         ) {
-            NotesEditorView( onBack = {
-                navController.upPress()
-            })
+            NotesEditorView( onBack = navController::upPress
+            , onCameraPreview = { navController.navigateTo(Route.CameraPreview) })
         }
         composable(
             route = Route.NotesEditor+"/{noteId}"
         ) {
            val noteId =  it.arguments?.getString("noteId") ?: ""
-            NotesEditorView(id = noteId, onBack = {
-                navController.upPress()
-            })
+            NotesEditorView(id = noteId, onBack =
+                navController::upPress, onCameraPreview = { navController.navigateTo(Route.CameraPreview) })
         }
         composable(
             route = Route.Notification
@@ -46,6 +47,12 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             route = Route.Search
         ) {
             SearchView(onNavigate = {})
+        }
+        composable(
+            route = Route.CameraPreview
+        ) {
+            val imageViewModel: ImageDataViewModel = viewModel<ImageDataViewModel>()
+            CameraPreviewScreen(imageViewModel, navController::upPress)
         }
     }
 }

@@ -3,8 +3,6 @@ package com.app.pustakam.android.screen.noteEditor
 import android.app.Activity
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.camera.view.CameraController
-import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -52,8 +50,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
-import com.app.pustakam.android.hardware.camera.CameraPreview
-import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
@@ -77,10 +73,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 fun NotesEditorView(
     id: String? = null,
     onBack: () -> Unit = {},
+    onCameraPreview: ()-> Unit ={}
 ) {
     val noteEditorViewModel: NoteEditorViewModel = viewModel()
     val focusManager = LocalFocusManager.current
-    val imageViewModel: ImageDataViewModel = viewModel<ImageDataViewModel>()
     val context = LocalContext.current
     OnLifecycleEvent { _, event ->
         when (event) {
@@ -88,7 +84,6 @@ fun NotesEditorView(
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
-
             else -> {}
         }
     }
@@ -97,11 +92,6 @@ fun NotesEditorView(
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
     val state = noteEditorViewModel.noteContentUiState.collectAsStateWithLifecycle()
-    val controller = remember {
-        LifecycleCameraController(context).apply {
-            setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.VIDEO_CAPTURE)
-        }
-    }
     val stateEditor = noteEditorViewModel.noteUIState.collectAsStateWithLifecycle().value.apply {
         when {
             isLoading -> LoadingUI()
@@ -129,7 +119,9 @@ fun NotesEditorView(
                     }) {
                         noteEditorViewModel.showDeleteAlertBox(false, null)
                     }
-                } else DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
+                } else DeleteNoteAlert(noteTitle =
+                if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty())
+                    noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
                     noteEditorViewModel.deleteNote(noteId = id!!)
                     noteEditorViewModel.showDeleteAlertBox(false)
                 }) {
@@ -146,8 +138,8 @@ fun NotesEditorView(
 
     }
     if (stateEditor.previewCameraScreen) Box(modifier = Modifier.fillMaxSize()) {
-        CameraPreview(controller = controller, imageViewModel,
-            modifier = Modifier.matchParentSize())
+        noteEditorViewModel.enablePreviewCamera(false)
+        onCameraPreview()
     }
     else NotesEditor(state = state, topBar = {
         TopAppBar(title = {
@@ -281,6 +273,7 @@ fun RenderWidget(
             val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
             Card {
+                Text("Image is added")
                 LoadImage(url = path, modifier = Modifier)
             }
         }
@@ -289,7 +282,7 @@ fun RenderWidget(
             val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
             Card {
-
+              Text("Video is added")
             }
         }
 
@@ -304,9 +297,7 @@ fun RenderWidget(
 
         ContentType.LINK -> {
             val contentLink = content as NoteContentModel.Link
-            Text(contentLink.url, modifier = Modifier.clickable {
-
-            })
+            Text(contentLink.url, modifier = Modifier.clickable {})
         }
 
         ContentType.DOCX -> {

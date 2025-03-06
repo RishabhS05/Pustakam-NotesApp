@@ -43,7 +43,7 @@ class AudioViewModel : ViewModel(), KoinComponent {
             AudioRecordingIntent.ResumeRecordingIntent -> resumeRecording()
 
             AudioRecordingIntent.StartRecordingIntent ->
-                _audioState.value.noteContentModel?.let { startRecording(it) }
+                _audioState.value.noteContentModel?.let { startRecording(it.localPath) }
 
            is AudioRecordingIntent.StopRecordingIntent ->{
                stopRecording(audioRecordingIntent.duration)
@@ -51,8 +51,8 @@ class AudioViewModel : ViewModel(), KoinComponent {
         }
     }
 
-  private fun startRecording(noteContentModel: NoteContentModel.MediaContent) {
-        val file = noteContentModel.localPath?.let { File(it) }
+  private fun startRecording(filePath: String? = null) {
+        val file = filePath?.let { File(it) }
         _audioState.update { it.copy(file = file, audioLifecycle = AudioLifecycle.start) }
         with(audioRecorder) { file?.let { start(it) } }
     }
