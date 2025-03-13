@@ -24,7 +24,7 @@ sealed interface MediaProcessingEvent {
 
 data class MediaFileStateHandler(
     val noteId : String ="",
-    val filePath: String= "", val contentType: ContentType? = ContentType.IMAGE,
+    val contentType: ContentType? = ContentType.IMAGE,
     val bitmap: Bitmap? = null,
     val editedBitmap: Bitmap? = null,
     val showImagePreview: Boolean = false,
@@ -59,7 +59,7 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
 
     fun onClear() {
         _mediaFileState.update {
-            it.copy(filePath = "",
+            it.copy(
                 contentType = null,
                 bitmap = null,
                 showImagePreview = false,

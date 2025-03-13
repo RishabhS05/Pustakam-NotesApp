@@ -64,7 +64,9 @@ import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
+import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.textField.NoteTextField
+import com.app.pustakam.android.widgets.video.VideoCard
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.toLocalFormat
@@ -116,8 +118,11 @@ fun NotesEditorView(
                     noteEditorViewModel.showPermissionAlert(null)
                 }, onGrantPermission = {
                     noteEditorViewModel.showPermissionAlert(null)
-                    if (contentType == ContentType.IMAGE || contentType == ContentType.VIDEO) {
-                        noteEditorViewModel.enablePreviewCamera(true)
+                    when(contentType){
+                        ContentType.IMAGE,ContentType.VIDEO->
+                            noteEditorViewModel.enablePreviewCamera(true)
+                        ContentType.AUDIO->noteEditorViewModel.addNewContent(context,contentType)
+                        else ->{}
                     }
                 })
             }
@@ -275,23 +280,15 @@ fun RenderWidget(
         ContentType.IMAGE -> {
             val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
-            Card(
-                modifier = Modifier.clickable {  }
-                    .fillMaxWidth(.6f)
-                    .requiredHeight(350.dp).padding(8.dp)
-            ) {
-                LoadImage(url = path, modifier = Modifier.fillMaxSize())
+            ImageCard(imageUrl = path, modifier = Modifier){
+
             }
         }
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
-            Card(modifier = Modifier.clickable {  }
-                .fillMaxWidth(.6f)
-                .requiredHeight(200.dp)) {
-                //Preview Video
-            }
+            VideoCard(videoUrl = path)
         }
 
         ContentType.AUDIO -> {
