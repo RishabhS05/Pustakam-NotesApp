@@ -1,6 +1,4 @@
 package com.app.pustakam.data.models.response.notes
-
-
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.UniqueIdGenerator
 import com.app.pustakam.util.getCurrentTimestamp
@@ -12,11 +10,14 @@ data class Note(
     @SerialName("_id")
     val id: String?,
     var title: String?,
+    //todo updates will keep track of changes in note data time to time like VCS.
+    var updates: List<String>? = null,
     var updatedAt: String?,
     var createdAt: String?,
     var categoryId: String? ="",
     var isSynced : Boolean? = false,
-    var content: ArrayList<NoteContentModel>? = arrayListOf()
+    var content: ArrayList<NoteContentModel>? = arrayListOf(),
+
 ) {
     override fun equals(other: Any?): Boolean {
         return other === this
@@ -38,6 +39,7 @@ sealed class NoteContentModel {
     abstract val updatedAt: String?
     abstract val createdAt: String?
     abstract val type: ContentType
+    abstract val isDeletedContent : Boolean
     @SerialName("_id")
     abstract val id: String
     abstract val noteId : String
@@ -62,20 +64,22 @@ sealed class NoteContentModel {
 
     data class TextContent(
         var text: String = "",
-        override val position: Long,
         override val updatedAt: String? = "${getCurrentTimestamp()}",
         override val createdAt: String?= "${getCurrentTimestamp()}",
         override val type: ContentType = ContentType.TEXT,
         override val id: String = UniqueIdGenerator.generateUniqueId(),
+        override val isDeletedContent: Boolean = false ,
         override val noteId: String ,
+        override val position: Long,
     ) : NoteContentModel()
     data class MediaContent(
         override val position: Long,
+        override val noteId: String,
         override val updatedAt: String? = "${getCurrentTimestamp()}" ,
         override val createdAt: String? = "${getCurrentTimestamp()}",
         override val id: String = UniqueIdGenerator.generateUniqueId(),
         override val type: ContentType = ContentType.AUDIO,
-        override val noteId: String,
+        override val isDeletedContent: Boolean = false,
         val duration: Long = 0,
         val localPath: String? = null,
         val url: String = "",
@@ -84,24 +88,26 @@ sealed class NoteContentModel {
 
     data class Link(
         val url: String ="",
-        override val position: Long,
+        override val isDeletedContent: Boolean = false,
         override val updatedAt: String? = "${getCurrentTimestamp()}" ,
         override val createdAt: String? = "${getCurrentTimestamp()}",
         override val type: ContentType = ContentType.LINK,
         override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val noteId: String
+        override val position: Long,
+        override val noteId: String,
     ) : NoteContentModel()
 
     data class Location(
         val latitude: Double =0.0,
         val longitude: Double= 0.0,
         val address: String? = null,
-        override val position: Long,
+        override val isDeletedContent: Boolean = false,
         override val updatedAt: String? = "${getCurrentTimestamp()}",
         override val createdAt: String? = "${getCurrentTimestamp()}",
         override val type: ContentType = ContentType.LOCATION,
         override val id: String= UniqueIdGenerator.generateUniqueId(),
-        override val noteId: String
+        override val noteId: String,
+        override val position: Long,
     ) : NoteContentModel()
     fun isMediaFile() : Boolean = this is MediaContent
 }

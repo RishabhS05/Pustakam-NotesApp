@@ -1,22 +1,11 @@
 package com.app.pustakam.android.hardware.camera
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Matrix
-import android.util.Log
-import android.widget.Toast
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture.OnImageCapturedCallback
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.camera.video.FileOutputOptions
-import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
-import androidx.camera.view.video.AudioConfig
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,45 +21,40 @@ import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.PointerIcon.Companion.Text
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.pustakam.android.permission.NeededPermission
-import com.app.pustakam.android.permission.hasPermission
-import com.app.pustakam.android.permission.hasPermissions
-import com.app.pustakam.extensions.isNotnull
-import com.app.pustakam.util.getCurrentTimestamp
-import java.io.File
-import androidx.compose.material3.MaterialTheme.colorScheme
+import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.util.ContentType
+import com.app.pustakam.util.getCurrentTimestamp
 
 @Composable
 fun CameraPreviewScreen(
-    imageViewModel: ImageDataViewModel,
-    onBackPress: () -> Unit
-){
-    val context= LocalContext.current
+    imageViewModel: ImageDataViewModel, onBackPress: () -> Unit
+) {
+    val context = LocalContext.current
     val controller = remember {
         LifecycleCameraController(context).apply {
             setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.VIDEO_CAPTURE)
         }
     }
-    CameraPreview(controller,imageViewModel,onBackPress)
+    CameraPreview(controller, imageViewModel, onBackPress)
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraPreview(
     controller: LifecycleCameraController,
@@ -78,21 +62,22 @@ fun CameraPreview(
     onBackPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    BackHandler {
+        onBackPress()
+    }
     val lifecycle = LocalLifecycleOwner.current
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val state = imageViewModel.mediaFileState.collectAsStateWithLifecycle().value.apply {
-        if(onDismissCameraPreview) onBackPress()
-        if(showImagePreview){
-            if (contentType == ContentType.IMAGE)
-                ImagePreviewScreen(controller,this,
-                    onEdit = imageViewModel::onHandleMediaOperation,
-                    modifier = Modifier.fillMaxSize())
+        if (onDismissCameraPreview) onBackPress()
+        if (showImagePreview) {
+            if (contentType == ContentType.IMAGE) ImagePreviewScreen(
+                this, onEdit = imageViewModel::onHandleMediaOperation,
+                modifier = Modifier.fillMaxSize()
+            )
             else {
                 // todo Add Video Preview ui
             }
-        }
-        else {
+        } else {
             Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 AndroidView(factory = {
                     PreviewView(it).apply {
@@ -101,17 +86,23 @@ fun CameraPreview(
                     }
                 }, modifier = Modifier.fillMaxSize())
                 IconButton(onClick = {
-                    controller.cameraSelector = if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+                    controller.cameraSelector = if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
+                        CameraSelector.DEFAULT_FRONT_CAMERA
+                    else CameraSelector.DEFAULT_BACK_CAMERA
                 }, modifier = Modifier.offset(16.dp, 16.dp)) {
-                    Icon(imageVector = Icons.Default.Cameraswitch, contentDescription = "Camera Switch")
+                    Icon(imageVector = Icons.Default.Cameraswitch,
+                        contentDescription = "Camera Switch")
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     IconButton(onClick = {
                         takePhoto(controller, context, onPhotoTaken = imageViewModel::onTakePhoto)
                     }, modifier = Modifier.offset(16.dp, 16.dp)) {
-                        Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Take Photo", tint = colorScheme.surfaceTint,)
+                        Icon(imageVector = Icons.Default.PhotoCamera,
+                            contentDescription = "Take Photo",
+                            tint = colorScheme.surfaceTint)
                     }
 //                IconButton(onClick = {
 //                    scope.launch {
@@ -121,9 +112,16 @@ fun CameraPreview(
 //                    Icon(imageVector = Icons.Default.Photo, contentDescription = "Open Gallery")
 //                }
                     IconButton(onClick = {
-                        recordingVideo(controller, context, imageViewModel)
+                        val timeStamp = getCurrentTimestamp()
+                        recordingVideo(controller, context, imageViewModel,
+                            createFileWithFolders(context as
+                                    Activity,
+                                "${ContentType.VIDEO.name.lowercase()}/${timeStamp}"
+                                , "${timeStamp}${ContentType.VIDEO.getExt()}"))
                     }, modifier = Modifier.offset(16.dp, 16.dp)) {
-                        Icon(imageVector = Icons.Default.Videocam, contentDescription = "Recording Video", tint = colorScheme.surfaceTint)
+                        Icon(imageVector = Icons.Default.Videocam,
+                            contentDescription = "Recording Video",
+                            tint = colorScheme.surfaceTint)
                     }
                 }
             }
@@ -138,84 +136,49 @@ fun CameraPreview(
 
 @Composable
 fun ImagePreviewScreen(
-    controller: LifecycleCameraController,
     state: MediaFileStateHandler,
-    onEdit:(MediaProcessingEvent) ->Unit,
+    onEdit: (MediaProcessingEvent) -> Unit,
     modifier: Modifier = Modifier
-    ){
+) {
     BackHandler {
         onEdit(MediaProcessingEvent.DiscardImage)
     }
+    val context = LocalContext.current as Activity
     Box(modifier = modifier) {
-        state.bitmap?.asImageBitmap()?.let { Image(it, contentDescription = "Image Preview",
-            modifier = Modifier.fillMaxSize()) }
-        Row(modifier = Modifier.fillMaxWidth().background(color = colorScheme.background)
-            .align(Alignment.BottomCenter).padding(16.dp)) {
+        state.bitmap?.asImageBitmap()?.let {
+            Image(
+                it, contentDescription = "Image Preview",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .background(color = colorScheme.background)
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        ) {
             IconButton(onClick = {
-               onEdit(MediaProcessingEvent.OnSaveMedia)
+                val timeStamp = getCurrentTimestamp()
+                onEdit(MediaProcessingEvent.OnSaveImage(createFileWithFolders(context,
+                    "${ContentType.IMAGE.name.lowercase()}/${timeStamp}"
+                    , "${timeStamp}${ContentType.IMAGE.getExt()}")))
             }, modifier = Modifier.offset(16.dp, 16.dp)) {
-                Icon(imageVector = Icons.Default.Save, contentDescription = "Save Image")
+                Icon(imageVector = Icons.Default.Save,
+                    contentDescription = "Save Image")
             }
             //todo add image cropping feature
             IconButton(onClick = {
                 onEdit(MediaProcessingEvent.CropImage)
             }, modifier = Modifier.offset(16.dp, 16.dp)) {
-                Icon(imageVector = Icons.Default.Crop, contentDescription = "Crop Image")
+                Icon(imageVector = Icons.Default.Crop,
+                    contentDescription = "Crop Image")
             }
         }
-    }
-}
-@SuppressLint("MissingPermission")
-fun recordingVideo(controller: LifecycleCameraController, context: Context, imageDataViewModel: ImageDataViewModel) {
-
-    if (imageDataViewModel.recording.isNotnull()) {
-        imageDataViewModel.clearRecording()
-        return
-    }
-    if (!hasPermissions(context, listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO))) {
-        return
-    }
-    val outputFile = File(context.filesDir,if(imageDataViewModel.mediaFileState.value.filePath.isNotnull() )
-        imageDataViewModel.mediaFileState.value.filePath!!else "${getCurrentTimestamp()}.mp4")
-    imageDataViewModel.recording = controller.startRecording(
-        FileOutputOptions.Builder(outputFile).build(), AudioConfig.create(true), ContextCompat.getMainExecutor(context)
-    ) { event ->
-        when (event) {
-            is VideoRecordEvent.Finalize -> {
-                if (event.hasError()) {
-                    imageDataViewModel.clearRecording()
-                    Toast.makeText(context, "Video capture failed", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(context, "Video capture successfully", Toast.LENGTH_LONG).show()
-                }
-            }
+        Button(
+            modifier = Modifier.align(Alignment.BottomCenter), onClick = {
+              onEdit(MediaProcessingEvent.DiscardImage)
+            } ){
+            Text("Save")
         }
     }
-}
-
-fun takePhoto(
-    controller: LifecycleCameraController, context: Context, onPhotoTaken: (Bitmap) -> Unit
-) {
-    if (!hasPermission(context, NeededPermission.CAMERA.permission)) {
-        return
-    }
-    controller.takePicture(ContextCompat.getMainExecutor(context), object : OnImageCapturedCallback() {
-        override fun onCaptureSuccess(image: ImageProxy) {
-            super.onCaptureSuccess(image)
-            val matrix = Matrix().apply {
-                postRotate(image.imageInfo.rotationDegrees.toFloat())
-                if (controller.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA) postScale(-1f, 1f)
-            }
-            val rotatedBitmap = Bitmap.createBitmap(
-                image.toBitmap(), 0, 0, image.width, image.height, matrix, true
-            )
-            onPhotoTaken(rotatedBitmap)
-        }
-
-        override fun onError(exception: ImageCaptureException) {
-            super.onError(exception)
-            Log.e("ImageCapture", "Couldn't take photo $exception")
-        }
-    })
-
 }

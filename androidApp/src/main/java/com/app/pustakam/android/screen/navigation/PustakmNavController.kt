@@ -48,7 +48,6 @@ class PustakmNavController(
             Route.Search,
             Route.Notification,
                 -> true
-            Route.Login, Route.Signup -> false
             else -> false
         }
     val shouldShowFloatingButton
@@ -69,6 +68,9 @@ class PustakmNavController(
     }
 
     fun navigateTo(route: String) {
+        navController.navigate(route)
+    }
+    fun navigateTo(route: Any){
         navController.navigate(route)
     }
 @Composable

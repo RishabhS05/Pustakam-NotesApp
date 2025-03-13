@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -18,11 +21,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
-import com.app.pustakam.android.R
 import orange50
 import orange80
 
@@ -31,8 +32,7 @@ fun OverLayEditorButtons(
     modifier: Modifier = Modifier,
     offset: Animatable<Float, AnimationVector1D> = remember { Animatable(initialValue = 0f) },
     onAddTextField : ()-> Unit ={},
-    onRecordVideo: () -> Unit = {},
-    onAddImage: () -> Unit = {},
+    onCameraAction: () -> Unit = {},
     onRecordMic: () -> Unit = {},
     onArrowButton: ()-> Unit ={}
 ) {
@@ -77,7 +77,7 @@ fun OverLayEditorButtons(
                     elevation = cardElevation
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_mic),
+                        imageVector = Icons.Default.Mic,
                         contentDescription = "Mic",
                         modifier = iconModifier
                     )
@@ -85,28 +85,14 @@ fun OverLayEditorButtons(
                 Card(
                     onClick = {
                         onArrowButton()
-                        onAddImage()
+                        onCameraAction()
                              },
                     colors = cardColors,
                     elevation = cardElevation
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_add_photo),
-                        contentDescription = "Add Photo",
-                        modifier = iconModifier
-                    )
-                }
-                Card(
-                    onClick = {
-                        onArrowButton()
-                        onRecordVideo()
-                              },
-                    colors = cardColors,
-                    elevation = cardElevation
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_video_file),
-                        contentDescription = "Save a  Video",
+                        imageVector =  Icons.Default.PhotoCamera,
+                        contentDescription = "Click photo or record video",
                         modifier = iconModifier
                     )
                 }
@@ -119,7 +105,7 @@ fun OverLayEditorButtons(
                     elevation = CardDefaults.elevatedCardElevation()
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.text_fields),
+                        imageVector = Icons.Filled.TextFields,
                         contentDescription = "Add new text note",
                         modifier = iconModifier
                     )

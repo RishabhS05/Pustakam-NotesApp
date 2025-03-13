@@ -1,4 +1,4 @@
-package com.app.pustakam.android.extension
+package com.app.pustakam.android.fileUtils
 
 import android.app.Activity
 import android.graphics.Bitmap
@@ -38,8 +38,11 @@ fun deleteFile(filePath : String){
 }
 
 fun saveBitmapToFile(bitmap: Bitmap, filePath: String): Boolean {
+    val file = File(filePath)
+   return saveBitmapToFile(bitmap,file)
+}
+fun saveBitmapToFile(bitmap: Bitmap,file: File): Boolean{
     return try {
-        val file = File(filePath)
         file.parentFile?.mkdirs() // Ensure the directory exists
         FileOutputStream(file).use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG,100 , out) // Save as PNG with 100% quality

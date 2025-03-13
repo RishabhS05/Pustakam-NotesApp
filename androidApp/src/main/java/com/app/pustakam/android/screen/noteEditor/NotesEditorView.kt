@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
@@ -10,12 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.SaveAs
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,7 +45,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,7 +52,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
-import com.app.pustakam.android.R
+import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
@@ -68,22 +71,25 @@ import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
 import kotlinx.coroutines.flow.MutableStateFlow
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesEditorView(
     id: String? = null,
-    onBack: () -> Unit = {},
-    onCameraPreview: ()-> Unit ={}
+    noteEditorViewModel: NoteEditorViewModel = viewModel(),
+    imageDataViewModel: ImageDataViewModel = viewModel(),
+    onBack: () -> Unit = {}, onCameraPreview: (String) -> Unit = { }
 ) {
-    val noteEditorViewModel: NoteEditorViewModel = viewModel()
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+
     OnLifecycleEvent { _, event ->
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
+
             else -> {}
         }
     }
@@ -91,6 +97,7 @@ fun NotesEditorView(
         /**  block direct exit as my scope is getting distroyed  */
         noteEditorViewModel.changeNoteStatus(NoteStatus.onBackPress)
     }
+
     val state = noteEditorViewModel.noteContentUiState.collectAsStateWithLifecycle()
     val stateEditor = noteEditorViewModel.noteUIState.collectAsStateWithLifecycle().value.apply {
         when {
@@ -99,12 +106,16 @@ fun NotesEditorView(
                 noteEditorViewModel.clearError()
             }
 
+            previewCameraScreen -> Box(modifier = Modifier.fillMaxSize()) {
+                noteEditorViewModel.enablePreviewCamera(false)
+                onCameraPreview(noteEditorViewModel.noteContentUiState.value.note?.id!!)
+            }
+
             showPermissionAlert == true -> {
                 AskPermissions(permissionsRequired = permissions, onDismiss = {
                     noteEditorViewModel.showPermissionAlert(null)
                 }, onGrantPermission = {
                     noteEditorViewModel.showPermissionAlert(null)
-                    noteEditorViewModel.addNewContent(context)
                     if (contentType == ContentType.IMAGE || contentType == ContentType.VIDEO) {
                         noteEditorViewModel.enablePreviewCamera(true)
                     }
@@ -119,9 +130,7 @@ fun NotesEditorView(
                     }) {
                         noteEditorViewModel.showDeleteAlertBox(false, null)
                     }
-                } else DeleteNoteAlert(noteTitle =
-                if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty())
-                    noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
+                } else DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
                     noteEditorViewModel.deleteNote(noteId = id!!)
                     noteEditorViewModel.showDeleteAlertBox(false)
                 }) {
@@ -135,13 +144,12 @@ fun NotesEditorView(
             NoteStatus.onSaveCompletedExit, NoteStatus.exit -> onBack()
             else -> {}
         }
-
     }
-    if (stateEditor.previewCameraScreen) Box(modifier = Modifier.fillMaxSize()) {
-        noteEditorViewModel.enablePreviewCamera(false)
-        onCameraPreview()
+    imageDataViewModel.paths.collectAsStateWithLifecycle().value.apply {
+        noteEditorViewModel.getMediaData(this)
+        imageDataViewModel.clearPaths()
     }
-    else NotesEditor(state = state, topBar = {
+    NotesEditor(state = state, topBar = {
         TopAppBar(title = {
             state.value.note?.updatedAt?.let {
                 Text(
@@ -151,13 +159,13 @@ fun NotesEditorView(
         }, actions = {
             IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_save),
+                    imageVector = Icons.Filled.Save,
                     contentDescription = "Save",
                 )
             }
             IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_save_as),
+                    imageVector = Icons.Default.SaveAs,
                     contentDescription = "Save As",
                 )
             }
@@ -181,17 +189,13 @@ fun NotesEditorView(
             OverLayEditorButtons(
                 modifier = Modifier.align(alignment = Alignment.CenterEnd),
                 onAddTextField = {
-                    noteEditorViewModel.setContentType(contentType = ContentType.TEXT)
-                    noteEditorViewModel.addNewContent(context)
+                    noteEditorViewModel.addNewContent(context, ContentType.TEXT)
                 },
                 onArrowButton = { focusManager.clearFocus() },
-                onRecordVideo = {
-                    noteEditorViewModel.preparePermissionDialog(contentType = ContentType.VIDEO)
-                },
                 onRecordMic = {
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.AUDIO)
                 },
-                onAddImage = {
+                onCameraAction = {
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.IMAGE)
                 },
             )
@@ -223,7 +227,6 @@ fun NotesEditor(
     contentList: @Composable () -> Unit,
     onButtonOverLays: @Composable () -> Unit,
 ) {
-    // Note content state
     val isRuledEnabledState = remember { mutableStateOf(false) }
     val focusRequester = rememberFocusRequester()
     val focusManager = LocalFocusManager.current
@@ -272,17 +275,22 @@ fun RenderWidget(
         ContentType.IMAGE -> {
             val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
-            Card {
-                Text("Image is added")
-                LoadImage(url = path, modifier = Modifier)
+            Card(
+                modifier = Modifier.clickable {  }
+                    .fillMaxWidth(.6f)
+                    .requiredHeight(350.dp).padding(8.dp)
+            ) {
+                LoadImage(url = path, modifier = Modifier.fillMaxSize())
             }
         }
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
-            Card {
-              Text("Video is added")
+            Card(modifier = Modifier.clickable {  }
+                .fillMaxWidth(.6f)
+                .requiredHeight(200.dp)) {
+                //Preview Video
             }
         }
 
