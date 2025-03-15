@@ -6,9 +6,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.app.pustakam.android.extension.sharedViewModel
-import com.app.pustakam.android.hardware.camera.CameraPreviewScreen
+import com.app.pustakam.android.hardware.camera.CameraStreamingScreen
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
+import com.app.pustakam.android.hardware.camera.ImageEditorScreen
 import com.app.pustakam.android.hardware.camera.MediaProcessingEvent
+import com.app.pustakam.android.hardware.video.VideoPreviewScreen
 import com.app.pustakam.android.screen.noteEditor.NoteEditorViewModel
 import com.app.pustakam.android.screen.noteEditor.NotesEditorView
 import com.app.pustakam.android.screen.notes.list.NotesView
@@ -39,11 +41,10 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             NotesEditorView(
                 noteEditorViewModel = viewModel,
                 onBack = navController::upPress,
-                imageDataViewModel = imageViewModel
-            , onCameraPreview = { noteId ->
-                    navController.navigateTo(CameraData(noteId))
-            })
+                imageDataViewModel = imageViewModel,
+                navigateTo = navController::navigateTo)
         }
+        /** just wanted to use navigation with args style to remember this way of passing data*/
         composable(
             route = Route.NotesEditor+"/{noteId}"
         ) {   backStackEntry->
@@ -55,9 +56,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
                 noteEditorViewModel = viewModel,
                 imageDataViewModel = imageViewModel,
                 onBack =
-                navController::upPress, onCameraPreview = {
-                    navController.navigateTo(CameraData(noteId))
-                })
+                navController::upPress, navController::navigateTo)
         }
         composable(
             route = Route.Notification
@@ -69,12 +68,25 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         ) {
             SearchView(onNavigate = {})
         }
+
+        /** Routes For handling videos and Images*/
+        composable(route = Route.ImagePreview) {backStackEntry->
+            val imageViewModel : ImageDataViewModel = backStackEntry
+                .sharedViewModel<ImageDataViewModel>(navController.navController)
+            ImageEditorScreen(imageViewModel,     navController::popBackInclusive )
+        }
+        composable(route = Route.VideoPreview) {backStackEntry->
+            val imageViewModel : ImageDataViewModel = backStackEntry
+                .sharedViewModel<ImageDataViewModel>(navController.navController)
+            VideoPreviewScreen(imageViewModel)
+        }
         composable<CameraData> { backStackEntry ->
             val data = backStackEntry.toRoute<CameraData>()
             val imageViewModel : ImageDataViewModel = backStackEntry
                 .sharedViewModel<ImageDataViewModel>(navController.navController)
             imageViewModel.onHandleMediaOperation(MediaProcessingEvent.SetNoteId(data.noteId))
-            CameraPreviewScreen(imageViewModel,navController::upPress)
+            CameraStreamingScreen(imageViewModel,navController::upPress,
+                { navController.navigateTo(it) })
         }
     }
 }

@@ -74,7 +74,11 @@ class NoteEditorViewModel : BaseViewModel() {
                 if (!noteContentUiState.value.isAllSetupDone) _noteContentUiState.update {
                     it.titleTextState.value = note.title ?: ""
                     it.copy(
-                        titleTextState = it.titleTextState, note = note, isAllSetupDone = true, contents = if (note.content.isNotnull()) mutableStateListOf(*note.content!!.toTypedArray()) else mutableStateListOf()
+                        titleTextState = it.titleTextState, note = note,
+                        isAllSetupDone = true,
+                        contents = if (note.content.isNotnull())
+                            mutableStateListOf(*note.content!!.toTypedArray())
+                        else mutableStateListOf()
                     )
                 }
                 noteContentRepository.addAllNoteContent(note)
@@ -193,7 +197,7 @@ class NoteEditorViewModel : BaseViewModel() {
         else -> listOf(NeededPermission.POST_NOTIFICATIONS)
     }
 
-    // permission dialog setup
+   /**permission dialog setup*/
     fun preparePermissionDialog(contentType: ContentType? = null) {
         val permission = getPermissions(contentType)
         _noteUiState.update {
@@ -221,7 +225,9 @@ class NoteEditorViewModel : BaseViewModel() {
         }
         return content
     }
-
+/**
+ * Remove a note content for note
+ * */
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
         _noteContentUiState.update {
             it.contents[index] = updatedContent
@@ -247,6 +253,10 @@ class NoteEditorViewModel : BaseViewModel() {
         }
         showDeleteAlertBox(false, null)
     }
+ /**
+  * Share note with others
+  */
+    fun shareNote(){}
 
     override fun onCleared() {
         super.onCleared()

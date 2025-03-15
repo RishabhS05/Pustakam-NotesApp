@@ -111,3 +111,8 @@ sealed class NoteContentModel {
     ) : NoteContentModel()
     fun isMediaFile() : Boolean = this is MediaContent
 }
+fun NoteContentModel.MediaContent.getMediaUrl(): String =
+    when {!localPath.isNullOrEmpty() -> localPath
+        url.isNotEmpty() -> url
+        else -> ""
+    }

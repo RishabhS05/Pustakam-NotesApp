@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
@@ -21,7 +20,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAs
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,11 +51,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
+import com.app.pustakam.android.hardware.camera.ImagePreviewAndEditor
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
+import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.theme.typography
-import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
@@ -67,7 +66,9 @@ import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.textField.NoteTextField
 import com.app.pustakam.android.widgets.video.VideoCard
+import com.app.pustakam.data.models.CameraData
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.data.models.response.notes.getMediaUrl
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
@@ -80,7 +81,8 @@ fun NotesEditorView(
     id: String? = null,
     noteEditorViewModel: NoteEditorViewModel = viewModel(),
     imageDataViewModel: ImageDataViewModel = viewModel(),
-    onBack: () -> Unit = {}, onCameraPreview: (String) -> Unit = { }
+    onBack: () -> Unit = {},
+    navigateTo: (Any)-> Unit
 ) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
@@ -107,12 +109,6 @@ fun NotesEditorView(
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 noteEditorViewModel.clearError()
             }
-
-            previewCameraScreen -> Box(modifier = Modifier.fillMaxSize()) {
-                noteEditorViewModel.enablePreviewCamera(false)
-                onCameraPreview(noteEditorViewModel.noteContentUiState.value.note?.id!!)
-            }
-
             showPermissionAlert == true -> {
                 AskPermissions(permissionsRequired = permissions, onDismiss = {
                     noteEditorViewModel.showPermissionAlert(null)
@@ -120,7 +116,7 @@ fun NotesEditorView(
                     noteEditorViewModel.showPermissionAlert(null)
                     when(contentType){
                         ContentType.IMAGE,ContentType.VIDEO->
-                            noteEditorViewModel.enablePreviewCamera(true)
+                            navigateTo(CameraData(noteEditorViewModel.noteContentUiState.value.note?.id!!))
                         ContentType.AUDIO->noteEditorViewModel.addNewContent(context,contentType)
                         else ->{}
                     }
@@ -174,7 +170,7 @@ fun NotesEditorView(
                     contentDescription = "Save As",
                 )
             }
-            IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
+            IconButton(onClick = noteEditorViewModel:: shareNote) {
                 Icon(
                     Icons.Default.Share,
                     contentDescription = "Share Note",
@@ -211,9 +207,17 @@ fun NotesEditorView(
                 itemsIndexed(it.sortedBy { content -> content.position.inc() }) { index, contentValue ->
                     RenderWidget(content = contentValue, onUpdate = { value ->
                         noteEditorViewModel.updateContent(index, value)
-                    }) { value ->
-                        noteEditorViewModel.showDeleteAlertBox(true, deleteNoteContentId = value.id)
-                    }
+                    } , onDelete = {value ->
+                        noteEditorViewModel.showDeleteAlertBox(true, deleteNoteContentId = value.id)},
+                     onMediaPreview = {
+                         imageDataViewModel.onSetMediaToPreview((contentValue as NoteContentModel.MediaContent)
+                             .getMediaUrl(),
+                             contentValue.type)
+                         when {
+                             contentValue.type== ContentType.IMAGE ->  navigateTo(Route.ImagePreview)
+                             contentValue.type== ContentType.VIDEO ->  navigateTo(Route.VideoPreview)
+                         }
+                     })
                 }
             }
         }
@@ -271,6 +275,7 @@ fun RenderWidget(
     content: NoteContentModel,
     onUpdate: (content: NoteContentModel) -> Unit,
     onDelete: (content: NoteContentModel) -> Unit,
+    onMediaPreview: ()-> Unit,
 ) {
     when (content.type) {
         ContentType.TEXT -> {
@@ -280,15 +285,13 @@ fun RenderWidget(
         ContentType.IMAGE -> {
             val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
-            ImageCard(imageUrl = path, modifier = Modifier){
-
-            }
+            ImageCard(imageUrl = path, modifier = Modifier, onClick = onMediaPreview)
         }
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
             val path = contentVideo.localPath ?: contentVideo.url
-            VideoCard(videoUrl = path)
+            VideoCard(videoUrl = path, onClick = onMediaPreview )
         }
 
         ContentType.AUDIO -> {

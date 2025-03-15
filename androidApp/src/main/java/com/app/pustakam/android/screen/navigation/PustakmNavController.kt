@@ -11,6 +11,7 @@ import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.app.pustakam.extensions.isNotnull
 
 object Route {
     const val Home = "HOME"
@@ -21,7 +22,8 @@ object Route {
     const val Notes = "NOTES"
     const val NotesEditor = "NOTES_EDITOR"
     const val Authentication = "AUTH"
-    const val CameraPreview = "CAMERA_PREVIEW"
+    const val ImagePreview = "IMAGE_PREVIEW"
+    const val VideoPreview = "VIDEO_PREVIEW"
 }
 @Stable
 class PustakmNavController(
@@ -59,6 +61,12 @@ class PustakmNavController(
     fun upPress() {
         navController.navigateUp()
     }
+    fun popBackInclusive (route: String ?= null){
+        if(route.isNotnull()) while (navController.currentBackStackEntry?.destination?.route?.startsWith(route!!) == false) {
+            upPress()
+        }
+        else upPress()
+    }
 
     fun goToHomeScreen() {
         navController.clearBackStack<Screen.Authentication>()
@@ -71,7 +79,9 @@ class PustakmNavController(
         navController.navigate(route)
     }
     fun navigateTo(route: Any){
-        navController.navigate(route)
+        if(route is String)
+            navigateTo(route)
+        else navController.navigate(route)
     }
 @Composable
 fun currentRoute(): String? {

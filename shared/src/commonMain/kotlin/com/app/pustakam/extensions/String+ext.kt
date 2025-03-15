@@ -13,6 +13,7 @@ fun String?.isValidName() = !this.isNullOrEmpty() && this.length >= 3
 fun String?.isDigits() = !this.isNullOrEmpty() && (this.contains(regex = Regex("^[\\d\t*#+]+$")))
 fun String?.isValidPassword() = !this.isNullOrEmpty() && this.length >= 4
 
+fun String?.isUrl()= !this.isNullOrEmpty() && (this.startsWith("http://") || this.startsWith("https://"))
 fun String.toLocalFormat(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
     val instant: Instant = if (this.isDigits()) Instant.fromEpochMilliseconds(this.toLong())
     else Instant.parse(this)

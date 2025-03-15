@@ -1,11 +1,13 @@
 package com.app.pustakam.android.fileUtils
 
+import android.R.id.input
 import android.app.Activity
 import android.graphics.Bitmap
-
+import android.graphics.BitmapFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+
 
 fun createFileWithFolders(context: Activity, folderPath : String, fileName : String) : File {
     var file : File = File("")
@@ -53,3 +55,5 @@ fun saveBitmapToFile(bitmap: Bitmap,file: File): Boolean{
         false // Failure
     }
 }
+
+fun String.toBitmap(): Bitmap = BitmapFactory.decodeFile(this)

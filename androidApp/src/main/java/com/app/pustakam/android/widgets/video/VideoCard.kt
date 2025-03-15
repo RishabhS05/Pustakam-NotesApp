@@ -13,10 +13,12 @@ import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
 
 @Composable
-fun VideoCard(videoUrl :String ="", ) {
+fun VideoCard(videoUrl :String ="",onClick: ()-> Unit) {
+
     Card(modifier = Modifier.clickable {  }
         .fillMaxWidth(.6f)
         .requiredHeight(350.dp)
+        .clickable { onClick() }
         .padding(8.dp)) {
         //Preview Video
 
@@ -29,6 +31,6 @@ fun VideoCard(videoUrl :String ="", ) {
 private fun VideoCardPreview() {
   /** App Theme */ /** View */
     MyApplicationTheme {
-      /** View */ VideoCard()
+      /** View */ VideoCard(){}
     }
 }
