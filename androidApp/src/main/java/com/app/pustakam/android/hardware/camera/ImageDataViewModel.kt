@@ -28,6 +28,7 @@ sealed interface MediaProcessingEvent {
      * F4 : Discard EditChanges -> DiscardChanges
      * F5 : Draw on Image (pencil tool) -> ActivatePenTool
      * F6 : undo and redo changes on Image. -> UndoAction, RedoAction
+     * F7 : EditingImage enabled/disabled. -> EditImage
      * */
     data object DiscardImage : MediaProcessingEvent
     data object DiscardChanges : MediaProcessingEvent

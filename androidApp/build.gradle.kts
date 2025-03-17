@@ -59,5 +59,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.bundles.media3)
     implementation(libs.bundles.camerax)
+    implementation(libs.androidx.constraintlayout)
     debugImplementation(libs.compose.ui.tooling)
 }

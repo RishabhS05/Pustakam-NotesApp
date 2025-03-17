@@ -21,18 +21,18 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 
-sealed interface AudioPlayingUIEvent {
-    data class PlayOrPauseUIEvent(val mediaId: String) : AudioPlayingUIEvent
-    data class ResumeUIEvent(val mediaId: String) : AudioPlayingUIEvent
-    data class RestartUIEvent(val mediaId: String) : AudioPlayingUIEvent
-    data class SeekToUIEvent(val position: Float, val mediaId: String) : AudioPlayingUIEvent
-    data class SeekNextUIEvent(val mediaId: String) : AudioPlayingUIEvent
-    data class StopUIEvent(val mediaId: String) : AudioPlayingUIEvent
-    data class SeekToPrevious(val mediaId: String) : AudioPlayingUIEvent
-    data class SelectedAudioChange(val mediaId: String) : AudioPlayingUIEvent
-    data class UpdateProgress(val newProgress: Float, val mediaId: String) : AudioPlayingUIEvent
-    data object Backward : AudioPlayingUIEvent
-    data object Forward : AudioPlayingUIEvent
+sealed interface MediaPlayingUIEvent {
+    data class PlayOrPauseUIEvent(val mediaId: String) : MediaPlayingUIEvent
+    data class ResumeUIEvent(val mediaId: String) : MediaPlayingUIEvent
+    data class RestartUIEvent(val mediaId: String) : MediaPlayingUIEvent
+    data class SeekToUIEvent(val position: Float, val mediaId: String) : MediaPlayingUIEvent
+    data class SeekNextUIEvent(val mediaId: String) : MediaPlayingUIEvent
+    data class StopUIEvent(val mediaId: String) : MediaPlayingUIEvent
+    data class SeekToPrevious(val mediaId: String) : MediaPlayingUIEvent
+    data class SelectedMediaChange(val mediaId: String) : MediaPlayingUIEvent
+    data class UpdateProgress(val newProgress: Float, val mediaId: String) : MediaPlayingUIEvent
+    data class  Backward(val mediaId: String) : MediaPlayingUIEvent
+    data class  Forward(val mediaId: String) : MediaPlayingUIEvent
 
 }
 
@@ -150,19 +150,19 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
 
 
     /** media events triggered by view model */
-    fun onPlayingIntent(audioPlayingIntent: AudioPlayingUIEvent) {
+    fun onPlayingIntent(audioPlayingIntent: MediaPlayingUIEvent) {
         viewModelScope.launch {
             when (audioPlayingIntent) {
-                is AudioPlayingUIEvent.PlayOrPauseUIEvent -> play(audioPlayingIntent.mediaId)
-                is AudioPlayingUIEvent.RestartUIEvent -> restartPlaying(audioPlayingIntent.mediaId)
-                is AudioPlayingUIEvent.ResumeUIEvent -> resumePlaying(audioPlayingIntent.mediaId)
-                is AudioPlayingUIEvent.SeekNextUIEvent -> seekNext(audioPlayingIntent.mediaId)
-                is AudioPlayingUIEvent.SeekToUIEvent -> seekTo(audioPlayingIntent.position, audioPlayingIntent.mediaId)
-                is AudioPlayingUIEvent.StopUIEvent ->    mediaServiceListener.onPlayerEvents(MediaPlayingEvent.Stop)
-                is AudioPlayingUIEvent.Backward ->    mediaServiceListener.onPlayerEvents(MediaPlayingEvent.Backward)
-                is AudioPlayingUIEvent.Forward ->  mediaServiceListener.onPlayerEvents(MediaPlayingEvent.Forward)
-                is AudioPlayingUIEvent.SelectedAudioChange -> selectionAudioId(audioPlayingIntent.mediaId)
-                is AudioPlayingUIEvent.UpdateProgress -> {
+                is MediaPlayingUIEvent.PlayOrPauseUIEvent -> play(audioPlayingIntent.mediaId)
+                is MediaPlayingUIEvent.RestartUIEvent -> restartPlaying(audioPlayingIntent.mediaId)
+                is MediaPlayingUIEvent.ResumeUIEvent -> resumePlaying(audioPlayingIntent.mediaId)
+                is MediaPlayingUIEvent.SeekNextUIEvent -> seekNext(audioPlayingIntent.mediaId)
+                is MediaPlayingUIEvent.SeekToUIEvent -> seekTo(audioPlayingIntent.position, audioPlayingIntent.mediaId)
+                is MediaPlayingUIEvent.StopUIEvent ->    mediaServiceListener.onPlayerEvents(MediaPlayingEvent.Stop)
+                is MediaPlayingUIEvent.Backward ->    mediaServiceListener.onPlayerEvents(MediaPlayingEvent.Backward)
+                is MediaPlayingUIEvent.Forward ->  mediaServiceListener.onPlayerEvents(MediaPlayingEvent.Forward)
+                is MediaPlayingUIEvent.SelectedMediaChange -> selectionAudioId(audioPlayingIntent.mediaId)
+                is MediaPlayingUIEvent.UpdateProgress -> {
                     mediaServiceListener.onPlayerEvents(MediaPlayingEvent.UpdateProgress(audioPlayingIntent.newProgress, audioPlayingIntent.mediaId))
                     _playerUiState.update {
                         it.copy(
@@ -172,7 +172,7 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
                         )
                     }
                 }
-                is AudioPlayingUIEvent.SeekToPrevious -> mediaServiceListener.onPlayerEvents(MediaPlayingEvent.SeekToPrevious)
+                is MediaPlayingUIEvent.SeekToPrevious -> mediaServiceListener.onPlayerEvents(MediaPlayingEvent.SeekToPrevious)
             }
         }
     }
@@ -223,4 +223,6 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
     }
 
     fun getNoteContentPlayerState(id: String): PlayerUiState? = _playerUiState.value.mediaStates[id]
+    fun getExoPlayer() = mediaServiceListener.getExoPlayer()
+    fun getMediaId(id : String)= mediaServiceListener.getMedia(id)
 }

@@ -51,7 +51,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
-import com.app.pustakam.android.hardware.camera.ImagePreviewAndEditor
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
@@ -290,8 +289,7 @@ fun RenderWidget(
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
-            val path = contentVideo.localPath ?: contentVideo.url
-            VideoCard(videoUrl = path, onClick = onMediaPreview )
+            VideoCard(contentVideo,  onClick = onMediaPreview )
         }
 
         ContentType.AUDIO -> {

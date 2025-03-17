@@ -75,10 +75,10 @@ sealed class NoteContentModel {
     data class MediaContent(
         override val position: Long,
         override val noteId: String,
+        override val type: ContentType ,
         override val updatedAt: String? = "${getCurrentTimestamp()}" ,
         override val createdAt: String? = "${getCurrentTimestamp()}",
         override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val type: ContentType = ContentType.AUDIO,
         override val isDeletedContent: Boolean = false,
         val duration: Long = 0,
         val localPath: String? = null,
@@ -110,6 +110,7 @@ sealed class NoteContentModel {
         override val position: Long,
     ) : NoteContentModel()
     fun isMediaFile() : Boolean = this is MediaContent
+    fun isPlayingMedia(): Boolean = this.type == ContentType.AUDIO || this.type == ContentType.VIDEO
 }
 fun NoteContentModel.MediaContent.getMediaUrl(): String =
     when {!localPath.isNullOrEmpty() -> localPath

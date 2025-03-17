@@ -44,6 +44,7 @@ class MediaServiceListener(
         exoPlayer.setMediaItem(media)
         exoPlayer.prepare()
     }
+    fun getMedia(id: String) = media.find { id == it.mediaId }
     fun addMediaItemList(mediaList : List<MediaItem>){
         media.clear()
         media.addAll(mediaList)
@@ -153,4 +154,5 @@ class MediaServiceListener(
 
     //always call getId method to update the data otherwise ui will cause issues
 private fun getId() = media[exoPlayer.currentMediaItemIndex].mediaId
+    fun getExoPlayer(): ExoPlayer = exoPlayer
 }

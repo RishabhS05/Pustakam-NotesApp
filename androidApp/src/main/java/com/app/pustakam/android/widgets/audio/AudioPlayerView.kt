@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,21 +32,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
 import com.app.pustakam.android.MyApplicationTheme
-import com.app.pustakam.android.R
 import com.app.pustakam.android.extension.startServiceWrapper
-import com.app.pustakam.android.hardware.audio.player.AudioPlayingUIEvent
+import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
 import com.app.pustakam.android.services.mediaSessionService.PustakmMediaPlayerService
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.util.ContentType
 
 
 @OptIn(UnstableApi::class)
@@ -60,13 +61,13 @@ fun AudioPlayerUIState(
 
     if (mediaState.noteContent.position == noteContent.position) {
         AudioPlayView(state = mediaState, onDelete = {
-            viewModel.onPlayingIntent(AudioPlayingUIEvent.PlayOrPauseUIEvent(mediaId = noteContent.id))
+            viewModel.onPlayingIntent(MediaPlayingUIEvent.PlayOrPauseUIEvent(mediaId = noteContent.id))
             onDelete(noteContentModel)
         }, onSeek = {
-            viewModel.onPlayingIntent(AudioPlayingUIEvent.SeekToUIEvent(it, noteContent.id))
+            viewModel.onPlayingIntent(MediaPlayingUIEvent.SeekToUIEvent(it, noteContent.id))
         }, onPlay = {
             if (!state.value.isServiceIsRunning) localContext.startServiceWrapper(Intent(localContext, PustakmMediaPlayerService::class.java))
-            viewModel.onPlayingIntent(AudioPlayingUIEvent.SelectedAudioChange(noteContent.id))
+            viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(noteContent.id))
         })
     }
 }
@@ -119,9 +120,9 @@ fun AudioPlayView(
                     }
                 )
                 IconButton(onClick = onPlay) {
-                    val drawable = if (state.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+                    val drawable = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow
                     Icon(
-                        painter = painterResource(drawable), contentDescription = "", tint = colorScheme.onPrimaryContainer, modifier = iconModifier
+                        imageVector = drawable, contentDescription = "", tint = colorScheme.onPrimaryContainer, modifier = iconModifier
                     )
                 }
                 IconButton(onClick = onDelete) {
@@ -143,7 +144,7 @@ private fun AudioPlayerPreview() {
     MyApplicationTheme {
         val state = PlayerUiState(
             totalDuration = "00 sec", progress = 10f, timeRemaining = "00:20", timeElapsed = "00:20",
-            duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "", duration = 100, position = 1)
+            duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "", duration = 100, position = 1, type = ContentType.AUDIO)
         )
         AudioPlayView(state = state)
     }

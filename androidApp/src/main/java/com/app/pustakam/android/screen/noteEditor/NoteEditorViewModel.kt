@@ -234,7 +234,7 @@ class NoteEditorViewModel : BaseViewModel() {
             it.note?.content?.set(index, updatedContent)
             it.copy(note = it.note)
         }
-        if (updatedContent.isMediaFile()) noteContentRepository.updateNoteContent(updatedContent as NoteContentModel.MediaContent)
+        if (updatedContent.isPlayingMedia()) noteContentRepository.updateNoteContent(updatedContent as NoteContentModel.MediaContent)
     }
 
     fun removeContent(value: String) {

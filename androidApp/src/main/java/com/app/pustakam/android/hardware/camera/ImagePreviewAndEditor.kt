@@ -3,6 +3,7 @@ package com.app.pustakam.android.hardware.camera
 import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,19 +68,22 @@ fun ImagePreviewAndEditor(
         state.bitmap?.asImageBitmap()?.let {
             Image(
                 it, contentDescription = "Image Preview",
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillHeight
             )
         }
         Row(
             modifier = Modifier.fillMaxWidth()
-                .background(color = colorScheme.background)
+                .background(color = colorScheme.background.copy(alpha = .5f))
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalArrangement =Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
                saveImage()
                 onDismiss(null)
-            }, modifier = Modifier.offset(16.dp, 16.dp)) {
+            }, modifier = Modifier) {
                 Icon(imageVector = Icons.Default.Save,
                     contentDescription = "Save Image")
             }
@@ -86,13 +91,13 @@ fun ImagePreviewAndEditor(
 
             IconButton(onClick = {
                 onEditImageAction(if(state.dataStateEvent == DataStateEvent.Editing) MediaProcessingEvent.CropImage else MediaProcessingEvent.EditImage)
-            }, modifier = Modifier.offset(16.dp, 16.dp)) {
+            }, modifier = Modifier) {
                 Icon(imageVector =  if(state.dataStateEvent == DataStateEvent.Editing) Icons.Default.Crop else Icons.Filled.Edit,
                     contentDescription = "Crop Image")
             }
         }
         Button(
-            modifier = Modifier.align(Alignment.BottomCenter), onClick = {
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp), onClick = {
                 if(state.dataStateEvent == DataStateEvent.Editing) saveImage()
                 onDismiss(Route.NotesEditor)
             }){ Text("Done") }
