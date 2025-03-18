@@ -30,7 +30,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                   title = note.title,
                   createdAt = note.noteCreatedAt,
                   updatedAt = note.noteUpdatedAt,
-                  content = rows.mapNotNull { row ->
+                  contents = rows.mapNotNull { row ->
                       if (row.contentId != null&& !row.type.isNullOrEmpty()) {
                           val type = ContentType.valueOf(row.type)
                           when (type) {
@@ -177,7 +177,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
             categoryId = note.categoryId,
         )
            database.transaction {
-               note.content?.forEach { content ->
+               note.contents?.forEach { content ->
                    CoroutineScope(Dispatchers.IO).launch {
                        insertOrUpdateNotesContent(content)
                    }
@@ -196,7 +196,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                 title = note.title,
                 createdAt = note.noteCreatedAt,
                 updatedAt = note.noteUpdatedAt,
-                content = rows.mapNotNull { row ->
+                contents = rows.mapNotNull { row ->
                     if (row.contentId != null&&!row.type.isNullOrEmpty()) {
                         val type = ContentType.valueOf(row.type)
                         when (type) {

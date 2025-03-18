@@ -16,9 +16,8 @@ data class Note(
     var createdAt: String?,
     var categoryId: String? ="",
     var isSynced : Boolean? = false,
-    var content: ArrayList<NoteContentModel>? = arrayListOf(),
-
-) {
+    var contents: ArrayList<NoteContentModel>? = arrayListOf(),
+    ) {
     override fun equals(other: Any?): Boolean {
         return other === this
     }
@@ -29,7 +28,7 @@ data class Note(
         + createdAt.hashCode()
         + title.hashCode()
                +isSynced.hashCode()
-        + content?.count().hashCode())
+        + contents?.count().hashCode())
     }
 }
 

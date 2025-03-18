@@ -12,7 +12,7 @@ import com.app.pustakam.util.getCurrentTimestamp
 //It decides and return a noteContent
 //also provide create filepath and add if required
 fun addContent(context: Context,note : Note, contentType : ContentType, ) : NoteContentModel{
-    val position: Long = note.content?.count()?.toLong() ?: 0
+    val position: Long = note.contents?.count()?.toLong() ?: 0
     val noteId = note.id?: ""
     val content: NoteContentModel
     when (contentType) {
@@ -29,8 +29,7 @@ fun addContent(context: Context,note : Note, contentType : ContentType, ) : Note
             content = NoteContentModel.Location(position = position,
                 noteId = noteId)
         }
-
-        AUDIO , DOCX, VIDEO, IMAGE -> {
+        GIF, PDF, AUDIO , DOCX, VIDEO, IMAGE -> {
             val timeStamp = getCurrentTimestamp()
             val folderName = "${contentType.name.lowercase()}/${timeStamp}"
             val fileName = "${timeStamp}${contentType.getExt()}"
@@ -38,11 +37,6 @@ fun addContent(context: Context,note : Note, contentType : ContentType, ) : Note
             content = NoteContentModel.MediaContent(position = position,
                 title = "$contentType-$position",
                 noteId = noteId, localPath = filePath , type = contentType)
-        }
-
-        else -> {
-            content = NoteContentModel.Location(position = position,
-                noteId = noteId)
         }
     }
     return content

@@ -2,7 +2,6 @@ package com.app.pustakam.domain.repositories.noteContentRepo
 
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,7 +26,7 @@ class NoteContentRepository {
     }
 
     fun addAllNoteContent(note: Note){
-        _selectedNote.value = note.content?.filterIsInstance<NoteContentModel.MediaContent>()
+        _selectedNote.value = note.contents?.filterIsInstance<NoteContentModel.MediaContent>()
             ?.sortedBy { it.position }?.toMutableList()?: mutableListOf()
     }
     fun clear(){

@@ -76,8 +76,8 @@ class NoteEditorViewModel : BaseViewModel() {
                     it.copy(
                         titleTextState = it.titleTextState, note = note,
                         isAllSetupDone = true,
-                        contents = if (note.content.isNotnull())
-                            mutableStateListOf(*note.content!!.toTypedArray())
+                        contents = if (note.contents.isNotnull())
+                            mutableStateListOf(*note.contents!!.toTypedArray())
                         else mutableStateListOf()
                     )
                 }
@@ -127,7 +127,7 @@ class NoteEditorViewModel : BaseViewModel() {
     // call make a wish api
     fun createOrUpdateNote() {
         if (_noteContentUiState.value.titleTextState.value.isEmpty()) {
-            if (_noteContentUiState.value.note?.content?.isEmpty() == true) {
+            if (_noteContentUiState.value.note?.contents?.isEmpty() == true) {
                 changeNoteStatus(NoteStatus.exit)
                 return
             }
@@ -215,11 +215,9 @@ class NoteEditorViewModel : BaseViewModel() {
      * */
     fun addNewContent(context: Context, contentType: ContentType): NoteContentModel {
         setContentType(contentType)
-        val content = addContent(
-            context = context, note = _noteContentUiState.value.note!!, contentType = contentType
-        )
+        val content = addContent( context = context, note = _noteContentUiState.value.note!!, contentType = contentType)
         _noteContentUiState.update {
-            it.note?.content?.add(content)
+            it.note?.contents?.add(content)
             it.contents.add(content)
             it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
         }
@@ -231,14 +229,15 @@ class NoteEditorViewModel : BaseViewModel() {
     fun updateContent(index: Int, updatedContent: NoteContentModel) {
         _noteContentUiState.update {
             it.contents[index] = updatedContent
-            it.note?.content?.set(index, updatedContent)
-            it.copy(note = it.note)
+            it.note?.contents?.set(index, updatedContent)
+            it.copy(note = it.note,contents = it.contents)
         }
-        if (updatedContent.isPlayingMedia()) noteContentRepository.updateNoteContent(updatedContent as NoteContentModel.MediaContent)
+        if (updatedContent.isPlayingMedia())
+            noteContentRepository.updateNoteContent(updatedContent as NoteContentModel.MediaContent)
     }
-
     fun removeContent(value: String) {
-        val find = _noteContentUiState.value.contents.find { value == it.id }
+        val find = _noteContentUiState.value.note?.contents?.find { value == it.id }
+
         if (find?.isMediaFile() == true) {
             find as NoteContentModel.MediaContent
             find.localPath?.let { deleteFile(filePath = it) }
@@ -247,9 +246,11 @@ class NoteEditorViewModel : BaseViewModel() {
             deleteNoteContentUseCase.invoke(value)
         }
         _noteContentUiState.update {
-            it.contents.remove(find)
-            it.note?.content?.remove(find)
-            it.copy(note = it.note)
+            val index= it.note?.contents?.indexOf(find)
+            val indexContent = it.contents.indexOf(find)
+            if( indexContent != -1 )   it.contents.removeAt(indexContent)
+          if(index.isNotnull() && index != -1 )  it.note?.contents?.removeAt(index!!)
+            it.copy(note = it.note, contents = it.contents)
         }
         showDeleteAlertBox(false, null)
     }
@@ -268,11 +269,11 @@ class NoteEditorViewModel : BaseViewModel() {
       list.forEach{ path ->
           _noteContentUiState.update {
               if(!it.note.isNotnull()) return
-              val position: Long = it.note?.content?.count()?.toLong() ?: 0
+              val position: Long = it.note?.contents?.count()?.toLong() ?: 0
               val content = NoteContentModel.MediaContent(position = position,
                   title = "$${path.second}-$position",
                   noteId =it.note!!.id!!, localPath = path.first , type = path.second)
-              it.note.content?.add(content)
+              it.note.contents?.add(content)
               it.contents.add(content)
               it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
           }
