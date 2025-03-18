@@ -11,7 +11,6 @@ import java.io.File
 
 data class AudioState(
     val file: File? = null,
-    val showDeleteDialog : Boolean = false,
     val audioLifecycle : AudioLifecycle = AudioLifecycle.idle,
     val noteContentModel: NoteContentModel.MediaContent? = null
 )
@@ -31,10 +30,8 @@ class AudioViewModel : ViewModel(), KoinComponent {
     val state = _audioState.asStateFlow()
     private val audioRecorder = get<IAudioRecorder>()
     fun updateContent(noteContentModel: NoteContentModel.MediaContent){
-        _audioState.update { it.copy(noteContentModel = noteContentModel) }
-    }
-    fun showDeleteAlert( value : Boolean){
-        _audioState.update { it.copy(showDeleteDialog = value) }
+        _audioState.update { it.copy(noteContentModel = noteContentModel, audioLifecycle = AudioLifecycle.start) }
+        handleIntent(AudioRecordingIntent.StartRecordingIntent)
     }
     fun handleIntent(audioRecordingIntent: AudioRecordingIntent) {
         when (audioRecordingIntent) {

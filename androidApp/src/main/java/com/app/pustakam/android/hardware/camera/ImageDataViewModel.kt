@@ -49,6 +49,7 @@ data class MediaFileStateHandler(
     val dataStateEvent : DataStateEvent = DataStateEvent.Saved ,
     val bitmap: Bitmap? = null,
     val editedBitmap: Bitmap? = null,
+    val mediaFilePath :String = ""
 )
 
 class ImageDataViewModel : ViewModel(), KoinComponent {
@@ -83,7 +84,6 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
             MediaProcessingEvent.DiscardChanges -> {
                 _mediaFileState.update { it.copy(editedBitmap = it.bitmap, dataStateEvent = DataStateEvent.Editing) }
             }
-
             MediaProcessingEvent.DiscardImage -> onClear()
             MediaProcessingEvent.ActivatePenTool -> TODO()
             MediaProcessingEvent.RedoAction -> TODO()
@@ -106,20 +106,27 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
             //todo handle later api call
         } else {
             when {
-                contentType == ContentType.IMAGE -> {
-                    onTakenPhotoPreview(fileUrl.toBitmap(), dataStateEvent = DataStateEvent.Saved)
-                }
-
-                contentType == ContentType.VIDEO -> {
-
-                }
+                contentType == ContentType.IMAGE -> onTakenPhotoPreview(fileUrl.toBitmap(), dataStateEvent = DataStateEvent.Saved)
+                contentType == ContentType.VIDEO -> onVideoFullPreview(fileUrl)
+//                contentType == ContentType.AUDIO -> onAudioFilePreview(fileUrl)
             }
         }
     }
 
+//    private fun onAudioFilePreview(fileUrl: String, dataStateEvent: DataStateEvent = DataStateEvent.Saved) {
+//        _mediaFileState.update {
+//            it.copy(mediaFilePath = fileUrl,dataStateEvent = dataStateEvent, contentType = ContentType.AUDIO)
+//        }
+//    }
+
+    private fun onVideoFullPreview(fileUrl : String, dataStateEvent: DataStateEvent= DataStateEvent.Saved ) {
+        _mediaFileState.update {
+            it.copy(mediaFilePath=fileUrl,dataStateEvent = dataStateEvent, contentType = ContentType.VIDEO)
+        }
+    }
     fun onTakenPhotoPreview(bitmap: Bitmap,dataStateEvent: DataStateEvent = DataStateEvent.Editing) {
         _mediaFileState.update {
-            it.copy(bitmap = bitmap, editedBitmap = bitmap, dataStateEvent = dataStateEvent)
+            it.copy(bitmap = bitmap, editedBitmap = bitmap, dataStateEvent = dataStateEvent, contentType = ContentType.IMAGE)
         }
     }
 
@@ -129,7 +136,12 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
         }
         _mediaFileState.update { it.copy(dataStateEvent = DataStateEvent.Saved) }
     }
-
+    private fun saveAudio(file: File){
+        _paths.value += Pair(file.absolutePath, ContentType.AUDIO)
+    }
+    private fun saveVideo(file: File){
+        _paths.value += Pair(file.absolutePath, ContentType.VIDEO)
+    }
     var recording: Recording? = null
 
     fun clearRecording() {
@@ -141,7 +153,6 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
     fun clearPaths() {
         _paths.value = emptyList()
     }
-
 
     fun saveRecordedVideo(outputFile: File) {
         _paths.value += Pair(outputFile.absolutePath, ContentType.VIDEO)

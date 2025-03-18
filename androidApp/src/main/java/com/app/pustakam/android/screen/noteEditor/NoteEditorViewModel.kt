@@ -25,6 +25,7 @@ import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.ContentType.AUDIO
 import com.app.pustakam.util.ContentType.IMAGE
 import com.app.pustakam.util.ContentType.LOCATION
+import com.app.pustakam.util.ContentType.TEXT
 import com.app.pustakam.util.ContentType.VIDEO
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
@@ -204,11 +205,18 @@ class NoteEditorViewModel : BaseViewModel() {
             it.copy(permissions = permission, contentType = contentType, showPermissionAlert = true, isLoading = false)
         }
     }
-
-    fun enablePreviewCamera(value: Boolean) {
-        _noteUiState.update { it.copy(previewCameraScreen = value, isLoading = false) }
-    }
-
+      fun addNewText() {
+          val note = _noteContentUiState.value.note!!
+          if (note.isNotnull()) {
+              val textContent =
+                  NoteContentModel.TextContent(
+                      noteId = note.id!!,
+                      position = note.contents?.count()?.toLong() ?: 0
+                  )
+              setContentType(TEXT)
+              updateContent(content =textContent)
+          }
+      }
     /**content logic
      * Add new content to the note content list
      * by selecting it type on the bases of user selection
@@ -216,24 +224,34 @@ class NoteEditorViewModel : BaseViewModel() {
     fun addNewContent(context: Context, contentType: ContentType): NoteContentModel {
         setContentType(contentType)
         val content = addContent( context = context, note = _noteContentUiState.value.note!!, contentType = contentType)
+        return content
+    }
+    fun addContentData(content: NoteContentModel){
         _noteContentUiState.update {
             it.note?.contents?.add(content)
             it.contents.add(content)
             it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
         }
-        return content
+    }
+
+    fun startStopAudioRecording(value: Boolean = true) {
+        _noteUiState.update { it.copy(isLoading = false, showAudioRecorder = value) }
     }
 /**
  * Remove a note content for note
  * */
-    fun updateContent(index: Int, updatedContent: NoteContentModel) {
+    fun updateContent(index: Int = -1, content: NoteContentModel) {
+        if(index== -1) {
+            addContentData(content)
+        }else{
         _noteContentUiState.update {
-            it.contents[index] = updatedContent
-            it.note?.contents?.set(index, updatedContent)
+            it.contents[index] = content
+            it.note?.contents?.set(index, content)
             it.copy(note = it.note,contents = it.contents)
         }
-        if (updatedContent.isPlayingMedia())
-            noteContentRepository.updateNoteContent(updatedContent as NoteContentModel.MediaContent)
+        }
+        if (content.isPlayingMedia())
+            noteContentRepository.updateNoteContent(content as NoteContentModel.MediaContent)
     }
     fun removeContent(value: String) {
         val find = _noteContentUiState.value.note?.contents?.find { value == it.id }
@@ -279,4 +297,5 @@ class NoteEditorViewModel : BaseViewModel() {
           }
       }
     }
+
 }

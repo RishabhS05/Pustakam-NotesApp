@@ -11,7 +11,10 @@ import com.app.pustakam.util.getCurrentTimestamp
 
 //It decides and return a noteContent
 //also provide create filepath and add if required
-fun addContent(context: Context,note : Note, contentType : ContentType, ) : NoteContentModel{
+
+/**
+ * Factory method  of note content */
+fun addContent(context: Context,note : Note, contentType : ContentType) : NoteContentModel{
     val position: Long = note.contents?.count()?.toLong() ?: 0
     val noteId = note.id?: ""
     val content: NoteContentModel
@@ -22,7 +25,7 @@ fun addContent(context: Context,note : Note, contentType : ContentType, ) : Note
         }
         LINK -> {
             content = NoteContentModel.Link(position = position,
-                noteId = noteId, )
+                noteId = noteId,)
         }
 
         LOCATION -> {
@@ -36,6 +39,8 @@ fun addContent(context: Context,note : Note, contentType : ContentType, ) : Note
             val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
             content = NoteContentModel.MediaContent(position = position,
                 title = "$contentType-$position",
+                createdAt = timeStamp.toString(),
+                updatedAt = timeStamp.toString(),
                 noteId = noteId, localPath = filePath , type = contentType)
         }
     }

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,35 +41,29 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 
 @Composable
-fun AudioRecording(
-    noteContentModel: NoteContentModel.MediaContent, onStop: (NoteContentModel.MediaContent) -> Unit = {}, onDelete: (NoteContentModel.MediaContent) -> Unit = {}
+fun AudioRecording( noteContentModel: NoteContentModel.MediaContent,
+    onStop: (NoteContentModel.MediaContent) -> Unit = {}, onDelete: (NoteContentModel.MediaContent) -> Unit = {}
 ) {
-    val viewModel: AudioViewModel = viewModel()
-    OnLifecycleEvent{ _, event ->
-        when(event){
-            Lifecycle.Event.ON_CREATE -> {
-                viewModel.updateContent(noteContentModel)
-            }
-            else->{}
-        }
+    val viewModel: AudioViewModel = viewModel<AudioViewModel>().apply {
+        updateContent(noteContentModel)
     }
     val state = viewModel.state.collectAsStateWithLifecycle()
     state.value.apply {
-        when {audioLifecycle == AudioLifecycle.stop -> state.value.noteContentModel?.let { onStop(it) }
+        when {
+            audioLifecycle == AudioLifecycle.stop -> state.value.noteContentModel?.let { onStop(it) }
         }
     }
-    AudioRecordView(state = state, onAction = viewModel::handleIntent, onDelete = {
-        viewModel.showDeleteAlert(true)
-        onDelete(noteContentModel)
-    })
+    AudioRecordView(state = state, onAction = viewModel::handleIntent)
 }
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -> Unit, onDelete: () -> Unit) {
+fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -> Unit
+) {
     val iconModifier = Modifier.size(28.dp)
     val elapsedTime = remember { mutableLongStateOf(0) }
-    val isRecording = state.value.audioLifecycle == AudioLifecycle.start || state.value.audioLifecycle == AudioLifecycle.resume
+    val isRecording = state.value.audioLifecycle == AudioLifecycle.start
+            || state.value.audioLifecycle == AudioLifecycle.resume
     Card(modifier = Modifier.padding(12.dp)) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -94,8 +90,8 @@ fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -
                     onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.longValue))
                 }
             }) {
-                val drawable = if (isRecording) R.drawable.ic_stop else R.drawable.ic_record
-                Icon(painter = painterResource(drawable), contentDescription = "", modifier = iconModifier)
+                val drawable = if (isRecording) Icons.Default.Stop else Icons.Default.RecordVoiceOver
+                Icon(imageVector = drawable, contentDescription = "", modifier = iconModifier)
             }
 
             IconButton(onClick = {
@@ -107,12 +103,6 @@ fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -
             }) {
                 val drawable = if (state.value.audioLifecycle == AudioLifecycle.pause) R.drawable.ic_play else R.drawable.ic_pause
                 Icon(painter = painterResource(drawable), contentDescription = "", modifier = iconModifier)
-            }
-            IconButton(onClick = {
-               onAction(AudioRecordingIntent.StopRecordingIntent(elapsedTime.longValue))
-                onDelete()
-            }) {
-                Icon(Icons.Default.Delete, contentDescription = "", tint = colorScheme.error, modifier = iconModifier)
             }
         }
     }
@@ -126,7 +116,7 @@ fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -
 private fun AudioRecordingPreview() {
     MyApplicationTheme {
         val state = MutableStateFlow(AudioState())
-        AudioRecordView(state = state.collectAsStateWithLifecycle(), onAction = {}, onDelete = {})
+        AudioRecordView(state = state.collectAsStateWithLifecycle(), onAction = {},)
     }
 }
 

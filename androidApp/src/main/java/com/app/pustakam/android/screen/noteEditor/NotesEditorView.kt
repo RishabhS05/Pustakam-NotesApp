@@ -1,7 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -76,12 +75,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotesEditorView(
+fun NoteEditorScreen(
     id: String? = null,
     noteEditorViewModel: NoteEditorViewModel = viewModel(),
     imageDataViewModel: ImageDataViewModel = viewModel(),
     onBack: () -> Unit = {},
-    navigateTo: (Any)-> Unit
+    navigateTo: (Any) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
@@ -108,19 +107,20 @@ fun NotesEditorView(
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 noteEditorViewModel.clearError()
             }
+
             showPermissionAlert == true -> {
                 AskPermissions(permissionsRequired = permissions, onDismiss = {
                     noteEditorViewModel.showPermissionAlert(null)
                 }, onGrantPermission = {
                     noteEditorViewModel.showPermissionAlert(null)
-                    when(contentType){
-                        ContentType.IMAGE,ContentType.VIDEO->
-                            navigateTo(CameraData(noteEditorViewModel.noteContentUiState.value.note?.id!!))
-                        ContentType.AUDIO->noteEditorViewModel.addNewContent(context,contentType)
-                        else ->{}
+                    when (contentType) {
+                        ContentType.IMAGE, ContentType.VIDEO -> navigateTo(CameraData(noteEditorViewModel.noteContentUiState.value.note?.id!!))
+                        ContentType.AUDIO -> noteEditorViewModel.startStopAudioRecording()
+                        else -> {}
                     }
                 })
             }
+
             showDeleteAlert -> {
                 if (deleteNoteContentId.isNotnull()) {
                     DeleteNoteAlert(noteTitle = "Recorded Note", onConfirm = {
@@ -128,11 +128,14 @@ fun NotesEditorView(
                     }) {
                         noteEditorViewModel.showDeleteAlertBox(false, null)
                     }
-                } else DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "", onConfirm = {
-                    noteEditorViewModel.deleteNote(noteId = id!!)
-                    noteEditorViewModel.showDeleteAlertBox(false)
-                }) {
-                    noteEditorViewModel.showDeleteAlertBox(false)
+                } else {
+                    DeleteNoteAlert(noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "",
+                        onConfirm = {
+                            noteEditorViewModel.deleteNote(noteId = id!!)
+                            noteEditorViewModel.showDeleteAlertBox(false)
+                        }) {
+                        noteEditorViewModel.showDeleteAlertBox(false)
+                    }
                 }
             }
         }
@@ -167,7 +170,7 @@ fun NotesEditorView(
                     contentDescription = "Save As",
                 )
             }
-            IconButton(onClick = noteEditorViewModel:: shareNote) {
+            IconButton(onClick = noteEditorViewModel::shareNote) {
                 Icon(
                     Icons.Default.Share,
                     contentDescription = "Share Note",
@@ -187,7 +190,7 @@ fun NotesEditorView(
             OverLayEditorButtons(
                 modifier = Modifier.align(alignment = Alignment.CenterEnd),
                 onAddTextField = {
-                    noteEditorViewModel.addNewContent(context, ContentType.TEXT)
+                    noteEditorViewModel.addNewText()
                 },
                 onArrowButton = { focusManager.clearFocus() },
                 onRecordMic = {
@@ -198,25 +201,34 @@ fun NotesEditorView(
                 },
             )
         }
-    }, contentList = {
-        LazyColumn {
-            state.value.contents.let {
-                itemsIndexed(it.sortedBy { content -> content.position.inc() }) { index, contentValue ->
-                    RenderWidget(content = contentValue, onUpdate = { value ->
-                        noteEditorViewModel.updateContent(index, value)
-                    } , onDelete = {value ->
-                        noteEditorViewModel.showDeleteAlertBox(true, deleteNoteContentId = value.id)},
-                     onMediaPreview = {
-                         imageDataViewModel.onSetMediaToPreview((contentValue as NoteContentModel.MediaContent)
-                             .getMediaUrl(),
-                             contentValue.type)
-                         when {
-                             contentValue.type== ContentType.IMAGE ->  navigateTo(Route.ImagePreview)
-                             contentValue.type== ContentType.VIDEO ->  navigateTo(Route.VideoPreview)
-                         }
-                     })
+    }, contentList = { focusRequester ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn {
+                state.value.contents.let {
+                    itemsIndexed(it.sortedBy { content -> content.position.inc() }) { index, contentValue ->
+                        RenderWidget(content = contentValue, focusRequester = focusRequester, onUpdate = { value ->
+                            noteEditorViewModel.updateContent(index, value)
+                        }, onDelete = { value ->
+                            noteEditorViewModel.showDeleteAlertBox(true, deleteNoteContentId = value.id)
+                        }, onMediaPreview = {
+                            imageDataViewModel.onSetMediaToPreview(
+                                (contentValue as NoteContentModel.MediaContent).getMediaUrl(), contentValue.type
+                            )
+                            when {
+                                contentValue.type == ContentType.IMAGE -> navigateTo(Route.ImagePreview)
+                                contentValue.type == ContentType.VIDEO -> navigateTo(Route.VideoPreview)
+                            }
+                        })
+                    }
                 }
             }
+            if(stateEditor.showAudioRecorder)
+            AudioRecording(
+                noteContentModel = noteEditorViewModel.addNewContent(context, contentType = ContentType.AUDIO) as NoteContentModel.MediaContent,
+                onStop = {
+                    noteEditorViewModel.updateContent(content = it)
+                         noteEditorViewModel.startStopAudioRecording(false)},
+            )
         }
     })
 
@@ -230,7 +242,7 @@ fun rememberFocusRequester() = remember { FocusRequester() }
 fun NotesEditor(
     state: State<NoteContentUiState>,
     topBar: @Composable () -> Unit,
-    contentList: @Composable () -> Unit,
+    contentList: @Composable (FocusRequester) -> Unit,
     onButtonOverLays: @Composable () -> Unit,
 ) {
     val isRuledEnabledState = remember { mutableStateOf(false) }
@@ -250,7 +262,11 @@ fun NotesEditor(
                         modifier = Modifier.padding(start = paddingLeft),
                     )
                 }, colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, cursorColor = colorScheme.tertiary
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = colorScheme.tertiary
                 ), onValueChange = {
                     state.value.titleTextState.value = it
                 }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), keyboardActions = KeyboardActions(onNext = {
@@ -258,7 +274,7 @@ fun NotesEditor(
                 }), modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).padding(top = 2.dp)
                 )
                 HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
-                contentList()
+                contentList(focusRequester)
             }
             onButtonOverLays()
         }
@@ -269,14 +285,17 @@ fun NotesEditor(
 @Composable
 fun RenderWidget(
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester = rememberFocusRequester(),
     content: NoteContentModel,
     onUpdate: (content: NoteContentModel) -> Unit,
     onDelete: (content: NoteContentModel) -> Unit,
-    onMediaPreview: ()-> Unit,
+    onMediaPreview: () -> Unit,
 ) {
     when (content.type) {
         ContentType.TEXT -> {
-            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent), onUpdate = { onUpdate(content.copy(text = it)) })
+            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent),
+                focusRequester = focusRequester,
+                onUpdate = { onUpdate(content.copy(text = it)) })
         }
 
         ContentType.IMAGE -> {
@@ -287,16 +306,12 @@ fun RenderWidget(
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
-            VideoCard(contentVideo,  onClick = onMediaPreview )
+            VideoCard(contentVideo, onClick = onMediaPreview)
         }
 
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.MediaContent
-            if (contentAudio.duration > 0) {// todo temp logic
-                AudioPlayerUIState(contentAudio, onDelete = onDelete)
-            } else {
-                AudioRecording(contentAudio, onStop = { onUpdate(it) }, onDelete = onDelete)
-            }
+            AudioPlayerUIState(contentAudio, onDelete = onDelete)
         }
 
         ContentType.LINK -> {

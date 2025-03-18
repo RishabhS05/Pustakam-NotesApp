@@ -44,20 +44,22 @@ data class NotesUIState(
     val notes: ArrayList<Note> = arrayListOf()
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
+//Note ActionState
 data class NoteUIState(
     override val isLoading: Boolean =false,
     override val error: String? =null,
     override val successMessage: String? = null,
     val showDeleteAlert : Boolean= false,
     val showDeleteButton : Boolean = false,
+    val showPermissionAlert  : Boolean? = null,
+    val showAudioRecorder :Boolean = false,
     val deleteNoteContentId : String?= null,
     val noteStatus : NoteStatus? = NoteStatus.OnEditingMode,
     val contentType : ContentType? = null,
-    val showPermissionAlert  : Boolean? = null,
     val permissions : List<NeededPermission> = listOf(),
-    val previewCameraScreen : Boolean = false,
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
+//NoteDataState
 data class NoteContentUiState(
     val note: Note? = null,
     val titleTextState:MutableState<String>  = mutableStateOf(""),

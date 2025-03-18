@@ -32,9 +32,10 @@ fun NoteTextField(
 ) {
     val focusManager = LocalFocusManager.current
     var textState: String by remember { mutableStateOf(noteContentModel.text) }
-    TextField(value = textState, onValueChange = {
+    TextField(value = textState,
+        onValueChange = {
         textState = it
-        onUpdate(it)
+            onUpdate(it)
     },
         placeholder = { Text("Hi start writing from here...") },
         colors = TextFieldDefaults.colors(
@@ -49,6 +50,8 @@ fun NoteTextField(
         focusManager.moveFocus(FocusDirection.Down)
     },
         onDone = {
-        focusManager.clearFocus()
+            if(!focusManager.moveFocus(FocusDirection.Down)){
+                focusManager.clearFocus()
+            }
     }), modifier = modifier.wrapContentHeight().fillMaxWidth().focusRequester(focusRequester))
 }

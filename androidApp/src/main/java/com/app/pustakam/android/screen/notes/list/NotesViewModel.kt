@@ -17,11 +17,14 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
+
 class NotesViewModel : BaseViewModel() {
     private var hasLoaded = false
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
         isNextPage = true))
-    val notesUIState = _notesUiState.onStart {
+
+    val notesUIState = _notesUiState
+        .onStart {
         if(!hasLoaded){
             callGetNotes()
             hasLoaded = true

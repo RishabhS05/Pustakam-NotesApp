@@ -12,7 +12,7 @@ import com.app.pustakam.android.hardware.camera.ImageEditorScreen
 import com.app.pustakam.android.hardware.camera.MediaProcessingEvent
 import com.app.pustakam.android.hardware.video.VideoPreviewScreen
 import com.app.pustakam.android.screen.noteEditor.NoteEditorViewModel
-import com.app.pustakam.android.screen.noteEditor.NotesEditorView
+import com.app.pustakam.android.screen.noteEditor.NoteEditorScreen
 import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
@@ -29,7 +29,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             route = Route.Notes
         ) {
             NotesView(onNavigateNote = {
-                navController.navigateTo(Route.NotesEditor+"/${it.id}")
+                navController.navigateTo(Route.NotesEditor)
             })
         }
         composable(
@@ -38,7 +38,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             val viewModel: NoteEditorViewModel = viewModel()
             val imageViewModel : ImageDataViewModel = backStackEntry
                 .sharedViewModel<ImageDataViewModel>(navController.navController)
-            NotesEditorView(
+            NoteEditorScreen(
                 noteEditorViewModel = viewModel,
                 onBack = navController::upPress,
                 imageDataViewModel = imageViewModel,
@@ -52,7 +52,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             val viewModel: NoteEditorViewModel = viewModel()
             val imageViewModel : ImageDataViewModel = backStackEntry
                 .sharedViewModel<ImageDataViewModel>(navController.navController)
-            NotesEditorView(id = noteId,
+            NoteEditorScreen(id = noteId,
                 noteEditorViewModel = viewModel,
                 imageDataViewModel = imageViewModel,
                 onBack =
