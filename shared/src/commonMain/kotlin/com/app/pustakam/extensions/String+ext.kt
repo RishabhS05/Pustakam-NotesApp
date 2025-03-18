@@ -14,7 +14,7 @@ fun String?.isDigits() = !this.isNullOrEmpty() && (this.contains(regex = Regex("
 fun String?.isValidPassword() = !this.isNullOrEmpty() && this.length >= 4
 
 fun String?.isUrl()= !this.isNullOrEmpty() && (this.startsWith("http://") || this.startsWith("https://"))
-fun String.toLocalFormat(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+fun String.toLocalFormat(timeZone: TimeZone = TimeZone.currentSystemDefault(), showTime: Boolean= true): String {
     val instant: Instant = if (this.isDigits()) Instant.fromEpochMilliseconds(this.toLong())
     else Instant.parse(this)
 
@@ -27,7 +27,7 @@ fun String.toLocalFormat(timeZone: TimeZone = TimeZone.currentSystemDefault()): 
     val minute = dateTime.minute.toString().padStart(2, char)
     val amPm = if (dateTime.hour < 12) "am" else "pm"
 
-    return "$day/$month/$year $hour:$minute $amPm"
+    return if (showTime)"$day/$month/$year $hour:$minute $amPm" else "$day/$month/$year "
 }
 
 
