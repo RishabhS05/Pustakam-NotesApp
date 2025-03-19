@@ -224,7 +224,9 @@ fun NoteEditorScreen(
             }
             if(stateEditor.showAudioRecorder)
             AudioRecording(
-                noteContentModel = noteEditorViewModel.addNewContent(context, contentType = ContentType.AUDIO) as NoteContentModel.MediaContent,
+                modifier =  Modifier.align(Alignment.TopEnd),
+                noteContentModel = noteEditorViewModel.addNewContent(context,
+                    contentType = ContentType.AUDIO) as NoteContentModel.MediaContent,
                 onStop = {
                     noteEditorViewModel.updateContent(content = it)
                          noteEditorViewModel.startStopAudioRecording(false)},

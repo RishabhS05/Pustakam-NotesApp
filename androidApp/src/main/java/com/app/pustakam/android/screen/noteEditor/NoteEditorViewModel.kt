@@ -247,7 +247,7 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteContentUiState.update {
             it.contents[index] = content
             it.note?.contents?.set(index, content)
-            it.copy(note = it.note,contents = it.contents)
+            it.copy(note = it.note,contents = it.contents, isAllSetupDone = true)
         }
         }
         if (content.isPlayingMedia())

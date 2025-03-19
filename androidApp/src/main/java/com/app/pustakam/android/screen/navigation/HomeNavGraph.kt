@@ -29,7 +29,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             route = Route.Notes
         ) {
             NotesView(onNavigateNote = {
-                navController.navigateTo(Route.NotesEditor)
+                navController.navigateTo(Route.NotesEditor+"/${it.id}")
             })
         }
         composable(

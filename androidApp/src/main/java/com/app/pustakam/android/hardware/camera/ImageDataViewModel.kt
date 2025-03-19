@@ -143,9 +143,6 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
     private fun saveAudio(file: File){
         _paths.value += Pair(file.absolutePath, ContentType.AUDIO)
     }
-    private fun saveVideo(file: File){
-        _paths.value += Pair(file.absolutePath, ContentType.VIDEO)
-    }
     var recording: Recording? = null
 
     fun clearRecording() {

@@ -9,10 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.RecordVoiceOver
-import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -23,7 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -41,11 +44,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 
 @Composable
-fun AudioRecording( noteContentModel: NoteContentModel.MediaContent,
-    onStop: (NoteContentModel.MediaContent) -> Unit = {}, onDelete: (NoteContentModel.MediaContent) -> Unit = {}
+fun AudioRecording(modifier: Modifier = Modifier,
+    noteContentModel: NoteContentModel.MediaContent,
+    onStop: (NoteContentModel.MediaContent) -> Unit = {},
+                    onDelete: (NoteContentModel.MediaContent) -> Unit = {}
 ) {
-    val viewModel: AudioViewModel = viewModel<AudioViewModel>().apply {
-        updateContent(noteContentModel)
+    val viewModel: AudioViewModel = viewModel<AudioViewModel>()
+
+    OnLifecycleEvent{ _, event->
+        when {
+            event == Lifecycle.Event.ON_CREATE->{
+               viewModel.updateContent(noteContentModel)
+            }
+        }
     }
     val state = viewModel.state.collectAsStateWithLifecycle()
     state.value.apply {
@@ -58,13 +69,15 @@ fun AudioRecording( noteContentModel: NoteContentModel.MediaContent,
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -> Unit
+fun AudioRecordView(modifier: Modifier = Modifier,
+    state: State<AudioState>, onAction: (AudioRecordingIntent) -> Unit
 ) {
     val iconModifier = Modifier.size(28.dp)
     val elapsedTime = remember { mutableLongStateOf(0) }
-    val isRecording = state.value.audioLifecycle == AudioLifecycle.start
-            || state.value.audioLifecycle == AudioLifecycle.resume
-    Card(modifier = Modifier.padding(12.dp)) {
+    val isRecording = state.value.audioLifecycle ==
+            AudioLifecycle.start || state.value.audioLifecycle == AudioLifecycle.resume
+    Card(modifier = modifier.padding(12.dp), elevation = CardDefaults
+        .elevatedCardElevation(defaultElevation = 12.dp) ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -90,7 +103,7 @@ fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -
                     onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.longValue))
                 }
             }) {
-                val drawable = if (isRecording) Icons.Default.Stop else Icons.Default.RecordVoiceOver
+                val drawable = if (isRecording) Icons.Rounded.Stop else ImageVector.vectorResource(R.drawable.ic_record)
                 Icon(imageVector = drawable, contentDescription = "", modifier = iconModifier)
             }
 
@@ -101,8 +114,8 @@ fun AudioRecordView(state: State<AudioState>, onAction: (AudioRecordingIntent) -
                     onAction(AudioRecordingIntent.ResumeRecordingIntent)
                 }
             }) {
-                val drawable = if (state.value.audioLifecycle == AudioLifecycle.pause) R.drawable.ic_play else R.drawable.ic_pause
-                Icon(painter = painterResource(drawable), contentDescription = "", modifier = iconModifier)
+                val drawable = if (state.value.audioLifecycle == AudioLifecycle.pause) Icons.Rounded.PlayArrow else Icons.Rounded.Pause
+                Icon(imageVector =drawable, contentDescription = "", modifier = iconModifier)
             }
         }
     }
