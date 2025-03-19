@@ -49,10 +49,12 @@ data class MediaFileStateHandler(
     val dataStateEvent : DataStateEvent = DataStateEvent.Saved ,
     val bitmap: Bitmap? = null,
     val editedBitmap: Bitmap? = null,
-    val mediaFilePath :String = ""
+    val mediaFilePath :String = "",
 )
 
 class ImageDataViewModel : ViewModel(), KoinComponent {
+
+
     private val _paths =
         MutableStateFlow<List<Pair<String, ContentType>>>(emptyList())
     val paths =
@@ -62,6 +64,8 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
     val mediaFileState =
         _mediaFileState.asStateFlow()
 
+   private val _isRecording = MutableStateFlow(false)
+    val isRecording = _isRecording.asStateFlow()
     fun onHandleMediaOperation(event: MediaProcessingEvent) {
         when (event) {
 
@@ -156,5 +160,9 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
 
     fun saveRecordedVideo(outputFile: File) {
         _paths.value += Pair(outputFile.absolutePath, ContentType.VIDEO)
+    }
+
+    fun startOrStopRecording(value : Boolean) {
+        _isRecording.value = value
     }
 }

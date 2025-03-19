@@ -35,7 +35,6 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     private val notesDao by inject<NotesDao>()
     val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
     private lateinit var prefs: UserPreference
-
     init {
         CoroutineScope(Dispatchers.IO).launch {
             _userAuthState.collect { pref ->
@@ -168,8 +167,8 @@ open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepos
     /** methods for decision logic
      * - call local db methods or
      * - call api for server
-     * - insert or update note */
-   /** // step 1 * check with local db
+     * - insert or update note
+    // step 1 * check with local db
                  * data is present call update server apis
                  * else call create server apis
 
