@@ -73,9 +73,10 @@ fun CameraStreamingPreview(
     val lifecycle = LocalLifecycleOwner.current
     val context = LocalContext.current
     val elapsedTime = remember { mutableLongStateOf(0) }
-    val recording = imageViewModel.isRecording.collectAsState()
+    val isRecording = imageViewModel.isRecording.collectAsState()
     val iconSize = 100.dp
-val  (timerColor: Color, backgroundColor : Color ) = if(recording.value){
+val  (timerColor: Color, backgroundColor : Color ) =
+    if(isRecording.value){
     (orange30 to baseWhite.copy(alpha = .3f))
 }else{
     elapsedTime.value = 0
@@ -89,7 +90,7 @@ val  (timerColor: Color, backgroundColor : Color ) = if(recording.value){
             }
         }, modifier = Modifier.fillMaxSize())
         RecordingTimer(
-            isTimerRunning = recording.value,
+            isTimerRunning = isRecording.value,
             elapsedTime = elapsedTime,
             style = typography.headlineSmall.copy(color = timerColor, fontWeight = FontWeight.Black),
             modifier = Modifier.padding(vertical = 25.dp,horizontal = 6.dp).align(Alignment.TopCenter)
@@ -108,12 +109,12 @@ val  (timerColor: Color, backgroundColor : Color ) = if(recording.value){
                         context as Activity, "${ContentType.VIDEO.name.lowercase()}/${timeStamp}", "${timeStamp}${ContentType.VIDEO.getExt()}"
                     )
                 )
-                imageViewModel.startOrStopRecording(!recording.value)
+                imageViewModel.startOrStopRecording(!isRecording.value)
 
             }, modifier = Modifier) {
                 Icon(
                     painter = painterResource(
-                        if (recording.value) R.drawable.ic_stop else R.drawable.ic_record,
+                        if (isRecording.value) R.drawable.ic_stop else R.drawable.ic_record,
                     ), modifier = Modifier.size(100.dp),
                     contentDescription = "Recording Video",
                     tint =timerColor
@@ -122,7 +123,14 @@ val  (timerColor: Color, backgroundColor : Color ) = if(recording.value){
             IconButton(onClick = {
                 takePhoto(controller, context, onPhotoTaken = { bitmap ->
                     imageViewModel.onTakenPhotoPreview(bitmap)
-                    if (bitmap.isNotnull()) navigateTo(Route.ImagePreview)
+                    if(isRecording.value) {
+                            val timeStamp = getCurrentTimestamp()
+                            imageViewModel.onHandleMediaOperation(MediaProcessingEvent.OnSaveImage(
+                                createFileWithFolders(context as Activity,
+                                    "${ContentType.IMAGE.name.lowercase()}/${timeStamp}"
+                                    , "${timeStamp}${ContentType.IMAGE.getExt()}")
+                            ))
+                    } else if (bitmap.isNotnull()) navigateTo(Route.ImagePreview)
                 })
 
             }, modifier = Modifier) {

@@ -3,10 +3,12 @@ package com.app.pustakam.android.hardware.camera
 import android.graphics.Bitmap
 import androidx.camera.video.Recording
 import androidx.lifecycle.ViewModel
+import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.fileUtils.saveBitmapToFile
 import com.app.pustakam.android.fileUtils.toBitmap
 import com.app.pustakam.extensions.isUrl
 import com.app.pustakam.util.ContentType
+import com.app.pustakam.util.getCurrentTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -66,14 +68,14 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
 
    private val _isRecording = MutableStateFlow(false)
     val isRecording = _isRecording.asStateFlow()
+    var recording: Recording? = null
     fun onHandleMediaOperation(event: MediaProcessingEvent) {
         when (event) {
 
             MediaProcessingEvent.CropImage -> {
                 _mediaFileState.update { it.copy(dataStateEvent = DataStateEvent.Editing) }
             }
-            is MediaProcessingEvent.OnSaveImage ->
-                saveImage(event.file)
+            is MediaProcessingEvent.OnSaveImage -> saveImage(event.file)
 
             is MediaProcessingEvent.SetNoteId -> {
                 _mediaFileState.update {
@@ -140,10 +142,8 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
         }
         _mediaFileState.update { it.copy(dataStateEvent = DataStateEvent.Saved) }
     }
-    private fun saveAudio(file: File){
-        _paths.value += Pair(file.absolutePath, ContentType.AUDIO)
-    }
-    var recording: Recording? = null
+
+
 
     fun clearRecording() {
         recording?.stop()
