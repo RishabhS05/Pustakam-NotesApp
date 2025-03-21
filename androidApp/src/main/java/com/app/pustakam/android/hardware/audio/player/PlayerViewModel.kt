@@ -6,7 +6,7 @@ import com.app.pustakam.android.extension.toMediaItem
 import com.app.pustakam.android.services.mediaSessionService.MediaPlayingEvent
 import com.app.pustakam.android.services.mediaSessionService.MediaServiceListener
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
+import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
 import com.app.pustakam.extensions.getReadableHMS
 import com.app.pustakam.extensions.getTimerFormatedString
 import com.app.pustakam.extensions.isNotnull

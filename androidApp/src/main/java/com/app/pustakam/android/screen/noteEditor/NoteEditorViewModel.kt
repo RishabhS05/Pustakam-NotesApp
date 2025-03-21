@@ -2,6 +2,7 @@ package com.app.pustakam.android.screen.noteEditor
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.fileUtils.deleteFile
@@ -19,7 +20,7 @@ import com.app.pustakam.android.screen.notes.ReadNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.noteContentRepo.NoteContentRepository
+import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.ContentType.AUDIO
@@ -34,20 +35,22 @@ import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
 
 class NoteEditorViewModel : BaseViewModel() {
     private val noteContentRepository = get<NoteContentRepository>()
-    private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
-    val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
-    private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
-    val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
     private val readNoteUseCase = ReadNoteUseCase()
     private val deleteNoteUseCase = DeleteNoteUseCase()
     private val deleteNoteContentUseCase = DeleteNoteContentUseCase()
     private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
+    private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
+    val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
+    private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
+    val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
+
 
     //default methods
     override fun onLoading(taskCode: TaskCode) {

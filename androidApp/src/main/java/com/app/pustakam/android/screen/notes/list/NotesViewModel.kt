@@ -7,7 +7,6 @@ import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.notes.GetNotesUseCase
 import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -16,15 +15,24 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 
 class NotesViewModel : BaseViewModel() {
     private var hasLoaded = false
+    private val getNotesUseCase = GetNotesUseCase()
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
         isNextPage = true))
 
     val notesUIState = _notesUiState
         .onStart {
+            viewModelScope.launch {
+                getNotesUseCase.notes.collect {notes ->
+                    _notesUiState.update {currentState ->
+                        currentState.copy(notes = notes.notes, isLoading = false )
+                    }
+                }
+            }
         if(!hasLoaded){
             callGetNotes()
             hasLoaded = true
@@ -33,23 +41,15 @@ class NotesViewModel : BaseViewModel() {
         SharingStarted.WhileSubscribed(5000L),
         _notesUiState.value
     )
-    private val getNotesUseCase = GetNotesUseCase()
+
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         when (taskCode) {
             NOTES_CODES.GET_NOTES -> {
-                val response = (result.data.data as Notes)
                 _notesUiState.update {
-                    val page = it.page + 1
-                    var isNextPage = it.isNextPage
-                    if (!response.notes.isNullOrEmpty()) {
-                        it.notes.addAll(response.notes!!)
-                    } else {
-                        isNextPage = false
-                    }
                     it.copy(
                         isLoading = false, notes = it.notes,
                         successMessage = result.data.message,
-                        page = page, isNextPage = isNextPage
+                        page = it.page + 1, isNextPage = it.isNextPage
                     )
                 }
             }

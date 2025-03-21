@@ -1,28 +1,30 @@
 package com.app.pustakam.android.screen.notes
 
-import com.app.pustakam.android.screen.base.BaseUseCase
+import com.app.pustakam.android.screen.base.NoteBaseUseCase
 import com.app.pustakam.data.models.response.notes.Note
 
-class CreateORUpdateNoteUseCase : BaseUseCase() {
-    suspend operator  fun invoke(note : Note) =
-        getBaseApiCall{repository.insertOrUpdateNote(note)}
-}
-class DeleteNoteUseCase : BaseUseCase() {
-    suspend operator  fun invoke(noteId : String?)
-    = getBaseApiCall{ repository.deleteNote(noteId ?: "") }
+
+class CreateORUpdateNoteUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(note: Note) =
+        getBaseApiCall { noteRepository.insertOrUpdateNote(note) }
 }
 
-class ReadNoteUseCase : BaseUseCase() {
-    suspend operator  fun invoke(id : String?) =
-        getBaseApiCall{ repository.getANote(id) }
+class DeleteNoteUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(noteId: String?) =
+        getBaseApiCall { noteRepository.deleteNote(noteId ?: "") }
 }
 
-class GetNotesUseCase : BaseUseCase() {
-    suspend operator fun invoke(page : Int) =
-        getBaseApiCall{ repository.getAllNotes(page) }
+class ReadNoteUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(id: String?) =
+        getBaseApiCall { noteRepository.getANote(id) }
 }
 
-class DeleteNoteContentUseCase : BaseUseCase() {
-    suspend operator  fun invoke(id : String?)
-            = getBaseApiCall{ repository.deleteNoteContentFromDb(id ?: "") }
+class GetNotesUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(page: Int) =
+        getBaseApiCall { noteRepository.getAllNotes(page) }
+}
+
+class DeleteNoteContentUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(id: String?) =
+        getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }
 }

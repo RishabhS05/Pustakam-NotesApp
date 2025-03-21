@@ -1,8 +1,6 @@
 package com.app.pustakam.data.network
 
 import com.app.pustakam.data.localdb.preferences.IAppPreferences
-import com.app.pustakam.domain.repositories.BaseRepository
-import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result

@@ -16,8 +16,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
     private val database = NotesDatabase(sharedDb)
     private val queries = database.notesDatabaseQueries
   suspend fun selectAllNotesFromDb(limit : Int = 10, page : Int = 0): Notes {
-//      val offset = (page - 1) * limit
-//      limit.toLong(), offset.toLong()
+      val offset = (page - 1) * limit
       val notesWithContent = arrayListOf<Note>()
       val results  =  queries.selectWithAllContent().executeAsList()
       val grouped = results.groupBy { it.noteId }
