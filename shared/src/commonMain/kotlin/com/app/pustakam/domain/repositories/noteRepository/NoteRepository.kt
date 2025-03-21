@@ -29,8 +29,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     fun insertNotes(notes : Notes){
         _notes.update {
             val list : ArrayList<Note> = arrayListOf()
-            list.addAll(it.notes)
-            list.addAll(notes.notes)
+            list.addAll(it.notes + notes.notes)
             it.copy(notes = list, page =  notes.page)
         }
         log_d("Notes" , _notes.value.notes.count())
