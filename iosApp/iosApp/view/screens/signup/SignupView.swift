@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftUICore
 import shared
 
-class SignUpHandler: BaseHandler {
+class SignUpHandler: BaseViewModel {
     func validateCred(req: RegisterReq) -> ErrorField? {
         let valmsg =
             FieldValidationKt.checkRegisterFieldsValidity(
@@ -14,7 +14,7 @@ class SignUpHandler: BaseHandler {
     }
     func signUpCall(reqUser: RegisterReq) async -> BaseResult<User?> {
         return await apiHandler(apiCall: {
-            try await base.registerUser(user: reqUser)
+            try await baseRepositary.registerUser(user: reqUser)
         })
     }
 }

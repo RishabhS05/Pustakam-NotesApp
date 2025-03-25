@@ -8,7 +8,7 @@
 
 import SwiftUI
 import shared
-final class Router: ObservableObject {
+final class Router: Observable {
     @Published var navPath = NavigationPath()
     public enum Destination : Hashable {
         case Login
@@ -24,7 +24,7 @@ final class Router: ObservableObject {
         func hash(into hasher: inout Hasher) {
             switch self {
                 case .NoteEditor(let note):
-                    hasher.combine(note?._id)
+                    hasher.combine(note?.id)
                 default:
                     hasher.combine(String(describing: self))
             }
@@ -33,7 +33,7 @@ final class Router: ObservableObject {
         static func == (lhs: Router.Destination, rhs: Router.Destination) -> Bool {
             switch (lhs, rhs) {
                 case (.NoteEditor(let lhsNote), .NoteEditor(let rhsNote)):
-                    return lhsNote?._id == rhsNote?._id
+                    return lhsNote?.id == rhsNote?.id
                 default:
                     return String(describing: lhs) == String(describing: rhs)
             }

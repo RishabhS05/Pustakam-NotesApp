@@ -5,8 +5,7 @@ class  UserPreferenceWrapper : ObservableObject {
     private let userPreferenceViewModel: UserPreferenceViewModel = UserPreferenceViewModel()
     @Published var userPreference: UserPreference? = nil
     init() {
-        userPreferenceViewModel.observeUserPreference { [weak self]  newPreference in
-                    DispatchQueue.main.async {
+        userPreferenceViewModel.observeUserPreference { [weak self]  newPreference in DispatchQueue.main.async {
                       self?.userPreference = newPreference
                     }
                 }
@@ -16,18 +15,19 @@ class  UserPreferenceWrapper : ObservableObject {
 
 
 struct AppView : View {
-    @EnvironmentObject var router : Router
+    @Environment(Router.self) var router : Router
     @Environment(\.dismiss) var dismiss
-    @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
+//    @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
     var body: some View {
-        LoginView()
-            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
-                        if isAuthenticated == true {
-                            dismiss()
-                            print("User is authenticated")
-                            router.navigate(to: .Home)
-                        }
-                    }
+        NotesView()
+      //  LoginView()
+//            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
+//                        if isAuthenticated == true {
+//                            dismiss()
+//                            print("User is authenticated")
+//                            router.navigate(to: .Home)
+//                        }
+//                    }
     }
 }
 

@@ -47,7 +47,6 @@ dependencies {
         }
     }
     implementation(projects.shared)
-//    implementation(projects.camerax)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.compose.ui)
     implementation(libs.coil.svg)

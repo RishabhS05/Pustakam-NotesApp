@@ -3,9 +3,12 @@ import SwiftUI
 
 @main
 struct iOSApp: App {
+    @State var themeManager = ThemeManager()
+    @State var router = Router()
     
-
-    @ObservedObject var router = Router()
+    init(){
+        KoinKt.doInitKoin(appDeclaration: {_ in})
+    }
     var body: some Scene {
        
         WindowGroup {
@@ -26,15 +29,19 @@ struct iOSApp: App {
                             default: LoginView()
                         }
                     }
-            }.environmentObject(router)
+            }.environment(router)
+                .environment(themeManager)
+                .preferredColorScheme(themeManager.getTheme())
         }
 	}
 }
 
 class AppDelegate: UIResponder, UIApplicationDelegate {
+   
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization
         KoinKt.doInitKoin(appDeclaration: {_ in})
         return true
     }
+
 }

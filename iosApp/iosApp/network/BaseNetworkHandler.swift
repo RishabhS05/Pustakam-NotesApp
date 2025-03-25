@@ -1,7 +1,6 @@
 //
 //  BaseNetworkHandler.swift
 //  iosApp
-//
 //  Created by Rishabh Shrivastava on 09/10/24.
 //  Copyright © 2024 orgName. All rights reserved.
 //
@@ -16,7 +15,9 @@ struct BaseResult<T> {
 }
 
 protocol IBaseHandler {
-    var base: BaseRepository { get set }
+    var baseRepositary: BaseRepository { get set }
+    var noteRepositary: NoteRepository { get set }
+    var noteContentRepository: NoteContentRepository { get set }
 }
 extension IBaseHandler {
     

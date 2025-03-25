@@ -1,7 +1,7 @@
 import SwiftUI
 import shared
 
-class LoginHandler : BaseHandler {
+class LoginHandler : BaseViewModel {
     
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
@@ -11,7 +11,7 @@ class LoginHandler : BaseHandler {
     func loginWithEmail(login :Login) async ->
     BaseResult<BaseResponse<User>?>  {
         return await apiHandler(apiCall: {
-            try await base.loginUser(login: login)
+            try await baseRepositary.loginUser(login: login)
         })
     }
 }
@@ -29,7 +29,7 @@ struct LoginView: View {
         case email, password
     }
     @FocusState private var focusedField: Fields?
-    @EnvironmentObject var router: Router
+    @Environment(Router.self) var router: Router
     var body: some View {
         ZStack(alignment: .center){
             VStack{

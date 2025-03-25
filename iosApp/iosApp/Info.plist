@@ -18,8 +18,20 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>LSApplicationCategoryType</key>
+	<string></string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera for capturing photos.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>We need access to your location to provide location-based services.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone for recording audio.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need access to save photos to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to select photos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -46,15 +58,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>We need access to your microphone for recording audio.</string>
-	<key>NSLocationUsageDescription</key>
-	<string>We need access to your location to provide location-based services.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to select photos.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera for capturing photos.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We need access to save photos to your photo library.</string>
 </dict>
 </plist>

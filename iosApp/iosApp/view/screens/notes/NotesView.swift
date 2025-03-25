@@ -1,30 +1,21 @@
 import SwiftUI
 import shared
 
-class NotesHandler : BaseHandler, ObservableObject {
+
+class NotesHandler : BaseViewModel, ObservableObject {
+    
     @Published var page: Int = 1
     @Published var notes = [Note]()
     @Published var isLoading : Bool = false
     func clear(){
         self.page = 1
     }
-    func getNotes(){
-        let notesList : Notes? = base.getNotes()
-        notes.removeAll()
-        if notesList != nil && notesList?.notes != nil && notesList?.notes != [] {
-            notesList!.notes!.forEach{ note in
-                self.notes.append(note as! Note)
-            }
-        } else {
-            getNotesCall()
-        }
-    }
     func getNotesCall() {
         Task {
             DispatchQueue.main.async { self.isLoading = true }
             let response = await apiHandler(
                 apiCall: {
-                    try await base.getNotesForUser(
+                    try await noteRepositary.getAllNotes(
                         page: Int32(page)
                     )
                 })
@@ -33,7 +24,7 @@ class NotesHandler : BaseHandler, ObservableObject {
                 self.isLoading = false
                 if response.isSuccessful {
                     let data =  response.data as! BaseResponse<Notes>
-                    data.data?.notes?
+                    data.data?.notes
                         .forEach{note in
                             print(note)
                             self.notes.append(note as! Note)
@@ -48,19 +39,19 @@ class NotesHandler : BaseHandler, ObservableObject {
 }
 struct NotesView: View {
     @StateObject private var notesHandler = NotesHandler()
-    @EnvironmentObject var router: Router
+    @Environment(Router.self) var router: Router
     var body: some View {
         ZStack{
             VStack {
                 StaggeredGrid(columns: 2, items: notesHandler.notes, spacing:8) {
-                            note in NoteView(note: note){
+                            note in NoteBookView(note: note){
                                 router.navigate(to: .NoteEditor(note: note))
                             }
                         }
             }.padding(.trailing,12)
             .navigationBarBackButtonHidden().padding(8)
             .onAppear {
-                notesHandler.getNotes()
+                notesHandler.getNotesCall()
             }.onDisappear{
                 notesHandler.isLoading = false
             }

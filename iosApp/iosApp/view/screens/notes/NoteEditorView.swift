@@ -1,34 +1,27 @@
 import SwiftUI
 import shared
 
-class NoteEditorHandler: BaseHandler, ObservableObject {
-    private func createNoteCall(noteRequest: NoteRequest) async -> BaseResult<BaseResponse<Note>?> {
+class NoteEditorHandler: BaseViewModel, ObservableObject {
+    private func createNoteCall(note: Note) async -> BaseResult<BaseResponse<Note>?> {
         return await apiHandler(apiCall: {
-            try await base.addNewNote(note: noteRequest)
+            try await noteRepositary.insertOrUpdateNote(note : note)
         })
     }
-
-    private func updateNoteCall(oldNote: Note, updatedNoteRequest: NoteRequest) async -> BaseResult<BaseResponse<Note>?> {
-        return await apiHandler(apiCall: { try await base.updateNote(note: updatedNoteRequest) })
-    }
-        // making decision call update or create api
-    func createOrUpdate(noteRequest: NoteRequest, note: Note? = nil) async -> BaseResult<BaseResponse<Note>?>? {
-        guard noteRequest.title.isNotNilOrEmpty() && noteRequest.description_.isNotNilOrEmpty() else { return nil }
-        if !noteRequest._id.isNotNilOrEmpty() {
-            return await createNoteCall(noteRequest: noteRequest)
-        } else {
-            guard let note, FieldValidationKt.checkAnyUpdateOnNote(new: noteRequest, old: note) else { return nil }
-
-            return await updateNoteCall(oldNote: note, updatedNoteRequest: noteRequest)
-        }
-    }
-
     func deleteNoteCall(noteId: String) async -> BaseResult<BaseResponse<DeleteDataModel>?> {
-        return await apiHandler(apiCall: { try await base.deleteNote(noteId: noteId) })
+        return await apiHandler(apiCall: { try await noteRepositary.deleteNote(id: noteId) })
     }
 }
+
+
+
+
+
+
+
+
+
 struct NoteEditorView: View {
-    @EnvironmentObject var router: Router
+    @Environment(Router.self) var router: Router
     @Environment(\.dismiss) private var dismiss
     private var noteEditorHandler = NoteEditorHandler()
     @State private var showRecorder = false
@@ -87,8 +80,6 @@ struct NoteEditorView: View {
             }
             OverlayEditorButtons(
                 showDelete: note != nil,
-                onSave: { callCreateOrUpdate(action: {}) },
-                onSaveAs: { print("Save As action") },
                 onRecordVideo: {
                     guard cameraPermission.checkCameraPermission() else {
                         setAlert(title: "Camera Permission Required")
@@ -106,9 +97,6 @@ struct NoteEditorView: View {
                         return
                     }
                     showRecorder = true
-                },
-                onDelete: {
-                    setAlert(message: "Do you want to delete this note? This action cannot be undone.", title: "Warning deleting note confirmation")
                 },
                 onArrowButton: {}
             )
@@ -130,7 +118,7 @@ struct NoteEditorView: View {
                     })
                 }
             }.onDisappear {
-                callCreateOrUpdate(action: {})
+//                callCreateOrUpdate(action: {})
             }
     }
 
@@ -151,20 +139,6 @@ struct NoteEditorView: View {
         }
     }
 
-    private func callCreateOrUpdate(action: @escaping () -> Void) {
-        let noteRequest = NoteRequest(title: self.title, description: self.noteContent, _id: note?._id ?? "")
-        Task {
-            isLoading = true
-            let apiResponse = await noteEditorHandler.createOrUpdate(noteRequest: noteRequest, note: self.note)
-            isLoading = false
-            if apiResponse?.error != nil {
-                errorField.errorMessage = (apiResponse?.error as! NetworkError).getError()
-                errorField.showErrorAlert = apiResponse?.isSuccessful == false
-            }
-            action()
-        }
-    }
-
         // Alert
     func throwAlert() -> Alert {
         switch errorField.errorMessageTitle {
@@ -176,7 +150,7 @@ struct NoteEditorView: View {
                     secondaryButton: Alert.Button.default(
                         Text("Confirm"),
                         action: {
-                            callDelete(noteId: note?._id)
+                            callDelete(noteId: note?.id)
                             resetAlert()
                         }))
             case "Camera Permission Required": return cameraPermission.showAlert { resetAlert() }

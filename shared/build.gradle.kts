@@ -63,7 +63,7 @@ kotlin {
 
 android {
     namespace = "com.app.pustakam"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig {
         minSdk = 24
     }

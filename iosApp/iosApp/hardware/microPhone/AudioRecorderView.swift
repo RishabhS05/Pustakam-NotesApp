@@ -290,7 +290,6 @@ struct PulseShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let midY = rect.midY
-        let pulseWidth: CGFloat = 5 // Width of each pulse
         let pulseSpacing: CGFloat = 10 // Space between pulses
         for x in stride(from: 0, to: rect.width, by: pulseSpacing) {
             let normalizedX = x / rect.width

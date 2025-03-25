@@ -6,4 +6,4 @@
 //  Copyright © 2024 orgName. All rights reserved.
 //
 import shared
-extension Note : Identifiable{}
+extension Note : @retroactive Identifiable{}

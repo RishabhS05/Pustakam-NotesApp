@@ -26,10 +26,12 @@
 		63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */; };
 		63682AB22CE9337400425C35 /* Note.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AB12CE9336500425C35 /* Note.ext.swift */; };
 		639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEF42CDC7B6B00E0E00D /* LoadingUI.swift */; };
-		639BBEF72CDCA68400E0E00D /* NoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEF62CDCA67D00E0E00D /* NoteView.swift */; };
+		639BBEF72CDCA68400E0E00D /* NoteBookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEF62CDCA67D00E0E00D /* NoteBookView.swift */; };
 		639BBEF92CDCB2C100E0E00D /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEF82CDCB2AF00E0E00D /* NoteEditorView.swift */; };
 		639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEFB2CDD4A9B00E0E00D /* View.ext.swift */; };
-		63C00BE12CEB661900A4907C /* BaseHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE02CEB661100A4907C /* BaseHandler.swift */; };
+		63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A552972D91949300A9C006 /* ThemeManager.swift */; };
+		63A5529B2D91949300A9C006 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A552982D91949300A9C006 /* Theme.swift */; };
+		63C00BE12CEB661900A4907C /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE02CEB661100A4907C /* BaseViewModel.swift */; };
 		63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE22CEC839E00A4907C /* Any.ext.swift */; };
 		63C00BE62CEC925900A4907C /* BackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE52CEC925300A4907C /* BackButton.swift */; };
 		63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE82CEC942500A4907C /* RulledPage.swift */; };
@@ -83,10 +85,12 @@
 		63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaggeredGrid.swift; sourceTree = "<group>"; };
 		63682AB12CE9336500425C35 /* Note.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.ext.swift; sourceTree = "<group>"; };
 		639BBEF42CDC7B6B00E0E00D /* LoadingUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingUI.swift; sourceTree = "<group>"; };
-		639BBEF62CDCA67D00E0E00D /* NoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteView.swift; sourceTree = "<group>"; };
+		639BBEF62CDCA67D00E0E00D /* NoteBookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteBookView.swift; sourceTree = "<group>"; };
 		639BBEF82CDCB2AF00E0E00D /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
 		639BBEFB2CDD4A9B00E0E00D /* View.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = View.ext.swift; sourceTree = "<group>"; };
-		63C00BE02CEB661100A4907C /* BaseHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseHandler.swift; sourceTree = "<group>"; };
+		63A552972D91949300A9C006 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		63A552982D91949300A9C006 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		63C00BE02CEB661100A4907C /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		63C00BE22CEC839E00A4907C /* Any.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Any.ext.swift; sourceTree = "<group>"; };
 		63C00BE52CEC925300A4907C /* BackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackButton.swift; sourceTree = "<group>"; };
 		63C00BE82CEC942500A4907C /* RulledPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulledPage.swift; sourceTree = "<group>"; };
@@ -168,7 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				639BBEF82CDCB2AF00E0E00D /* NoteEditorView.swift */,
-				639BBEF62CDCA67D00E0E00D /* NoteView.swift */,
+				639BBEF62CDCA67D00E0E00D /* NoteBookView.swift */,
 				63D089282CAEADA5008FD8CC /* NotesView.swift */,
 			);
 			path = notes;
@@ -223,10 +227,19 @@
 			path = extensions;
 			sourceTree = "<group>";
 		};
+		63A552992D91949300A9C006 /* theme */ = {
+			isa = PBXGroup;
+			children = (
+				63A552972D91949300A9C006 /* ThemeManager.swift */,
+				63A552982D91949300A9C006 /* Theme.swift */,
+			);
+			path = theme;
+			sourceTree = "<group>";
+		};
 		63C00BDF2CEB660800A4907C /* base */ = {
 			isa = PBXGroup;
 			children = (
-				63C00BE02CEB661100A4907C /* BaseHandler.swift */,
+				63C00BE02CEB661100A4907C /* BaseViewModel.swift */,
 			);
 			path = base;
 			sourceTree = "<group>";
@@ -373,6 +386,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				63A552992D91949300A9C006 /* theme */,
 				6345BFAF2CEF357800CC254C /* hardware */,
 				639BBEFA2CDD4A9100E0E00D /* extensions */,
 				63DE80E12CB6ADA900626E49 /* network */,
@@ -413,8 +427,9 @@
 		7555FF73242A565900829871 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1130;
-				LastUpgradeCheck = 1130;
+				LastUpgradeCheck = 1620;
 				ORGANIZATIONNAME = orgName;
 				TargetAttributes = {
 					7555FF7A242A565900829871 = {
@@ -492,9 +507,11 @@
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
+				63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */,
+				63A5529B2D91949300A9C006 /* Theme.swift in Sources */,
 				63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */,
 				63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */,
-				63C00BE12CEB661900A4907C /* BaseHandler.swift in Sources */,
+				63C00BE12CEB661900A4907C /* BaseViewModel.swift in Sources */,
 				63C00BEF2CECC6FF00A4907C /* ActionButton.swift in Sources */,
 				63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */,
 				63C00BED2CECC51900A4907C /* OverlayEditorButtons.swift in Sources */,
@@ -510,7 +527,7 @@
 				63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */,
 				630BA1992CF50F8C00D148C8 /* AudioVisualizerView.swift in Sources */,
 				630BA1852CF23E0700D148C8 /* AudioRecoderHandler.swift in Sources */,
-				639BBEF72CDCA68400E0E00D /* NoteView.swift in Sources */,
+				639BBEF72CDCA68400E0E00D /* NoteBookView.swift in Sources */,
 				6345BFBB2CEF6CB500CC254C /* HardwareManager.swift in Sources */,
 				63FD32AB2CBEAEC50047ED10 /* NotificationView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
@@ -561,6 +578,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -576,7 +594,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pustakm;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -584,7 +602,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = "";
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Debug;
 		};
@@ -626,6 +645,8 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -635,14 +656,14 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pustakm;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = "";
+				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -660,7 +681,7 @@
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pustakm;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				"LD_CLIENT_NAME[arch=*]" = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -692,7 +713,7 @@
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pustakm;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

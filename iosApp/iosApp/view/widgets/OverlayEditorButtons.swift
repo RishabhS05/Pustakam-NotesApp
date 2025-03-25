@@ -11,13 +11,11 @@ struct OverlayEditorButtons : View {
     @State private var showArrow: Bool = false
     @State private var offset: CGFloat = 0 // Animatable offset
     var showDelete: Bool = false
-    var onSave: () -> Void = {}
-    var onSaveAs: () -> Void = {}
     var onRecordVideo: () -> Void = {}
     var onAddImage: () -> Void = {}
     var onShare: () -> Void = {}
     var onRecordMic: () -> Void = {}
-    var onDelete: () -> Void = {}
+
     var onArrowButton: () -> Void = {}
     var body: some View {
         VStack(alignment: .center) {
@@ -35,14 +33,7 @@ struct OverlayEditorButtons : View {
                           onArrowButton()
                           onRecordVideo()
                       })
-                      ActionButton(iconName: "square.and.arrow.down.fill", action: {
-                          onArrowButton()
-                          onSave()
-                      })
-                      ActionButton(iconName: "square.and.arrow.down.on.square.fill", action: {
-                          onArrowButton()
-                          onSaveAs()
-                      })
+            
                       ActionButton(iconName: "square.and.arrow.up", action: {
                           onArrowButton()
                           onShare()
@@ -54,7 +45,7 @@ struct OverlayEditorButtons : View {
                       if showDelete {
                           ActionButton(iconName: "trash.fill", action: {
                               onArrowButton()
-                              onDelete()
+//                              onDelete()
                           }, tint: Color.red)
                       }
                   }
