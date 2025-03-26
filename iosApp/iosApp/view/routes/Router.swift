@@ -8,8 +8,9 @@
 
 import SwiftUI
 import shared
-final class Router: Observable {
-    @Published var navPath = NavigationPath()
+@Observable final class Router{
+    
+    var navPath = NavigationPath()
     public enum Destination : Hashable {
         case Login
         case Signup

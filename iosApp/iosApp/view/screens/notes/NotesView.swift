@@ -2,7 +2,7 @@ import SwiftUI
 import shared
 
 
-class NotesHandler : BaseViewModel, ObservableObject {
+class NotesViewModel : BaseViewModel, ObservableObject {
     
     @Published var page: Int = 1
     @Published var notes = [Note]()
@@ -38,12 +38,12 @@ class NotesHandler : BaseViewModel, ObservableObject {
     }
 }
 struct NotesView: View {
-    @StateObject private var notesHandler = NotesHandler()
+    @StateObject private var notesViewModel = NotesViewModel()
     @Environment(Router.self) var router: Router
     var body: some View {
         ZStack{
             VStack {
-                StaggeredGrid(columns: 2, items: notesHandler.notes, spacing:8) {
+                StaggeredGrid(columns: 2, items: notesViewModel.notes, spacing:8) {
                             note in NoteBookView(note: note){
                                 router.navigate(to: .NoteEditor(note: note))
                             }
@@ -51,11 +51,11 @@ struct NotesView: View {
             }.padding(.trailing,12)
             .navigationBarBackButtonHidden().padding(8)
             .onAppear {
-                notesHandler.getNotesCall()
+                notesViewModel.getNotesCall()
             }.onDisappear{
-                notesHandler.isLoading = false
+                notesViewModel.isLoading = false
             }
-            if notesHandler.isLoading {
+            if notesViewModel.isLoading {
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }

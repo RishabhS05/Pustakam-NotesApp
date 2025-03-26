@@ -17,17 +17,17 @@ class  UserPreferenceWrapper : ObservableObject {
 struct AppView : View {
     @Environment(Router.self) var router : Router
     @Environment(\.dismiss) var dismiss
-//    @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
+    @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
     var body: some View {
-        NotesView()
-      //  LoginView()
-//            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
-//                        if isAuthenticated == true {
-//                            dismiss()
-//                            print("User is authenticated")
-//                            router.navigate(to: .Home)
-//                        }
-//                    }
+//        HomeView()
+     LoginView()
+            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
+                        if isAuthenticated == true {
+                            dismiss()
+                            print("User is authenticated")
+                            router.navigate(to: .Home)
+                        }
+                    }
     }
 }
 

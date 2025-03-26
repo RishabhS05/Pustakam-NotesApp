@@ -3,8 +3,8 @@ import SwiftUI
 
 @main
 struct iOSApp: App {
-    @State var themeManager = ThemeManager()
-    @State var router = Router()
+   @State var themeManager = ThemeManager()
+  @State var router = Router()
     
     init(){
         KoinKt.doInitKoin(appDeclaration: {_ in})
