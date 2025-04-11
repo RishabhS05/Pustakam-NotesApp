@@ -13,8 +13,23 @@ struct NoteTextEditor: View {
     var placeholder: String = ""
     @State var leftpadding: CGFloat = 10
     @State var fontSize: CGFloat = 16
+    @State var isRulledEnabled: Bool = false
+    let lineColor = Color.gray.opacity(0.5)
+    let marginColor = Color.red
+    let lineSpacing: CGFloat = 28
     var body: some View {
         ZStack(alignment: .topLeading){
+            if isRulledEnabled {
+                RulledPage(
+                    lineColor: lineColor,
+                    marginColor:
+                        marginColor, fontSize: fontSize,
+                    lineSpacing: lineSpacing,
+                    leftpadding: leftpadding
+                )
+                .background(Color.white)
+                .ignoresSafeArea()
+            }
             if text.isEmpty {
                 Text(placeholder)
                     .padding(.leading, leftpadding)

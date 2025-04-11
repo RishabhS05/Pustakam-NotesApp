@@ -6,14 +6,12 @@
     //  Copyright © 2024 orgName. All rights reserved.
     //
 import SwiftUI
-
-import SwiftUI
 import AVFoundation
 
 struct AudioRecorderView : View {
+    private var path = ""
     @StateObject private var audioRecorder = AudioRecorder()
     @StateObject private var audioLevelsMonitor = AudioLevelsMonitor()
-    
     @State private var elapsedTime: TimeInterval = 0.0
     @State private var timer: Timer? = nil
     @State private var showRenameSheet = false
@@ -22,32 +20,27 @@ struct AudioRecorderView : View {
     
     let onDismiss: (() -> Void) = { }
     var body: some View {
-        ZStack {
-                // Background gradient
-            LinearGradient(gradient: Gradient(colors: [Color.green.opacity(0.6), Color.red.opacity(0.6)]),
-                           startPoint: .top,
-                           endPoint: .bottom)
-            .edgesIgnoringSafeArea(.all)
-            
-            VStack(spacing: 40) {
+            HStack(spacing: 8) {
+                Image(systemName: "microphone.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .padding(8)
+                    .background(Color.red)
+                    .clipShape(Circle())
+                    .foregroundColor(.white)
+                
                     // Timer Display
                 Text(String(format: "%02d : %02d . %02d",
                             Int(elapsedTime / 60),
                             Int(elapsedTime.truncatingRemainder(dividingBy: 60)),
                             Int((elapsedTime * 100).truncatingRemainder(dividingBy: 100))))
-                .font(.largeTitle.monospacedDigit())
-                .foregroundColor(.white)
+                .font(.headline.monospacedDigit())
+                .foregroundColor(.brown)
                     // Real-time Wave Animation
                 AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
-                .frame(height: 150)
+                .frame(height: 30)
                 .padding()
-                .background(LinearGradient(colors: [Color.green.opacity(0.4), Color.red.opacity(0.3)], startPoint: .top, endPoint: .bottom))
-                .cornerRadius(20)
-                .frame(height: 100)
-                
-                    
-                // Record Button
-                HStack {
                         // Play Button
                     Button(action: {
                         if !audioRecorder.isPlaying {
@@ -57,14 +50,12 @@ struct AudioRecorderView : View {
                         Image(systemName: audioRecorder.isPlaying ? "pause.fill" : "play.fill")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 50, height: 50)
-                            .padding()
-                            .background(Color.blue)
-                            .clipShape(Circle())
-                            .foregroundColor(.white)
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(.brown)
                     }
-                    .disabled(audioRecorder.audioFileURL == nil) // Disable if there's no recorded file
-                    
+                    .disabled(audioRecorder.audioFileURL == nil)
+                    .padding(8)
+                    // Disable if there's no recorded file
                         // Stop Playback Button
                     Button(action: {
                         if audioRecorder.isRecording {
@@ -73,35 +64,19 @@ struct AudioRecorderView : View {
                            startRecording()
                         }
                     }) {
-                        Image(systemName: audioRecorder.isRecording  ? "stop.fill" : "mic.fill")
+                        Image(systemName: audioRecorder.isRecording ?  "stop.fill" : "pause.fill")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 70, height: 70)
-                            .padding()
-                            .background(audioRecorder.isRecording  ? Color.red : Color.green)
-                            .clipShape(Circle())
-                            .foregroundColor(.white)
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(.brown)
                     }
-                    
-                    Button(action: {
-                        if audioRecorder.isPlaying  {
-                            stopPlayback()
-                        }
-                    }) {
-                        Image(systemName: "stop.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 50, height: 50)
-                            .padding()
-                            .background(Color.orange)
-                            .clipShape(Circle())
-                            .foregroundColor(.white)
-                    }
-                    .disabled(!audioRecorder.isPlaying)
                 }
-            }
-        }
-        
+            .frame(height: 40)
+            .padding(8)
+            .background(Theme.Colors.onSurface)
+            .cornerRadius(12)
+            .shadow(radius: 12)
+            .padding(8)
         .sheet(isPresented: $showRenameSheet) {
             RenameSheetView(fileName: $fileName, tempFileName: $tempFileName,
                             showRenameSheet: $showRenameSheet, audioRecorder: audioRecorder)
@@ -112,11 +87,13 @@ struct AudioRecorderView : View {
     }
         // Start Recording Function
     private func startRecording() {
+        audioRecorder.setPath(value: path)
         audioRecorder.startRecording()
         audioRecorder.isRecording  = true
         audioLevelsMonitor.startLevelsMonitoring()
         startTimer()
     }
+    
         // Stop Recording Function
     private func stopRecording() {
         audioRecorder.stopRecording()
@@ -151,7 +128,9 @@ struct AudioRecorderView : View {
     }
 }
 
-
+#Preview{
+    AudioRecorderView()
+}
     // Rename Sheet View
 struct RenameSheetView: View {
     @Binding var fileName: String

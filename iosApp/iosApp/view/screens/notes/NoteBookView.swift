@@ -8,12 +8,14 @@ struct NoteBookView : View {
         GeometryReader{ geo in
             let width = geo.size.width
             let height = geo.size.height
-            ZStack(){
-                Rectangle()
-                    .foregroundColor(Theme.Colors.primary)
-                    .frame(width: 20, height: height)
-                    .position(x: 0, y: 0)
-                VStack(spacing : 12){
+            ZStack{
+                HStack(){
+                    Rectangle()
+                        .foregroundColor(Theme.Colors.primary)
+                        .frame(width: 10)
+                    Spacer()
+                }
+                VStack{
                     Text(note.title ?? "No Title ?")
                         .font(.system(size: 18, weight: .bold))
                         .lineLimit(5)
@@ -22,19 +24,20 @@ struct NoteBookView : View {
                 }
                 .frame(maxWidth:width , maxHeight: height, alignment: .topLeading).padding(.horizontal,20)
                     .padding(.vertical,35)
-                Text("\(note.updatedAt ?? "")")
-                    .font(.system(size: 14, weight: .regular))
-                    .padding(4)
-                    .background(.gray.gradient)
-                    .cornerRadius(4)
-                    .foregroundColor(Theme.Colors.onSurface)
-                    .frame(maxWidth:width ,
-                           maxHeight: height,
-                           alignment: .topTrailing)
-            }.frame(maxWidth: width - 24,maxHeight : 250, alignment: .top)
-                .background(.orange.opacity(0.3))
+                HStack{
+                    Spacer()
+                    Text("\(note.updatedAt?.toLocalFormat(showTime: false) ?? "")")
+                        .font(.system(size: 14, weight: .regular))
+                        .background(.gray.gradient)
+                        .cornerRadius(4)
+                        .foregroundColor(Theme.Colors.onSurface)
+                }
+                .frame(width :width,
+                        height : height,
+                        alignment: .topTrailing)
+            }
+        .background(.orange.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-                .padding()
                 .onTapGesture {
                     onClick()
                 }

@@ -8,6 +8,7 @@ import com.app.pustakam.data.models.response.notes.Notes
 
 import com.app.pustakam.domain.repositories.base.BaseRepository
 import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.koinDI.provideDispatcher
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -16,16 +17,26 @@ import com.app.pustakam.util.getCurrentTimestamp
 import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 class NoteRepository(private val userPreference: IAppPreferences) : BaseRepository(userPreference),
     IRemoteNoteRepository, ILocalNotesRepository {
         private val _notes= MutableStateFlow(Notes())
-       val notesState = _notes.asStateFlow()
+       val notesState = _notes.stateIn(scope = CoroutineScope(provideDispatcher().io),
+           initialValue = Notes(),
+           started =  SharingStarted.WhileSubscribed())
+
+    /** create an blank note
+     */
+    private fun createNewEmptyNote(): Note {
+        val date = getCurrentTimestamp().toString()
+        val id = UniqueIdGenerator.generateUniqueId()
+        return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
+    }
     fun insertNotes(notes : Notes){
         _notes.update {
             val list : ArrayList<Note> = arrayListOf()
@@ -126,7 +137,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
         notesDao.deleteNoteContentById(id!!)
         return Result.Success(BaseResponse(data = true, isSuccessful = true))
     }
-
+/**---------CRUD LOGIC METHODS --------------*/
     /** methods for decision logic
      * - call local db methods or
      * - call api for server
@@ -142,6 +153,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     suspend fun insertOrUpdateNote(note : Note) : Result<BaseResponse<Note?>, Error> {
         val existingNote =  notesDao.selectNoteById(note.id!!)
         return insertUpdateFromDb(note).onSuccess {
+            log_d("Insert Update","")
             _notes.update { notes->
                 val index = notes.notes.indexOfFirst {n -> note.id == n.id  }
                 if(index!= -1) notes.notes.set(index,note) else
@@ -198,11 +210,5 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
 //            getNotesForUserApi(page)
         }
     }
-    /** create an blank note
-     */
-    private fun createNewEmptyNote(): Note {
-        val date = getCurrentTimestamp().toString()
-        val id = UniqueIdGenerator.generateUniqueId()
-        return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
-    }
+
 }

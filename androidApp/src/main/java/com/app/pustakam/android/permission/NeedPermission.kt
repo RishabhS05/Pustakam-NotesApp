@@ -16,21 +16,18 @@ enum class NeededPermission(
         description = "This permission is needed to get your approximate location. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
     ),
-
     READ_CALENDAR(
         permission = Manifest.permission.READ_CALENDAR,
         title = "Read Calendar Permission",
         description = "This permission is needed to read your calendar. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to read your calendar. Please grant the permission in app settings.",
     ),
-
     READ_CONTACTS(
         permission = Manifest.permission.READ_CONTACTS,
         title = "Read Contacts Permission",
         description = "This permission is needed to read your contacts. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to read your contacts. Please grant the permission in app settings.",
     ),
-
     RECORD_AUDIO(
         permission = Manifest.permission.RECORD_AUDIO,
         title = "Record Audio permission",

@@ -11,6 +11,8 @@ class AudioRecorder(
     private val context: Context
 ) : IAudioRecorder {
     private var recorder: MediaRecorder? = null
+
+
     override fun start(outputFile: File) {
         if (recorder.isNotnull()) return
         else createRecorder().apply {
@@ -36,6 +38,10 @@ class AudioRecorder(
 
     override fun resume() {
         recorder?.resume()
+    }
+
+    override fun getRecorder(): MediaRecorder? {
+        return recorder
     }
 
 

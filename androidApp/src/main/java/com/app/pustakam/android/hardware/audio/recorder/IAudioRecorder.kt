@@ -1,5 +1,6 @@
 package com.app.pustakam.android.hardware.audio.recorder
 
+import android.media.MediaRecorder
 import java.io.File
 
 interface IAudioRecorder {
@@ -7,4 +8,5 @@ interface IAudioRecorder {
     fun stop()
     fun pause()
     fun resume()
+    fun getRecorder() : MediaRecorder?
 }

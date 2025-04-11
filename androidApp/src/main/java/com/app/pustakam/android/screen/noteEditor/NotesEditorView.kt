@@ -193,7 +193,7 @@ fun NoteEditorScreen(
                     noteEditorViewModel.addNewText()
                 },
                 onArrowButton = { focusManager.clearFocus() },
-                onRecordMic = {
+                onRecordMic = { 
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.AUDIO)
                 },
                 onCameraAction = {

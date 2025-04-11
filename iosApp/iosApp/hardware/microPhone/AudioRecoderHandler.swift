@@ -10,14 +10,14 @@ class AudioRecorder: ObservableObject {
     private var audioRecorder: AVAudioRecorder?
     private var audioPlayer: AVAudioPlayer?
     var fileName = ""
-    
     private var timer: Timer?
-    
+    func setPath(value: String){
+        fileName = value
+    }
     /// Start Recording
     func startRecording() {
         let session = AVAudioSession.sharedInstance()
         do {
-            fileName = "\(Date().toString(dateFormat: "dd-MM-YYYY-HH:mm:ss")).m4a"
             try session.setCategory(.playAndRecord, mode: .default,options: [.defaultToSpeaker])
             try session.setActive(true)
             let tempDir = FileManager.default.temporaryDirectory
@@ -32,6 +32,7 @@ class AudioRecorder: ObservableObject {
             audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
             audioRecorder?.record()
             audioRecorder?.isMeteringEnabled = true
+            audioFileURL = audioRecorder?.url
             isRecording = true
             startTimerMonitoring()
         } catch {
@@ -42,7 +43,7 @@ class AudioRecorder: ObservableObject {
     /// Stop Recording
     func stopRecording() {
         audioRecorder?.stop()
-        audioFileURL = audioRecorder?.url
+//        audioFileURL = audioRecorder?.url
         audioRecorder = nil
         isRecording = false
         stopTimerMonitoring()
@@ -58,7 +59,7 @@ class AudioRecorder: ObservableObject {
         let newFileURL = documentsDir.appendingPathComponent(name)
         
         do {
-            
+    
             try FileManager.default.moveItem(at: originalURL, to: newFileURL)
             audioFileURL = newFileURL
             print(audioFileURL ?? "")

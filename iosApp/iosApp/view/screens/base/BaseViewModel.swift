@@ -20,4 +20,5 @@ class BaseViewModel  : IBaseHandler {
         self.noteRepositary = KoinHelper().getNoteRepository()
         self.noteContentRepository = KoinHelper().getNoteContentRepository()
     }
+    
 }

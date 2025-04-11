@@ -6,14 +6,16 @@ import com.app.pustakam.data.models.response.notes.NoteContentModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.koin.core.component.KoinComponent
 
 class NoteContentRepository  : KoinComponent{
-    private val _selectedNote = MutableStateFlow<List<NoteContentModel.MediaContent>>(
+    private val _selectedNote =
+        MutableStateFlow<List<NoteContentModel.MediaContent>>(
         value = mutableListOf()
     )
-    val selectedNote: SharedFlow<List<NoteContentModel.MediaContent>> = _selectedNote.asSharedFlow()
+    val selectedNote: SharedFlow<List<NoteContentModel.MediaContent>> = _selectedNote.asStateFlow()
     fun getIndexOfMedia(id : String ): Int{
         return _selectedNote.value.indexOfFirst { id == it.id }
     }

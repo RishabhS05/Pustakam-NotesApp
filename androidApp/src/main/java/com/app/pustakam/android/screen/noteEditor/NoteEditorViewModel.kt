@@ -2,7 +2,6 @@ package com.app.pustakam.android.screen.noteEditor
 
 import android.annotation.SuppressLint
 import android.content.Context
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.fileUtils.deleteFile
@@ -35,7 +34,6 @@ import com.app.pustakam.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
@@ -220,6 +218,19 @@ class NoteEditorViewModel : BaseViewModel() {
               updateContent(content =textContent)
           }
       }
+    fun updateContent(index: Int = -1, content: NoteContentModel) {
+        if(index== -1) {
+            addContentData(content)
+        }else{
+            _noteContentUiState.update {
+                it.contents[index] = content
+                it.note?.contents?.set(index, content)
+                it.copy(note = it.note,contents = it.contents, isAllSetupDone = true)
+            }
+        }
+        if (content.isPlayingMedia())
+            noteContentRepository.updateNoteContent(content as NoteContentModel.MediaContent)
+    }
     /**content logic
      * Add new content to the note content list
      * by selecting it type on the bases of user selection
@@ -243,19 +254,6 @@ class NoteEditorViewModel : BaseViewModel() {
 /**
  * Remove a note content for note
  * */
-    fun updateContent(index: Int = -1, content: NoteContentModel) {
-        if(index== -1) {
-            addContentData(content)
-        }else{
-        _noteContentUiState.update {
-            it.contents[index] = content
-            it.note?.contents?.set(index, content)
-            it.copy(note = it.note,contents = it.contents, isAllSetupDone = true)
-        }
-        }
-        if (content.isPlayingMedia())
-            noteContentRepository.updateNoteContent(content as NoteContentModel.MediaContent)
-    }
     fun removeContent(value: String) {
         val find = _noteContentUiState.value.note?.contents?.find { value == it.id }
 
@@ -275,6 +273,8 @@ class NoteEditorViewModel : BaseViewModel() {
         }
         showDeleteAlertBox(false, null)
     }
+
+
  /**
   * Share note with others
   */

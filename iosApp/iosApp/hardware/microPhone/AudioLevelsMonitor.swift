@@ -74,7 +74,6 @@ class AudioLevelsMonitor : ObservableObject {
                 guard let channelData = buffer.floatChannelData else {
                     return 0.0
                 }
-
                 // Create an array from the channel data
                 let frameCount = Int(buffer.frameLength)
                 let channelDataArray = Array(UnsafeBufferPointer(start: channelData.pointee, count: frameCount))

@@ -1,13 +1,19 @@
 package com.app.pustakam.android.hardware.audio.recorder
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.File
+import kotlin.math.abs
 
 data class AudioState(
     val file: File? = null,
@@ -29,6 +35,8 @@ class AudioViewModel : ViewModel(), KoinComponent {
     private val _audioState = MutableStateFlow(AudioState())
     val state = _audioState.asStateFlow()
     private val audioRecorder = get<IAudioRecorder>()
+    private val _audioLevels = MutableStateFlow<List<Float>>(emptyList())
+    val audioLevels: StateFlow<List<Float>> = _audioLevels.asStateFlow()
     fun updateContent(noteContentModel: NoteContentModel.MediaContent){
         _audioState.update { it.copy(noteContentModel = noteContentModel, audioLifecycle = AudioLifecycle.start) }
         handleIntent(AudioRecordingIntent.StartRecordingIntent)
@@ -48,10 +56,21 @@ class AudioViewModel : ViewModel(), KoinComponent {
         }
     }
 
+    suspend fun updateAudioLevels() {
+        while (true) {
+            val amplitude = audioRecorder.getRecorder()?.maxAmplitude ?: 0
+            val normalizedLevel = amplitude / 32768f  // Normalize (0 to 1)
+            _audioLevels.value = (_audioLevels.value + normalizedLevel).takeLast(50)  // Keep last 50 samples
+            delay(100)  // Update every 100ms
+        }
+    }
   private fun startRecording(filePath: String? = null) {
         val file = filePath?.let { File(it) }
         _audioState.update { it.copy(file = file, audioLifecycle = AudioLifecycle.start) }
-        with(audioRecorder) { file?.let { start(it) } }
+        with(audioRecorder) { file?.let {
+            start(it)
+            viewModelScope.launch { updateAudioLevels() }
+        } }
     }
 
   private fun stopRecording(duration: Long) {
@@ -67,6 +86,7 @@ class AudioViewModel : ViewModel(), KoinComponent {
     private fun resumeRecording() {
         audioRecorder.resume()
         _audioState.update { it.copy(audioLifecycle = AudioLifecycle.resume) }
+        viewModelScope.launch { updateAudioLevels() }
     }
 }
 

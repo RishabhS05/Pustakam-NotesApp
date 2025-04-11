@@ -11,11 +11,10 @@ struct OverlayEditorButtons : View {
     @State private var showArrow: Bool = false
     @State private var offset: CGFloat = 0 // Animatable offset
     var showDelete: Bool = false
-    var onRecordVideo: () -> Void = {}
-    var onAddImage: () -> Void = {}
+    var onMediaCapture: () -> Void = {}
     var onShare: () -> Void = {}
     var onRecordMic: () -> Void = {}
-
+    var onAddTextField : () -> Void = {}
     var onArrowButton: () -> Void = {}
     var body: some View {
         VStack(alignment: .center) {
@@ -25,18 +24,15 @@ struct OverlayEditorButtons : View {
                           onArrowButton()
                           onRecordMic()
                       })
-                      ActionButton(iconName: "photo.on.rectangle.angled", action: {
+                      ActionButton(iconName: "camera.circle", action: {
                           onArrowButton()
-                          onAddImage()
+                          onMediaCapture()
                       })
-                      ActionButton(iconName: "video.fill", action: {
+              
+
+                      ActionButton(iconName: "note.text.badge.plus", action: {
                           onArrowButton()
-                          onRecordVideo()
-                      })
-            
-                      ActionButton(iconName: "square.and.arrow.up", action: {
-                          onArrowButton()
-                          onShare()
+                          onAddTextField()
                       })
                       ActionButton(iconName: "square.and.arrow.up", action: {
                           onArrowButton()

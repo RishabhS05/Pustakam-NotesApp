@@ -1,10 +1,3 @@
-    //
-    //  Router.swift
-    //  iosApp
-    //
-    //  Created by Rishabh Shrivastava on 04/10/24.
-    //  Copyright © 2024 orgName. All rights reserved.
-    //
 
 import SwiftUI
 import shared

@@ -3,12 +3,10 @@ package com.app.pustakam.android.hardware.camera
 import android.graphics.Bitmap
 import androidx.camera.video.Recording
 import androidx.lifecycle.ViewModel
-import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.fileUtils.saveBitmapToFile
 import com.app.pustakam.android.fileUtils.toBitmap
 import com.app.pustakam.extensions.isUrl
 import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.getCurrentTimestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

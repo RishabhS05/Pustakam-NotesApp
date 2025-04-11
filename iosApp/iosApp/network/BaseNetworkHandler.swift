@@ -28,8 +28,9 @@ extension IBaseHandler {
         let response = try? await apiCall()
         if response is ResultSuccess<T> {
             let res = response as? ResultSuccess<T>
+            let data = res?.data as? BaseResponse<T>
             baseResult = BaseResult<T?>(
-                isSuccessful: true, data: res?.data, error: nil)
+                isSuccessful: true, data: data?.data, error: nil)
         }  else {
             let err = response as? ResultError<NetworkError>
             baseResult = BaseResult<T?>(
