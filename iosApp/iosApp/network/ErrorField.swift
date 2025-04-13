@@ -10,6 +10,7 @@ import Foundation
 
 struct ErrorField {
      var showErrorAlert : Bool = false
-    var errorMessage  : String  = ""
-    var errorMessageTitle  : String  = ""
+     var alertType : AlertUCPermission = AlertUCPermission.WARNING
+     var errorMessage  : String  = ""
+     var errorMessageTitle  : String  = ""
 }

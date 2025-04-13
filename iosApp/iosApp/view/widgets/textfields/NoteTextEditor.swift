@@ -8,6 +8,21 @@
 
 import SwiftUI
 
+
+struct NoteTextFieldWrapper : View {
+    @State var bodyText : String = ""
+    var onTextChange: (String) -> Void = {_ in  }
+    var body: some View{
+        NoteTextEditor(
+            text: $bodyText,
+           placeholder: "Keep your thoughts alive.",
+           fontSize: 16
+        ).frame(minHeight: 20, maxHeight: 100)
+            .onChange(of: bodyText){
+                onTextChange(bodyText)
+            }
+    }
+}
 struct NoteTextEditor: View {
     @Binding var text: String
     var placeholder: String = ""

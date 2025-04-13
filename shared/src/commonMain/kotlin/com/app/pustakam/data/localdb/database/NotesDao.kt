@@ -43,7 +43,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                       updatedAt = row.contentUpdatedAt,
                                   )
                               ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO  ->
-                                  NoteContentModel.MediaContent(
+                                  NoteContentModel.MediaContent(title = row.title?:"${row.type}-${row.position}",
                                   id = row.contentId,
                                   noteId = row.noteId,
                                   url = row.url!!,
@@ -211,6 +211,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
 
                             ContentType.IMAGE,ContentType.DOCX,
                             ContentType.VIDEO , ContentType.AUDIO -> NoteContentModel.MediaContent(
+                                title = row.title?:"${row.position}-${row.type}",
                                 id = row.contentId,
                                 noteId = row.noteId,
                                 url = row.url!!,

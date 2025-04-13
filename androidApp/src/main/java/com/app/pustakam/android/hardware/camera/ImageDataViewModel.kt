@@ -54,7 +54,8 @@ data class MediaFileStateHandler(
 
 class ImageDataViewModel : ViewModel(), KoinComponent {
 
-
+//TODO
+    //TODO remove path create MediaContent directly and add it in to the list as we have noteId here
     private val _paths =
         MutableStateFlow<List<Pair<String, ContentType>>>(emptyList())
     val paths =

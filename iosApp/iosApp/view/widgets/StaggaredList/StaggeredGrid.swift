@@ -30,7 +30,7 @@ struct StaggeredGrid<Content: View, T: Identifiable>: View {
                     }
                 }
             }
-        .frame(height: calculatedHeight()) // Important to fix layout!
+        .frame(minHeight: calculatedHeight()) // Important to fix layout!
         }
     }
    private func calculatedHeight() -> CGFloat {

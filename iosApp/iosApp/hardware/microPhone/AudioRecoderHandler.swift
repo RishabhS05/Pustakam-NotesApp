@@ -39,6 +39,14 @@ class AudioRecorder: ObservableObject {
             print("Failed to start recording: \(error)")
         }
     }
+    func  pauseRecording(){
+        audioRecorder?.pause()
+        isRecording = false
+    }
+    func resumeRecording(){
+        audioRecorder?.record()
+        isRecording = true
+    }
     
     /// Stop Recording
     func stopRecording() {

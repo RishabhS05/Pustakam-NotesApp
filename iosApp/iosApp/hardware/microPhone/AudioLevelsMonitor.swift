@@ -62,8 +62,7 @@ class AudioLevelsMonitor : ObservableObject {
             }
         }
         try? audioEngine.start()
-    }
-    
+    }    
     func stopLevelsMonitoring() {
         inputNode?.removeTap(onBus: 0)
         audioEngine.stop()

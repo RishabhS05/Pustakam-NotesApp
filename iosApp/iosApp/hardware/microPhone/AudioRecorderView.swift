@@ -17,7 +17,6 @@ struct AudioRecorderView : View {
     @State private var showRenameSheet = false
     @State private var fileName = ""
     @State private var tempFileName = ""
-    
     let onDismiss: (() -> Void) = { }
     var body: some View {
             HStack(spacing: 8) {
@@ -43,11 +42,13 @@ struct AudioRecorderView : View {
                 .padding()
                         // Play Button
                     Button(action: {
-                        if !audioRecorder.isPlaying {
-                            playRecording()
+                        if audioRecorder.isRecording {
+                            pauseRecording()
+                        } else {
+                            resumeRecording()
                         }
                     }) {
-                        Image(systemName: audioRecorder.isPlaying ? "pause.fill" : "play.fill")
+                        Image(systemName: audioRecorder.isRecording ? "pause.fill" : "play.fill")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 20, height: 20)
@@ -58,13 +59,9 @@ struct AudioRecorderView : View {
                     // Disable if there's no recorded file
                         // Stop Playback Button
                     Button(action: {
-                        if audioRecorder.isRecording {
-                            stopRecording()
-                        } else {
-                           startRecording()
-                        }
+                        stopRecording()
                     }) {
-                        Image(systemName: audioRecorder.isRecording ?  "stop.fill" : "pause.fill")
+                        Image(systemName: "stop.fill")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 20, height: 20)
@@ -80,6 +77,8 @@ struct AudioRecorderView : View {
         .sheet(isPresented: $showRenameSheet) {
             RenameSheetView(fileName: $fileName, tempFileName: $tempFileName,
                             showRenameSheet: $showRenameSheet, audioRecorder: audioRecorder)
+        }.onAppear(){
+            startRecording()
         }
         .onDisappear() {
             onDismiss()
@@ -89,8 +88,16 @@ struct AudioRecorderView : View {
     private func startRecording() {
         audioRecorder.setPath(value: path)
         audioRecorder.startRecording()
-        audioRecorder.isRecording  = true
         audioLevelsMonitor.startLevelsMonitoring()
+        startTimer()
+    }
+    
+    private func pauseRecording(){
+        audioRecorder.pauseRecording()
+        stopTimer()
+    }
+    private func resumeRecording(){
+        audioRecorder.resumeRecording()
         startTimer()
     }
     
@@ -99,29 +106,28 @@ struct AudioRecorderView : View {
         audioRecorder.stopRecording()
         audioLevelsMonitor.stopLevelsMonitoring()
         audioLevelsMonitor.loadAudioFile(url:audioRecorder.audioFileURL ?? nil)
-        audioRecorder.isRecording  = false
         stopTimer()
         tempFileName = fileName
         showRenameSheet = true
     }
-    private func playRecording(){
-        audioRecorder.playRecording()
-    }
-    private func pausePlayback(){
-        audioRecorder.togglePlayback()
-    }
-    private func stopPlayback(){
-        audioRecorder.stopPlayback()
-    }
+ 
+//    private func playRecording(){
+//        audioRecorder.playRecording()
+//    }
+//    private func pausePlayback(){
+//        audioRecorder.togglePlayback()
+//    }
+//    private func stopPlayback(){
+//        audioRecorder.stopPlayback()
+//    }
     
-        // Timer Functions
+        // Timer start or pause Functions
     private func startTimer() {
-        elapsedTime = 0.0
         timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { _ in
             elapsedTime += 0.01
         }
     }
-    
+    // this will call only when recording is completed
     private func stopTimer() {
         timer?.invalidate()
         timer = nil

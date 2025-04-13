@@ -1,70 +1,6 @@
 import SwiftUI
 import shared
 
-    // note viewmodels are basically ui logic handlers only
-class NoteEditorViewModel: BaseViewModel, ObservableObject {
-    var note: Note? = nil
-    
-    @Published var noteContents = [NoteContentModel]()
-    override init() {}
-    func setNote(note : Note?){
-        if note == nil {
-            Task{
-           let value =
-                await apiHandler(apiCall: {
-                    try await noteRepositary.getANote(id: nil)
-                })
-                
-                print("value \(value.data as? Note)")
-                self.note = value.data as? Note
-            
-                print()
-            }
-        }else { self.note = note } 
-    }
-    
-    private func  createUpdateNoteCall() async -> BaseResult<BaseResponse<Note>?> {
-        
-        return await apiHandler(apiCall: {
-            try await noteRepositary.insertOrUpdateNote(note : self.note!)
-        })
-    }
-    func createorUpdateNoteCall() {
-        Task {
-         let data =  await createUpdateNoteCall()
-        }
-    }
-        // delete a note
-    func deleteNoteCall(noteId: String) async -> BaseResult<BaseResponse<DeleteDataModel>?> {
-        return await apiHandler(apiCall: { try await noteRepositary.deleteNote(id: noteId) })
-    }
-    
-    
-    func saveMedia(mediaPath : String){
-        
-    }
-
-    
-    func createNoteContent () {}
-    /**
-     Handling note content
-     **/
-        // add new note content
-    func addNewContent(){}
-    
-    
-    
-        // remove note content from list, db , server and stroage
-    func removeContent(){}
-    
-        //
-    func addContentData() {}
-    
-    
-    func shareNote(){}
-    
-}
-
 struct NoteEditorView: View {
     @Environment(Router.self) var router: Router
     @Environment(\.dismiss) private var dismiss
@@ -76,7 +12,7 @@ struct NoteEditorView: View {
     @State private var isLoading: Bool = false
     @State private var capturedData: CapturedMedia?
     
-    private var noteEditorViewModel = NoteEditorViewModel()
+    @ObservedObject private  var noteEditorViewModel = NoteEditorViewModel()
     private var cameraPermission = CameraPermission()
     private var micPermission = MicPermission()
     
@@ -88,7 +24,6 @@ struct NoteEditorView: View {
         }
     }
     var body: some View {
-        let _: CGFloat = isRulledEnabled ? 100 : 0
         ZStack(alignment: .topLeading) {
             VStack(alignment: .leading) {
                 NoteTextEditor(
@@ -96,8 +31,12 @@ struct NoteEditorView: View {
                     placeholder: "Title : Keep your thoughts alive.",
                     fontSize: 22
                 ).frame(minHeight: 20, maxHeight: 100)
+                
                 ForEach(noteEditorViewModel.noteContents){ noteContent in
-                        //                    renderWidget(content: noteContent)
+                    renderWidget(content: noteContent){
+                        updatedContent in
+                        noteEditorViewModel.updateContent(content: updatedContent)
+                    }
                 }
             }.frame(maxHeight: .infinity, alignment: .top)
             if showRecorder {
@@ -110,11 +49,11 @@ struct NoteEditorView: View {
                 showDelete:noteEditorViewModel.note != nil,
                 onMediaCapture: {
                     guard cameraPermission.checkCameraPermission() else {
-                        setAlert(title: "Camera Permission Required")
+                        setAlert(alertType: .CAMERA)
                         return
                     }
                     guard micPermission.checkMicPermission() else {
-                        setAlert(title: "Microphone Permission Required")
+                        setAlert(alertType: .MIC)
                         return
                     }
                     router.navigate(to: .Camera(){ data in
@@ -124,10 +63,12 @@ struct NoteEditorView: View {
                 onShare: { print("Share action") },
                 onRecordMic: {
                     guard micPermission.checkMicPermission() else {
-                        setAlert(title: "Microphone Permission Required")
+                        setAlert(alertType: .MIC)
                         return
                     }
                     showRecorder = true
+                }, onAddTextField: {
+                    noteEditorViewModel.addNewText()
                 },
                 onArrowButton: {}
             )
@@ -162,60 +103,65 @@ struct NoteEditorView: View {
                 saveNote()
             }
     }
-    
-    func addText() {
+
+    func renderWidget(content : NoteContentModel, onUpdate :  @escaping (NoteContentModel)-> Void ) -> some View {
+        switch content.type {
+            case .text:
+                let textContent = content as! NoteContentModel.TextContent
+                return NoteTextFieldWrapper(
+                    onTextChange: {
+                        newValue in
+                        textContent.text = newValue
+                        onUpdate(textContent)
+                    }
+                )
+                
+            case .image :
+                let contentImage = content as! NoteContentModel.MediaContent
+                let path = contentImage.getMediaUrl()
+                return NoteTextFieldWrapper()
+            
         
+            case .video:
+                let contentVideo = content as! NoteContentModel.MediaContent
+                    //                    VideoCard(contentVideo, onClick = onMediaPreview)
+                return NoteTextFieldWrapper()
+            
+        
+            case .audio:
+                let contentAudio = content as! NoteContentModel.MediaContent
+        
+                return NoteTextFieldWrapper()
+            
+        
+        
+            case .link :
+                let contentLink = content as! NoteContentModel.Link
+                return NoteTextFieldWrapper()
+
+        
+            case .docx :
+                let contentDoc = content as! NoteContentModel.MediaContent
+                let path = contentDoc.getMediaUrl()
+                return NoteTextFieldWrapper()
+            
+        
+            case .location:
+                let locationContent = content as! NoteContentModel.Location
+                return NoteTextFieldWrapper()
+            
+        
+            case .pdf :
+                return NoteTextFieldWrapper()
+            
+            case .gif :
+                return NoteTextFieldWrapper()
+            
+                       
+            default : return NoteTextFieldWrapper()
+        }
+                
     }
-        //    func renderWidget(content : NoteContentModel) -> some View {
-        //        switch content.type {
-        //            case .text: {
-        //              return
-        //                }
-        //
-        //            case .image : {
-        //                let contentImage = content as! NoteContentModel.MediaContent
-        //              let path = contentImage.getMediaUrl()
-        //                return
-        //                }
-        //
-        //            case .video: {
-        //                    let contentVideo = content as! NoteContentModel.MediaContent
-        ////                    VideoCard(contentVideo, onClick = onMediaPreview)
-        //                return
-        //                }
-        //
-        //            case .audio:  {
-        //                    let contentAudio = content as! NoteContentModel.MediaContent
-        //
-        //                return
-        //                }
-        //
-        //
-        //            case .link : {
-        //                    let contentLink = content as! NoteContentModel.Link
-        //                return
-        //
-        //                }
-        //
-        //            case .docx :  {
-        //                    let contentDoc = content as! NoteContentModel.MediaContent
-        //                    let path = contentDoc.getMediaUrl()
-        //                return
-        //                }
-        //
-        //            case .location:  {
-        //                    let locationContent = content as! NoteContentModel.Location
-        //                return
-        //                }
-        //
-        //            case .pdf :  {
-        //                return
-        //            }
-        //        case .gif :  {
-        //            return
-        //        }
-        //        }
-        //    }
     
     
     func shareNote(){
@@ -223,7 +169,7 @@ struct NoteEditorView: View {
     }
     
     private func saveNote(){
-            noteEditorViewModel.createorUpdateNoteCall()
+        noteEditorViewModel.createorUpdateNoteCall()
     }
     
         // handler call wrappers
@@ -243,10 +189,12 @@ struct NoteEditorView: View {
         }
     }
     
-        // Alert
+    /**
+     Render Alert on Screen
+     */
     func throwAlert() -> Alert {
-        switch errorField.errorMessageTitle {
-            case "Warning deleting note confirmation":
+        switch errorField.alertType {
+            case .DELETE:
                 return Alert(
                     title: Text("\(errorField.errorMessageTitle)").font(.headline.weight(.heavy)).foregroundColor(.red),
                     message: Text(errorField.errorMessage),
@@ -257,11 +205,11 @@ struct NoteEditorView: View {
                             callDelete(noteId: noteEditorViewModel.note?.id)
                             resetAlert()
                         }))
-            case "Camera Permission Required": return cameraPermission.showAlert { resetAlert() }
+            case .CAMERA : return cameraPermission.showAlert { resetAlert() }
                 
-            case "Microphone Permission Required": return micPermission.showAlert { resetAlert() }
+            case .MIC: return micPermission.showAlert { resetAlert() }
                 
-            case "Location Permission Required": return cameraPermission.showAlert { resetAlert() }
+            case .LOCATION : return cameraPermission.showAlert { resetAlert() }
                 
             default:
                 return Alert(
@@ -272,13 +220,18 @@ struct NoteEditorView: View {
         }
         
     }
-    
-    private func setAlert(message: String = "", title: String = "Error") {
+    /**
+     Configure Alert According to condition
+     */
+    private func setAlert(message: String = "", title: String = "Error", alertType : AlertUCPermission) {
+        errorField.alertType = alertType
         errorField.errorMessage = message
         errorField.showErrorAlert = true
         errorField.errorMessageTitle = title
     }
+    
     private func resetAlert() {
+        errorField.alertType = AlertUCPermission.WARNING
         errorField.errorMessage = ""
         errorField.showErrorAlert = false
         errorField.errorMessageTitle = ""

@@ -19,6 +19,7 @@ import com.app.pustakam.android.screen.notes.ReadNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.data.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
@@ -210,12 +211,12 @@ class NoteEditorViewModel : BaseViewModel() {
           val note = _noteContentUiState.value.note!!
           if (note.isNotnull()) {
               val textContent =
-                  NoteContentModel.TextContent(
+                  NoteContentObjectHelper.createText(
                       noteId = note.id!!,
-                      position = note.contents?.count()?.toLong() ?: 0
+                      positionedAt = note.contents?.count()?.toLong() ?: 0
                   )
               setContentType(TEXT)
-              updateContent(content =textContent)
+              updateContent(content = textContent)
           }
       }
     fun updateContent(index: Int = -1, content: NoteContentModel) {
@@ -291,14 +292,15 @@ class NoteEditorViewModel : BaseViewModel() {
           _noteContentUiState.update {
               if(!it.note.isNotnull()) return
               val position: Long = it.note?.contents?.count()?.toLong() ?: 0
-              val content = NoteContentModel.MediaContent(position = position,
-                  title = "$${path.second}-$position",
-                  noteId =it.note!!.id!!, localPath = path.first , type = path.second)
+              val content = NoteContentObjectHelper.createMedia(positionedAt = position,
+                  noteId =it.note!!.id!!,
+                  localPath = path.first ,
+                  contentType = path.second)
+                  .copy(title ="${path.second}-$position",)
               it.note.contents?.add(content)
               it.contents.add(content)
               it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
           }
       }
     }
-
 }

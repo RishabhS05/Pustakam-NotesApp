@@ -22,7 +22,7 @@ object NoteRepositoryHelper {
         }
     }
 
-    fun noteContentRepository(callback: (List<NoteContentModel.MediaContent>) -> Unit){
+    fun noteContentMediaList(callback: (List<NoteContentModel.MediaContent>) -> Unit){
         CoroutineScope(Dispatchers.Main).launch {
             noteContentRepository.selectedNote.collectLatest {
                 callback(it)

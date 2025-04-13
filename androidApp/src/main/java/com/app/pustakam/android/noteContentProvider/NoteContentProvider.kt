@@ -5,6 +5,7 @@ import android.content.Context
 import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.data.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.ContentType.*
 import com.app.pustakam.util.getCurrentTimestamp
@@ -20,16 +21,16 @@ fun addContent(context: Context,note : Note, contentType : ContentType) : NoteCo
     val content: NoteContentModel
     when (contentType) {
         TEXT -> {
-            content = NoteContentModel.TextContent(position = position,
-                noteId = noteId,)
+            content = NoteContentObjectHelper.createText(positionedAt = position,
+                noteId = noteId)
         }
         LINK -> {
-            content = NoteContentModel.Link(position = position,
+            content = NoteContentObjectHelper.createHyperLink(positionedAt = position,
                 noteId = noteId,)
         }
 
         LOCATION -> {
-            content = NoteContentModel.Location(position = position,
+            content = NoteContentObjectHelper.createLocation(positionedAt = position,
                 noteId = noteId)
         }
         GIF, PDF, AUDIO , DOCX, VIDEO, IMAGE -> {
@@ -37,11 +38,8 @@ fun addContent(context: Context,note : Note, contentType : ContentType) : NoteCo
             val folderName = "${contentType.name.lowercase()}/${timeStamp}"
             val fileName = "${timeStamp}${contentType.getExt()}"
             val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
-            content = NoteContentModel.MediaContent(position = position,
-                title = "$contentType-$position",
-                createdAt = timeStamp.toString(),
-                updatedAt = timeStamp.toString(),
-                noteId = noteId, localPath = filePath , type = contentType)
+            content = NoteContentObjectHelper.createMedia(positionedAt = position, timestamp = timeStamp.toString(),
+                noteId = noteId, localPath = filePath ,  contentType = contentType).copy( title = "$contentType-$position",)
         }
     }
     return content
