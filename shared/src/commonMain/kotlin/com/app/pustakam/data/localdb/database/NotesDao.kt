@@ -142,7 +142,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
            }
             else -> {}
         }
-      val insertedRow  = queries.insertNoteContentById(
+      queries.insertNoteContentById(
             id = noteContent.id,
             noteId = noteContent.noteId,
             createdAt = noteContent.createdAt,
@@ -167,7 +167,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
     }
 
    suspend fun insertOrUpdateNoteFromDb(note: Note) : Note {
-        log_d("insert", note)
+        log_d("NoteDao insert", note)
         queries.insertOrUpdateNote(
             id = note.id!!,
             title = note.title,
@@ -181,9 +181,10 @@ class NotesDao(private val sharedDb: SqlDriver) {
                        insertOrUpdateNotesContent(content)
                    }
                }.apply {
-                   log_d("Note Content ", this.toString())
+                   log_d("NoteDao Note Content ", this.toString())
                }
            }
+       log_d("NoteDao end ", note)
        return note
     }
     suspend fun selectNoteById(id: String): Note? {

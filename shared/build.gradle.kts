@@ -24,6 +24,7 @@ kotlin {
             baseName = "shared"
             isStatic = true
             linkerOpts.add("-lsqlite3")
+            freeCompilerArgs += listOf("-Xmemory-model=experimental")
         }
     }
 

@@ -1,4 +1,5 @@
 package com.app.pustakam.data.models.response.notes
+
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.UniqueIdGenerator
 import com.app.pustakam.util.getCurrentTimestamp
@@ -8,27 +9,25 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Note(
     @SerialName("_id")
-    val id: String?,
+    val id: String,
     var title: String?,
-    //todo updates will keep track of changes in note data time to time like VCS.
     var updates: List<String>? = null,
     var updatedAt: String?,
     var createdAt: String?,
     var categoryId: String? ="",
     var isSynced : Boolean? = false,
-    var contents: ArrayList<NoteContentModel>? = arrayListOf(),
-    ) {
-    override fun equals(other: Any?): Boolean {
-        return other === this
+    var contents: List<NoteContentModel>? = emptyList(),
+    ) {    override fun equals(other: Any?): Boolean {
+        return other is Note && other.id == this.id
     }
 
     override fun hashCode(): Int {
-       return  31 * ( id.hashCode()
-        + updatedAt.hashCode()
-        + createdAt.hashCode()
-        + title.hashCode()
-               +isSynced.hashCode()
-        + contents?.count().hashCode())
+       return  31 * ( id.hashCode()+
+           (updatedAt?.hashCode() ?: 0) +
+               (createdAt?.hashCode() ?: 0) +
+               (title?.hashCode() ?: 0 ) +
+               (isSynced?.hashCode() ?: 0) +
+               (contents?.count()?.hashCode() ?: 0))
     }
 }
 
@@ -43,14 +42,13 @@ sealed class NoteContentModel {
     abstract val id: String
     abstract val noteId : String
     override fun hashCode(): Int {
-        return  31 * (updatedAt.hashCode() + createdAt.hashCode() + position.hashCode() + type.hashCode() +id.hashCode()+ noteId.hashCode())
+        return  31 * (+id.hashCode()+ noteId.hashCode()  + position.hashCode() + type.hashCode() + (updatedAt?.hashCode() ?: 0) +
+                (createdAt?.hashCode() ?: 0) )
     }
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || this::class != other::class) return false
 
+        if (other == null) return false
         other as NoteContentModel
-
         if (position != other.position) return false
         if (updatedAt != other.updatedAt) return false
         if (createdAt != other.createdAt) return false
@@ -111,8 +109,6 @@ sealed class NoteContentModel {
     fun isMediaFile() : Boolean = this is MediaContent
     fun isPlayingMedia(): Boolean = this.type == ContentType.AUDIO || this.type == ContentType.VIDEO
 }
-fun NoteContentModel.MediaContent.getMediaUrl(): String =
-    when {!localPath.isNullOrEmpty() -> localPath
-        url.isNotEmpty() -> url
-        else -> ""
-    }
+fun NoteContentModel.MediaContent.getMediaUrl(): String = localPath?.takeIf { it.isNotEmpty() }
+        ?: url.takeIf { it.isNotEmpty() }
+        ?: ""

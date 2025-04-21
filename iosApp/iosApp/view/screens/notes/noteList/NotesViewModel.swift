@@ -5,8 +5,12 @@
 //  Created by Rishabh Shrivastava on 13/04/25.
 //  Copyright © 2025 orgName. All rights reserved.
 //
+import SwiftUI
+import Combine // Import Combine if you're not already using it
+
 
 import shared
+import Combine
 
 class NotesViewModel : BaseViewModel, ObservableObject {
     
@@ -17,12 +21,14 @@ class NotesViewModel : BaseViewModel, ObservableObject {
     
     override init(){
         super.init()
-            NoteRepositoryHelper().noteListStateHelper{ [weak self] state in
+//        getNotesCall()
+            NoteRepositoryHelper().noteListStateHelper{ state in
                 DispatchQueue.main.async {
-                    self?.notes = state.notes as! [Note]
+                    self.clear()
+                    print("NotesViewModel new List \(state.notes)\n count =  \(state.notes.count)")
+                    self.notes = state.notes as! [Note]
                 }
             }
-        getNotesCall()
     }
     func clear(){
         self.notes.removeAll()
@@ -39,15 +45,7 @@ class NotesViewModel : BaseViewModel, ObservableObject {
             
             DispatchQueue.main.async {
                 self.isLoading = false
-                if response.isSuccessful {
-                    let data =  response.data as? Notes
-                    data?.notes
-                        .forEach{note in
-                            print(note)
-                            self.notes.append(note as! Note)
-                        }
-                }
-                else if response.error != nil { print("Error \(response.error!)") }
+                 if response.error != nil { print("Error \(response.error!)") }
             }
         }
     }

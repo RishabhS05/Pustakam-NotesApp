@@ -10,6 +10,7 @@ import com.app.pustakam.domain.repositories.base.BaseRepository
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.koinDI.provideDispatcher
 import com.app.pustakam.util.Error
+import com.app.pustakam.util.ErrorMessage
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.UniqueIdGenerator
@@ -40,10 +41,10 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     fun insertNotes(notes : Notes){
         _notes.update {
             val list : ArrayList<Note> = arrayListOf()
-            list.addAll(it.notes + notes.notes)
+            list.addAll(notes.notes)
             it.copy(notes = list, page =  notes.page)
         }
-        log_d("Notes" , _notes.value.notes.count())
+        log_d("NoteRepository insert Notes" , _notes.value.notes.count())
     }
 
     /**---------------- NOTES API SERVER CALL ------------*/
@@ -59,7 +60,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     override suspend fun upsertNewNoteApi(note: Note): Result<BaseResponse<Note>, Error> {
         return  apiClient.addNewNote(prefs.userId, note).onSuccess {
             it.data?.let { it1 ->
-                log_d("BaseRepo", "addNewNote: $it1")
+                log_d("NoteRepository", "addNewNote: $it1")
                 insertUpdateFromDb(it1)
             }
         }
@@ -69,7 +70,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
         apiClient.updateNote(prefs.userId, note).onSuccess {
             it.data?.let {
                     it1 ->
-                log_d("BaseRepo", "addNewNote: $it1")
+                log_d("NoteRepository", "addNewNote: $it1")
                 insertUpdateFromDb(it1)
             }
         }
@@ -87,14 +88,19 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     /**-----------------------LOCAL DATABASE -------------*/
 
     /** insert or update a note data from local db */
-    override suspend fun insertUpdateFromDb(note: Note): Result<BaseResponse<Note?>, Error> {
-        val newNote = notesDao.insertOrUpdateNoteFromDb(note)
-        return if(newNote.isNotnull()) {
-            val response = BaseResponse<Note?>(data = newNote , isSuccessful = true,
-                isFromDb = true)
-            return Result.Success(response)
-        } else {
-            Result.Error(error = NetworkError.NOT_FOUND)
+    override suspend fun insertUpdateFromDb(note: Note): Result<BaseResponse<Note>, Error> {
+       return try {
+            val newNote = notesDao.insertOrUpdateNoteFromDb(note)
+            return if(newNote.isNotnull()) {
+                val response = BaseResponse(data = newNote , isSuccessful = true,
+                    isFromDb = true)
+                return Result.Success(response)
+            } else {
+                Result.Error(error = NetworkError.NOT_FOUND)
+            }
+        } catch (e : Exception) {
+           println(e.printStackTrace())
+           Result.Error(error = ErrorMessage(e.stackTraceToString()))
         }
     }
     /** delete a note data from local db */
@@ -109,20 +115,20 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     }
 
     /** get notes data from local db */
-    override suspend fun getNotesFromDb( page: Int ): Result<BaseResponse<Notes?>, Error> {
+    override suspend fun getNotesFromDb( page: Int ): Result<BaseResponse<Notes>, Error> {
         val notes  = notesDao.selectAllNotesFromDb(page)
-        val response = BaseResponse<Notes?>(data = notes ,
+        val response = BaseResponse(data = notes ,
             isSuccessful = true,
             isFromDb = true)
         return  Result.Success(response)
 
     }
     /** get a note data from local db */
-    override suspend fun getNoteByIdFromDb(id: String?): Result<BaseResponse<Note?>, Error> {
+    override suspend fun getNoteByIdFromDb(id: String?): Result<BaseResponse<Note>, Error> {
         if(id.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
         val note = notesDao.selectNoteById(id)
         return if(note.isNotnull()) {
-            val response = BaseResponse<Note?>(data = note , isSuccessful = true,
+            val response = BaseResponse(data = note , isSuccessful = true,
                 isFromDb = true)
             Result.Success(response)
         } else {
@@ -150,17 +156,16 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     // step 3 call api to upsert the data or sync with server
     // step 4 again update the local db with sync data.
      */
-    suspend fun insertOrUpdateNote(note : Note) : Result<BaseResponse<Note?>, Error> {
-        val existingNote =  notesDao.selectNoteById(note.id!!)
+    suspend fun insertOrUpdateNote(note : Note) : Result<BaseResponse<Note>, Error> {
         return insertUpdateFromDb(note).onSuccess {
-            log_d("Insert Update","")
-            _notes.update { notes->
-                val index = notes.notes.indexOfFirst {n -> note.id == n.id  }
-                if(index!= -1) notes.notes.set(index,note) else
-                    notes.notes.add(note)
-                val newList  =ArrayList(notes.notes)
-                notes.copy(notes = newList )
-            }
+            log_d("Insert Update","added ")
+//            _notes.update { notes->
+//                val index = notes.notes.indexOfFirst {n -> note.id == n.id  }
+//                if(index!= -1) notes.notes[index] = note else
+//                    notes.notes.add(note)
+//                val newList  =ArrayList(notes.notes)
+//                notes.copy(notes = newList)
+//            }
 //              if(existingNote != null ) {
 //                  updateNoteApi(note)
 //              }else upsertNewNoteApi(note)
@@ -185,7 +190,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
      * - read from local db
      * - call read api from server
      * */
-    suspend fun getANote(id : String?): Result<BaseResponse<Note?>, Error> {
+    suspend fun getANote(id : String?): Result<BaseResponse<Note>, Error> {
         if (id.isNullOrEmpty()){
             return Result.Success(
                 BaseResponse(data = createNewEmptyNote(),
@@ -200,7 +205,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
      * - read from local db
      * - call read api from server
      * */
-    suspend fun getAllNotes(page: Int = 0): Result<BaseResponse<Notes?>, Error> {
+    suspend fun getAllNotes(page: Int = 0): Result<BaseResponse<Notes>, Error> {
         return getNotesFromDb(page).onSuccess { notes->
             if(notes.data?.notes?.count()!! > 0){
               insertNotes(notes = notes.data)

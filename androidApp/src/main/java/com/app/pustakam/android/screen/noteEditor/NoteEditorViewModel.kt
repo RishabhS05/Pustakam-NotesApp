@@ -225,7 +225,9 @@ class NoteEditorViewModel : BaseViewModel() {
         }else{
             _noteContentUiState.update {
                 it.contents[index] = content
-                it.note?.contents?.set(index, content)
+                val list =  it.note?.contents?.toMutableList()
+                list?.set(index, content)
+                it.note?.contents = list
                 it.copy(note = it.note,contents = it.contents, isAllSetupDone = true)
             }
         }
@@ -243,8 +245,10 @@ class NoteEditorViewModel : BaseViewModel() {
     }
     fun addContentData(content: NoteContentModel){
         _noteContentUiState.update {
-            it.note?.contents?.add(content)
+           var list =  it.note?.contents?.toMutableList()
+          list?.add(content)
             it.contents.add(content)
+             it.note?.contents = list
             it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
         }
     }
@@ -269,7 +273,7 @@ class NoteEditorViewModel : BaseViewModel() {
             val index= it.note?.contents?.indexOf(find)
             val indexContent = it.contents.indexOf(find)
             if( indexContent != -1 )   it.contents.removeAt(indexContent)
-          if(index.isNotnull() && index != -1 )  it.note?.contents?.removeAt(index!!)
+          if(index.isNotnull() && index != -1 )  it.note?.contents?.toMutableList()?.removeAt(index!!)
             it.copy(note = it.note, contents = it.contents)
         }
         showDeleteAlertBox(false, null)
@@ -293,12 +297,14 @@ class NoteEditorViewModel : BaseViewModel() {
               if(!it.note.isNotnull()) return
               val position: Long = it.note?.contents?.count()?.toLong() ?: 0
               val content = NoteContentObjectHelper.createMedia(positionedAt = position,
-                  noteId =it.note!!.id!!,
+                  noteId =it.note!!.id,
                   localPath = path.first ,
                   contentType = path.second)
                   .copy(title ="${path.second}-$position",)
-              it.note.contents?.add(content)
+                val dataList =   it.note.contents?.toMutableList()
+              dataList?.add(content)
               it.contents.add(content)
+              it.note.contents = dataList
               it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
           }
       }

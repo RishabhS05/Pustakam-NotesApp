@@ -14,17 +14,17 @@ object NoteRepositoryHelper {
     private val noteContentRepository = KoinHelper.getNoteContentRepository()
     fun noteListStateHelper(callback : (Notes) -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
-            noteRepository.notesState.collectLatest {
-                log_d("notes list ",it.notes)
+            noteRepository.notesState.collectLatest{
+                log_d("NoteRepositoryHelper notes list ",it.notes)
+                log_d("NoteRepositoryHelper notes count ",it.notes.size)
                 callback(it)
-
             }
         }
     }
 
     fun noteContentMediaList(callback: (List<NoteContentModel.MediaContent>) -> Unit){
         CoroutineScope(Dispatchers.Main).launch {
-            noteContentRepository.selectedNote.collectLatest {
+            noteContentRepository.selectedNote.collect{
                 callback(it)
             }
         }

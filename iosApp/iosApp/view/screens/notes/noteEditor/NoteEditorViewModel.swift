@@ -12,6 +12,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
     var note: Note? = nil
     
     @Published var noteContents = [NoteContentModel]()
+    
     override init() {
         super.init()
     }
@@ -24,7 +25,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                 await apiHandler(apiCall: {
                     try await noteRepositary.getANote(id: nil)
                 })
-                print("value \(value.data as? Note)")
+                print("value \(String(describing: value.data as? Note))")
                 self.note = value.data as? Note
             }
         }else {
@@ -32,7 +33,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                 // if note already exist
             self.note = note
             noteContentRepository.addAllNoteContent(note: note!)
-            self.noteContents = note!.contents as! [NoteContentModel]
+            self.noteContents = note!.contents!
         }
     }
     
@@ -42,7 +43,8 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
     private func  createUpdateNoteCall() async -> BaseResult<BaseResponse<Note>?> {
         
         return await apiHandler(apiCall: {
-            try await noteRepositary.insertOrUpdateNote(note : self.note!)
+            print("NoteEditorViewModel note \(String(describing: self.note))")
+            return try await noteRepositary.insertOrUpdateNote(note : self.note!)
         })
     }
     
@@ -51,7 +53,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
      */
     func createorUpdateNoteCall() {
         Task {
-            let data =  await createUpdateNoteCall()
+         await self.createUpdateNoteCall()
         }
     }
         // delete a note
@@ -60,9 +62,8 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
     }
     
     func addNewText(){
-        guard note!.id != nil else { return }
         let text = NoteContentObjectHelper()
-            .createText(noteId: note!.id!,
+            .createText(noteId: note!.id,
                         positionedAt: Int64(noteContents.count),
                         text: "")
         noteContents += [text]
@@ -79,23 +80,19 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
      */
     
     func updateContent(index : Int = -1 , content : NoteContentModel){
-        if let index = noteContents.firstIndex(where: { $0.id == content.id }) {
-            noteContents[index] = content
-            note?.contents = [noteContents]
-        }else if index == -1  {
-            addNewContent(content: content)
+        if let index = noteContents.firstIndex(where: { $0.id == content.id }) {noteContents[index] = content
+         }else  {
+             noteContents.append(content)
+        }
+        if let noteIndex = note?.contents?.firstIndex(where: {
+            $0.id == content.id
+        }){
+            note?.contents?[noteIndex] = content
+        }else {
+            note?.contents! += [content]
         }
     }
-    /**
-     Handling note content
-     **/
-        // add new note content
-    func addNewContent(content : NoteContentModel){
-        noteContents.append(content)
-        var noteContent = (note?.contents as? [NoteContentModel])
-        noteContent! += [content]
-        note?.contents = [noteContent ?? [] ]
-    }
+
     func createNoteContent () {}
     
     

@@ -84,3 +84,4 @@ enum class ValidationError : Error {
     };
     abstract fun getError(): String
 }
+data class ErrorMessage(val message : String) : Error
