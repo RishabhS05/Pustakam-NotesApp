@@ -42,6 +42,10 @@
 		63C2ECD02DAB125000412221 /* NoteEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C2ECCF2DAB125000412221 /* NoteEditorViewModel.swift */; };
 		63C2ECD32DAB127D00412221 /* NotesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C2ECD22DAB127D00412221 /* NotesViewModel.swift */; };
 		63C61C822DA848EE004F92CB /* String.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C61C812DA848E7004F92CB /* String.ext.swift */; };
+		63CFB91C2DB6C77400093C96 /* EditorTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB91B2DB6C76700093C96 /* EditorTextField.swift */; };
+		63CFB9202DB6F6E300093C96 /* FileOps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB91F2DB6F69000093C96 /* FileOps.swift */; };
+		63CFB9222DB7109A00093C96 /* CardImageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9212DB7107D00093C96 /* CardImageEditor.swift */; };
+		63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9232DB7260A00093C96 /* VideoCardView.swift */; };
 		63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0891B2CABD6AA008FD8CC /* LoginView.swift */; };
 		63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0891D2CABD6C2008FD8CC /* SignupView.swift */; };
 		63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089222CAC870A008FD8CC /* AvatarImageView.swift */; };
@@ -107,6 +111,10 @@
 		63C2ECCF2DAB125000412221 /* NoteEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorViewModel.swift; sourceTree = "<group>"; };
 		63C2ECD22DAB127D00412221 /* NotesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesViewModel.swift; sourceTree = "<group>"; };
 		63C61C812DA848E7004F92CB /* String.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.ext.swift; sourceTree = "<group>"; };
+		63CFB91B2DB6C76700093C96 /* EditorTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextField.swift; sourceTree = "<group>"; };
+		63CFB91F2DB6F69000093C96 /* FileOps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOps.swift; sourceTree = "<group>"; };
+		63CFB9212DB7107D00093C96 /* CardImageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEditor.swift; sourceTree = "<group>"; };
+		63CFB9232DB7260A00093C96 /* VideoCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCardView.swift; sourceTree = "<group>"; };
 		63D0891B2CABD6AA008FD8CC /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		63D0891D2CABD6C2008FD8CC /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		63D089222CAC870A008FD8CC /* AvatarImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageView.swift; sourceTree = "<group>"; };
@@ -310,10 +318,33 @@
 			path = noteList;
 			sourceTree = "<group>";
 		};
+		63CFB91D2DB6CB8E00093C96 /* sections */ = {
+			isa = PBXGroup;
+			children = (
+				63C00BEC2CECC4E800A4907C /* OverlayEditorButtons.swift */,
+			);
+			path = sections;
+			sourceTree = "<group>";
+		};
+		63CFB91E2DB6F68200093C96 /* file */ = {
+			isa = PBXGroup;
+			children = (
+				63CFB91F2DB6F69000093C96 /* FileOps.swift */,
+			);
+			path = file;
+			sourceTree = "<group>";
+		};
+		63CFB9252DB7261E00093C96 /* video */ = {
+			isa = PBXGroup;
+			children = (
+				63CFB9232DB7260A00093C96 /* VideoCardView.swift */,
+			);
+			path = video;
+			sourceTree = "<group>";
+		};
 		63D089152CABD616008FD8CC /* view */ = {
 			isa = PBXGroup;
 			children = (
-				63D0892B2CAF8CE1008FD8CC /* routes */,
 				63D089192CABD653008FD8CC /* screens */,
 				63D089182CABD636008FD8CC /* widgets */,
 			);
@@ -323,9 +354,10 @@
 		63D089182CABD636008FD8CC /* widgets */ = {
 			isa = PBXGroup;
 			children = (
+				63CFB9252DB7261E00093C96 /* video */,
+				63CFB91D2DB6CB8E00093C96 /* sections */,
 				634F659C2DA9CF5F00DD5142 /* alert */,
 				630BA1822CF1F55800D148C8 /* AudioPlayingWidget.swift */,
-				63C00BEC2CECC4E800A4907C /* OverlayEditorButtons.swift */,
 				63C00BE72CEC941B00A4907C /* canvas */,
 				63C00BE42CEC924C00A4907C /* button */,
 				63682AAE2CE9114D00425C35 /* StaggaredList */,
@@ -347,6 +379,7 @@
 				6343B1412CB4233200186B67 /* notes */,
 				6343B1402CB4232100186B67 /* signup */,
 				6343B13F2CB4230100186B67 /* login */,
+				63D0892B2CAF8CE1008FD8CC /* routes */,
 			);
 			path = screens;
 			sourceTree = "<group>";
@@ -354,8 +387,8 @@
 		63D0891F2CAC85B4008FD8CC /* textfields */ = {
 			isa = PBXGroup;
 			children = (
+				63CFB91B2DB6C76700093C96 /* EditorTextField.swift */,
 				63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */,
-				63D089242CAC92CA008FD8CC /* OutlineTextfieldStyle.swift */,
 			);
 			path = textfields;
 			sourceTree = "<group>";
@@ -364,6 +397,7 @@
 			isa = PBXGroup;
 			children = (
 				63D089262CAEA758008FD8CC /* SigninButton.swift */,
+				63D089242CAC92CA008FD8CC /* OutlineTextfieldStyle.swift */,
 			);
 			path = styles;
 			sourceTree = "<group>";
@@ -371,6 +405,7 @@
 		63D089212CAC86EA008FD8CC /* imageview */ = {
 			isa = PBXGroup;
 			children = (
+				63CFB9212DB7107D00093C96 /* CardImageEditor.swift */,
 				63D089222CAC870A008FD8CC /* AvatarImageView.swift */,
 			);
 			path = imageview;
@@ -436,6 +471,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				63CFB91E2DB6F68200093C96 /* file */,
 				63A552992D91949300A9C006 /* theme */,
 				6345BFAF2CEF357800CC254C /* hardware */,
 				639BBEFA2CDD4A9100E0E00D /* extensions */,
@@ -548,12 +584,15 @@
 				630BA17E2CF10ED800D148C8 /* CameraPermission.swift in Sources */,
 				63AA02532D9C64860040E872 /* NoteContents.ext.swift in Sources */,
 				63D089272CAEA758008FD8CC /* SigninButton.swift in Sources */,
+				63CFB9202DB6F6E300093C96 /* FileOps.swift in Sources */,
 				63D089252CAC92CA008FD8CC /* OutlineTextfieldStyle.swift in Sources */,
 				630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */,
 				639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */,
 				63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */,
 				630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */,
+				63CFB9222DB7109A00093C96 /* CardImageEditor.swift in Sources */,
 				63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */,
+				63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */,
 				63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */,
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
@@ -580,6 +619,7 @@
 				63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */,
 				634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */,
 				63FD32A92CBEAEB20047ED10 /* SearchView.swift in Sources */,
+				63CFB91C2DB6C77400093C96 /* EditorTextField.swift in Sources */,
 				63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */,
 				630BA1992CF50F8C00D148C8 /* AudioVisualizerView.swift in Sources */,
 				630BA1852CF23E0700D148C8 /* AudioRecoderHandler.swift in Sources */,

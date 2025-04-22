@@ -10,7 +10,6 @@ struct NoteEditorView: View {
     @State private var noteContent: String = ""
     @State private var isRulledEnabled: Bool = false
     @State private var isLoading: Bool = false
-    @State private var capturedData: CapturedMedia?
     
     @ObservedObject private  var noteEditorViewModel = NoteEditorViewModel()
     private var cameraPermission = CameraPermission()
@@ -57,7 +56,8 @@ struct NoteEditorView: View {
                         return
                     }
                     router.navigate(to: .Camera(){ data in
-                        capturedData = data
+                        print("capturedData \(String(describing: data))")
+                      noteEditorViewModel.getCapturedData(media: data)
                     })
                 },
                 onShare: { print("Share action") },
@@ -103,62 +103,59 @@ struct NoteEditorView: View {
                 saveNote()
             }
     }
-
+    
+    
+    @ViewBuilder
     func renderWidget(content : NoteContentModel, onUpdate :  @escaping (NoteContentModel)-> Void ) -> some View {
+      
         switch content.type {
             case .text:
                 let textContent = content as! NoteContentModel.TextContent
-                return NoteTextFieldWrapper(
+                 NoteTextFieldWrapper(
+                    bodyText: textContent.text,
                     onTextChange: {
                         newValue in
                         textContent.text = newValue
                         onUpdate(textContent)
                     }
                 )
-                
             case .image :
                 let contentImage = content as! NoteContentModel.MediaContent
-                let path = contentImage.getMediaUrl()
-                return NoteTextFieldWrapper()
-            
-        
+                 CardImageEditor(content: contentImage, actionClick: {})
             case .video:
                 let contentVideo = content as! NoteContentModel.MediaContent
-                    //                    VideoCard(contentVideo, onClick = onMediaPreview)
-                return NoteTextFieldWrapper()
+                VideoCardPlayer(content: contentVideo, actionClick:{})
             
-        
             case .audio:
                 let contentAudio = content as! NoteContentModel.MediaContent
-        
-                return NoteTextFieldWrapper()
+                 NoteTextFieldWrapper()
             
         
         
             case .link :
                 let contentLink = content as! NoteContentModel.Link
-                return NoteTextFieldWrapper()
+                 NoteTextFieldWrapper()
 
         
             case .docx :
                 let contentDoc = content as! NoteContentModel.MediaContent
                 let path = contentDoc.getMediaUrl()
-                return NoteTextFieldWrapper()
+                 NoteTextFieldWrapper()
             
         
             case .location:
                 let locationContent = content as! NoteContentModel.Location
-                return NoteTextFieldWrapper()
+                 NoteTextFieldWrapper()
             
         
             case .pdf :
-                return NoteTextFieldWrapper()
+                 NoteTextFieldWrapper()
             
             case .gif :
-                return NoteTextFieldWrapper()
+                 NoteTextFieldWrapper()
             
                        
-            default : return NoteTextFieldWrapper()
+            default : NoteTextFieldWrapper()
         }
                 
     }

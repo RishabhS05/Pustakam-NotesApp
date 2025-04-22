@@ -28,7 +28,6 @@ struct OverlayEditorButtons : View {
                           onArrowButton()
                           onMediaCapture()
                       })
-              
 
                       ActionButton(iconName: "note.text.badge.plus", action: {
                           onArrowButton()

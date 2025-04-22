@@ -37,6 +37,13 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
         }
     }
     
+    // Add Content into list
+    func addContent(content: NoteContentModel){
+        noteContents += [content]
+        if content.isPlayingMedia() {
+            noteContentRepository.updateNoteContent(note: content as! NoteContentModel.MediaContent)
+        }
+    }
     /***
      Create new or update note async method
      */
@@ -66,11 +73,9 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
             .createText(noteId: note!.id,
                         positionedAt: Int64(noteContents.count),
                         text: "")
-        noteContents += [text]
+        addContent(content: text)
     }
-    func saveMedia(mediaPath : String){
-        
-    }
+ 
     /***
      update note content by index
      
@@ -92,9 +97,64 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
             note?.contents! += [content]
         }
     }
-
-    func createNoteContent () {}
     
+    
+    
+    func getCapturedData(media : CapturedMedia?){
+        let timeStamp =  DateTimeUtilsKt.getCurrentTimestamp()
+            switch media {
+                case .image(let image):
+                    let type = ContentType.image
+                    let folderName = "\(type.name)/\(note!.id)"
+                    let fileName = "\(timeStamp)\(type.getExt())"
+                    if let data = image.pngData() {
+                        let localpath = saveImageFile(data: data, in : folderName, to:  fileName)
+                    let image = NoteContentObjectHelper()
+                            .createMedia(
+                                contentType: type,
+                                noteId: note!.id ,
+                                positionedAt: 0 ,
+                                localPath: localpath,
+                                url: "",
+                                duration: 0,
+                                timestamp: "\(timeStamp)"
+                            )
+                        addContent(content: image)
+                        //update note
+                        note?.contents! += [image]
+                        print("Image saved to: \(localpath)")
+                        
+                    }
+                   
+                case .video(let url):
+                    let type = ContentType.video
+                    let folderName = "\(type.name)/\(note!.id)"
+                    let fileName = "\(timeStamp)\(type.getExt())"
+                    guard let savedURL =  copyFile(to: folderName, fileName: fileName, from: url)else { return }
+                    let video = NoteContentObjectHelper().createMedia(
+                                contentType: type,
+                                noteId: note!.id ,
+                                positionedAt: 0 ,
+                                localPath: savedURL.absoluteString,
+                                url: "",
+                                duration: 0,
+                                timestamp: "\(timeStamp)"
+                            )
+                    addContent(content: video)
+                    //update note
+                    note?.contents! += [video]
+                    print("Video saved to: \(savedURL.absoluteString)")
+               
+                case .audio(let audio):
+                    let type = ContentType.video
+                    let folderName = "\(type.name)/\(note!.id)"
+                    let fileName = "\(timeStamp)\(type.getExt())"
+                    break
+                    
+                case .none: break
+            
+            }
+        }
     
         // remove note content from list, db , server and stroage
     func removeContent(){}

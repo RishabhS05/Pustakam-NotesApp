@@ -225,9 +225,7 @@ class NoteEditorViewModel : BaseViewModel() {
         }else{
             _noteContentUiState.update {
                 it.contents[index] = content
-                val list =  it.note?.contents?.toMutableList()
-                list?.set(index, content)
-                it.note?.contents = list
+                it.note?.contents = it.note?.contents?.toMutableList()?.apply { add(content) }
                 it.copy(note = it.note,contents = it.contents, isAllSetupDone = true)
             }
         }
@@ -245,10 +243,8 @@ class NoteEditorViewModel : BaseViewModel() {
     }
     fun addContentData(content: NoteContentModel){
         _noteContentUiState.update {
-           var list =  it.note?.contents?.toMutableList()
-          list?.add(content)
             it.contents.add(content)
-             it.note?.contents = list
+             it.note?.contents = it.note?.contents?.toMutableList()?.apply { add(content) }
             it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
         }
     }
@@ -301,10 +297,8 @@ class NoteEditorViewModel : BaseViewModel() {
                   localPath = path.first ,
                   contentType = path.second)
                   .copy(title ="${path.second}-$position",)
-                val dataList =   it.note.contents?.toMutableList()
-              dataList?.add(content)
               it.contents.add(content)
-              it.note.contents = dataList
+              it.note.contents = it.note.contents?.toMutableList()?.apply { add(content) }
               it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
           }
       }

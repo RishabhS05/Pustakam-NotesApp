@@ -7,8 +7,11 @@
 //
 
 import SwiftUI
-
+import shared
 struct AudioPlayingWidget : View {
+    var content : NoteContentModel.MediaContent
+    var actionEdit : () -> Void = {}
+    var actionClick : () -> Void
     var body: some View {
         Text("Hello, World!")
     }

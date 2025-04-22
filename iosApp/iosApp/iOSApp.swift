@@ -24,8 +24,8 @@ struct iOSApp: App {
                             case .Notification : NotificationView()
                             case .Search : SearchView()
                             case .Home : HomeView()
-                            case .Camera(let onCapture):
-                                CameraPreview(onCapture: onCapture)
+                            case .Camera(let onDone):
+                                CameraPreview(onCapture: onDone)
                             default: LoginView()
                         }
                     }

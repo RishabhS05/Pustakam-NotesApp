@@ -35,7 +35,7 @@ fun addContent(context: Context,note : Note, contentType : ContentType) : NoteCo
         }
         GIF, PDF, AUDIO , DOCX, VIDEO, IMAGE -> {
             val timeStamp = getCurrentTimestamp()
-            val folderName = "${contentType.name.lowercase()}/${timeStamp}"
+            val folderName = "${contentType.name.lowercase()}/${noteId}"
             val fileName = "${timeStamp}${contentType.getExt()}"
             val filePath = createFileWithFolders(context as Activity,folderName,fileName).absolutePath
             content = NoteContentObjectHelper.createMedia(positionedAt = position, timestamp = timeStamp.toString(),

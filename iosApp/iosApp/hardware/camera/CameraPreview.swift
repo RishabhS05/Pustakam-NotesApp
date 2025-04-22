@@ -11,9 +11,9 @@ import AVKit
     // SwiftUI View to Display the Camera
 struct CameraPreview: View {
     @State private var capturedMedia: CapturedMedia?
+    @Environment(\.dismiss) private var dismiss
     @State private var isCameraPresented = false
     var onCapture: (CapturedMedia?) -> Void
-    
     var cameraPermission = CameraPermission()
     var body: some View {
         ZStack {
@@ -26,12 +26,17 @@ struct CameraPreview: View {
                     case .video(let video):
                         VideoPlayer(player: AVPlayer(url: video))
                             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity).ignoresSafeArea()
+                    case .audio(let audio): AudioRecorderView()
+                    
                 }
             }
             else {
                 Text("No media captured")
             }
-            
+            Button("Done") {
+                onCapture(capturedMedia)
+                dismiss()
+            } .foregroundColor(.brown)
         }.onAppear() {
             isCameraPresented =  cameraPermission.checkCameraPermission()
         }.fullScreenCover(isPresented: $isCameraPresented ){
@@ -39,8 +44,6 @@ struct CameraPreview: View {
                 isPresented: $isCameraPresented,
                 capturedMedia: $capturedMedia
             ).ignoresSafeArea()
-        }.onDisappear() {
-            onCapture(capturedMedia)
         }
         
     }
