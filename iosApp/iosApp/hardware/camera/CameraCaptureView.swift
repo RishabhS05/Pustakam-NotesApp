@@ -54,23 +54,8 @@ struct CameraCaptureView: UIViewControllerRepresentable {
             parent.isPresented = false
         }
     }
-
+    
     private func saveMedia(_ media: CapturedMedia) {
-        // Save the media reference to the binding property
         capturedMedia = media
-
-    // Save media to a temporary location
-//        switch media {
-//        case .image(let image):
-//                if let data = image.pngData() {
-//                let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
-//                try? data.write(to: url)
-//                print("Image saved to: \(url)")
-//            }
-//        case .video(let url):
-//            let destination = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
-//            try? FileManager.default.copyItem(at: url, to: destination)
-//            print("Video saved to: \(destination)")
-//        }
     }
 }

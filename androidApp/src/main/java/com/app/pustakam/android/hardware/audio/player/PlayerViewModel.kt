@@ -72,7 +72,7 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
 
     init {
         viewModelScope.launch {
-            noteRepository.selectedNote.collectLatest { notesContents ->
+            noteRepository.selectedNoteMediaContent.collectLatest { notesContents ->
                 if (notesContents.isNotEmpty()) {
                     mediaServiceListener.addMediaItemList(notesContents.map { it.toMediaItem() })
                     val map = notesContents.map {

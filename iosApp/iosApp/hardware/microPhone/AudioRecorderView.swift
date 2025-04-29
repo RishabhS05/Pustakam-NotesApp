@@ -1,23 +1,19 @@
-    //
-    //  AudioRecorderView.swift
-    //  iosApp
-    //
-    //  Created by Rishabh Shrivastava on 24/11/24.
-    //  Copyright © 2024 orgName. All rights reserved.
-    //
+
 import SwiftUI
 import AVFoundation
 
 struct AudioRecorderView : View {
-    private var path = ""
     @StateObject private var audioRecorder = AudioRecorder()
     @StateObject private var audioLevelsMonitor = AudioLevelsMonitor()
     @State private var elapsedTime: TimeInterval = 0.0
     @State private var timer: Timer? = nil
-    @State private var showRenameSheet = false
-    @State private var fileName = ""
-    @State private var tempFileName = ""
+    
     let onDismiss: (() -> Void) = { }
+    var onSave: (CapturedMedia) -> Void = { _ in  }
+    init(onSave :  @escaping (_ media : CapturedMedia) -> Void){
+        self.onSave = onSave
+    }
+    
     var body: some View {
             HStack(spacing: 8) {
                 Image(systemName: "microphone.fill")
@@ -36,9 +32,10 @@ struct AudioRecorderView : View {
                             Int((elapsedTime * 100).truncatingRemainder(dividingBy: 100))))
                 .font(.headline.monospacedDigit())
                 .foregroundColor(.brown)
+                    
                     // Real-time Wave Animation
                 AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
-                .frame(height: 30)
+                .frame(height: 30).padding(4)
                 .padding()
                         // Play Button
                     Button(action: {
@@ -48,18 +45,22 @@ struct AudioRecorderView : View {
                             resumeRecording()
                         }
                     }) {
-                        Image(systemName: audioRecorder.isRecording ? "pause.fill" : "play.fill")
+                        Image(systemName:"record.circle")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 20, height: 20)
-                            .foregroundColor(.brown)
+                            .foregroundColor(audioRecorder.isRecording ? .red : .brown)
                     }
                     .disabled(audioRecorder.audioFileURL == nil)
-                    .padding(8)
+                    .padding(12)
                     // Disable if there's no recorded file
                         // Stop Playback Button
                     Button(action: {
                         stopRecording()
+                        if ((audioRecorder.audioFileURL) != nil){
+                            onSave(.audio(audioRecorder.audioFileURL!))
+                        }
+                        onDismiss()
                     }) {
                         Image(systemName: "stop.fill")
                             .resizable()
@@ -74,10 +75,7 @@ struct AudioRecorderView : View {
             .cornerRadius(12)
             .shadow(radius: 12)
             .padding(8)
-        .sheet(isPresented: $showRenameSheet) {
-            RenameSheetView(fileName: $fileName, tempFileName: $tempFileName,
-                            showRenameSheet: $showRenameSheet, audioRecorder: audioRecorder)
-        }.onAppear(){
+            .onAppear(){
             startRecording()
         }
         .onDisappear() {
@@ -86,7 +84,6 @@ struct AudioRecorderView : View {
     }
         // Start Recording Function
     private func startRecording() {
-        audioRecorder.setPath(value: path)
         audioRecorder.startRecording()
         audioLevelsMonitor.startLevelsMonitoring()
         startTimer()
@@ -94,32 +91,23 @@ struct AudioRecorderView : View {
     
     private func pauseRecording(){
         audioRecorder.pauseRecording()
+        audioLevelsMonitor.stopLevelsMonitoring()
+        
         stopTimer()
     }
     private func resumeRecording(){
         audioRecorder.resumeRecording()
+        audioLevelsMonitor.startLevelsMonitoring()
         startTimer()
     }
     
         // Stop Recording Function
     private func stopRecording() {
         audioRecorder.stopRecording()
-        audioLevelsMonitor.stopLevelsMonitoring()
         audioLevelsMonitor.loadAudioFile(url:audioRecorder.audioFileURL ?? nil)
+        audioLevelsMonitor.stopLevelsMonitoring()
         stopTimer()
-        tempFileName = fileName
-        showRenameSheet = true
     }
- 
-//    private func playRecording(){
-//        audioRecorder.playRecording()
-//    }
-//    private func pausePlayback(){
-//        audioRecorder.togglePlayback()
-//    }
-//    private func stopPlayback(){
-//        audioRecorder.stopPlayback()
-//    }
     
         // Timer start or pause Functions
     private func startTimer() {
@@ -135,43 +123,8 @@ struct AudioRecorderView : View {
 }
 
 #Preview{
-    AudioRecorderView()
+    AudioRecorderView(){_ in }
 }
-    // Rename Sheet View
-struct RenameSheetView: View {
-    @Binding var fileName: String
-    @Binding var tempFileName: String
-    @Binding var showRenameSheet: Bool
-    var audioRecorder: AudioRecorder
-    
-    var body: some View {
-        VStack {
-            TextField("Enter new file name", text: $tempFileName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            HStack {
-                Button("Cancel") {
-                    showRenameSheet = false
-                }
-                .padding()
-                
-                Spacer()
-                
-                Button("Save") {
-                    if !tempFileName.isEmpty {
-                        fileName = tempFileName
-                        audioRecorder.saveRecording(withName: fileName)
-                    }
-                    showRenameSheet = false
-                }
-                .padding()
-            }
-        }
-        .padding()
-    }
-}
-
 
 struct BarView: View {
     let height: CGFloat
@@ -183,18 +136,6 @@ struct BarView: View {
     }
 }
 
-
-
-    //                ZStack {
-    //
-    //                    ForEach(0..<5, id: \.self) { i in
-    //                        PulseShape(
-    //                            amplitude: CGFloat(audioRecorder.normalizedPower) * (1 - CGFloat(i) * 0.2),
-    //                            phase: CGFloat(audioRecorder.phase + Double(i) * 0.5)
-    //                        )
-    //                        .stroke(lineWidth: 4)
-    //                        .foregroundColor(Color.gray.opacity(1 - Double(i) * 0.2))
-    //                    }
 // wave pattern
 struct WaveShape: Shape {
     var amplitude: CGFloat

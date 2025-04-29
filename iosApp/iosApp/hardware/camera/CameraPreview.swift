@@ -16,6 +16,7 @@ struct CameraPreview: View {
     var onCapture: (CapturedMedia?) -> Void
     var cameraPermission = CameraPermission()
     var body: some View {
+        
         ZStack {
             if let media = capturedMedia {
                 switch media {
@@ -26,8 +27,8 @@ struct CameraPreview: View {
                     case .video(let video):
                         VideoPlayer(player: AVPlayer(url: video))
                             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity).ignoresSafeArea()
-                    case .audio(let audio): AudioRecorderView()
-                    
+                    case .audio(let audio): AudioRecorderView(){ media in }
+                
                 }
             }
             else {
@@ -36,7 +37,8 @@ struct CameraPreview: View {
             Button("Done") {
                 onCapture(capturedMedia)
                 dismiss()
-            } .foregroundColor(.brown)
+            } .background(.brown)
+                .frame(alignment: .bottomTrailing)
         }.onAppear() {
             isCameraPresented =  cameraPermission.checkCameraPermission()
         }.fullScreenCover(isPresented: $isCameraPresented ){

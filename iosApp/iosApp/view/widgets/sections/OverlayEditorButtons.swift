@@ -37,12 +37,7 @@ struct OverlayEditorButtons : View {
                           onArrowButton()
                           onShare()
                       })
-                      if showDelete {
-                          ActionButton(iconName: "trash.fill", action: {
-                              onArrowButton()
-//                              onDelete()
-                          }, tint: Color.red)
-                      }
+
                   }
                   .padding(8)
                   .background(Color.gray.opacity(0.4))

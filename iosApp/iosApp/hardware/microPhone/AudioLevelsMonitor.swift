@@ -1,22 +1,16 @@
-//
-//  AudioLevelsMonitor.swift
-//  iosApp
-//
-//  Created by Rishabh Shrivastava on 26/11/24.
-//  Copyright © 2024 orgName. All rights reserved.
-//
-
 import AVFoundation
 
 class AudioLevelsMonitor : ObservableObject {
+    
     private var audioEngine: AVAudioEngine = AVAudioEngine()
     private var inputNode: AVAudioInputNode?
-    
+    // Control Audio Wave updates
+    private var isEnabledAudioLevels : Bool = true
         // Array to hold audio levels over time
          @Published var audioLevels: [CGFloat] = []
          private let bufferSize: AVAudioFrameCount = 1024
+       
         // Function to read and process recorded audio
-    
         func loadAudioFile(url: URL?) {
             guard let url else { return }
             audioLevels.removeAll()
@@ -45,7 +39,7 @@ class AudioLevelsMonitor : ObservableObject {
                     
                     // Calculate the level for this chunk
                     let level = processAudioBuffer(chunkBuffer)
-                    audioLevels.append(level)
+                    if isEnabledAudioLevels{ audioLevels.append(level) }
                 }
             } catch {
                 print("Error loading audio file: \(error.localizedDescription)")
@@ -53,6 +47,7 @@ class AudioLevelsMonitor : ObservableObject {
         }
     
     func startLevelsMonitoring() {
+        isEnabledAudioLevels = true
         inputNode = audioEngine.inputNode
         let recordingFormat = inputNode?.outputFormat(forBus: 0)
         inputNode?.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
@@ -64,6 +59,7 @@ class AudioLevelsMonitor : ObservableObject {
         try? audioEngine.start()
     }    
     func stopLevelsMonitoring() {
+        isEnabledAudioLevels = false
         inputNode?.removeTap(onBus: 0)
         audioEngine.stop()
     }
@@ -88,7 +84,7 @@ class AudioLevelsMonitor : ObservableObject {
     }
     
     private func updateLevels(_ level: CGFloat) {
-        audioLevels.append(level)
+        if isEnabledAudioLevels{ audioLevels.append(level) }
             // Add the new level to the array
         }
 }

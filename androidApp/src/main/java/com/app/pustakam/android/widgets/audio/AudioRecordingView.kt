@@ -115,25 +115,25 @@ fun AudioRecordView(modifier: Modifier = Modifier,
                 .width(100.dp),)
 
             IconButton(onClick = {
-                if (!isRecording) {
-                    onAction(AudioRecordingIntent.StartRecordingIntent)
-                } else {
-                    onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.longValue))
-                }
-            }) {
-                val drawable = if (isRecording) Icons.Rounded.Stop else ImageVector.vectorResource(R.drawable.ic_record)
-                Icon(imageVector = drawable, contentDescription = "", modifier = iconModifier)
-            }
-
-            IconButton(onClick = {
                 if (isRecording) {
                     onAction(AudioRecordingIntent.PauseRecordingIntent)
                 } else {
                     onAction(AudioRecordingIntent.ResumeRecordingIntent)
                 }
             }) {
-                val drawable = if (state.value.audioLifecycle == AudioLifecycle.pause) Icons.Rounded.PlayArrow else Icons.Rounded.Pause
-                Icon(imageVector =drawable, contentDescription = "", modifier = iconModifier)
+                val drawable = ImageVector.vectorResource(R.drawable.ic_record)
+                Icon(imageVector =drawable, contentDescription = "", modifier = iconModifier, tint = if (state.value.audioLifecycle ==
+                    AudioLifecycle.pause) Color.Gray else Color.Red )
+            }
+            IconButton(onClick = {
+                if (!isRecording) {
+                    onAction(AudioRecordingIntent.StartRecordingIntent)
+                } else {
+                    onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.longValue))
+                }
+            }) {
+                val drawable =  Icons.Rounded.Stop
+                Icon(imageVector = drawable, contentDescription = "", modifier = iconModifier)
             }
         }
     }
@@ -187,7 +187,6 @@ fun AudioVisualizerView(audioLevels: List<Float>, modifier: Modifier =Modifier) 
         animatedLevels.forEachIndexed { index, level ->
             val waveEffect = (sin((index + System.currentTimeMillis() / 100.0) / waveFrequency) + 1) / 2
             val barHeight = level * waveEffect * (size.height / 2)  // Adjust to stay within middle
-
             drawRoundRect(
                 color = brown3,
                 topLeft = Offset(x = index * barWidth, y = (centerY - barHeight).toFloat()),

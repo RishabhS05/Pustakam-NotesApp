@@ -1,12 +1,5 @@
-//
-//  NoteEditorViewModel.swift
-//  iosApp
-//
-//  Created by Rishabh Shrivastava on 13/04/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
-
 import shared
+    
     // note viewmodels are basically ui logic handlers only
 class NoteEditorViewModel: BaseViewModel, ObservableObject {
     var note: Note? = nil
@@ -20,7 +13,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
     func setNote(note : Note?){
         if note == nil {
                 // if note doesnt exist create a empty notebook
-            Task{
+            Task{  
                 let value =
                 await apiHandler(apiCall: {
                     try await noteRepositary.getANote(id: nil)
@@ -29,7 +22,6 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                 self.note = value.data as? Note
             }
         }else {
-
                 // if note already exist
             self.note = note
             noteContentRepository.addAllNoteContent(note: note!)
@@ -39,9 +31,11 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
     
     // Add Content into list
     func addContent(content: NoteContentModel){
+       
         noteContents += [content]
         if content.isPlayingMedia() {
             noteContentRepository.updateNoteContent(note: content as! NoteContentModel.MediaContent)
+            print("media \((content as! NoteContentModel.MediaContent).getMediaUrl())")
         }
     }
     /***
@@ -86,8 +80,9 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
     
     func updateContent(index : Int = -1 , content : NoteContentModel){
         if let index = noteContents.firstIndex(where: { $0.id == content.id }) {noteContents[index] = content
+            
          }else  {
-             noteContents.append(content)
+             addContent(content: content)
         }
         if let noteIndex = note?.contents?.firstIndex(where: {
             $0.id == content.id
@@ -126,11 +121,11 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                         
                     }
                    
-                case .video(let url):
+                case .video(let path):
                     let type = ContentType.video
                     let folderName = "\(type.name)/\(note!.id)"
                     let fileName = "\(timeStamp)\(type.getExt())"
-                    guard let savedURL =  copyFile(to: folderName, fileName: fileName, from: url)else { return }
+                    guard let savedURL =  copyFile(to: folderName, fileName: fileName, from: path)else { return }
                     let video = NoteContentObjectHelper().createMedia(
                                 contentType: type,
                                 noteId: note!.id ,
@@ -145,10 +140,23 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                     note?.contents! += [video]
                     print("Video saved to: \(savedURL.absoluteString)")
                
-                case .audio(let audio):
-                    let type = ContentType.video
+                case .audio(let path):
+                    let type = ContentType.audio
                     let folderName = "\(type.name)/\(note!.id)"
                     let fileName = "\(timeStamp)\(type.getExt())"
+                 
+                    guard let savedURL =  copyFile(to: folderName, fileName: fileName, from: path) else { return }
+                    let audioFile = NoteContentObjectHelper().createMedia(
+                        contentType: type,
+                        noteId: note!.id ,
+                        positionedAt: 0 ,
+                        localPath: savedURL.absoluteString ,
+                        url: "",
+                        duration: 0,
+                        timestamp: "\(timeStamp)"
+                    )
+                    addContent(content: audioFile)
+                    note?.contents! += [audioFile]
                     break
                     
                 case .none: break

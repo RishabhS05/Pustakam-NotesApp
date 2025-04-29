@@ -84,7 +84,7 @@ fun VideoCard(
         if (mediaState.noteContent.position == noteContent.position)
             Box(Modifier.fillMaxSize()) {
          VideoPlayer(exoPlayer, Modifier.clickable { onClick() })
-         VideoControllerUi(state =mediaState,
+         VideoControllerUi(state = mediaState,
              onAction = viewModel::onPlayingIntent)
         }
     }

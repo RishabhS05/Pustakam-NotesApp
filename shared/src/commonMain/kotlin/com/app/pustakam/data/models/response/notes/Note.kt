@@ -50,7 +50,6 @@ sealed class NoteContentModel {
         if (other == null) return false
         other as NoteContentModel
         if (position != other.position) return false
-        if (updatedAt != other.updatedAt) return false
         if (createdAt != other.createdAt) return false
         if (type != other.type) return false
         if (id != other.id) return false

@@ -10,36 +10,45 @@ struct NoteEditorView: View {
     @State private var noteContent: String = ""
     @State private var isRulledEnabled: Bool = false
     @State private var isLoading: Bool = false
-    
+    @State private var  showDelete : Bool = false
     @ObservedObject private  var noteEditorViewModel = NoteEditorViewModel()
     private var cameraPermission = CameraPermission()
     private var micPermission = MicPermission()
-    
-    
+
     init(note: Note? = nil) {
         noteEditorViewModel.setNote(note: note)
         if note != nil {
             _title = State(initialValue: note!.title ?? "")
+            showDelete = true
         }
+        else {
+            showDelete = false
+        }
+        
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
+            ScrollView(.vertical){
             VStack(alignment: .leading) {
                 NoteTextEditor(
                     text: $title,
                     placeholder: "Title : Keep your thoughts alive.",
                     fontSize: 22
                 ).frame(minHeight: 20, maxHeight: 100)
-                
-                ForEach(noteEditorViewModel.noteContents){ noteContent in
-                    renderWidget(content: noteContent){
-                        updatedContent in
-                        noteEditorViewModel.updateContent(content: updatedContent)
+                    ForEach(noteEditorViewModel.noteContents){ noteContent in
+                        renderWidget(content: noteContent){
+                            updatedContent in
+                            noteEditorViewModel.updateContent(content: updatedContent)
+                        }
                     }
                 }
             }.frame(maxHeight: .infinity, alignment: .top)
             if showRecorder {
-                AudioRecorderView().frame(alignment : .topTrailing)}
+                AudioRecorderView(onSave : { media  in
+                    noteEditorViewModel.getCapturedData(media:media)
+                    showRecorder = false
+                }).frame(alignment : .topTrailing)
+            }
             if isLoading {
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
@@ -94,9 +103,10 @@ struct NoteEditorView: View {
                                                       action: {
                             
                         },tint : .brown)
-                        ActionButtonWithoutBackground(iconName: "square.and.arrow.up", action: {
-                            shareNote()
-                        },tint : .brown)
+                            ActionButtonWithoutBackground(iconName: "trash.fill", action: {
+    
+//                                onDelete()
+                            }, tint: Color.red)
                     }
                 }
             }.onDisappear {
@@ -124,13 +134,11 @@ struct NoteEditorView: View {
                  CardImageEditor(content: contentImage, actionClick: {})
             case .video:
                 let contentVideo = content as! NoteContentModel.MediaContent
-                VideoCardPlayer(content: contentVideo, actionClick:{})
-            
+                VideoCardPlayer(content: contentVideo)
             case .audio:
                 let contentAudio = content as! NoteContentModel.MediaContent
-                 NoteTextFieldWrapper()
-            
-        
+
+                 AudioPlayView(mediaContent: contentAudio)
         
             case .link :
                 let contentLink = content as! NoteContentModel.Link
