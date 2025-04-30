@@ -10,6 +10,7 @@ struct AudioRecorderView : View {
     
     let onDismiss: (() -> Void) = { }
     var onSave: (CapturedMedia) -> Void = { _ in  }
+    
     init(onSave :  @escaping (_ media : CapturedMedia) -> Void){
         self.onSave = onSave
     }
@@ -25,7 +26,7 @@ struct AudioRecorderView : View {
                     .clipShape(Circle())
                     .foregroundColor(.white)
                 
-                    // Timer Display
+                // Timer Display
                 Text(String(format: "%02d : %02d . %02d",
                             Int(elapsedTime / 60),
                             Int(elapsedTime.truncatingRemainder(dividingBy: 60)),
@@ -33,11 +34,11 @@ struct AudioRecorderView : View {
                 .font(.headline.monospacedDigit())
                 .foregroundColor(.brown)
                     
-                    // Real-time Wave Animation
+                // Real-time Wave Animation
                 AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
                 .frame(height: 30).padding(4)
                 .padding()
-                        // Play Button
+                    // Play Button
                     Button(action: {
                         if audioRecorder.isRecording {
                             pauseRecording()
@@ -53,8 +54,9 @@ struct AudioRecorderView : View {
                     }
                     .disabled(audioRecorder.audioFileURL == nil)
                     .padding(12)
+                   
                     // Disable if there's no recorded file
-                        // Stop Playback Button
+                    // Stop Playback Button
                     Button(action: {
                         stopRecording()
                         if ((audioRecorder.audioFileURL) != nil){
@@ -216,13 +218,14 @@ struct PulseShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let midY = rect.midY
-        let pulseSpacing: CGFloat = 10 // Space between pulses
+        let pulseSpacing: CGFloat = 10
+        // Space between pulses
         for x in stride(from: 0, to: rect.width, by: pulseSpacing) {
             let normalizedX = x / rect.width
             let angle = normalizedX * .pi * 2 + phase
             let pulseHeight = sin(angle) * amplitude * rect.height / 2
             
-                // Draw a vertical line (pulse)
+            // Draw a vertical line (pulse)
             let pulseStart = CGPoint(x: x, y: midY - pulseHeight / 2)
             let pulseEnd = CGPoint(x: x, y: midY + pulseHeight / 2)
             path.move(to: pulseStart)

@@ -28,9 +28,8 @@ class AudioRecorder: ObservableObject {
             audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
             audioRecorder?.record()
             audioRecorder?.isMeteringEnabled = true
-            print("recording fileURL \(fileURL)")
             audioFileURL = audioRecorder?.url
-            print("recording fileURL \(audioRecorder?.url)")
+
             isRecording = true
             startTimerMonitoring()
         } catch {

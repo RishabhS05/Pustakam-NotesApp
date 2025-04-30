@@ -3,7 +3,8 @@ import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.getCurrentTimestamp
 
 object NoteContentObjectHelper {
-    fun createText(noteId: String , positionedAt : Long , text : String = "" ) = NoteContentModel.TextContent(noteId = noteId, position =
+    fun createText(noteId: String , positionedAt : Long , text : String = "" )
+    = NoteContentModel.TextContent(noteId = noteId, position =
         positionedAt)
     fun createMedia(contentType: ContentType, noteId: String , positionedAt : Long,
                     localPath : String= "", url: String = "", duration:  Long = 0,

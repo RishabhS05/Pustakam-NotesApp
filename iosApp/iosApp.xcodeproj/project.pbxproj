@@ -48,7 +48,6 @@
 		63CFB9202DB6F6E300093C96 /* FileOps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB91F2DB6F69000093C96 /* FileOps.swift */; };
 		63CFB9222DB7109A00093C96 /* CardImageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9212DB7107D00093C96 /* CardImageEditor.swift */; };
 		63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9232DB7260A00093C96 /* VideoCardView.swift */; };
-		63CFB92A2DB8D4EA00093C96 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9292DB8D4D300093C96 /* AudioPlayer.swift */; };
 		63D0891C2CABD6AA008FD8CC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0891B2CABD6AA008FD8CC /* LoginView.swift */; };
 		63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0891D2CABD6C2008FD8CC /* SignupView.swift */; };
 		63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089222CAC870A008FD8CC /* AvatarImageView.swift */; };
@@ -123,7 +122,6 @@
 		63CFB91F2DB6F69000093C96 /* FileOps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOps.swift; sourceTree = "<group>"; };
 		63CFB9212DB7107D00093C96 /* CardImageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEditor.swift; sourceTree = "<group>"; };
 		63CFB9232DB7260A00093C96 /* VideoCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCardView.swift; sourceTree = "<group>"; };
-		63CFB9292DB8D4D300093C96 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		63D0891B2CABD6AA008FD8CC /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		63D0891D2CABD6C2008FD8CC /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		63D089222CAC870A008FD8CC /* AvatarImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageView.swift; sourceTree = "<group>"; };
@@ -167,7 +165,6 @@
 		630BA1802CF195F700D148C8 /* microPhone */ = {
 			isa = PBXGroup;
 			children = (
-				63CFB9292DB8D4D300093C96 /* AudioPlayer.swift */,
 				630BA1982CF50F8C00D148C8 /* AudioVisualizerView.swift */,
 				630BA19A2CF5398000D148C8 /* AudioLevelsMonitor.swift */,
 				630BA18A2CF2FD1B00D148C8 /* AudioRecorderView.swift */,
@@ -657,7 +654,6 @@
 				6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */,
 				630BA18B2CF2FD1B00D148C8 /* AudioRecorderView.swift in Sources */,
 				630BA19B2CF5398000D148C8 /* AudioLevelsMonitor.swift in Sources */,
-				63CFB92A2DB8D4EA00093C96 /* AudioPlayer.swift in Sources */,
 				63DF20112DBC5969001E0EDE /* SystemControlledPlayerView.swift in Sources */,
 				630BA1832CF1F57800D148C8 /* AudioPlayingView.swift in Sources */,
 				6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */,

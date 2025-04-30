@@ -9,16 +9,30 @@ struct VideoCardPlayer : View {
     var mediaManager = MediaManager.mediaManager
     init(content: NoteContentModel.MediaContent){
         self.content = content
-        mediaManager.selectedMedia(media: content)
     }
     
     var body: some View {
         ZStack{
-            SystemControlledPlayerView(player: mediaManager.currentPlaying?.id == content.id ? mediaManager.getPlayer() : nil)
+            if mediaManager.currentPlaying?.id == content.id {
+                            SystemControlledPlayerView(player: mediaManager.getPlayer())
+                        } else {
+                            ZStack {
+                                // You can show thumbnail or just placeholder when not active
+                                Rectangle().fill(Color.black.opacity(0.2))
+                                Image(systemName: "play.circle.fill")
+                                    .resizable()
+                                    .frame(width: 40, height: 40)
+                                    .foregroundColor(.white)
+                            }
+                        }
         }.frame(width: 200,height: 300)
             .cornerRadius(12)
             .padding(12)
+            .onAppear{
+                mediaManager.selectAndPlayMedia(media: content)
+            }
             .onTapGesture {
+                mediaManager.resumePlaying(media:content)
                 actionClick()
             }
     }

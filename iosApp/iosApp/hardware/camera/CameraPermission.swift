@@ -11,7 +11,7 @@ import SwiftUI
 class CameraPermission  {
  func checkCameraPermission() -> Bool {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
-        var   isAuthorized: Bool = false
+        var  isAuthorized: Bool = false
         switch status {
             case .authorized:
                 isAuthorized = true
