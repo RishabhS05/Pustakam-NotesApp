@@ -8,7 +8,7 @@ struct AvatarImageView: View {
     var body: some View {
         
         ZStack (alignment: .bottom){
-           AsyncImage(url: URL(string :  imageUrl)) { phase in
+            AsyncImage(url: URL(fileURLWithPath: imageUrl)) { phase in
                 if let image = phase.image {
                         // Display the loaded image
                     image.resizable().scaledToFit()

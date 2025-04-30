@@ -35,7 +35,10 @@ import MediaPlayer
     
     private func convertAVPlayerItem(list : [NoteContentModel.MediaContent]){
         list.forEach{ item in
-            self.playList[item.id] = PlayerUiState(mediaPlayerItem :AVPlayerItem(url: URL(string: item.getMediaUrl())!), mediaContent: item)
+            self.playList[item.id] = PlayerUiState(
+                mediaPlayerItem :AVPlayerItem(url: URL(fileURLWithPath: item.getMediaUrl())),
+                mediaContent: item
+            )
         }
     }
     private func activateSession() {

@@ -16,7 +16,7 @@ struct AudioRecorderView : View {
     }
     
     var body: some View {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Image(systemName: "microphone.fill")
                     .resizable()
                     .scaledToFit()
@@ -37,7 +37,6 @@ struct AudioRecorderView : View {
                 // Real-time Wave Animation
                 AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
                 .frame(height: 30).padding(4)
-                .padding()
                     // Play Button
                     Button(action: {
                         if audioRecorder.isRecording {
@@ -53,7 +52,7 @@ struct AudioRecorderView : View {
                             .foregroundColor(audioRecorder.isRecording ? .red : .brown)
                     }
                     .disabled(audioRecorder.audioFileURL == nil)
-                    .padding(12)
+                    .padding(8)
                    
                     // Disable if there's no recorded file
                     // Stop Playback Button

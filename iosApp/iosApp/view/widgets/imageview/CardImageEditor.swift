@@ -8,7 +8,7 @@ struct CardImageEditor : View{
     
     var body: some View {
         ZStack (alignment: .bottom){
-            AsyncImage(url: URL(string : content.getMediaUrl())) { phase in
+            AsyncImage(url: URL(fileURLWithPath: content.getMediaUrl())) { phase in
                 if let image = phase.image {
                         // Display the loaded image
                     image.resizable().scaledToFill()
@@ -28,12 +28,11 @@ struct CardImageEditor : View{
             .onTapGesture {
                 actionClick()
             }
-            Image(systemName: "square.and.arrow.up.circle.fill")
-                .font(.system(size: 30)
-                    .weight(.bold))
-                .scaledToFill().imageScale(.large)
+            Image(systemName: "square.and.arrow.up").padding()
+                .font(.system(size: 20))
+                .scaledToFit()
                 .foregroundColor(.brown)
-                .frame(width: 150,height: 50,alignment: .bottomTrailing)
+                .frame(width: 20,height: 20,alignment: .bottomTrailing)
                 .padding(8)
                 .onTapGesture {
                     actionEdit()

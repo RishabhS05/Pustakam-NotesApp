@@ -34,12 +34,22 @@ struct CameraPreview: View {
             else {
                 Text("No media captured")
             }
-            Button("Done") {
-                onCapture(capturedMedia)
-                dismiss()
-            } .background(.brown)
-                .frame(alignment: .bottomTrailing)
-        }.onAppear() {
+            VStack{
+                Spacer()
+
+                    Button("Done") {
+                        onCapture(capturedMedia)
+                        dismiss()
+                    }.padding()
+                        .background(.brown)
+                        .cornerRadius(50)
+                        .shadow(radius: 8)
+                        .padding(8)
+                
+            }
+               
+        }.frame(maxWidth: .infinity, maxHeight: .infinity,)
+        .onAppear() {
             isCameraPresented =  cameraPermission.checkCameraPermission()
         }.fullScreenCover(isPresented: $isCameraPresented ){
             CameraCaptureView(

@@ -130,7 +130,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                                 contentType: type,
                                 noteId: note!.id ,
                                 positionedAt: 0 ,
-                                localPath: savedURL.absoluteString,
+                                localPath: savedURL.path,
                                 url: "",
                                 duration: 0,
                                 timestamp: "\(timeStamp)"
@@ -138,8 +138,8 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                     addContent(content: video)
                     //update note
                     note?.contents! += [video]
-                    print("Video saved to: \(savedURL.absoluteString)")
-               
+                    print("Video saved to: \(savedURL.path)")
+            
                 case .audio(let path):
                     let type = ContentType.audio
                     let folderName = "\(type.name)/\(note!.id)"
@@ -150,7 +150,7 @@ class NoteEditorViewModel: BaseViewModel, ObservableObject {
                         contentType: type,
                         noteId: note!.id ,
                         positionedAt: 0 ,
-                        localPath: savedURL.absoluteString ,
+                        localPath: savedURL.path,
                         url: "",
                         duration: 0,
                         timestamp: "\(timeStamp)"

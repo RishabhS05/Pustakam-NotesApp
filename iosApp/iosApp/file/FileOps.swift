@@ -64,7 +64,7 @@ func saveImageFile(data content : Data, in folder : String,to filePath : String 
     
     guard let  fileSavingPath = createFilepath(in: folder, fileName: filePath, contents: content) else {return ""}
     saveData(url: fileSavingPath , data: content)
-    return fileSavingPath.absoluteString
+    return fileSavingPath.path
 }
 
 func saveVideoFile(in folder : String,to filePath : String, url : URL) -> String{
