@@ -10,14 +10,16 @@ struct CardImageEditor : View{
         ZStack (alignment: .bottom){
             AsyncImage(url: URL(fileURLWithPath: content.getMediaUrl())) { phase in
                 if let image = phase.image {
+                      
                         // Display the loaded image
                     image.resizable().scaledToFill()
                     
                 } else if phase.error != nil || content.getMediaUrl().isEmpty {
+                      
                         // Display a placeholder when loading failed
-                    Image("avatar").resizable()
-                        .scaledToFill()
+                    Image("avatar").resizable().scaledToFill()
                 } else {
+                        
                         // Display a placeholder while loading
                     ProgressView()
                 }
@@ -38,6 +40,5 @@ struct CardImageEditor : View{
                     actionEdit()
                 }
         }
-
     }
 }

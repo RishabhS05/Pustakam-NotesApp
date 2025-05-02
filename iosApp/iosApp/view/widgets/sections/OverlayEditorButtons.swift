@@ -24,6 +24,7 @@ struct OverlayEditorButtons : View {
                           onArrowButton()
                           onRecordMic()
                       })
+                      
                       ActionButton(iconName: "camera.circle", action: {
                           onArrowButton()
                           onMediaCapture()
