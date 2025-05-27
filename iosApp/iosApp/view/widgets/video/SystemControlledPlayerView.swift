@@ -6,7 +6,8 @@ struct SystemControlledPlayerView: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(player: self.player)
     }
-
+   
+    
     var player: MediaControlledPlayer?
     init(player: MediaControlledPlayer?) {
         self.player = player

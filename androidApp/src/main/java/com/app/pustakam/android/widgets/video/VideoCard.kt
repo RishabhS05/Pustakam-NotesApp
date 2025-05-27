@@ -36,7 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,11 +46,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
@@ -193,8 +190,6 @@ fun VideoControllerUi(
             }, interactionSource = interactionSource, track = { sliderPositions ->
                 SliderDefaults.Track(
                     colors = SliderDefaults.colors(
-                        thumbColor = brown8, // Thumb color
-                        activeTrackColor =brown8, // Color of the track before the thumb
                         inactiveTrackColor = DarkBrown0 // Color of the track after the thumb
                     ),
                     thumbTrackGapSize = 0.dp,

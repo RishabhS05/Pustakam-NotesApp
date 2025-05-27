@@ -19,5 +19,4 @@ fun VideoPreviewScreen(imageDataViewModel: ImageDataViewModel){
 fun  VideoPreviewEditor(state: MediaFileStateHandler,
                         onEditImageAction: (MediaProcessingEvent) -> Unit,
                         modifier: Modifier = Modifier,
-                        ) {
-}
+                        ) {}

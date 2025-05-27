@@ -38,7 +38,6 @@ fun OverLayEditorButtons(
 ) {
     var showArrow = remember { mutableStateOf(false) }
     val cardColors = CardDefaults.cardColors(
-        contentColor = orange80,
         containerColor = colorScheme.secondary
     )
     val iconModifier = Modifier.padding(6.dp)
@@ -50,7 +49,7 @@ fun OverLayEditorButtons(
             modifier = modifier,
             shape = CardDefaults.elevatedShape,
             elevation = CardDefaults.cardElevation(),
-            colors = CardDefaults.cardColors(containerColor = orange50.copy(alpha = 0.4f))
+            colors = CardDefaults.cardColors()
         ) {
             Icon(icon, tint = colorScheme.inverseSurface,
                 contentDescription = "",

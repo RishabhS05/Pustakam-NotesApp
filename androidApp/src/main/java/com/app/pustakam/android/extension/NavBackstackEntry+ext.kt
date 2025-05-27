@@ -13,8 +13,6 @@ inline fun <reified T : ViewModel> NavBackStackEntry.sharedViewModel(
     navController: NavHostController,
 ): T {
     val navGraphRoute = destination.parent?.route ?: return viewModel()
-    val parentEntry = remember(this) {
-        navController.getBackStackEntry(navGraphRoute)
-    }
+    val parentEntry = remember(this) { navController.getBackStackEntry(navGraphRoute) }
     return viewModel(parentEntry)
 }

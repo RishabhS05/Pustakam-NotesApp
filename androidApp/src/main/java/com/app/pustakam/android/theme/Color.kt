@@ -3,6 +3,68 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+// app new theme color
+
+
+val baseWhite = Color(0xFFFFFFFF)
+val primaryLight = Color(0xff97d2ff)
+val inversePrimaryLight = Color(0xff92cdfa)
+val secondaryLight = Color(0xff246cbc)
+val onSecondaryLight = baseWhite
+val tertiaryLight = Color(0xFF835422)
+val onTertiaryLight = Color(0xFFffffff)
+val errorLight = Color(0xFFba1a1a)
+val onErrorLight = Color(0xFFffffff)
+val onPrimaryLight = Color(0xFFffffff)
+val primaryContainerLight = Color(0xFF97d2ff)
+val onPrimaryContainerLight = Color(0xFF125b82)
+val secondaryContainerLight = Color(0xFF007cb2)
+val onSecondaryContainerLight = Color(0xFFfcfcff)
+val tertiaryContainerLight = Color(0xFFffbf83)
+val onTertiaryContainerLight = Color(0xFF794b1a)
+val errorContainerLight = Color(0xFFffdad6)
+val onErrorContainerLight = Color(0xFF93000a)
+val inverseSurface = Color(0xFF2e3134)
+val onInverseSurface = Color(0xFFeff1f4)
+val surface = Color(0xFFf8f9fd)
+val onSurface = Color(0xFF191c1f)
+val onSurfaceVar = Color(0xFF41484e)
+val surfaceDim = Color(0xFFd8dade)
+val surfaceBright = surface
+val outline = Color(0xFF71787f)
+val outlineVarient = Color(0xFFc0c7cf)
+
+
+
+val primaryDark = Color(0xffd4eaff)
+val onPrimaryDark = Color(0xFF00344e)
+val primaryContainerDark = Color(0xFF97d2ff)
+val onPrimaryContainerDark = Color(0xFF125b82)
+val inversePrimaryDark = Color(0xFF21648b)
+val secondaryDark = Color(0xff8aceff)
+val onSecondaryDark = Color(0xff00344e)
+val tertiaryDark = Color(0xFFffe3cc)
+val onTertiaryDark = Color(0xFF4b2800)
+val errorDark = Color(0xFFffb4ab)
+val onErrorDark = Color(0xFF690005)
+
+val secondaryContainerDark = Color(0xFF039adc)
+val onSecondaryContainerDark = Color(0xFF002c43)
+val tertiaryContainerDark = Color(0xFFffbf83)
+val onTertiaryContainerDark = Color(0xFF794b1a)
+val errorContainerDark = Color(0xFF93000a)
+val onErrorContainerDark = Color(0xFFffdad6)
+val inverseSurfaceDark = Color(0xFFe1e2e6)
+val onInverseSurfaceDark = Color(0xFF2e3134)
+val surfaceDark = Color(0xFF111416)
+val onSurfaceDark = Color(0xFF191c1f)
+val onSurfaceVarDark = Color(0xFF41484e)
+val surfaceDimDark = Color(0xFF111416)
+val surfaceBrightDark = Color(0xFF37393c)
+val outlineDark = Color(0xFF8a9199)
+val outlineVarientDark = Color(0xFF41484e)
+
+
 
 //darkbrown
 val DarkBrown0 = Color(0xFF382320)
@@ -18,7 +80,6 @@ val DarkBrown7 = Color(0xFF0c0807)
 val brown0 = Color(0XFF9e6225)
 val brown1 = Color(0XFFab6a28)
 val brown2 = Color(0XFFb8722b)
-val brown3= Color(0XFFc57a2f)
 val brown4 = Color(0XFFcf8336)
 val brown5 = Color(0XFFd28b43)
 val brown6 = Color(0XFFd59350)
@@ -29,7 +90,7 @@ val brown10 = Color(0XFFe6c098)
 val brown11 = Color(0XFFe9c8a6)
 val brown12 = Color(0XFFeed4b9)
 val brown13 = Color(0XFFf0e4e0)
-val baseWhite = Color(0xFFFFFFFF)
+
 
 
 //orange
@@ -72,65 +133,65 @@ val sideGreenGradient = listOf(green1,green2,green3)
 val sideblueGradient = listOf(blue1,blue2,blue3,blue4)
 val sideBrownGradient = listOf(DarkBrown1.copy(alpha = .5f),DarkBrown2.copy(alpha = .5f))
 val lightTheme = lightColorScheme(
-    primary = earthyLight, // dark
-    primaryContainer = brown10, //light
-    onPrimary =  earthyLight2, // light or white
-    onPrimaryContainer = DarkBrown3, // darker
-    inversePrimary = brown0,// dark
-
-    secondary = earthBrown, //another dark
-    secondaryContainer = brown11,// light
-    onSecondaryContainer = earthGreenDark10,
-    onSecondary = earthGreenDark11,
-    outline = earthBrown1,
-    outlineVariant = brown13,
+    primary = primaryLight, // dark
+    primaryContainer = primaryContainerLight, //light
+    onPrimary =  onPrimaryLight, // light or white
+    onPrimaryContainer = onPrimaryContainerLight, // darker
+    inversePrimary =inversePrimaryLight ,// dark
+    tertiary =  tertiaryLight,
+    tertiaryContainer = tertiaryContainerLight,
+    onTertiaryContainer = onTertiaryContainerLight,
+    onTertiary = onTertiaryLight,
+    secondary = secondaryLight, //another dark
+    secondaryContainer = secondaryContainerLight,// light
+    onSecondaryContainer = onSecondaryContainerLight,
+    onSecondary = onSecondaryLight,
+    outline = outline,
+    outlineVariant = outlineVarient,
     background = OffWhite2,
     onBackground = Gray,
-
-    surface = earthyLight,
-    onSurface = earthtyDarker,
+    surface = surface,
+    inverseSurface = inverseSurface,
+    onSurfaceVariant = onSurfaceVar,
+    onSurface = onSurface,
     surfaceContainer = earthyLight,
-    surfaceTint = DarkBrown4,
-    surfaceVariant =  earthyGrayLight3,
-    surfaceDim = OffWhite,
-    surfaceBright = OffWhite2,
+    surfaceDim = surfaceDim,
+    surfaceBright = surfaceBright,
+    inverseOnSurface = onInverseSurface,
     scrim = Black,
-    onError = orange20,
-    onErrorContainer = orange80,
-    errorContainer = orange10,
-    error = orange30,
+    onError = onErrorLight,
+    onErrorContainer = onErrorContainerLight,
+    errorContainer = errorContainerLight,
+    error = errorLight,
 )
 
 var darkTheme = darkColorScheme(
-    primary = brown8 , //light
-    primaryContainer = DarkBrown4, //darker then primary color
-    onPrimary = brown13,// darker or black
-    onPrimaryContainer = brown11, // lighter then primary
+    primary = primaryDark , //light
+    primaryContainer = primaryContainerDark, //darker then primary color
+    onPrimary = baseWhite,// darker or black
+    onPrimaryContainer = baseWhite, // lighter then primary
 
-    secondary = DarkBrown0, // other then primary same shade
-    secondaryContainer = DarkBrown3, //lighter then onSecondary
-    onSecondary = DarkBrown4 ,// darker
-    onSecondaryContainer = brown13, // same as onPrimaryContainer shade might different
-
-    inversePrimary = brown12, // darker then primary or opposite
-
-    onSurface = brown13, //light
-    surface = DarkBrown4, //darker
-
-    onSurfaceVariant = brown12,
-    surfaceTint = brown13,
-    surfaceVariant =  DarkBrown3, //  mild light then surface
-
-    surfaceDim = Gray3,
-    outline = Gray2,
-    surfaceBright = Gray4,
+    secondary = secondaryDark, // other then primary same shade
+    secondaryContainer = secondaryContainerDark, //lighter then onSecondary
+    onSecondary = onSecondaryDark ,// darker
+    onSecondaryContainer = onSecondaryContainerDark, // same as onPrimaryContainer shade might different
+    onTertiaryContainer = onTertiaryContainerDark,
+    tertiary = tertiaryDark,
+    onTertiary = onTertiaryDark,
+    tertiaryContainer = tertiaryContainerDark,
+    inversePrimary = inversePrimaryDark, // darker then primary or opposite
+    onSurface = baseWhite, //light
+    surface = surfaceDark, //darker
+    onSurfaceVariant = onSurfaceVarDark,
+    surfaceDim = surfaceDimDark,
+    outline = outlineDark,
+    surfaceBright = surfaceBrightDark,
     scrim = Black,
     background = Gray3,
-
     onBackground = OffWhite,
-    error = orange30,
-    errorContainer = orange90,
-    onError = orange20,
-    onErrorContainer = orange80,
+    error = errorDark,
+    errorContainer = errorContainerDark,
+    onError = onErrorDark,
+    onErrorContainer = onErrorContainerDark,
 )
 

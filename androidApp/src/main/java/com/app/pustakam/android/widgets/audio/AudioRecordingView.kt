@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import brown3
+
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.R
 import com.app.pustakam.android.hardware.audio.recorder.AudioLifecycle
@@ -51,6 +51,7 @@ import com.app.pustakam.android.hardware.audio.recorder.AudioViewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import orange20
 import kotlin.math.sin
 
 
@@ -188,7 +189,7 @@ fun AudioVisualizerView(audioLevels: List<Float>, modifier: Modifier =Modifier) 
             val waveEffect = (sin((index + System.currentTimeMillis() / 100.0) / waveFrequency) + 1) / 2
             val barHeight = level * waveEffect * (size.height / 2)  // Adjust to stay within middle
             drawRoundRect(
-                color = brown3,
+                color =orange20 ,
                 topLeft = Offset(x = index * barWidth, y = (centerY - barHeight).toFloat()),
                 size = Size(barWidth * 0.8f, (barHeight * 2).toFloat()), // Extend above and below the line
                 cornerRadius = CornerRadius(barWidth / 2)
