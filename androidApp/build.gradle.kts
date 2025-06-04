@@ -59,5 +59,7 @@ dependencies {
     implementation(libs.bundles.media3)
     implementation(libs.bundles.camerax)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.play.services.location)
+
     debugImplementation(libs.compose.ui.tooling)
 }

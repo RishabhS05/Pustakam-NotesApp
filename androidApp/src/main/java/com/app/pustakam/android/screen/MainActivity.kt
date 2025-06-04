@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.app.pustakam.android.MyApplicationTheme
+import com.app.pustakam.android.hardware.sensors.accerometer.AccelerometerManager
+import com.app.pustakam.android.hardware.sensors.gyroscopeManager.GyroscopeManager
 import com.app.pustakam.android.screen.navigation.AppNavGraph
 import com.app.pustakam.android.screen.navigation.BottomBar
 import com.app.pustakam.android.screen.navigation.PustakmNavController
@@ -22,15 +24,30 @@ import com.app.pustakam.android.widgets.fabWidget.AddNewNoteFAB
 import com.app.pustakam.extensions.isNotnull
 
 class MainActivity : ComponentActivity() {
+    val accMeter = AccelerometerManager(this)
+    val gyroMeter = GyroscopeManager(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
+
                 val navController = rememberPustakmNavController()
                 AppUi(navController = navController)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        accMeter.registorAccelerometer()
+        gyroMeter.registorGyroscope()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        accMeter.unRegistorAccelerometer()
+        gyroMeter.unregistorGyroscope()
     }
 }
 

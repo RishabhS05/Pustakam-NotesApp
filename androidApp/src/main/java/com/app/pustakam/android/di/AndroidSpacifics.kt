@@ -9,8 +9,12 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 
 import com.app.pustakam.android.hardware.audio.recorder.AudioRecorder
 import com.app.pustakam.android.hardware.audio.recorder.IAudioRecorder
+import com.app.pustakam.android.hardware.location.LocationClient
+import com.app.pustakam.android.services.locationService.DefaultLocationClient
 import com.app.pustakam.android.services.mediaSessionService.MediaNotificationManager
 import com.app.pustakam.android.services.mediaSessionService.MediaServiceListener
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
 
 import org.koin.core.module.Module
@@ -36,4 +40,10 @@ fun getAndroidSpecifics(): Module =
            exoPlayer = get()
        )}
        single <MediaServiceListener>{ MediaServiceListener(get())  }
+       factory<DefaultLocationClient>{
+           DefaultLocationClient(
+               get(), // application context
+              client =  LocationServices.getFusedLocationProviderClient(get()) // fused location provider client
+           )
+       }
    }

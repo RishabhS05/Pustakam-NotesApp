@@ -196,7 +196,8 @@ class NoteEditorViewModel : BaseViewModel() {
         VIDEO -> listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO)
         AUDIO -> listOf(NeededPermission.RECORD_AUDIO)
         IMAGE -> listOf(NeededPermission.CAMERA)
-        LOCATION -> listOf(NeededPermission.COARSE_LOCATION)
+        LOCATION -> listOf(NeededPermission.COARSE_LOCATION, NeededPermission.FINE_LOCATION,
+            NeededPermission.BACKGROUND_LOCATION)
         else -> listOf(NeededPermission.POST_NOTIFICATIONS)
     }
 
@@ -219,6 +220,10 @@ class NoteEditorViewModel : BaseViewModel() {
               updateContent(content = textContent)
           }
       }
+
+    fun locationState(value: Boolean ) {
+        _noteUiState.update { it.copy(LocationState = value) }
+    }
     fun updateContent(index: Int = -1, content: NoteContentModel) {
         if(index== -1) {
             addContentData(content)

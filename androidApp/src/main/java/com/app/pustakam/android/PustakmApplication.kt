@@ -1,6 +1,10 @@
 package com.app.pustakam.android
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import com.app.pustakam.android.di.getAndroidSpecifics
 import com.app.pustakam.koinDI.initKoin
 import org.koin.android.ext.koin.androidContext
@@ -11,7 +15,7 @@ import org.koin.core.logger.Level
 class PustakmApplication : Application(){
     override fun onCreate() {
         super.onCreate()
-        initKoin{
+        initKoin {
             androidLogger(level = Level.INFO)
             androidContext(this@PustakmApplication)
             modules(getAndroidSpecifics())

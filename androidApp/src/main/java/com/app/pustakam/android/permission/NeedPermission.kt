@@ -1,6 +1,7 @@
-package com.app.pustakam.android.permission
+ package com.app.pustakam.android.permission
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 
@@ -10,6 +11,21 @@ enum class NeededPermission(
     val description: String,
     val permanentlyDeniedDescription: String,
 ) {
+
+    @SuppressLint("InlinedApi")
+    BACKGROUND_LOCATION(
+        permission = Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+        title = "Background Location Permission",
+        description = "This permission is needed to get your approximate location in background. Please grant the permission.",
+        permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
+    ),
+
+    FINE_LOCATION(
+        permission = Manifest.permission.ACCESS_FINE_LOCATION,
+        title = "Accurate Location Permission",
+        description = "This permission is needed to get your accurate location . Please grant the permission.",
+        permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
+    ),
     COARSE_LOCATION(
         permission = Manifest.permission.ACCESS_COARSE_LOCATION,
         title = "Approximate Location Permission",

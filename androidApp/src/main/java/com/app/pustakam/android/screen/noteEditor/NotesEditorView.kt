@@ -1,6 +1,8 @@
 package com.app.pustakam.android.screen.noteEditor
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -49,11 +51,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
+import com.app.pustakam.android.extension.startServiceWrapper
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.screen.navigation.Route
+import com.app.pustakam.android.services.locationService.LocationService
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
@@ -116,9 +120,18 @@ fun NoteEditorScreen(
                     when (contentType) {
                         ContentType.IMAGE, ContentType.VIDEO -> navigateTo(CameraData(noteEditorViewModel.noteContentUiState.value.note?.id!!))
                         ContentType.AUDIO -> noteEditorViewModel.startStopAudioRecording()
+                        ContentType.LOCATION -> {
+                            noteEditorViewModel.locationState(true)
+                        }
                         else -> {}
                     }
                 })
+            }
+            LocationState -> {
+                val intent = Intent(context, LocationService::class.java).apply {
+                    action = LocationService.ACTION_START
+                }
+                (context as Activity).startServiceWrapper(intent = intent)
             }
 
             showDeleteAlert -> {
@@ -195,6 +208,10 @@ fun NoteEditorScreen(
                 onArrowButton = { focusManager.clearFocus() },
                 onRecordMic = { 
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.AUDIO)
+                },
+                onLocation = {
+                    noteEditorViewModel.preparePermissionDialog(contentType = ContentType.LOCATION)
+
                 },
                 onCameraAction = {
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.IMAGE)
@@ -328,6 +345,7 @@ fun RenderWidget(
 
         ContentType.LOCATION -> {
             val locationContent = content as NoteContentModel.Location
+
         }
 
         ContentType.PDF -> {}

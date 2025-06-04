@@ -57,6 +57,7 @@ data class NoteUIState(
     val noteStatus : NoteStatus? = NoteStatus.OnEditingMode,
     val contentType : ContentType? = null,
     val permissions : List<NeededPermission> = listOf(),
+    val LocationState : Boolean = false ,
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
 //NoteDataState

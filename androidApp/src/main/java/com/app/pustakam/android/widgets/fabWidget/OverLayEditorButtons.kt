@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.TextFields
@@ -34,7 +35,8 @@ fun OverLayEditorButtons(
     onAddTextField : ()-> Unit ={},
     onCameraAction: () -> Unit = {},
     onRecordMic: () -> Unit = {},
-    onArrowButton: ()-> Unit ={}
+    onArrowButton: ()-> Unit ={},
+    onLocation : () -> Unit = {}
 ) {
     var showArrow = remember { mutableStateOf(false) }
     val cardColors = CardDefaults.cardColors(
@@ -106,6 +108,20 @@ fun OverLayEditorButtons(
                     Icon(
                         imageVector = Icons.Filled.TextFields,
                         contentDescription = "Add new text note",
+                        modifier = iconModifier
+                    )
+                }
+                Card(
+                    onClick = {
+                        onArrowButton()
+                      onLocation()
+                    },
+                    colors = cardColors,
+                    elevation = CardDefaults.elevatedCardElevation()
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOn,
+                        contentDescription = "location",
                         modifier = iconModifier
                     )
                 }
