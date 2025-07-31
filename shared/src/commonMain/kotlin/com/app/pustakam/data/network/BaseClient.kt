@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
 
-abstract class BaseClient(val userPrefs : IAppPreferences ) {
+abstract class BaseClient(val userPrefs : IAppPreferences) {
     protected val httpClient: HttpClient = createHttpClient()
     suspend inline fun < reified T, E: Error> baseApiCall(
         crossinline actualApiCall : suspend  () -> HttpResponse

@@ -34,8 +34,6 @@ val surfaceBright = surface
 val outline = Color(0xFF71787f)
 val outlineVarient = Color(0xFFc0c7cf)
 
-
-
 val primaryDark = Color(0xffd4eaff)
 val onPrimaryDark = Color(0xFF00344e)
 val primaryContainerDark = Color(0xFF97d2ff)
@@ -57,6 +55,7 @@ val onErrorContainerDark = Color(0xFFffdad6)
 val inverseSurfaceDark = Color(0xFFe1e2e6)
 val onInverseSurfaceDark = Color(0xFF2e3134)
 val surfaceDark = Color(0xFF111416)
+
 val onSurfaceDark = Color(0xFF191c1f)
 val onSurfaceVarDark = Color(0xFF41484e)
 val surfaceDimDark = Color(0xFF111416)
@@ -110,27 +109,20 @@ val Gray2 = Color(0xFF79747E)
 val Gray3 = Color(0xFF151219)
 val Gray4 = Color(0xFF3A383F)
 
-val earthtyDarker = Color(0xFF523D35)
-val earthyLight = Color(0xFFBBA58F)
-val earthyLight2 = Color(0xFFE7DACD)
-val earthyGrayLight3= Color(0xFFEFEFE9)
-val earthBrown1 = Color(0xFFA68A64)
-val earthBrown = Color(0xFF936639)
-val earthGreenDark10 = Color(0xFF7F4F24)
-val earthGreenDark11 = Color(0xFF582E0E)
+
 val green1 = Color(0xffbcf825)
 val green2 = Color(0xff61800b)
 val green3 = Color(0xff3a5102)
 val blue1 = Color(0xff7295f3)
+val blue5 = Color(0xFF8FA9FC)
 val blue2 = Color(0xff2d3e75)
 val blue3 = Color(0xff223c98)
 val blue4 = Color(0xff0f1e4a)
-
+val surfaceContainerLight = blue1.copy(0.1f)
 val notegradient = listOf(orange90,orange50)
-
-val bgradient = listOf(earthGreenDark11,earthGreenDark10, earthtyDarker)
 val sideGreenGradient = listOf(green1,green2,green3)
-val sideblueGradient = listOf(blue1,blue2,blue3,blue4)
+val allGradient = listOf(orange10,orange30,orange50,blue1,blue3,blue4,green2,green3,DarkBrown1,DarkBrown2)
+val sideblueGradient = listOf(blue1,blue2,blue5,blue3,blue4)
 val sideBrownGradient = listOf(DarkBrown1.copy(alpha = .5f),DarkBrown2.copy(alpha = .5f))
 val lightTheme = lightColorScheme(
     primary = primaryLight, // dark
@@ -154,7 +146,7 @@ val lightTheme = lightColorScheme(
     inverseSurface = inverseSurface,
     onSurfaceVariant = onSurfaceVar,
     onSurface = onSurface,
-    surfaceContainer = earthyLight,
+    surfaceContainer = surfaceContainerLight,
     surfaceDim = surfaceDim,
     surfaceBright = surfaceBright,
     inverseOnSurface = onInverseSurface,
@@ -168,9 +160,8 @@ val lightTheme = lightColorScheme(
 var darkTheme = darkColorScheme(
     primary = primaryDark , //light
     primaryContainer = primaryContainerDark, //darker then primary color
-    onPrimary = baseWhite,// darker or black
-    onPrimaryContainer = baseWhite, // lighter then primary
-
+    onPrimary = onPrimaryDark,// darker or black
+    onPrimaryContainer = onPrimaryContainerDark, // lighter then primary
     secondary = secondaryDark, // other then primary same shade
     secondaryContainer = secondaryContainerDark, //lighter then onSecondary
     onSecondary = onSecondaryDark ,// darker

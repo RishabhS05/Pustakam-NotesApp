@@ -10,6 +10,8 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 
+
+
 fun Activity.goToAppSetting() {
     val i = Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,

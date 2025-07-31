@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.bundles.camerax)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.work.runtime.ktx)
 
     debugImplementation(libs.compose.ui.tooling)
 }

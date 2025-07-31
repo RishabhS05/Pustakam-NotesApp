@@ -25,13 +25,14 @@ espressoCore = "3.6.1"
 appcompat = "1.7.0"
 constraintlayout = "2.2.1"
 playServicesLocation = "21.3.0"
+workRuntimeKtx = "2.10.2"
 
 [libraries]
-androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+
 #compose
 coil = { module = "io.coil-kt:coil-compose", version.ref= "coil" }
 coil-svg = {module = "io.coil-kt:coil-svg", version.ref= "coil" }
-
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
 compose-viewmodel= {module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodelCompose"}
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
@@ -88,6 +89,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 #Location
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

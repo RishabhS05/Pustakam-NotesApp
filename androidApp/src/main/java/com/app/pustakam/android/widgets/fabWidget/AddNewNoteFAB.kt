@@ -20,9 +20,9 @@ fun AddNewNoteFAB(modifier: Modifier = Modifier,onClick : ()-> Unit={}) {
         shape = CircleShape,
         containerColor = colorScheme.secondary,
         onClick = { onClick() },
-        icon = { Icon(Icons.Filled.Edit, tint = colorScheme.primary,
+        icon = { Icon(Icons.Filled.Edit,
             contentDescription = "Add A Quick note.") },
-        text = { Text(text = "Quick note.", style = TextStyle(color = colorScheme.primary, )) },
+        text = { Text(text = "Quick note.") },
     )
 }
 

@@ -19,12 +19,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -80,8 +83,12 @@ fun AudioPlayView(
 
     val iconModifier = Modifier.size(28.dp)
     val interactionSource = remember { MutableInteractionSource() }
-    Card(modifier = Modifier.padding(8.dp)) {
-        Column(modifier = Modifier) {
+    Card(modifier = Modifier.padding(8.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 12.dp
+        )
+    ) {
+        Column {
             Box(
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp).fillMaxWidth(),
             ) {
@@ -108,12 +115,20 @@ fun AudioPlayView(
                     interactionSource = interactionSource,
                     track = { sliderPositions ->
                         SliderDefaults.Track(
+                            colors = SliderDefaults.colors(
+                                thumbColor = colorScheme.secondary,
+                                inactiveTrackColor = colorScheme.onSurface.copy(0.5f),
+                                activeTrackColor = colorScheme.secondary
+                            ),
                             sliderState = sliderPositions,
                             modifier = Modifier.height(8.dp),
                         )
                     },
                     thumb = {
                         SliderDefaults.Thumb(
+                            colors = SliderDefaults.colors(
+                               thumbColor =  colorScheme.secondary,
+                            ),
                             modifier = Modifier.scale(scaleX = 0.5f, scaleY =1f),
                             interactionSource = interactionSource,
                         )
@@ -122,7 +137,7 @@ fun AudioPlayView(
                 IconButton(onClick = onPlay) {
                     val drawable = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow
                     Icon(
-                        imageVector = drawable, contentDescription = "", tint = colorScheme.onPrimaryContainer, modifier = iconModifier
+                        imageVector = drawable, contentDescription = "", tint = colorScheme.secondary, modifier = iconModifier
                     )
                 }
                 IconButton(onClick = onDelete) {
@@ -132,7 +147,6 @@ fun AudioPlayView(
                 }
             }
         }
-
     }
 }
 
@@ -143,8 +157,10 @@ fun AudioPlayView(
 private fun AudioPlayerPreview() {
     MyApplicationTheme {
         val state = PlayerUiState(
-            totalDuration = "00 sec", progress = 10f, timeRemaining = "00:20", timeElapsed = "00:20",
-            duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "", duration = 100, position = 1, type = ContentType.AUDIO)
+            totalDuration = "00 sec", progress = 10f, timeRemaining = "00:20",
+            timeElapsed = "00:20",
+            duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "",
+                duration = 100, position = 1, type = ContentType.AUDIO)
         )
         AudioPlayView(state = state)
     }

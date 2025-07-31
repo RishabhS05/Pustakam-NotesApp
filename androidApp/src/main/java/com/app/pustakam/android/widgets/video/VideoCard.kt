@@ -1,11 +1,10 @@
 package com.app.pustakam.android.widgets.video
 
-import DarkBrown0
+
 import android.app.Activity
 import android.content.res.Configuration
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.VideoView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,7 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +54,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import brown8
+
+
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
@@ -139,7 +139,9 @@ fun VideoControllerUi(
                 onAction(MediaPlayingUIEvent.SeekToPrevious(content.id))
             }) {
                 Icon(
-                    imageVector = Icons.Filled.SkipPrevious, contentDescription = "Play/Pause Media", tint = brown8, modifier = iconModifier
+                    imageVector = Icons.Filled.SkipPrevious, contentDescription = "Play/Pause Media",
+                    tint = colorScheme.primary,
+                    modifier = iconModifier
                 )
             }
 
@@ -147,7 +149,9 @@ fun VideoControllerUi(
                 onAction(MediaPlayingUIEvent.Backward(  mediaId = content.id))
             }) {
                 Icon(
-                    imageVector = Icons.Filled.Replay10, contentDescription = "forward Media", tint = brown8, modifier = iconModifier
+                    imageVector = Icons.Filled.Replay10, contentDescription = "forward Media",
+                    modifier = iconModifier,
+                            tint = colorScheme.primary,
                 )
             }
             //play/pause
@@ -156,7 +160,8 @@ fun VideoControllerUi(
             }) {
                 val drawable = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow
                 Icon(
-                    imageVector = drawable, contentDescription = "Play/Pause Media", tint = brown8, modifier = Modifier.size(34.dp)
+                    imageVector = drawable, contentDescription = "Play/Pause Media",tint=
+                    colorScheme.primary, modifier = Modifier.size(34.dp)
                 )
             }
             //forward some seconds
@@ -164,7 +169,8 @@ fun VideoControllerUi(
                 onAction(MediaPlayingUIEvent.Forward(mediaId = content.id))
             }) {
                 Icon(
-                    imageVector = Icons.Filled.Forward10, contentDescription = "forward Media", tint = brown8, modifier = iconModifier
+                    imageVector = Icons.Filled.Forward10, contentDescription = "forward Media", modifier = iconModifier,
+                    tint = colorScheme.primary,
                 )
             }
             //skip next
@@ -172,7 +178,8 @@ fun VideoControllerUi(
                 onAction(MediaPlayingUIEvent.SeekNextUIEvent(content.id))
             }) {
                 Icon(
-                    imageVector = Icons.Filled.SkipNext, contentDescription = "Play/Pause Media", tint = colorScheme.primary, modifier = iconModifier
+                    imageVector = Icons.Filled.SkipNext, contentDescription = "Play/Pause Media",
+                    tint = colorScheme.primary, modifier = iconModifier
                 )
             }
         }
@@ -190,7 +197,8 @@ fun VideoControllerUi(
             }, interactionSource = interactionSource, track = { sliderPositions ->
                 SliderDefaults.Track(
                     colors = SliderDefaults.colors(
-                        inactiveTrackColor = DarkBrown0 // Color of the track after the thumb
+                        inactiveTrackColor = colorScheme.onSurface.copy(0.5f),
+                        activeTrackColor = colorScheme.primary
                     ),
                     thumbTrackGapSize = 0.dp,
                     sliderState = sliderPositions,
@@ -207,11 +215,11 @@ fun VideoControllerUi(
                 .padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     state.timeElapsed, style = typography.labelMedium,
-                    color = brown8,modifier = Modifier
+                    color = colorScheme.primary,modifier = Modifier
                 )
                 Text(
                     state.timeRemaining, style = typography.labelMedium,
-                    color = brown8,
+                    color = colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 6.dp)
                 )
             }
@@ -222,6 +230,7 @@ fun VideoControllerUi(
 
 @Preview("default")
 @Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview("light theme", uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Preview("large font", fontScale = 2f)
 
 @Composable
