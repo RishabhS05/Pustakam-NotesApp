@@ -71,6 +71,7 @@ fun LoadImage( url: String,
 
 @Preview("default")
 @Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview("dark theme", uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Preview("large font", fontScale = 2f)
 @Composable
 private fun LoadImagePrev() {

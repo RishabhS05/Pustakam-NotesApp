@@ -33,8 +33,8 @@ fun Modifier.thickGlass() : Modifier {
         .drawBehind {
             drawRect(
                 color = Color.White.copy(alpha = 0.2f),
-                style = Stroke(width = 2.dp.toPx())
+                style = Stroke(width = 1.dp.toPx())
             )
         }
-        .blur(16.dp) // needs Accompanist or custom modifier
+        .blur(8.dp) // needs Accompanist or custom modifier
 }

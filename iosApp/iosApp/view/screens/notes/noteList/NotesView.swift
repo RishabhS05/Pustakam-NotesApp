@@ -44,7 +44,8 @@ struct NotesView: View {
     }
     var body: some View {
         ZStack{
-            staggeredGrid
+            if notesHandler.notes.isEmpty { emptyNotesUI }
+            else { staggeredGrid }
             if notesHandler.isLoading {
                 loadingUi
             }
@@ -57,5 +58,11 @@ struct NotesView: View {
             }.onDisappear{
                 notesHandler.isLoading = false
             }
+    }
+    var emptyNotesUI : some View {
+        HStack{
+            Image("emptyNotes").resizable()
+                .frame(width: 400, height:400)
+        }
     }
 }

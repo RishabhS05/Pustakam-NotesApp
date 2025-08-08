@@ -1,22 +1,31 @@
 package com.app.pustakam.android.screen.notes.list
 
 import allGradient
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.pustakam.android.R
 import com.app.pustakam.android.extension.thickGlass
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.screen.notes.single.NoteCardView
+import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.data.models.response.notes.Note
@@ -31,11 +40,15 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 notesViewModel.clearError()
             }
+            notes.isEmpty ->{EmptyNoteUI(modifier = Modifier.fillMaxSize())}
             notes.isNotEmpty() -> LazyVerticalStaggeredGrid(
                 columns = StaggeredGridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize()
-                    .background(brush = Brush.verticalGradient(sideblueGradient),
-                        alpha = 0.2f),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(sideblueGradient),
+                        alpha = 0.2f
+                    ),
                 contentPadding = PaddingValues(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -45,6 +58,14 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
             }
             isLoading -> LoadingUI()
         }
-    }
+}
+}
+@Composable
+fun EmptyNoteUI(modifier: Modifier = Modifier) {
+    Column(modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(painter = painterResource(R.mipmap.empty_notes), "", Modifier.size(300.dp))
 
+    }
 }
