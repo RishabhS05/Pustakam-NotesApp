@@ -34,7 +34,7 @@ struct NotesView: View {
     }
         // Padding to keep the button away from screen edges
     }
-    //List of not
+    //List of notes
     var staggeredGrid : some View {
         StaggeredGrid(columns: 2, items: notesHandler.notes, spacing: 12 ) {
             note in NoteBookView(note: note){
@@ -42,10 +42,28 @@ struct NotesView: View {
             }
         }
     }
+    //List of tags
+    var tagsUi : some View {
+        ScrollView(.horizontal,showsIndicators: false){
+            LazyHStack(alignment:.center,spacing: 8){
+                ForEach(notesHandler.tags) { tag in
+                    TagView(tag: tag)
+                }
+            }
+        }.frame(height: 40)
+    }
     var body: some View {
-        ZStack{
+        ZStack(alignment: .top){
             if notesHandler.notes.isEmpty { emptyNotesUI }
-            else { staggeredGrid }
+            else {
+                ScrollView{
+                    LazyVStack(alignment:.center,spacing: 0){
+                        tagsUi
+                        
+                        staggeredGrid
+                    }
+                }
+            }
             if notesHandler.isLoading {
                 loadingUi
             }

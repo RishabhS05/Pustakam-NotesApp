@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.noteEditor.NoteStatus
+import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.util.ContentType
@@ -41,7 +42,8 @@ data class NotesUIState(
     val page : Int = 1,
     val count : Int = 0,
     val isNextPage : Boolean = true,
-    val notes: ArrayList<Note> = arrayListOf()
+    val notes: ArrayList<Note> = arrayListOf(),
+    val tags: ArrayList<Tag> = arrayListOf()
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
 //Note ActionState

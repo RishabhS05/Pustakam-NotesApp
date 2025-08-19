@@ -1,8 +1,9 @@
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.core.graphics.toColorInt
+
 // app new theme color
 
 
@@ -62,7 +63,7 @@ val surfaceDimDark = Color(0xFF111416)
 val surfaceBrightDark = Color(0xFF37393c)
 val outlineDark = Color(0xFF8a9199)
 val outlineVarientDark = Color(0xFF41484e)
-
+val bookmarkDefault = Color(0xFFFF6F46)
 
 
 //darkbrown
@@ -186,3 +187,14 @@ var darkTheme = darkColorScheme(
     onErrorContainer = onErrorContainerDark,
 )
 
+fun Color.toHexString(): String {
+    val alpha = (this.alpha * 255).toInt()
+    val red = (this.red * 255).toInt()
+    val green = (this.green * 255).toInt()
+    val blue = (this.blue * 255).toInt()
+
+    return String.format("#%02X%02X%02X%02X", alpha, red, green, blue)
+}
+fun String.toColor() : Color {
+    return Color(this.toColorInt())
+}

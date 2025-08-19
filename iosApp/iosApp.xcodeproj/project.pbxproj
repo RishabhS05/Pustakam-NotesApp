@@ -19,6 +19,8 @@
 		630BA1992CF50F8C00D148C8 /* AudioVisualizerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1982CF50F8C00D148C8 /* AudioVisualizerView.swift */; };
 		630BA19B2CF5398000D148C8 /* AudioLevelsMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA19A2CF5398000D148C8 /* AudioLevelsMonitor.swift */; };
 		6315C6322DBA649F00796C7E /* MediaManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6315C6312DBA649900796C7E /* MediaManager.swift */; };
+		63302FE62E54B8270038B1FD /* TagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63302FE52E54B81A0038B1FD /* TagView.swift */; };
+		63302FE92E55198D0038B1FD /* Color.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63302FE82E5519860038B1FD /* Color.ext.swift */; };
 		6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB22CEF35AA00CC254C /* MicPermission.swift */; };
 		6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB42CEF35D100CC254C /* StroagePermission.swift */; };
 		6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB82CEF363100CC254C /* LocationPermission.swift */; };
@@ -93,6 +95,8 @@
 		630BA1982CF50F8C00D148C8 /* AudioVisualizerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioVisualizerView.swift; sourceTree = "<group>"; };
 		630BA19A2CF5398000D148C8 /* AudioLevelsMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLevelsMonitor.swift; sourceTree = "<group>"; };
 		6315C6312DBA649900796C7E /* MediaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaManager.swift; sourceTree = "<group>"; };
+		63302FE52E54B81A0038B1FD /* TagView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagView.swift; sourceTree = "<group>"; };
+		63302FE82E5519860038B1FD /* Color.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Color.ext.swift; sourceTree = "<group>"; };
 		6345BFB22CEF35AA00CC254C /* MicPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicPermission.swift; sourceTree = "<group>"; };
 		6345BFB42CEF35D100CC254C /* StroagePermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StroagePermission.swift; sourceTree = "<group>"; };
 		6345BFB82CEF363100CC254C /* LocationPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermission.swift; sourceTree = "<group>"; };
@@ -192,6 +196,22 @@
 			path = media;
 			sourceTree = "<group>";
 		};
+		63302FE42E54B80F0038B1FD /* tags */ = {
+			isa = PBXGroup;
+			children = (
+				63302FE52E54B81A0038B1FD /* TagView.swift */,
+			);
+			path = tags;
+			sourceTree = "<group>";
+		};
+		63302FE72E5519800038B1FD /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				63302FE82E5519860038B1FD /* Color.ext.swift */,
+			);
+			path = ui;
+			sourceTree = "<group>";
+		};
 		633E376F2E5389CF00FABC05 /* theme */ = {
 			isa = PBXGroup;
 			children = (
@@ -281,6 +301,7 @@
 		639BBEFA2CDD4A9100E0E00D /* extensions */ = {
 			isa = PBXGroup;
 			children = (
+				63302FE72E5519800038B1FD /* ui */,
 				635557432DC0731100C7D533 /* utils */,
 				63C61C812DA848E7004F92CB /* String.ext.swift */,
 				63AA02542D9C64EC0040E872 /* note */,
@@ -400,6 +421,7 @@
 		63D089182CABD636008FD8CC /* widgets */ = {
 			isa = PBXGroup;
 			children = (
+				63302FE42E54B80F0038B1FD /* tags */,
 				63CFB9262DB8CFA600093C96 /* audio */,
 				63CFB9252DB7261E00093C96 /* video */,
 				63CFB91D2DB6CB8E00093C96 /* sections */,
@@ -638,6 +660,7 @@
 				63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */,
 				630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */,
 				63CFB9222DB7109A00093C96 /* CardImageEditor.swift in Sources */,
+				63302FE62E54B8270038B1FD /* TagView.swift in Sources */,
 				63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */,
 				63DF20132DBC59BF001E0EDE /* MediaControlledPlayer.swift in Sources */,
 				63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */,
@@ -645,6 +668,7 @@
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
+				63302FE92E55198D0038B1FD /* Color.ext.swift in Sources */,
 				63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */,
 				63DF200B2DBC3698001E0EDE /* PlayerUiState.swift in Sources */,
 				63A5529B2D91949300A9C006 /* Theme.swift in Sources */,

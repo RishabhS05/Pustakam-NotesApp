@@ -108,3 +108,4 @@ struct Images {
    static let workoutImage =  "workout-image"
                           
 }
+
