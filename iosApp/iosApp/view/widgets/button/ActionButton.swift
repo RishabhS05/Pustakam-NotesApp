@@ -20,7 +20,7 @@ struct ActionButton: View {
                 .scaledToFit()
                 .frame(width: 18, height: 18)
                 .padding(12)
-                .background(.brown)
+                .background(Theme.Colors.secondary)
                 .clipShape(Rectangle())
                 .cornerRadius(12)
                 .shadow(color: .gray.opacity(0.1),radius: 4)

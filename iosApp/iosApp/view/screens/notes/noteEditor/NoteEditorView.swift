@@ -98,12 +98,12 @@ struct NoteEditorView: View {
                     HStack{
                         ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
                             saveNote()
-                        }, tint :.brown)
+                        }, tint :Theme.Colors.secondary)
                         ActionButtonWithoutBackground(iconName: "arrow.down.document",
                                                       action: {
                             
-                        },tint : .brown)
-                            ActionButtonWithoutBackground(iconName: "trash.fill", action: {
+                        },tint : Theme.Colors.secondary)
+                            ActionButtonWithoutBackground(iconName: "trash", action: {
     
 //                                onDelete()
                             }, tint: Color.red)

@@ -10,6 +10,6 @@ struct BackButton: View {
                 Text("Back")
             }
         }
-        .foregroundColor(.brown)
+        .foregroundColor(Theme.Colors.secondary)
     }
 }

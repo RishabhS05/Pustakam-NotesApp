@@ -25,7 +25,7 @@ struct NotesView: View {
                         .font(.system(size: 24))
                         .frame(height: 48,alignment: .leading).padding(.leading,12)
                     Text("Quick note ").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white).padding(.trailing, 12)
-                }.background(.brown)
+                }.background(Theme.Colors.secondary)
             }
             .cornerRadius(24)
             .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 5)

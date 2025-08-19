@@ -192,6 +192,13 @@
 			path = media;
 			sourceTree = "<group>";
 		};
+		633E376F2E5389CF00FABC05 /* theme */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = theme;
+			sourceTree = "<group>";
+		};
 		6343B13F2CB4230100186B67 /* login */ = {
 			isa = PBXGroup;
 			children = (
@@ -383,6 +390,7 @@
 		63D089152CABD616008FD8CC /* view */ = {
 			isa = PBXGroup;
 			children = (
+				633E376F2E5389CF00FABC05 /* theme */,
 				63D089192CABD653008FD8CC /* screens */,
 				63D089182CABD636008FD8CC /* widgets */,
 			);

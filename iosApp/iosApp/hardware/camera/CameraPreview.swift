@@ -41,7 +41,7 @@ struct CameraPreview: View {
                         onCapture(capturedMedia)
                         dismiss()
                     }.padding()
-                        .background(.brown)
+                    .background(Theme.Colors.secondary)
                         .cornerRadius(50)
                         .shadow(radius: 8)
                         .padding(8)

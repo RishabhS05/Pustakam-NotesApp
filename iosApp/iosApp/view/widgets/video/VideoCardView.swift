@@ -22,7 +22,7 @@ struct VideoCardPlayer : View {
                                 Image(systemName: "play.circle.fill")
                                     .resizable()
                                     .frame(width: 40, height: 40)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Theme.Colors.primary)
                             }
                         }
         }.frame(width: 200,height: 300)

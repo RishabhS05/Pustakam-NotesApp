@@ -30,6 +30,7 @@ struct HomeView : View {
             }
             .tag(2)
         }.navigationBarBackButtonHidden()
+        
     }
 }
 

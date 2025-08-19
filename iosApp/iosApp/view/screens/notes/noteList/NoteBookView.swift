@@ -9,18 +9,11 @@ struct NoteBookView : View {
             let width = geo.size.width
             let height = geo.size.height
             ZStack{
-                HStack(){
-                    Rectangle()
-                        .foregroundColor(Theme.Colors.primary)
-                        .frame(width: 10)
-                    Spacer()
-                }
                 VStack{
                     Text(note.title ?? "No Title ?")
                         .font(.system(size: 18, weight: .bold))
                         .lineLimit(5)
                         .padding(12)
-                        .background(.white.opacity(0.3))
                 }
                 .frame(maxWidth:width , maxHeight: height, alignment: .topLeading).padding(.horizontal,20)
                     .padding(.vertical,35)
@@ -36,7 +29,7 @@ struct NoteBookView : View {
                         height : height,
                         alignment: .topTrailing)
             }
-        .background(.orange.opacity(0.3))
+            .background(Theme.Colors.primary)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .onTapGesture {
                     onClick()

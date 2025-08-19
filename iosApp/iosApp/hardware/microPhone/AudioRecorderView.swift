@@ -32,7 +32,7 @@ struct AudioRecorderView : View {
                             Int(elapsedTime.truncatingRemainder(dividingBy: 60)),
                             Int((elapsedTime * 100).truncatingRemainder(dividingBy: 100))))
                 .font(.headline.monospacedDigit())
-                .foregroundColor(.brown)
+                .foregroundColor(Theme.Colors.primary)
                     
                 // Real-time Wave Animation
                 AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
@@ -49,7 +49,7 @@ struct AudioRecorderView : View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 20, height: 20)
-                            .foregroundColor(audioRecorder.isRecording ? .red : .brown)
+                            .foregroundColor(audioRecorder.isRecording ? .red : Theme.Colors.secondary)
                     }
                     .disabled(audioRecorder.audioFileURL == nil)
                     .padding(8)
@@ -67,12 +67,12 @@ struct AudioRecorderView : View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 20, height: 20)
-                            .foregroundColor(.brown)
+                            .foregroundColor(Theme.Colors.secondary)
                     }
                 }
             .frame(height: 40)
             .padding(8)
-            .background(Theme.Colors.onSurface)
+            .background(Theme.Colors.surface)
             .cornerRadius(12)
             .shadow(radius: 12)
             .padding(8)
