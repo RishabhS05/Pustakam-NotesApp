@@ -38,7 +38,7 @@ fun SnackBarUi(error: String, modifier: Modifier = Modifier, dismissAction: () -
                     .padding(4.dp)
                     .fillMaxWidth(), text = error,
                 color = Color.White,
-                fontSize = 18.sp,
+                fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
         }

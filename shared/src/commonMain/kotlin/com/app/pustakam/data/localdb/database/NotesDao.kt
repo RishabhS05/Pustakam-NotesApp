@@ -1,6 +1,7 @@
 package com.app.pustakam.data.localdb.database
 
 import app.cash.sqldelight.db.SqlDriver
+import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.Notes
@@ -15,6 +16,35 @@ import kotlinx.coroutines.launch
 class NotesDao(private val sharedDb: SqlDriver) {
     private val database = NotesDatabase(sharedDb)
     private val queries = database.notesDatabaseQueries
+
+   suspend fun createTagOnDB(tag : Tag) : Tag?   {
+       println("Create Tab On DB called with tag: $tag") // Debug log
+        // The transaction block is synchronous: it completes before proceeding.
+        database.transaction {
+            queries.createTag(id= tag.id, label = tag.label, color= tag.color)
+        }
+        // This will only execute after the transaction above is finished.
+        return getTag(tag.id)
+    }
+  suspend fun getTag(id : String) : Tag? =  queries.getTag(id).executeAsOneOrNull()?.let {
+            Tag(id = it.id, label = it.label, color= it.color)
+        }
+
+  suspend fun updateTagOnDB(tag: Tag) : Tag? {
+      database.transaction {
+          queries.updateTag(color = tag.color, label = tag.label, id = tag.id)
+      }
+        return getTag(tag.id)
+    }
+   suspend fun deleteTag(tagId  : String) : Boolean {
+        queries.deleteTag(tagId)
+        val tag  = getTag(tagId)
+        return tag == null
+    }
+
+    suspend fun getTagsFromDB() : List<Tag> = queries.getTags().executeAsList().map{
+          Tag(id = it.id, label = it.label, color= it.color)
+    }
   suspend fun selectAllNotesFromDb(limit : Int = 10, page : Int = 0): Notes {
       val offset = (page - 1) * limit
       val notesWithContent = arrayListOf<Note>()
@@ -163,13 +193,13 @@ class NotesDao(private val sharedDb: SqlDriver) {
     suspend fun deleteByIdFromDb(id: String) : Boolean {
         queries.deleteById(id)
         val note  = selectNoteById(id)
-        return note== null
+        return note == null
     }
 
    suspend fun insertOrUpdateNoteFromDb(note: Note) : Note {
         log_d("NoteDao insert", note)
         queries.insertOrUpdateNote(
-            id = note.id!!,
+            id = note.id,
             title = note.title,
             updatedAt = note.updatedAt,
             createdAt = note.createdAt,
@@ -252,4 +282,3 @@ class NotesDao(private val sharedDb: SqlDriver) {
         return noteWithContent
     }
 }
-

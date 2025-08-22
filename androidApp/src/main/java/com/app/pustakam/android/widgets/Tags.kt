@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -34,7 +35,7 @@ import toHexString
 
 
 @Composable
-fun TagView(modifier: Modifier = Modifier, tag : Tag, ) {
+fun TagView(modifier: Modifier = Modifier, tag : Tag ) {
     val color = tag.color?.toColor()?: bookmarkDefault
     val roundShape=RoundedCornerShape(20)
     Row(modifier = modifier.
@@ -48,7 +49,7 @@ background(color.copy(alpha = .1f),shape= roundShape).
        verticalAlignment = Alignment.CenterVertically,
         ){
         //color conversion from string to color
-   Icon(imageVector = Icons.Filled.Bookmark,
+   Icon(imageVector = Icons.Filled.Book,
        contentDescription = "Bookmark",
        tint =  color, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.size(4.dp))

@@ -22,8 +22,12 @@ address TEXT,
 duration INTEGER
 );
 
+CREATE TABLE Tags(
+id TEXT NOT NULL PRIMARY KEY,
+color TEXT,
+label TEXT);
 insertOrUpdateNote:
-INSERT OR REPLACE INTO Notes(id,  categoryId, title, createdAt,updatedAt)
+INSERT OR REPLACE INTO Notes(id, categoryId, title, createdAt,updatedAt)
 VALUES(?,?,?,?,?);
 
 insertNoteContentById:
@@ -83,7 +87,6 @@ ORDER BY NoteContent.position;
 deleteById :
 DELETE FROM Notes WHERE  id = ? ;
 
-
 selectWithAllContent:
 SELECT
     Notes.id AS noteId,
@@ -107,3 +110,21 @@ FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
 ORDER BY Notes.id, NoteContent.position;
 -- LIMIT ? OFFSET ?;
+
+createTag:
+INSERT OR REPLACE INTO Tags(id, label, color)
+VALUES(?,?,?);
+
+updateTag:
+UPDATE Tags
+SET color = ?, label = ?
+WHERE id = ?;
+
+deleteTag :
+DELETE FROM Tags WHERE id = ?;
+
+getTags:
+SELECT id, label, color FROM Tags;
+
+getTag:
+SELECT id, label, color FROM Tags WHERE id = ?;

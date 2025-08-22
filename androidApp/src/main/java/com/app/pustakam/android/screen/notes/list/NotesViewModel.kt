@@ -1,13 +1,13 @@
 package com.app.pustakam.android.screen.notes.list
 
 import androidx.lifecycle.viewModelScope
+import com.app.pustakam.android.screen.BOOKS
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.notes.GetNotesUseCase
 import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.Tag
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -25,18 +25,8 @@ class NotesViewModel : BaseViewModel() {
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
         isNextPage = true))
 
-    fun setTags(){
-        val tags = arrayListOf<Tag>().apply {
-            add(Tag(id = "1", label = "Maths", color = "#ba1a1a" ))
-            add(Tag(id = "2", label = "Physics", color = "#9e6225" ))
-            add(Tag(id = "3", label = "Hindi", color = "#3e1202" ))
-            add(Tag(id = "4", label = "English", color = "#0f1e4a" ))
-        }
-        _notesUiState.update { it.copy(tags = tags) }
-    }
     val notesUIState = _notesUiState
         .onStart {
-            setTags()
             viewModelScope.launch {
                 getNotesUseCase.notes.collect {notes ->
                     _notesUiState.update {currentState ->
@@ -95,4 +85,5 @@ class NotesViewModel : BaseViewModel() {
             it.copy(error = null)
         }
     }
+
 }

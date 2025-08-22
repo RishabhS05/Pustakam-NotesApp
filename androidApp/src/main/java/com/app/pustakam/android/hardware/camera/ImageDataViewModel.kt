@@ -3,8 +3,8 @@ package com.app.pustakam.android.hardware.camera
 import android.graphics.Bitmap
 import androidx.camera.video.Recording
 import androidx.lifecycle.ViewModel
+import com.app.pustakam.android.extension.toBitmap
 import com.app.pustakam.android.fileUtils.saveBitmapToFile
-import com.app.pustakam.android.fileUtils.toBitmap
 import com.app.pustakam.extensions.isUrl
 import com.app.pustakam.util.ContentType
 import kotlinx.coroutines.flow.MutableStateFlow

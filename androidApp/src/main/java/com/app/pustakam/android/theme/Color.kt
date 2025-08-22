@@ -3,6 +3,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
+import kotlin.math.roundToInt
 
 // app new theme color
 
@@ -188,12 +189,12 @@ var darkTheme = darkColorScheme(
 )
 
 fun Color.toHexString(): String {
-    val alpha = (this.alpha * 255).toInt()
-    val red = (this.red * 255).toInt()
-    val green = (this.green * 255).toInt()
-    val blue = (this.blue * 255).toInt()
-
-    return String.format("#%02X%02X%02X%02X", alpha, red, green, blue)
+    val alpha = (this.alpha * 255).roundToInt()
+    val red = (this.red * 255).roundToInt()
+    val green = (this.green * 255).roundToInt()
+    val blue = (this.blue * 255).roundToInt()
+    return if (alpha == 255) String.format("#%02X%02X%02X", red, green, blue)
+    else String.format("#%02X%02X%02X%02X", alpha, red, green, blue)
 }
 fun String.toColor() : Color {
     return Color(this.toColorInt())

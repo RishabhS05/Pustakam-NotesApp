@@ -2,6 +2,7 @@ package com.app.pustakam.domain.repositories.noteRepository
 
 import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.models.BaseResponse
+import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.DeleteDataModel
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.Notes
@@ -19,6 +20,7 @@ import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -30,13 +32,12 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
        val notesState = _notes.stateIn(scope = CoroutineScope(provideDispatcher().io),
            initialValue = Notes(),
            started =  SharingStarted.WhileSubscribed())
-
     /** create an blank note
      */
-    private fun createNewEmptyNote(): Note {
+    private fun createNewEmptyNote(tagId  : String = ""): Note {
         val date = getCurrentTimestamp().toString()
         val id = UniqueIdGenerator.generateUniqueId()
-        return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = "" )
+        return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId)
     }
     fun insertNotes(notes : Notes){
         _notes.update {
@@ -143,7 +144,34 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
         notesDao.deleteNoteContentById(id!!)
         return Result.Success(BaseResponse(data = true, isSuccessful = true))
     }
-/**---------CRUD LOGIC METHODS --------------*/
+    /** CRUD ON Tags/Categories */
+    override suspend fun createTagOnDB(tag: Tag): Result<BaseResponse<Tag>, Error> {
+        println("NoteRepository.createTagOnDB called") // Debug log
+         val tag = notesDao.createTagOnDB(tag)
+        if (tag == null)  return Result.Error(error = NetworkError.SERVER_ERROR)
+        return Result.Success(BaseResponse(data = tag, isSuccessful = true))
+    }
+
+    override suspend fun updateTagOnDB(tag: Tag): Result<BaseResponse<Tag>, Error> {
+        val tag =  notesDao.updateTagOnDB(tag)
+        if (tag == null)  return Result.Error(error = NetworkError.NOT_FOUND)
+        return Result.Success(BaseResponse(data = tag, isSuccessful = true))
+    }
+
+    override suspend fun deleteTagOnDB(tagId: String?): Result<BaseResponse<Boolean>, Error> {
+        if (tagId.isNullOrEmpty()) Result.Error(error = NetworkError.NOT_FOUND)
+        notesDao.deleteTag(tagId!!)
+        return Result.Success(BaseResponse(data = true, isSuccessful = true))
+    }
+
+    override suspend fun getTagsFromDB(): Result<BaseResponse<List<Tag>>, Error> {
+        println("NoteRepository.getTagsFromDB called") // Debug log
+        val tags = notesDao.getTagsFromDB()
+        if (tags.isEmpty())  return Result.Error(error = NetworkError.NOT_FOUND)
+        return Result.Success(BaseResponse(data = tags, isSuccessful = true))
+    }
+
+    /**---------CRUD LOGIC METHODS --------------*/
     /** methods for decision logic
      * - call local db methods or
      * - call api for server
@@ -191,6 +219,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
      * - call read api from server
      * */
     suspend fun getANote(id : String?): Result<BaseResponse<Note>, Error> {
+
         if (id.isNullOrEmpty()){
             return Result.Success(
                 BaseResponse(data = createNewEmptyNote(),
