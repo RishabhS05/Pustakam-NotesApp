@@ -16,7 +16,7 @@ struct OutlineTextfieldStyle: TextFieldStyle {
                 .disableAutocorrection(true)
                 .overlay(){
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(UIColor.brown), lineWidth: 1)
+                        .stroke(Theme.Colors.secondary, lineWidth: 1)
                 }.submitLabel(.next)
         }
   

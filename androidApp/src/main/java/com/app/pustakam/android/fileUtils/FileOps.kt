@@ -36,7 +36,6 @@ fun deleteFile(filePath : String){
         file.delete()
     }
 }
-
 fun saveBitmapToFile(bitmap: Bitmap, filePath: String): Boolean {
     val file = File(filePath)
    return saveBitmapToFile(bitmap,file)

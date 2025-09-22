@@ -20,7 +20,7 @@ import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -29,9 +29,13 @@ import kotlinx.coroutines.flow.update
 class NoteRepository(private val userPreference: IAppPreferences) : BaseRepository(userPreference),
     IRemoteNoteRepository, ILocalNotesRepository {
         private val _notes= MutableStateFlow(Notes())
+        private val _tags= MutableStateFlow<List<Tag>>(arrayListOf())
        val notesState = _notes.stateIn(scope = CoroutineScope(provideDispatcher().io),
            initialValue = Notes(),
            started =  SharingStarted.WhileSubscribed())
+    var tagState = _tags.stateIn(scope = CoroutineScope(provideDispatcher().io),
+        initialValue = arrayListOf(),
+        started =  SharingStarted.WhileSubscribed())
     /** create an blank note
      */
     private fun createNewEmptyNote(tagId  : String = ""): Note {
@@ -42,10 +46,18 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     fun insertNotes(notes : Notes){
         _notes.update {
             val list : ArrayList<Note> = arrayListOf()
-            list.addAll(notes.notes)
+            list+=notes.notes
             it.copy(notes = list, page =  notes.page)
         }
         log_d("NoteRepository insert Notes" , _notes.value.notes.count())
+    }
+    fun insertTag(tags : List<Tag>){
+        _tags.update {
+            val list : ArrayList<Tag> = arrayListOf()
+            list += tags
+            list
+        }
+        log_d("NoteRepository insert Tags" , _tags.value.count())
     }
 
     /**---------------- NOTES API SERVER CALL ------------*/
@@ -148,7 +160,11 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     override suspend fun createTagOnDB(tag: Tag): Result<BaseResponse<Tag>, Error> {
         println("NoteRepository.createTagOnDB called") // Debug log
          val tag = notesDao.createTagOnDB(tag)
+
         if (tag == null)  return Result.Error(error = NetworkError.SERVER_ERROR)
+        _tags.update {
+            it + tag
+        }
         return Result.Success(BaseResponse(data = tag, isSuccessful = true))
     }
 
@@ -168,6 +184,7 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
         println("NoteRepository.getTagsFromDB called") // Debug log
         val tags = notesDao.getTagsFromDB()
         if (tags.isEmpty())  return Result.Error(error = NetworkError.NOT_FOUND)
+        insertTag(tags)
         return Result.Success(BaseResponse(data = tags, isSuccessful = true))
     }
 

@@ -1,11 +1,3 @@
-    //
-    //  SearchView.swift
-    //  iosApp
-    //
-    //  Created by Rishabh Shrivastava on 15/10/24.
-    //  Copyright © 2024 orgName. All rights reserved.
-    //
-
 import SwiftUI
 
 struct SearchView: View {

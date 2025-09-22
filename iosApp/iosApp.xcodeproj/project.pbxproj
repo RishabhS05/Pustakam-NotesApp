@@ -57,6 +57,8 @@
 		63D089272CAEA758008FD8CC /* SigninButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089262CAEA758008FD8CC /* SigninButton.swift */; };
 		63D089292CAEADA5008FD8CC /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D089282CAEADA5008FD8CC /* NotesView.swift */; };
 		63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0892C2CAF8D13008FD8CC /* Router.swift */; };
+		63D2A6432E5C890B00FCF4A7 /* ColorSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D2A6422E5C890B00FCF4A7 /* ColorSelector.swift */; };
+		63D2A6482E5D9C5E00FCF4A7 /* HSVColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D2A6472E5D9C5E00FCF4A7 /* HSVColorPicker.swift */; };
 		63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */; };
 		63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E42CB6AEFF00626E49 /* ErrorField.swift */; };
 		63DF200B2DBC3698001E0EDE /* PlayerUiState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DF200A2DBC3698001E0EDE /* PlayerUiState.swift */; };
@@ -133,6 +135,8 @@
 		63D089262CAEA758008FD8CC /* SigninButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigninButton.swift; sourceTree = "<group>"; };
 		63D089282CAEADA5008FD8CC /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		63D0892C2CAF8D13008FD8CC /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
+		63D2A6422E5C890B00FCF4A7 /* ColorSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSelector.swift; sourceTree = "<group>"; };
+		63D2A6472E5D9C5E00FCF4A7 /* HSVColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HSVColorPicker.swift; sourceTree = "<group>"; };
 		63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseNetworkHandler.swift; sourceTree = "<group>"; };
 		63DE80E42CB6AEFF00626E49 /* ErrorField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorField.swift; sourceTree = "<group>"; };
 		63DF200A2DBC3698001E0EDE /* PlayerUiState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerUiState.swift; sourceTree = "<group>"; };
@@ -421,6 +425,7 @@
 		63D089182CABD636008FD8CC /* widgets */ = {
 			isa = PBXGroup;
 			children = (
+				63D2A6452E5C898300FCF4A7 /* colorSelector */,
 				63302FE42E54B80F0038B1FD /* tags */,
 				63CFB9262DB8CFA600093C96 /* audio */,
 				63CFB9252DB7261E00093C96 /* video */,
@@ -485,6 +490,15 @@
 				63D0892C2CAF8D13008FD8CC /* Router.swift */,
 			);
 			path = routes;
+			sourceTree = "<group>";
+		};
+		63D2A6452E5C898300FCF4A7 /* colorSelector */ = {
+			isa = PBXGroup;
+			children = (
+				63D2A6472E5D9C5E00FCF4A7 /* HSVColorPicker.swift */,
+				63D2A6422E5C890B00FCF4A7 /* ColorSelector.swift */,
+			);
+			path = colorSelector;
 			sourceTree = "<group>";
 		};
 		63DE80E12CB6ADA900626E49 /* network */ = {
@@ -661,6 +675,7 @@
 				630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */,
 				63CFB9222DB7109A00093C96 /* CardImageEditor.swift in Sources */,
 				63302FE62E54B8270038B1FD /* TagView.swift in Sources */,
+				63D2A6482E5D9C5E00FCF4A7 /* HSVColorPicker.swift in Sources */,
 				63D089232CAC870A008FD8CC /* AvatarImageView.swift in Sources */,
 				63DF20132DBC59BF001E0EDE /* MediaControlledPlayer.swift in Sources */,
 				63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */,
@@ -705,6 +720,7 @@
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				63FD32A42CBEA2AD0047ED10 /* HomeView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
+				63D2A6432E5C890B00FCF4A7 /* ColorSelector.swift in Sources */,
 				63D089292CAEADA5008FD8CC /* NotesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

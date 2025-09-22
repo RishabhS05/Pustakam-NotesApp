@@ -1,10 +1,3 @@
-//
-//  String.ext.swift
-//  iosApp
-//
-//  Created by Rishabh Shrivastava on 11/04/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
 import shared
 
 extension String {

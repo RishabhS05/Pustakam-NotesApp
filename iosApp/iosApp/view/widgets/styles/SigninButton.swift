@@ -12,7 +12,7 @@ struct SigninButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.title2).frame(width: 120)
-        .padding(8).background(.brown)
+            .padding(8).background(Theme.Colors.secondary)
         .foregroundColor(.white)
         .cornerRadius(12)
     }

@@ -12,12 +12,12 @@ class MediaControlledPlayer: AVPlayer {
 
     override func play() {
         super.play()
-        mediaCallback?(true) // 🔥 call your manager
+        mediaCallback?(true) // call your manager
     }
     
     override func pause() {
         super.pause()
         print("🎯 Hijacked system PAUSE")
-        mediaCallback?(false) // 🔥 call your manager
+        mediaCallback?(false) // call your manager
     }
 }

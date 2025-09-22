@@ -3,11 +3,12 @@ import SwiftUI
 import shared
 struct TagView  : View {
     let tag : Tag
+    let actionClick : () -> Void
     var body : some View {
         let color = tag.getColor()
         let cornerRadius : CGFloat = 5
         HStack{
-            Image(systemName: "bookmark.fill")
+        Image(systemName: "bookmark.fill")
                 .foregroundColor(color)
                 .font(.system(size: 16))
                 .frame(height: 28,alignment: .leading)
@@ -24,6 +25,9 @@ struct TagView  : View {
                 
         }
         .shadow(radius: 10)
+        .onTapGesture {
+            actionClick()
+        }
     }
 }
 extension Tag {
@@ -32,5 +36,7 @@ extension Tag {
     }
 }
 #Preview {
-    TagView(tag: Tag(id: "1", label: "Maths", color: "#FFFFFF"))
+    TagView(tag: Tag(id: "1", label: "Maths", color:"#FFFFFF")) {
+        
+    }
 }
