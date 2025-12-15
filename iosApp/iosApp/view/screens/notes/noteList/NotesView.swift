@@ -24,7 +24,7 @@ struct NotesView: View {
                         .foregroundColor(.white)
                         .font(.system(size: 24))
                         .frame(height: 48,alignment: .leading).padding(.leading,12)
-                    Text("Quick note ")
+                    Text("Quick note")
                         .font(.system(size: 16, weight:.semibold))
                         .foregroundStyle(.white)
                         .padding(.trailing, 12)
@@ -34,8 +34,7 @@ struct NotesView: View {
             .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 5)
             .frame(alignment:.bottomTrailing)
         }
-        
-    }
+    }.padding(12)
     // Padding to keep the button away from screen edges
     }
     //List of notes
@@ -93,36 +92,46 @@ struct NotesView: View {
     }
     }
     var body: some View {
-        ZStack(alignment: .top){
-            if notesHandler.notes.isEmpty { emptyNotesUI }
-            else {
-                ScrollView{
-                    LazyVStack(alignment:.center,spacing: 0){
-                        tagsUi
-                        staggeredGrid
+            ZStack(alignment: .center){
+                if notesHandler.notes.isEmpty { emptyNotesUI
+                }
+                else {
+                    ScrollView{
+                        LazyVStack(alignment:.center,spacing: 0){
+                            tagsUi
+                            staggeredGrid
+                        }
+                    }
+                }
+                if notesHandler.isLoading {
+                    loadingUi
+                }
+                fab
+            }
+            .toolbar{
+                ToolbarItem(placement: .topBarLeading){
+                    HStack{
+                        Text("Notes")
                     }
                 }
             }
-            if notesHandler.isLoading {
-                loadingUi
-            }
-         fab
-        }// ZStack
+        // ZStack
         .sheet(isPresented: $notesHandler.showSheet){
             createTag
         }
-        .navigationBarBackButtonHidden()
         .padding(8)
             .onAppear {
                 notesHandler.getNotesCall()
             }.onDisappear{
                 notesHandler.isLoading = false
             }
+            .navigationBarBackButtonHidden(true)
+            
     }
     var emptyNotesUI : some View {
         HStack{
             Image("emptyNotes").resizable()
-                .frame(width: 400, height:400)
+                .frame(width: 300, height:300)
         }
     }
 }

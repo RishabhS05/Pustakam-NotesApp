@@ -14,7 +14,6 @@ struct NoteEditorView: View {
     @ObservedObject private  var noteEditorViewModel = NoteEditorViewModel()
     private var cameraPermission = CameraPermission()
     private var micPermission = MicPermission()
-
     init(note: Note? = nil) {
         noteEditorViewModel.setNote(note: note)
         if note != nil {
@@ -24,7 +23,6 @@ struct NoteEditorView: View {
         else {
             showDelete = false
         }
-        
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -94,17 +92,16 @@ struct NoteEditorView: View {
                         dismiss()
                     })
                 }
+    
+                
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack{
                         ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
                             saveNote()
                         }, tint :Theme.Colors.secondary)
                         ActionButtonWithoutBackground(iconName: "arrow.down.document",
-                                                      action: {
-                            
-                        },tint : Theme.Colors.secondary)
+                    action: {},tint : Theme.Colors.secondary)
                             ActionButtonWithoutBackground(iconName: "trash", action: {
-    
 //                                onDelete()
                             }, tint: Color.red)
                     }
@@ -161,7 +158,6 @@ struct NoteEditorView: View {
             
             case .gif :
                  NoteTextFieldWrapper()
-            
                        
             default : NoteTextFieldWrapper()
         }

@@ -26,6 +26,7 @@ appcompat = "1.7.0"
 constraintlayout = "2.2.1"
 playServicesLocation = "21.3.0"
 workRuntimeKtx = "2.10.2"
+animation = "1.10.0"
 
 [libraries]
 
@@ -90,6 +91,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 #Location
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

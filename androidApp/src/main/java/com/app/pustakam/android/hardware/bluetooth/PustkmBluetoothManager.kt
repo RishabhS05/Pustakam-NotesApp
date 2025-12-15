@@ -19,7 +19,6 @@ class PustkmBluetoothManager(private val context: Context) {
     val bluetoothAdapter: BluetoothAdapter = bluetoothManager.adapter
     private var leScanner: BluetoothLeScanner? = null
     val foundDevices: SnapshotStateList<BluetoothDevice> = mutableStateListOf()
-
     private val classicReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == BluetoothDevice.ACTION_FOUND) {

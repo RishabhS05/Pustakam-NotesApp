@@ -201,7 +201,7 @@ fun NoteEditorScreen(
     }, onButtonOverLays = {
         Box(Modifier.fillMaxSize()) {
             OverLayEditorButtons(
-                modifier = Modifier.align(alignment = Alignment.CenterEnd),
+                modifier = Modifier.align(alignment = Alignment.BottomEnd),
                 onAddTextField = {
                     noteEditorViewModel.addNewText()
                 },
@@ -268,7 +268,7 @@ fun NotesEditor(
     val focusRequester = rememberFocusRequester()
     val focusManager = LocalFocusManager.current
     val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
-    Scaffold(topBar = topBar) { padding ->
+    Scaffold(topBar = topBar, floatingActionButton =  onButtonOverLays) { padding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(padding)
 
@@ -295,7 +295,6 @@ fun NotesEditor(
                 HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
                 contentList(focusRequester)
             }
-            onButtonOverLays()
         }
     }
 

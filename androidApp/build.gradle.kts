@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.play.services.location)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.animation)
 
     debugImplementation(libs.compose.ui.tooling)
 }

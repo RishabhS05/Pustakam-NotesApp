@@ -1,14 +1,12 @@
 package com.app.pustakam.android.widgets.fabWidget
-
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -31,7 +29,6 @@ import orange80
 @Composable
 fun OverLayEditorButtons(
     modifier: Modifier = Modifier,
-    offset: Animatable<Float, AnimationVector1D> = remember { Animatable(initialValue = 0f) },
     onAddTextField : ()-> Unit ={},
     onCameraAction: () -> Unit = {},
     onRecordMic: () -> Unit = {},
@@ -42,101 +39,122 @@ fun OverLayEditorButtons(
     val cardColors = CardDefaults.cardColors(
         containerColor = colorScheme.secondary
     )
-    val iconModifier = Modifier.padding(6.dp)
-    val icon = if (showArrow.value) Icons.AutoMirrored.Filled.KeyboardArrowLeft
-    else Icons.AutoMirrored.Filled.KeyboardArrowRight
+    val iconModifier = Modifier.padding(8.dp)
     val cardElevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
-    if (showArrow.value)
-        Card(
-            modifier = modifier,
-            shape = CardDefaults.elevatedShape,
-            elevation = CardDefaults.cardElevation(),
-            colors = CardDefaults.cardColors()
-        ) {
-            Icon(icon, tint = colorScheme.inverseSurface,
-                contentDescription = "",
-                modifier = Modifier
-                    .padding(start = 4.dp, top = 4.dp)
-                    .clickable {
-                        onArrowButton()
-                        showArrow.value = !showArrow.value
-                    })
-            Column(
-                modifier = Modifier
-                    .padding(2.dp)
-                    .offset(x = offset.value.dp)
-                    .padding(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier)
+        {
+                AnimatedVisibility(
+                    visible = showArrow.value, // Controls when content is visible
+                    enter =fadeIn(
+                        animationSpec = tween(durationMillis = 500)
+                    ),
+//                        slideInVertically (
+//                        initialOffsetY = { fullWidth -> fullWidth } // Starts off-screen to the right
+//                    ) + scaleIn(),
+                    exit =fadeOut(
+                        animationSpec = tween(durationMillis = 500)
+                    )
+//                        slideOutVertically(
+//                        targetOffsetY = { fullWidth -> fullWidth} // Exits off-screen to the right
+//                    ) + scaleOut()
+                )  {
+                    Card(
+                        shape = CardDefaults.elevatedShape,
+                        elevation = CardDefaults.cardElevation(),
+                        colors = CardDefaults.cardColors()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        )
+                        {
+                            Card(
+                                onClick = {
+                                    onArrowButton()
+                                    onRecordMic()
+                                },
+                                colors = cardColors,
+                                elevation = cardElevation
+                            )
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "Mic",
+                                    modifier = iconModifier
+                                )
+                            }
+                            Card(
+                                onClick = {
+                                    onArrowButton()
+                                    onCameraAction()
+                                },
+                                colors = cardColors,
+                                elevation = cardElevation
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoCamera,
+                                    contentDescription = "Click photo or record video",
+                                    modifier = iconModifier
+                                )
+                            }
+                            Card(
+                                onClick = {
+                                    onArrowButton()
+                                    onAddTextField()
+                                },
+                                colors = cardColors,
+                                elevation = cardElevation
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.TextFields,
+                                    contentDescription = "Add new text note",
+                                    modifier = iconModifier
+                                )
+                            }
+                            Card(
+                                onClick = {
+                                    onArrowButton()
+                                    onLocation()
+                                },
+                                colors = cardColors,
+                                elevation = cardElevation
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.LocationOn,
+                                    contentDescription = "location",
+                                    modifier = iconModifier
+                                )
+                            }
+                        }
+                    }
+                }
+            Card(
+                colors = cardColors,
+                elevation = cardElevation,
+                onClick = {
+                    onArrowButton()
+                    showArrow.value = !showArrow.value
+                },
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-
-                Card(
-                    onClick = {
-                        onArrowButton()
-                        onRecordMic()
-                              },
-                    colors = cardColors,
-                    elevation = cardElevation
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Mic,
-                        contentDescription = "Mic",
-                        modifier = iconModifier
-                    )
-                }
-                Card(
-                    onClick = {
-                        onArrowButton()
-                        onCameraAction()
-                             },
-                    colors = cardColors,
-                    elevation = cardElevation
-                ) {
-                    Icon(
-                        imageVector =  Icons.Default.PhotoCamera,
-                        contentDescription = "Click photo or record video",
-                        modifier = iconModifier
-                    )
-                }
-                Card(
-                    onClick = {
-                        onArrowButton()
-                      onAddTextField()
+                AnimatedContent(
+                    targetState = showArrow.value,
+                    transitionSpec = {
+                        // Simple crossfade and slight scale for the icon itself
+                        (fadeIn(animationSpec = tween(200)))
+                            .togetherWith(fadeOut(animationSpec = tween(200)))
                     },
-                    colors = cardColors,
-                    elevation = CardDefaults.elevatedCardElevation()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.TextFields,
-                        contentDescription = "Add new text note",
-                        modifier = iconModifier
-                    )
-                }
-                Card(
-                    onClick = {
-                        onArrowButton()
-                      onLocation()
-                    },
-                    colors = cardColors,
-                    elevation = CardDefaults.elevatedCardElevation()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = "location",
-                        modifier = iconModifier
-                    )
+                    label = "arrow_icon_animation"
+                )  { expanded ->
+                Icon(if (expanded) Icons.AutoMirrored.Filled.ArrowBack
+                else Icons.AutoMirrored.Filled.ArrowForward
+                    , contentDescription = "", modifier = iconModifier
+                )
                 }
             }
         }
-    else
-        Icon(icon, contentDescription = "",
-            tint = colorScheme.inverseSurface,
-            modifier = modifier
-                .padding(8.dp)
-                .clickable {
-                    onArrowButton()
-                    showArrow.value = !showArrow.value
-                })
-
 }
 
 @Preview
