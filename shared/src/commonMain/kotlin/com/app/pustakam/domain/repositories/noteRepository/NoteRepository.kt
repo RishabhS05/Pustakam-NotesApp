@@ -20,6 +20,7 @@ import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,10 +31,10 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     IRemoteNoteRepository, ILocalNotesRepository {
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(arrayListOf())
-       val notesState = _notes.stateIn(scope = CoroutineScope(provideDispatcher().io),
+       val notesState = _notes.stateIn(scope = CoroutineScope(provideDispatcher().io+ SupervisorJob()),
            initialValue = Notes(),
            started =  SharingStarted.WhileSubscribed())
-    var tagState = _tags.stateIn(scope = CoroutineScope(provideDispatcher().io),
+    var tagState = _tags.stateIn(scope = CoroutineScope(provideDispatcher().io + SupervisorJob()),
         initialValue = arrayListOf(),
         started =  SharingStarted.WhileSubscribed())
     /** create an blank note
@@ -196,7 +197,6 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     // step 1 * check with local db
      * data is present call update server apis
      * else call create server apis
-
     // step 2 insert or update into local db
     // step 3 call api to upsert the data or sync with server
     // step 4 again update the local db with sync data.
@@ -204,13 +204,13 @@ class NoteRepository(private val userPreference: IAppPreferences) : BaseReposito
     suspend fun insertOrUpdateNote(note : Note) : Result<BaseResponse<Note>, Error> {
         return insertUpdateFromDb(note).onSuccess {
             log_d("Insert Update","added ")
-//            _notes.update { notes->
-//                val index = notes.notes.indexOfFirst {n -> note.id == n.id  }
-//                if(index!= -1) notes.notes[index] = note else
-//                    notes.notes.add(note)
-//                val newList  =ArrayList(notes.notes)
-//                notes.copy(notes = newList)
-//            }
+            _notes.update { notes->
+                val index = notes.notes.indexOfFirst {n -> note.id == n.id  }
+                if(index!= -1) notes.notes[index] = note else
+                    notes.notes.add(note)
+                val newList  =ArrayList(notes.notes)
+                notes.copy(notes = newList)
+            }
 //              if(existingNote != null ) {
 //                  updateNoteApi(note)
 //              }else upsertNewNoteApi(note)

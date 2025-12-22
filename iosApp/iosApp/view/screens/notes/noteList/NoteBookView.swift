@@ -42,7 +42,7 @@ struct NoteBookView : View {
     NoteBookView(
         note: Note.init(
             id: "12345",
-            title: "Hello World      jghghghggmgngngngggnnggnnvgngngnngngngng",
+            title: "Hello World.",
             updates: [],
             updatedAt : "24/03/2025",
             createdAt: "24/03/2025",

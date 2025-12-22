@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAs
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,8 +35,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -42,11 +47,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.TextToolbarStatus
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -64,6 +74,7 @@ import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.audio.AudioRecording
+import com.app.pustakam.android.widgets.dynamicWidgets.TextEditorWidget
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.textField.NoteTextField
@@ -75,6 +86,18 @@ import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.window.PopupProperties
+import com.app.pustakam.android.widgets.dynamicWidgets.CustomTextToolbar
+
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -211,7 +234,6 @@ fun NoteEditorScreen(
                 },
                 onLocation = {
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.LOCATION)
-
                 },
                 onCameraAction = {
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.IMAGE)
@@ -270,7 +292,9 @@ fun NotesEditor(
     val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
     Scaffold(topBar = topBar, floatingActionButton =  onButtonOverLays) { padding ->
         Box(
-            modifier = Modifier.fillMaxSize().padding(padding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
 
         ) {
             if (isRuledEnabledState.value) RuledPage()
@@ -290,7 +314,10 @@ fun NotesEditor(
                     state.value.titleTextState.value = it
                 }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), keyboardActions = KeyboardActions(onNext = {
                     focusManager.moveFocus(FocusDirection.Down)
-                }), modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).padding(top = 2.dp)
+                }), modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .padding(top = 2.dp)
                 )
                 HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
                 contentList(focusRequester)
@@ -311,9 +338,24 @@ fun RenderWidget(
 ) {
     when (content.type) {
         ContentType.TEXT -> {
-            NoteTextField(noteContentModel = (content as NoteContentModel.TextContent),
-                focusRequester = focusRequester,
-                onUpdate = { onUpdate(content.copy(text = it)) })
+            var isDropDownVisible by  rememberSaveable { mutableStateOf(false) }
+                Box(
+                    modifier = Modifier) {
+                    NoteTextField(
+                        noteContentModel = (content as NoteContentModel.TextContent),
+                        focusRequester = focusRequester,
+                        onUpdate = { onUpdate(content.copy(text = it)) }) {
+//                        if (it.selection.length > 0) {
+//                            selectionString.value = if (it.selection.start <= it.selection.end)
+//                                it.text.substring(
+//                                    it.selection.start,
+//                                    it.selection.end
+//                                ) else it.text.substring(it.selection.end, it.selection.start)
+//                            println("Selected Text : ${selectionString.value}")
+//                            isDropDownVisible = true
+//                        } else isDropDownVisible = false
+                    }
+            }
         }
 
         ContentType.IMAGE -> {

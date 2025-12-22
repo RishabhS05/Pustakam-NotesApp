@@ -23,20 +23,23 @@ struct OverlayEditorButtons : View {
                       ActionButton(iconName: "mic.fill", action: {
                           onArrowButton()
                           onRecordMic()
+                          showArrow.toggle()
                       })
-                      
                       ActionButton(iconName: "camera.circle", action: {
                           onArrowButton()
                           onMediaCapture()
+                          showArrow.toggle()
                       })
 
                       ActionButton(iconName: "note.text.badge.plus", action: {
                           onArrowButton()
                           onAddTextField()
+                          showArrow.toggle()
                       })
                       ActionButton(iconName: "square.and.arrow.up", action: {
                           onArrowButton()
                           onShare()
+                          showArrow.toggle()
                       })
 
                   }

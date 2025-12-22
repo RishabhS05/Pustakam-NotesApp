@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -23,9 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
-import orange50
-import orange80
-
 @Composable
 fun OverLayEditorButtons(
     modifier: Modifier = Modifier,
@@ -36,12 +32,12 @@ fun OverLayEditorButtons(
     onLocation : () -> Unit = {}
 ) {
     var showArrow = remember { mutableStateOf(false) }
-    val cardColors = CardDefaults.cardColors(
-        containerColor = colorScheme.secondary
-    )
+    val cardColors = CardDefaults.cardColors(containerColor = colorScheme.secondary)
+    val showOrHide = { showArrow.value = !showArrow.value }
     val iconModifier = Modifier.padding(8.dp)
     val cardElevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
-        Column(
+
+    Column(
             horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier)
         {
                 AnimatedVisibility(
@@ -49,15 +45,9 @@ fun OverLayEditorButtons(
                     enter =fadeIn(
                         animationSpec = tween(durationMillis = 500)
                     ),
-//                        slideInVertically (
-//                        initialOffsetY = { fullWidth -> fullWidth } // Starts off-screen to the right
-//                    ) + scaleIn(),
                     exit =fadeOut(
                         animationSpec = tween(durationMillis = 500)
                     )
-//                        slideOutVertically(
-//                        targetOffsetY = { fullWidth -> fullWidth} // Exits off-screen to the right
-//                    ) + scaleOut()
                 )  {
                     Card(
                         shape = CardDefaults.elevatedShape,
@@ -74,6 +64,7 @@ fun OverLayEditorButtons(
                                 onClick = {
                                     onArrowButton()
                                     onRecordMic()
+                                    showOrHide()
                                 },
                                 colors = cardColors,
                                 elevation = cardElevation
@@ -89,6 +80,7 @@ fun OverLayEditorButtons(
                                 onClick = {
                                     onArrowButton()
                                     onCameraAction()
+                                    showOrHide()
                                 },
                                 colors = cardColors,
                                 elevation = cardElevation
@@ -103,6 +95,7 @@ fun OverLayEditorButtons(
                                 onClick = {
                                     onArrowButton()
                                     onAddTextField()
+                                    showOrHide()
                                 },
                                 colors = cardColors,
                                 elevation = cardElevation
@@ -117,6 +110,7 @@ fun OverLayEditorButtons(
                                 onClick = {
                                     onArrowButton()
                                     onLocation()
+                                    showOrHide()
                                 },
                                 colors = cardColors,
                                 elevation = cardElevation
