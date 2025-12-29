@@ -32,7 +32,7 @@ struct NoteEditorView: View {
                     text: $title,
                     placeholder: "Title : Keep your thoughts alive.",
                     fontSize: 22
-                ).frame(minHeight: 20, maxHeight: 100)
+                ).frame(minHeight: 20, maxHeight:.infinity)
                     ForEach(noteEditorViewModel.noteContents){ noteContent in
                         renderWidget(content: noteContent){
                             updatedContent in
@@ -119,10 +119,10 @@ struct NoteEditorView: View {
             case .text:
                 let textContent = content as! NoteContentModel.TextContent
                  NoteTextFieldWrapper(
-                    bodyText: textContent.text,
+                    text: textContent.text,
                     onTextChange: {
                         newValue in
-                        textContent.text = newValue
+                        textContent.text = newValue.string
                         onUpdate(textContent)
                     }
                 )
@@ -136,28 +136,6 @@ struct NoteEditorView: View {
                 let contentAudio = content as! NoteContentModel.MediaContent
 
                  AudioPlayView(mediaContent: contentAudio)
-        
-            case .link :
-                let contentLink = content as! NoteContentModel.Link
-                 NoteTextFieldWrapper()
-
-        
-            case .docx :
-                let contentDoc = content as! NoteContentModel.MediaContent
-                let path = contentDoc.getMediaUrl()
-                 NoteTextFieldWrapper()
-            
-        
-            case .location:
-                let locationContent = content as! NoteContentModel.Location
-                 NoteTextFieldWrapper()
-            
-        
-            case .pdf :
-                 NoteTextFieldWrapper()
-            
-            case .gif :
-                 NoteTextFieldWrapper()
                        
             default : NoteTextFieldWrapper()
         }

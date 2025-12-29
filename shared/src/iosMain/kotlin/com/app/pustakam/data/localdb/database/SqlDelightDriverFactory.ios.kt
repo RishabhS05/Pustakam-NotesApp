@@ -8,6 +8,6 @@ import com.app.pustakam.database.NotesDatabase
 
 actual class SqlDelightDriverFactory {
     actual fun createDriver(): SqlDriver {
-       return  NativeSqliteDriver(NotesDatabase.Schema, notesDb)
+       return  NativeSqliteDriver(schema = NotesDatabase.Schema, name = notesDb)
     }
 }

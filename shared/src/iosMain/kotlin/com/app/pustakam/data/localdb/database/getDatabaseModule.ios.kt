@@ -6,5 +6,5 @@ import org.koin.dsl.module
 
 actual fun getDatabaseModule(): Module = module {
     single <SqlDriver>{ SqlDelightDriverFactory().createDriver() }
-    single<NotesDao> { NotesDao(get()) }
+    single<NotesDao> { NotesDao() }
 }

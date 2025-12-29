@@ -27,6 +27,8 @@
 		6345BFBB2CEF6CB500CC254C /* HardwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */; };
 		634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */; };
 		635557452DC0732700C7D533 /* DateTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635557442DC0732100C7D533 /* DateTime.swift */; };
+		636341002F012A1B003835E4 /* NoteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636340FF2F012A1B003835E4 /* NoteTextField.swift */; };
+		636341022F016B8C003835E4 /* FormattingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636341012F016B8C003835E4 /* FormattingToolbar.swift */; };
 		63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */; };
 		63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */; };
 		63682AB22CE9337400425C35 /* Note.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AB12CE9336500425C35 /* Note.ext.swift */; };
@@ -46,7 +48,6 @@
 		63C2ECD02DAB125000412221 /* NoteEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C2ECCF2DAB125000412221 /* NoteEditorViewModel.swift */; };
 		63C2ECD32DAB127D00412221 /* NotesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C2ECD22DAB127D00412221 /* NotesViewModel.swift */; };
 		63C61C822DA848EE004F92CB /* String.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C61C812DA848E7004F92CB /* String.ext.swift */; };
-		63CFB91C2DB6C77400093C96 /* EditorTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB91B2DB6C76700093C96 /* EditorTextField.swift */; };
 		63CFB9202DB6F6E300093C96 /* FileOps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB91F2DB6F69000093C96 /* FileOps.swift */; };
 		63CFB9222DB7109A00093C96 /* CardImageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9212DB7107D00093C96 /* CardImageEditor.swift */; };
 		63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CFB9232DB7260A00093C96 /* VideoCardView.swift */; };
@@ -105,6 +106,8 @@
 		6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareManager.swift; sourceTree = "<group>"; };
 		634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertUseCase.swift; sourceTree = "<group>"; };
 		635557442DC0732100C7D533 /* DateTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTime.swift; sourceTree = "<group>"; };
+		636340FF2F012A1B003835E4 /* NoteTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextField.swift; sourceTree = "<group>"; };
+		636341012F016B8C003835E4 /* FormattingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingToolbar.swift; sourceTree = "<group>"; };
 		63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
 		63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaggeredGrid.swift; sourceTree = "<group>"; };
 		63682AB12CE9336500425C35 /* Note.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.ext.swift; sourceTree = "<group>"; };
@@ -124,7 +127,6 @@
 		63C2ECCF2DAB125000412221 /* NoteEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorViewModel.swift; sourceTree = "<group>"; };
 		63C2ECD22DAB127D00412221 /* NotesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesViewModel.swift; sourceTree = "<group>"; };
 		63C61C812DA848E7004F92CB /* String.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.ext.swift; sourceTree = "<group>"; };
-		63CFB91B2DB6C76700093C96 /* EditorTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextField.swift; sourceTree = "<group>"; };
 		63CFB91F2DB6F69000093C96 /* FileOps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOps.swift; sourceTree = "<group>"; };
 		63CFB9212DB7107D00093C96 /* CardImageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEditor.swift; sourceTree = "<group>"; };
 		63CFB9232DB7260A00093C96 /* VideoCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCardView.swift; sourceTree = "<group>"; };
@@ -345,6 +347,7 @@
 		63C00BE42CEC924C00A4907C /* button */ = {
 			isa = PBXGroup;
 			children = (
+				636341012F016B8C003835E4 /* FormattingToolbar.swift */,
 				63FDAFC92D96DFA50067169C /* ActionButtonWithoutBackground.swift */,
 				63C00BEE2CECC6F300A4907C /* ActionButton.swift */,
 				63C00BE52CEC925300A4907C /* BackButton.swift */,
@@ -460,7 +463,7 @@
 		63D0891F2CAC85B4008FD8CC /* textfields */ = {
 			isa = PBXGroup;
 			children = (
-				63CFB91B2DB6C76700093C96 /* EditorTextField.swift */,
+				636340FF2F012A1B003835E4 /* NoteTextField.swift */,
 				63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */,
 			);
 			path = textfields;
@@ -664,6 +667,7 @@
 				63682AB22CE9337400425C35 /* Note.ext.swift in Sources */,
 				639BBEF92CDCB2C100E0E00D /* NoteEditorView.swift in Sources */,
 				630BA1762CF0CF7700D148C8 /* CameraCaptureView.swift in Sources */,
+				636341022F016B8C003835E4 /* FormattingToolbar.swift in Sources */,
 				630BA17E2CF10ED800D148C8 /* CameraPermission.swift in Sources */,
 				63AA02532D9C64860040E872 /* NoteContents.ext.swift in Sources */,
 				63D089272CAEA758008FD8CC /* SigninButton.swift in Sources */,
@@ -681,6 +685,7 @@
 				63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */,
 				63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */,
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
+				636341002F012A1B003835E4 /* NoteTextField.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
 				63302FE92E55198D0038B1FD /* Color.ext.swift in Sources */,
@@ -710,7 +715,6 @@
 				635557452DC0732700C7D533 /* DateTime.swift in Sources */,
 				634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */,
 				63FD32A92CBEAEB20047ED10 /* SearchView.swift in Sources */,
-				63CFB91C2DB6C77400093C96 /* EditorTextField.swift in Sources */,
 				63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */,
 				630BA1992CF50F8C00D148C8 /* AudioVisualizerView.swift in Sources */,
 				630BA1852CF23E0700D148C8 /* AudioRecoderHandler.swift in Sources */,

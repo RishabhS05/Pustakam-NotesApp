@@ -12,12 +12,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import org.koin.core.component.inject
 
-class NotesDao(private val sharedDb: SqlDriver) {
-    private val database = NotesDatabase(sharedDb)
+class NotesDao() : KoinComponent {
+
+    private val database =  get<NotesDatabase>()
+
     private val queries = database.notesDatabaseQueries
 
-   suspend fun createTagOnDB(tag : Tag) : Tag?   {
+    fun createTagOnDB(tag : Tag) : Tag?   {
        println("Create Tab On DB called with tag: $tag") // Debug log
         // The transaction block is synchronous: it completes before proceeding.
         database.transaction {
@@ -26,26 +31,25 @@ class NotesDao(private val sharedDb: SqlDriver) {
         // This will only execute after the transaction above is finished.
         return getTag(tag.id)
     }
-  suspend fun getTag(id : String) : Tag? =  queries.getTag(id).executeAsOneOrNull()?.let {
+      fun getTag(id : String) : Tag? =  queries.getTag(id).executeAsOneOrNull()?.let {
             Tag(id = it.id, label = it.label, color= it.color)
         }
-
-  suspend fun updateTagOnDB(tag: Tag) : Tag? {
+    fun updateTagOnDB(tag: Tag) : Tag? {
       database.transaction {
           queries.updateTag(color = tag.color, label = tag.label, id = tag.id)
       }
         return getTag(tag.id)
     }
-   suspend fun deleteTag(tagId  : String) : Boolean {
+    fun deleteTag(tagId  : String) : Boolean {
         queries.deleteTag(tagId)
         val tag  = getTag(tagId)
         return tag == null
     }
 
-    suspend fun getTagsFromDB() : List<Tag> = queries.getTags().executeAsList().map{
+    fun getTagsFromDB() : List<Tag> = queries.getTags().executeAsList().map{
           Tag(id = it.id, label = it.label, color= it.color)
     }
-  suspend fun selectAllNotesFromDb(limit : Int = 10, page : Int = 0): Notes {
+   fun selectAllNotesFromDb(limit : Int = 10, page : Int = 0): Notes {
       val offset = (page - 1) * limit
       val notesWithContent = arrayListOf<Note>()
       val results  =  queries.selectWithAllContent().executeAsList()
@@ -71,6 +75,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                       position = row.position!!,
                                       createdAt = row.contentCreatedAt,
                                       updatedAt = row.contentUpdatedAt,
+                                      metadata =  row.metaData
                                   )
                               ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO  ->
                                   NoteContentModel.MediaContent(title = row.title?:"${row.type}-${row.position}",
@@ -117,7 +122,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
         )
     }
 
-   suspend fun insertNotes(notes: Notes) {
+    fun insertNotes(notes: Notes) {
         database.transaction {
             notes.notes?.forEach{ note ->
                 CoroutineScope(Dispatchers.IO).launch {
@@ -128,7 +133,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
             }
         }
    }
-  private suspend fun insertOrUpdateNotesContent (noteContent: NoteContentModel) {
+  private  fun insertOrUpdateNotesContent (noteContent: NoteContentModel) {
         var url = ""
         var text = ""
         var address: String? = null
@@ -136,6 +141,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
         var localPath: String? = null
         var long: Double? = null
         var lat: Double? = null
+        val metadata : RichTextMetadata? = null
         when (noteContent.type) {
             ContentType.TEXT -> {
              text = (noteContent as? NoteContentModel.TextContent)?.text ?: ""
@@ -186,17 +192,17 @@ class NotesDao(private val sharedDb: SqlDriver) {
             long = long,
             lat = lat,
             address = address,
+           metaData =  metadata
         )
     }
-    suspend fun  deleteNoteContentById(id : String)= queries.deleteNoteContentById(id)
+    fun  deleteNoteContentById(id : String)= queries.deleteNoteContentById(id)
 
     suspend fun deleteByIdFromDb(id: String) : Boolean {
         queries.deleteById(id)
         val note  = selectNoteById(id)
         return note == null
     }
-
-   suspend fun insertOrUpdateNoteFromDb(note: Note) : Note {
+    fun insertOrUpdateNoteFromDb(note: Note) : Note {
         log_d("NoteDao insert", note)
         queries.insertOrUpdateNote(
             id = note.id,
@@ -217,7 +223,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
        log_d("NoteDao end ", note)
        return note
     }
-    suspend fun selectNoteById(id: String): Note? {
+    fun selectNoteById(id: String): Note? {
         val rows = queries.selectById(id).executeAsList()
         val noteWithContent = rows.firstOrNull()?.let { note ->
             Note(
@@ -261,6 +267,7 @@ class NotesDao(private val sharedDb: SqlDriver) {
                                 position = row.position!!,
                                 createdAt = row.contentCreatedAt,
                                 updatedAt = row.contentUpdatedAt,
+
                             )
 
                             ContentType.LOCATION -> NoteContentModel.Location(

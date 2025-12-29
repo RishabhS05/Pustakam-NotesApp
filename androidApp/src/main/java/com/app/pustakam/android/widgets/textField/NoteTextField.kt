@@ -49,7 +49,7 @@ fun NoteTextField(
 ) {
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
-    var textState: TextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+    var textState: TextFieldValue by remember { mutableStateOf(TextFieldValue(text = noteContentModel.text)) }
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var dropdownOffset by remember { mutableStateOf(Offset.Zero) }
     var height  by remember { mutableStateOf(0.dp) }

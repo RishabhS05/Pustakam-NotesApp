@@ -1,3 +1,5 @@
+import com.app.pustakam.data.localdb.database.RichTextMetadata;
+
 CREATE TABLE Notes (
  id TEXT NOT NULL PRIMARY KEY,
  categoryId TEXT,
@@ -19,7 +21,8 @@ text TEXT,
 lat  REAL,
 long REAL,
 address TEXT,
-duration INTEGER
+duration INTEGER,
+metaData TEXT AS RichTextMetadata
 );
 
 CREATE TABLE Tags(
@@ -31,8 +34,8 @@ INSERT OR REPLACE INTO Notes(id, categoryId, title, createdAt,updatedAt)
 VALUES(?,?,?,?,?);
 
 insertNoteContentById:
-INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration )
-VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ? );
+INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration, metaData )
+VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ? ,?);
 
 updateNotesById:
 UPDATE Notes
@@ -41,7 +44,7 @@ WHERE id = ?;
 
 updateNoteContentById:
 UPDATE NoteContent
-SET type = ?, position = ?, text = ?, url = ?, lat = ?, long = ?
+SET type = ?, position = ?, text = ?, url = ?, lat = ?, long = ?, metaData = ?
 WHERE id = ?;
 
 deleteNoteContentById:
@@ -78,7 +81,8 @@ SELECT
     NoteContent.lat,
     NoteContent.long,
     NoteContent.address,
-    NoteContent.duration
+    NoteContent.duration,
+    NoteContent.metaData
 FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
 WHERE Notes.id = ?
@@ -105,7 +109,8 @@ SELECT
     NoteContent.lat,
     NoteContent.long,
     NoteContent.address,
-    NoteContent.duration
+    NoteContent.duration,
+    NoteContent.metaData
 FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
 ORDER BY Notes.id, NoteContent.position;

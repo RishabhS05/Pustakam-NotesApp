@@ -1,5 +1,6 @@
 package com.app.pustakam.data.models.response.notes
 
+import com.app.pustakam.data.localdb.database.RichTextMetadata
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.UniqueIdGenerator
 import com.app.pustakam.util.getCurrentTimestamp
@@ -67,6 +68,7 @@ sealed class NoteContentModel {
         override val isDeletedContent: Boolean = false ,
         override val noteId: String ,
         override val position: Long,
+        val metadata: RichTextMetadata? = null,
     ) : NoteContentModel()
     data class MediaContent(
         override val position: Long,
