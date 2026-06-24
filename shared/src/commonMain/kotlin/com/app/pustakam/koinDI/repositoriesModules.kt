@@ -6,7 +6,7 @@ import com.app.pustakam.domain.repositories.noteRepository.NoteRepository
 import org.koin.dsl.module
 
 fun  repositoriesModules()= module {
-    single <BaseRepository> { BaseRepository(get()) }
+    single{ NoteRepository(get()) }
+    single<BaseRepository>{ get<NoteRepository>() }
     single <NoteContentRepository>{ NoteContentRepository()  }
-    single <NoteRepository>{ NoteRepository(get())  }
 }

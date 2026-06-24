@@ -4,6 +4,7 @@ import app.cash.sqldelight.ColumnAdapter
 import com.app.pustakam.data.localdb.database.RichTextMetadata
 import com.app.pustakam.data.localdb.database.getDatabaseModule
 import com.app.pustakam.data.localdb.preferences.getDataSourceFromPlatForm
+import com.app.pustakam.data.network.ApiCallClient
 import com.app.pustakam.database.NoteContent
 import com.app.pustakam.database.NotesDatabase
 import kotlinx.serialization.encodeToString
@@ -33,7 +34,10 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         )
     }
 }
-    modules(getDataSourceFromPlatForm(), repositoriesModules(),databaseModule, getDatabaseModule(), )
+    val networkModule = module {
+        single<ApiCallClient> { ApiCallClient(get())  }
+    }
+    modules(getDataSourceFromPlatForm(), repositoriesModules(),networkModule, databaseModule, getDatabaseModule(), )
 
 }
 

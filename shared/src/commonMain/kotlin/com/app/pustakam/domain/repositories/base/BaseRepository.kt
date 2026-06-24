@@ -20,7 +20,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepository, ILocalRepository, KoinComponent {
-    protected val apiClient: ApiCallClient = ApiCallClient(userPrefs)
+    protected val apiClient: ApiCallClient by inject<ApiCallClient>()
     protected val notesDao by inject<NotesDao>()
     val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
     protected lateinit var prefs: UserPreference
