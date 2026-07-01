@@ -9,6 +9,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
 import io.ktor.util.network.UnresolvedAddressException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -17,11 +18,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-abstract class BaseClient(val userPrefs : IAppPreferences) {
-    protected val httpClient: HttpClient = createHttpClient()
-    suspend inline fun < reified T, E: Error> baseApiCall(
-        crossinline actualApiCall : suspend  () -> HttpResponse
+abstract class BaseClient  : KoinComponent {
+    val userPrefs : IAppPreferences by inject<IAppPreferences>()
+    protected val httpClient: HttpClient = createHttpClient{ userPrefs.currentTokenOrNull() }
+    protected suspend inline fun < reified T, E: Error> baseApiCall(
+        crossinline actualApiCall : suspend  () -> HttpResponse,
     ) : Result<T, Error> = flow {
            val response : HttpResponse = try {
                actualApiCall.invoke()
@@ -41,12 +45,12 @@ abstract class BaseClient(val userPrefs : IAppPreferences) {
             emit( Result.Error(NetworkError.CONNECTION_FAILED))
             return@flow
         }
-        log_d("auth"," ${response.headers["authorization"]}")
+//        log_d("auth"," ${response.headers["authorization"]}")
         if(userPrefs.getAuthToken().isNullOrEmpty()) {
            val token = response.headers["authorization"].toString()
-            log_d("auth","${response.headers["authorization"]}")
+//            log_d("auth","${response.headers["authorization"]}")
             userPrefs.setToken(token)
-            log_d("Token" ," $token")
+//            log_d("Token" ," $token")
         }
            when (response.status.value){
                in 200..299 -> emit(Result.Success(response.body<T>()))

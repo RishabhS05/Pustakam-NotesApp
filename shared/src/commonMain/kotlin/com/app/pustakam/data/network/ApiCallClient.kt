@@ -1,6 +1,5 @@
 package com.app.pustakam.data.network
 
-import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.Login
 
@@ -19,111 +18,74 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
-class ApiCallClient(userPrefs : IAppPreferences) : BaseClient(userPrefs) {
+class ApiCallClient : BaseClient() {
 
     suspend fun login(login: Login): Result<BaseResponse<User>, Error> =
-        baseApiCall<BaseResponse<User>, NetworkError> {
-                httpClient.post(ApiRoute.LOGIN.getName()) {
-                    contentType(ContentType.Application.Json)
-                    setBody(login)
-                }
-            }
-    suspend fun register(user: RegisterReq) : Result<BaseResponse<User>, Error> =
-        baseApiCall<BaseResponse<User>, NetworkError> {
-            httpClient.post(urlString = ApiRoute.REGISTER.getName()) {
-                contentType(ContentType.Application.Json)
-                setBody(user)
-            }
-        }
+     post(ApiRoute.LOGIN.getName(), requestData = login)
+
+    suspend fun register(user: RegisterReq): Result<BaseResponse<User>, Error> =
+    post(url = ApiRoute.REGISTER.getName(), requestData = user)
 
     suspend fun getNotes(userId: String): Result<BaseResponse<Notes>, Error> =
-        baseApiCall<BaseResponse<Notes>, NetworkError> {
-            httpClient.get(urlString = "${ApiRoute.NOTES.getName()}/$userId"){
-                contentType(ContentType.Application.Json)
-                headers.apply {
-                    val token = userPrefs.getAuthToken()?:""
-                    println(token)
-                    append(headerAuth,token)
-                }
-            }
-        }
-    suspend fun getNote(userId : String, noteId :String): Result<BaseResponse<Note>, Error> =
-        baseApiCall <BaseResponse<Note>, NetworkError>  {
-        httpClient.get(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
-            headers.apply {
-                val token = userPrefs.getAuthToken() ?: ""
-                append(headerAuth,token)
-            }
-        }
-    }
- suspend fun updateNote(userId: String,note: Note): Result<BaseResponse<Note>, Error> =
-     baseApiCall<BaseResponse<Note>, NetworkError> {
-     httpClient.post(urlString = "${ApiRoute.NOTES.getName()}/$userId/${note.id}"){
-         contentType(ContentType.Application.Json)
-         headers.apply {
-             val token = userPrefs.getAuthToken()?:""
-             append(headerAuth,token)
-         }
-         setBody(note)
-     }
- }
-    suspend fun deleteNote(userId: String,noteId: String) : Result<BaseResponse<DeleteDataModel>, Error> =
-        baseApiCall<BaseResponse<DeleteDataModel>, NetworkError> {
-        httpClient.delete(urlString = "${ApiRoute.NOTES.getName()}/$userId/$noteId"){
-            contentType(ContentType.Application.Json)
-            headers.apply {
-                val token = userPrefs.getAuthToken()?:""
-                append(headerAuth,token)
-            }
-        }
-    }
-    suspend fun addNewNote(userId: String,note : Note) : Result<BaseResponse<Note>, Error> =
-        baseApiCall<BaseResponse<Note>, NetworkError> {
-        httpClient.post(urlString = "${ApiRoute.NOTES.getName()}/$userId") {
-            contentType(ContentType.Application.Json)
-            headers.apply {
-                val token = userPrefs.getAuthToken()?:""
-                append(headerAuth,token)
-            }
-            setBody(note)
-        }
-    }
-    suspend fun getUser(userId : String): Result<BaseResponse<User>, Error> = baseApiCall <BaseResponse<User>, NetworkError>  {
-        httpClient.get(urlString = "${ApiRoute.USERS.getName()}/$userId"){
-            contentType(ContentType.Application.Json)
-            headers.apply {
-                val token = userPrefs.getAuthToken()?:""
-                append(headerAuth,token)
-            }
+        get(url = "${ApiRoute.NOTES.getName()}/$userId")
+
+    suspend fun getNote(userId: String, noteId: String): Result<BaseResponse<Note>, Error> =
+        get(url = "${ApiRoute.NOTES.getName()}/$userId/$noteId")
+
+
+    suspend fun updateNote(userId: String, note: Note): Result<BaseResponse<Note>, Error> =
+        post(url = "${ApiRoute.NOTES.getName()}/$userId/${note.id}", requestData = note)
+
+
+    suspend fun deleteNote(
+        userId: String, noteId: String
+    ): Result<BaseResponse<DeleteDataModel>, Error> =
+
+            delete(url = "${ApiRoute.NOTES.getName()}/$userId/$noteId")
+
+    suspend fun addNewNote(userId: String, note: Note): Result<BaseResponse<Note>, Error> =
+        post(url= "${ApiRoute.NOTES.getName()}/$userId", requestData = note)
+
+
+    suspend fun getUser(userId: String): Result<BaseResponse<User>, Error> =
+        get(url = "${ApiRoute.USERS.getName()}/$userId")
+
+
+
+    suspend fun updateUser(user: User): Result<BaseResponse<User>, Error> =
+         post(url = "${ApiRoute.USERS.getName()}/${user._id}", requestData = user)
+
+
+    suspend fun deleteUser(userId: String): Result<BaseResponse<User>, Error> =
+        delete(url = "${ApiRoute.USERS.getName()}/$userId")
+
+
+    suspend fun profileImage(): Result<BaseResponse<User>, Error> =
+        post(url = ApiRoute.PROFILE.getName(),contentType = ContentType.Application.FormUrlEncoded, requestData = null)
+
+
+    // actual api calls
+    private suspend inline fun <reified T> get(
+        url: String, contentType: ContentType = ContentType.Application.Json
+    ) = baseApiCall<T, NetworkError> {
+        httpClient.get(urlString = url) {
+            contentType(contentType)
         }
     }
 
-    suspend fun updateUser(user : User) : Result<BaseResponse<User>, Error> =
-        baseApiCall<BaseResponse<User>, NetworkError> {
-            httpClient.post(urlString = "${ApiRoute.USERS.getName()}/${user._id}") {
-                contentType(ContentType.Application.Json)
-                headers.apply {
-                    val token = userPrefs.getAuthToken()?:""
-                    append(headerAuth,token)
-                }
-                setBody(user)
-            }
+    private suspend inline fun <reified T> post(
+        url: String, contentType: ContentType = ContentType.Application.Json, requestData: Any?
+    ) = baseApiCall<T, NetworkError> {
+        httpClient.post (urlString = url) {
+            contentType(contentType)
+            setBody(requestData)
         }
-    suspend fun deleteUser(userId : String) : Result<BaseResponse<User>, Error> =
-        baseApiCall<BaseResponse<User>, NetworkError> {
-            httpClient.delete(urlString = "${ApiRoute.USERS.getName()}/$userId"){
-                contentType(ContentType.Application.Json)
-                headers.apply {
-                    val token = userPrefs.getAuthToken() ?: ""
-                    append(headerAuth,token)
-                }
-            }
+    }
+
+    private suspend inline fun <reified T> delete(url: String, contentType: ContentType = ContentType.Application.Json)
+    = baseApiCall<T, NetworkError> {
+        httpClient.delete(urlString = url) {
+            contentType(contentType)
         }
-    suspend fun profileImage() : Result<BaseResponse<User>, Error> =
-        baseApiCall<BaseResponse<User>, NetworkError> {
-            httpClient.post(urlString = ApiRoute.PROFILE.getName()){
-                contentType(ContentType.Application.FormUrlEncoded)
-            }
-        }
+    }
 }
-

@@ -10,4 +10,5 @@ interface IAppPreferences {
     suspend  fun setUserId(userId : String)
     suspend  fun setAuth(isAuth : Boolean)
     suspend fun  clear()
+    fun currentTokenOrNull(): String?
 }

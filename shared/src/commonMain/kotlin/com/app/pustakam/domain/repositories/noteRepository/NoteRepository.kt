@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
-class NoteRepository(private val userPreference: IAppPreferences) : BaseRepository(userPreference),
+class NoteRepository : BaseRepository(),
     IRemoteNoteRepository, ILocalNotesRepository {
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(arrayListOf())

@@ -90,4 +90,5 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
 //        isAuthenticated
         )
     }
+    override fun currentTokenOrNull(): String? =  userPreferenceStateFlow.value.token.ifBlank { null }
 }

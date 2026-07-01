@@ -34,9 +34,7 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         )
     }
 }
-    val networkModule = module {
-        single<ApiCallClient> { ApiCallClient(get())  }
-    }
+    val networkModule = module { single<ApiCallClient> { ApiCallClient()  } }
     modules(getDataSourceFromPlatForm(), repositoriesModules(),networkModule, databaseModule, getDatabaseModule(), )
 
 }

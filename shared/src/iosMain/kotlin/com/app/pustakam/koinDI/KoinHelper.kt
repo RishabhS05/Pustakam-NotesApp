@@ -8,6 +8,7 @@ import com.app.pustakam.domain.repositories.noteRepository.NoteRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 object KoinHelper : KoinComponent{
+
     fun getBaseRepository() = get<BaseRepository>()
     fun getNoteRepository() = get<NoteRepository>()
     fun getNoteContentRepository() = get<NoteContentRepository>()

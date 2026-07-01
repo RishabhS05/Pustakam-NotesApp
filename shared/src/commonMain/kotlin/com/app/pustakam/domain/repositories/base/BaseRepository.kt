@@ -17,12 +17,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.core.component.inject
 
-open class BaseRepository(private val userPrefs: IAppPreferences) : IRemoteRepository, ILocalRepository, KoinComponent {
+open class BaseRepository : IRemoteRepository, ILocalRepository, KoinComponent {
     protected val apiClient: ApiCallClient by inject<ApiCallClient>()
     protected val notesDao by inject<NotesDao>()
-    val _userAuthState = (userPrefs as BasePreferences).userPreferencesFlow
+    protected val userPrefs by inject<BasePreferences>()
+    val _userAuthState = (userPrefs).userPreferencesFlow
     protected lateinit var prefs: UserPreference
     init {
         CoroutineScope(Dispatchers.IO).launch {
