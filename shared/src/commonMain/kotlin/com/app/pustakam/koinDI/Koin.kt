@@ -3,6 +3,8 @@ package com.app.pustakam.koinDI
 import app.cash.sqldelight.ColumnAdapter
 import com.app.pustakam.data.localdb.database.RichTextMetadata
 import com.app.pustakam.data.localdb.database.getDatabaseModule
+import com.app.pustakam.data.localdb.preferences.BasePreferences
+import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.localdb.preferences.getDataSourceFromPlatForm
 import com.app.pustakam.data.network.ApiCallClient
 import com.app.pustakam.database.NoteContent
@@ -35,8 +37,11 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
     }
 }
     val networkModule = module { single<ApiCallClient> { ApiCallClient()  } }
-    modules(getDataSourceFromPlatForm(), repositoriesModules(),networkModule, databaseModule, getDatabaseModule(), )
-
+    val sharedPrefModule = module{
+            single { BasePreferences(get()) }
+            single<IAppPreferences> { get<BasePreferences>() }
+    }
+    modules(sharedPrefModule,getDataSourceFromPlatForm(),repositoriesModules(), networkModule, databaseModule, getDatabaseModule())
 }
 
 

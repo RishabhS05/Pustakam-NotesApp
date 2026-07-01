@@ -13,6 +13,5 @@ actual fun getDataSourceFromPlatForm() = module {
             androidContext().filesDir?.resolve(dataStoreFileName)?.absolutePath ?: throw Exception("Couldn't get Android Datastore context.")
         }
     }
-    single<IAppPreferences> { BasePreferences(get()) }
     factory <Dispatcher> { provideDispatcher() }
 }

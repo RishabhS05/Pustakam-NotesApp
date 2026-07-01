@@ -10,6 +10,5 @@ import org.koin.dsl.module
 
 actual fun getDataSourceFromPlatForm()= module {
     single<DataStore<Preferences>> { createDataStore() }
-    single<IAppPreferences> { BasePreferences(get()) }
     factory <Dispatcher> { provideDispatcher() }
 }
