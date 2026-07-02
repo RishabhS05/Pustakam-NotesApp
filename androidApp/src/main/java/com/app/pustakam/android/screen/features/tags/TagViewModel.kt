@@ -6,9 +6,9 @@ import com.app.pustakam.android.screen.DialogEnum
 import com.app.pustakam.android.screen.TagState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.android.screen.notes.CreateTagUseCase
-import com.app.pustakam.android.screen.notes.GetTagCase
-import com.app.pustakam.android.screen.notes.UpdateTagUseCase
+import com.app.pustakam.domain.repositories.usecases.CreateTagUseCase
+import com.app.pustakam.domain.repositories.usecases.GetTagCase
+import com.app.pustakam.domain.repositories.usecases.UpdateTagUseCase
 import com.app.pustakam.android.screen.notes.list.TagIntent
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.Tag

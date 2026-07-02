@@ -8,7 +8,7 @@ import com.app.pustakam.util.Result
 import org.koin.core.component.get
 
 class AppViewModel : BaseViewModel() {
-   private val repository = get<BaseRepository>()
+   private val repository  = get<BaseRepository>()
      val authState =  repository._userAuthState
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {}
 

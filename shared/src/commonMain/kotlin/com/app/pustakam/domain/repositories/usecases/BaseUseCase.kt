@@ -1,4 +1,4 @@
-package com.app.pustakam.android.screen.base
+package com.app.pustakam.domain.repositories.usecases
 
 import com.app.pustakam.domain.repositories.base.BaseRepository
 import com.app.pustakam.domain.repositories.noteRepository.NoteRepository
@@ -7,13 +7,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import  com.app.pustakam.util.Result
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.flowOn
 import org.koin.core.component.KoinComponent
 
 import org.koin.core.component.get
 
 
-abstract  class NoteBaseUseCase: BaseUseCase(){
+abstract class NoteBaseUseCase: BaseUseCase(){
    protected val noteRepository = repository as NoteRepository
     val notes =  noteRepository.notesState
     override fun setRepository(): NoteRepository {

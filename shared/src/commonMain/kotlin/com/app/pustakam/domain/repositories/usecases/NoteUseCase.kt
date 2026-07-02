@@ -1,6 +1,5 @@
-package com.app.pustakam.android.screen.notes
+package com.app.pustakam.domain.repositories.usecases
 
-import com.app.pustakam.android.screen.base.NoteBaseUseCase
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.Note
 

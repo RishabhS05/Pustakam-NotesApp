@@ -21,9 +21,9 @@ import org.koin.core.component.get
 import org.koin.core.component.inject
 
 open class BaseRepository : IRemoteRepository, ILocalRepository, KoinComponent {
-    protected val apiClient: ApiCallClient by inject<ApiCallClient>()
+    protected val apiClient by inject<ApiCallClient>()
     protected val notesDao by inject<NotesDao>()
-    protected val userPrefs by inject<BasePreferences>()
+    protected val userPrefs = get<BasePreferences>()
     val _userAuthState = (userPrefs).userPreferencesFlow
     protected lateinit var prefs: UserPreference
     init {
@@ -47,10 +47,9 @@ open class BaseRepository : IRemoteRepository, ILocalRepository, KoinComponent {
     override suspend fun updateUser(user: User): Result<BaseResponse<User>, Error> = apiClient.updateUser(user)
 
     // pass empty string to get current user
-    override suspend fun getUser(userId: String): Result<BaseResponse<User>, Error> {
-        val id = userId.ifEmpty { prefs.userId }
-        return apiClient.getUser(id)
-    }
+    override suspend fun getUser(userId: String): Result<BaseResponse<User>, Error> =
+         apiClient.getUser(userId.ifEmpty { prefs.userId })
+
 
     override suspend fun deleteUser(): Result<BaseResponse<User>, Error>
             = apiClient.deleteUser(prefs.userId)

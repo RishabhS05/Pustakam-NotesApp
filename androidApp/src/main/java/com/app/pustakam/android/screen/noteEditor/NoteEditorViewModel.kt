@@ -12,10 +12,10 @@ import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.android.screen.notes.CreateORUpdateNoteUseCase
-import com.app.pustakam.android.screen.notes.DeleteNoteContentUseCase
-import com.app.pustakam.android.screen.notes.DeleteNoteUseCase
-import com.app.pustakam.android.screen.notes.ReadNoteUseCase
+import com.app.pustakam.domain.repositories.usecases.CreateORUpdateNoteUseCase
+import com.app.pustakam.domain.repositories.usecases.DeleteNoteContentUseCase
+import com.app.pustakam.domain.repositories.usecases.DeleteNoteUseCase
+import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
@@ -38,13 +38,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
+import org.koin.core.component.inject
 
 class NoteEditorViewModel : BaseViewModel() {
     private val noteContentRepository = get<NoteContentRepository>()
-    private val readNoteUseCase = ReadNoteUseCase()
-    private val deleteNoteUseCase = DeleteNoteUseCase()
-    private val deleteNoteContentUseCase = DeleteNoteContentUseCase()
-    private val createUpdateNoteUseCase = CreateORUpdateNoteUseCase()
+    private val readNoteUseCase by inject<ReadNoteUseCase>()
+    private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
+    private val deleteNoteContentUseCase by inject<DeleteNoteContentUseCase>()
+    private val createUpdateNoteUseCase by inject<CreateORUpdateNoteUseCase>()
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())

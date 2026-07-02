@@ -1,12 +1,11 @@
 package com.app.pustakam.android.screen.notes.list
 
 import androidx.lifecycle.viewModelScope
-import com.app.pustakam.android.screen.BOOKS
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.android.screen.notes.GetNotesUseCase
+import com.app.pustakam.domain.repositories.usecases.GetNotesUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
