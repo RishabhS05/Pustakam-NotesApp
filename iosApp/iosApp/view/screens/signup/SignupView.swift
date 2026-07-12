@@ -1,8 +1,11 @@
 import SwiftUI
-import SwiftUICore
 import shared
 
-class SignUpHandler: BaseViewModel {
+// 🔧 AUTH-FIX: no BaseViewModel/apiHandler — signup via AuthBridge use cases
+class SignUpHandler {
+
+    private let adapter = AuthBridgeAdapter()
+
     func validateCred(req: RegisterReq) -> ErrorField? {
         let valmsg =
             FieldValidationKt.checkRegisterFieldsValidity(
@@ -12,10 +15,9 @@ class SignUpHandler: BaseViewModel {
                 showErrorAlert: true,
                 errorMessage: valmsg.getError()) : nil
     }
-    func signUpCall(reqUser: RegisterReq) async -> BaseResult<User?> {
-        return await apiHandler(apiCall: {
-            try await baseRepositary.registerUser(user: reqUser)
-        })
+
+    func signUpCall(reqUser: RegisterReq, onState: @escaping (UiState<User>) -> Void) {
+        adapter.signup(request: reqUser, onState: onState)
     }
 }
 struct SignupView: View {
@@ -31,7 +33,8 @@ struct SignupView: View {
     private enum Fields {
         case name, email, phone, password, confirmPasword
     }
-    private let signupHandle = SignUpHandler()
+    // 🔧 REALTIME-FIX: persistent handler (see LoginView note)
+    @State private var signupHandle = SignUpHandler()
     @Environment(\.dismiss) var dismiss
     var body: some View {
         ZStack {
@@ -130,19 +133,24 @@ struct SignupView: View {
             errorField = validation!
             return
         }
-        Task {
-           isLoading = true
-            let resp = await signupHandle.signUpCall(
-                reqUser: user)
-            isLoading = false
-            if resp.error != nil && !resp.isSuccessful {
-                errorField.errorMessage =
-                    (resp.error as! NetworkError).getError()
-                errorField.showErrorAlert = !resp.isSuccessful
-                return
+        // 🔧 AUTH-FIX: dismiss() used to run IMMEDIATELY (outside the Task) — the screen
+        //             closed before the API answered and error alerts were never seen.
+        //             Now: dismiss only on success; typed error, no `as!` crash cast.
+        signupHandle.signUpCall(reqUser: user) { state in
+            switch state {
+            case .loading:
+                isLoading = true
+            case .success:
+                isLoading = false
+                dismiss()
+            case .failure(let error):
+                isLoading = false
+                errorField.errorMessage = error.message
+                errorField.showErrorAlert = true
+            case .idle:
+                break
             }
         }
-        dismiss()
     }
 }
 #Preview {

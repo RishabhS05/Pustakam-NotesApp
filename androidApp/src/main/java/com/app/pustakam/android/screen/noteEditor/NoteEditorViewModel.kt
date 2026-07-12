@@ -80,9 +80,7 @@ class NoteEditorViewModel : BaseViewModel() {
                     it.copy(
                         titleTextState = it.titleTextState, note = note,
                         isAllSetupDone = true,
-                        contents = if (note.contents.isNotnull())
-                            mutableStateListOf(*note.contents!!.toTypedArray())
-                        else mutableStateListOf()
+                        contents = mutableStateListOf(*note.contents.toTypedArray())
                     )
                 }
                 noteContentRepository.addAllNoteContent(note)
@@ -158,9 +156,15 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     private fun updateNoteObject() {
-        _noteContentUiState.value.note?.copy(
-            title = _noteContentUiState.value.titleTextState.value
-        )
+        // old code built the copy and DISCARDED it — title was never saved.
+        // Now: write title + materialize the edited contents back into state before upsert.
+        _noteContentUiState.update {
+            val updatedNote = it.note?.withTitleAndContents(
+                newTitle = it.titleTextState.value,
+                newContents = it.contents.toList()
+            )
+            it.copy(note = updatedNote)
+        }
     }
 
 
@@ -214,8 +218,8 @@ class NoteEditorViewModel : BaseViewModel() {
           if (note.isNotnull()) {
               val textContent =
                   NoteContentObjectHelper.createText(
-                      noteId = note.id!!,
-                      positionedAt = note.contents?.count()?.toLong() ?: 0
+                      noteId = note.id,
+                      positionedAt = note.contents.count().toDouble()   // 🔧 C4
                   )
               setContentType(TEXT)
               updateContent(content = textContent)
@@ -231,8 +235,15 @@ class NoteEditorViewModel : BaseViewModel() {
         }else{
             _noteContentUiState.update {
                 it.contents[index] = content
-                it.note?.contents = it.note?.contents?.toMutableList()?.apply { add(content) }
-                it.copy(note = it.note,contents = it.contents, isAllSetupDone = true)
+                // immutable Note: upsert by id via copy (was: in-place add — also fixed
+                // the old bug of ADDING a duplicate on update instead of replacing)
+                val updatedNote = it.note?.let { n ->
+                    val newContents = n.contents.toMutableList()
+                    val i = newContents.indexOfFirst { c -> c.id == content.id }
+                    if (i != -1) newContents[i] = content else newContents.add(content)
+                    n.withContents(newContents)
+                }
+                it.copy(note = updatedNote, contents = it.contents, isAllSetupDone = true)
             }
         }
         if (content.isPlayingMedia())
@@ -250,8 +261,8 @@ class NoteEditorViewModel : BaseViewModel() {
     fun addContentData(content: NoteContentModel){
         _noteContentUiState.update {
             it.contents.add(content)
-             it.note?.contents = it.note?.contents?.toMutableList()?.apply { add(content) }
-            it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
+            val updatedNote = it.note?.let { n -> n.withContents(n.contents + content) }
+            it.copy(note = updatedNote, contents = it.contents, isAllSetupDone = true)
         }
     }
 
@@ -272,11 +283,15 @@ class NoteEditorViewModel : BaseViewModel() {
             deleteNoteContentUseCase.invoke(value)
         }
         _noteContentUiState.update {
-            val index= it.note?.contents?.indexOf(find)
             val indexContent = it.contents.indexOf(find)
-            if( indexContent != -1 )   it.contents.removeAt(indexContent)
-          if(index.isNotnull() && index != -1 )  it.note?.contents?.toMutableList()?.removeAt(index!!)
-            it.copy(note = it.note, contents = it.contents)
+            if (indexContent != -1) it.contents.removeAt(indexContent)
+            // immutable Note: rebuild contents without the removed item.
+            // (old code removed from a discarded copy — note.contents was never
+            //  actually updated; this also fixes that silent bug)
+            val updatedNote = it.note?.let { n ->
+                n.withContents(n.contents.filterNot { c -> c.id == value })
+            }
+            it.copy(note = updatedNote, contents = it.contents)
         }
         showDeleteAlertBox(false, null)
     }
@@ -296,16 +311,16 @@ class NoteEditorViewModel : BaseViewModel() {
          if(list.isEmpty()) return
       list.forEach{ path ->
           _noteContentUiState.update {
-              if(!it.note.isNotnull()) return
-              val position: Long = it.note?.contents?.count()?.toLong() ?: 0
+              val note = it.note ?: return
+              val position: Double = note.contents.count().toDouble()   // 🔧 C4
               val content = NoteContentObjectHelper.createMedia(positionedAt = position,
-                  noteId =it.note!!.id,
+                  noteId = note.id,
                   localPath = path.first ,
                   contentType = path.second)
                   .copy(title ="${path.second}-$position",)
               it.contents.add(content)
-              it.note.contents = it.note.contents?.toMutableList()?.apply { add(content) }
-              it.copy(note = it.note, contents = it.contents, isAllSetupDone = true)
+              it.copy(note = note.withContents(note.contents + content),
+                  contents = it.contents, isAllSetupDone = true)
           }
       }
     }

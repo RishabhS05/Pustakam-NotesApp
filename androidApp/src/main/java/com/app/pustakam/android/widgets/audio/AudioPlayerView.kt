@@ -159,8 +159,21 @@ private fun AudioPlayerPreview() {
         val state = PlayerUiState(
             totalDuration = "00 sec", progress = 10f, timeRemaining = "00:20",
             timeElapsed = "00:20",
-            duration = 100, noteContent = NoteContentModel.MediaContent(noteId = "",
-                duration = 100, position = 1, type = ContentType.AUDIO)
+            duration = 100, noteContent = NoteContentModel.MediaContent(
+                noteId = "",
+                duration = 100, position = 1.0, type = ContentType.AUDIO,
+                updatedAt = TODO(),
+                createdAt = TODO(),
+                id = TODO(),
+                localPath = TODO(),
+                url = TODO(),
+                title = TODO(),
+                mimeType = TODO(),
+                sizeBytes = TODO(),
+                width = TODO(),
+                height = TODO(),
+                thumbnailPath = TODO()
+            )
         )
         AudioPlayView(state = state)
     }

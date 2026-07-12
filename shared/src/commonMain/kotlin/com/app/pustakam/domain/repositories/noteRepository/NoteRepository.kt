@@ -9,7 +9,7 @@ import com.app.pustakam.data.models.response.notes.Notes
 
 import com.app.pustakam.domain.repositories.base.BaseRepository
 import com.app.pustakam.extensions.isNotnull
-import com.app.pustakam.koinDI.provideDispatcher
+// 🔧 F3: provideDispatcher no longer needed (stateIn scopes removed)
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.ErrorMessage
 import com.app.pustakam.util.NetworkError
@@ -19,24 +19,19 @@ import com.app.pustakam.util.getCurrentTimestamp
 import com.app.pustakam.util.log_d
 import com.app.pustakam.util.onError
 import com.app.pustakam.util.onSuccess
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class NoteRepository : BaseRepository(),
     IRemoteNoteRepository, ILocalNotesRepository {
         private val _notes= MutableStateFlow(Notes())
-        private val _tags= MutableStateFlow<List<Tag>>(arrayListOf())
-       val notesState = _notes.stateIn(scope = CoroutineScope(provideDispatcher().io+ SupervisorJob()),
-           initialValue = Notes(),
-           started =  SharingStarted.WhileSubscribed())
-    var tagState = _tags.stateIn(scope = CoroutineScope(provideDispatcher().io + SupervisorJob()),
-        initialValue = arrayListOf(),
-        started =  SharingStarted.WhileSubscribed())
+        private val _tags= MutableStateFlow<List<Tag>>(emptyList())
+    // 🔧 F3 (P5): asStateFlow — same public type (StateFlow), but no extra re-collection
+    //            layer and no never-cancelled CoroutineScope(io) leaking per instance
+    val notesState: StateFlow<Notes> = _notes.asStateFlow()
+    val tagState: StateFlow<List<Tag>> = _tags.asStateFlow()
     /** create an blank note
      */
     private fun createNewEmptyNote(tagId  : String = ""): Note {
@@ -119,8 +114,9 @@ class NoteRepository : BaseRepository(),
     }
     /** delete a note data from local db */
     override suspend fun deleteNoteByIdFromDb(id: String?): Result<BaseResponse<Boolean>, Error> {
-        if (id.isNullOrEmpty()) Result.Error(error = NetworkError.NOT_FOUND)
-        val success =  notesDao.deleteByIdFromDb(id!!)
+        // 🔧 F3: missing `return` — the null-check was dead code, then id!! could NPE
+        if (id.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
+        val success =  notesDao.deleteByIdFromDb(id)
         return  if(success){
             val response = BaseResponse(data = success, isSuccessful = true, isFromDb = true)
             Result.Success(response)
@@ -153,40 +149,43 @@ class NoteRepository : BaseRepository(),
     /** methods for deleting note content from db
      * */
     override suspend fun deleteNoteContentFromDb(id: String?): Result<BaseResponse<Boolean>, Error> {
-        if (id.isNullOrEmpty()) Result.Error(error = NetworkError.NOT_FOUND)
-        notesDao.deleteNoteContentById(id!!)
+        // 🔧 F3: missing `return` fixed (same dead-code pattern)
+        if (id.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
+        notesDao.deleteNoteContentById(id)
         return Result.Success(BaseResponse(data = true, isSuccessful = true))
     }
-    /** CRUD ON Tags/Categories */
+    /** CRUD ON Tags/Categories
+     *  🔧 F3 (piece 4): every DB mutation updates _tags immediately — single source of truth */
     override suspend fun createTagOnDB(tag: Tag): Result<BaseResponse<Tag>, Error> {
-        println("NoteRepository.createTagOnDB called") // Debug log
-         val tag = notesDao.createTagOnDB(tag)
-
-        if (tag == null)  return Result.Error(error = NetworkError.SERVER_ERROR)
-        _tags.update {
-            it + tag
-        }
-        return Result.Success(BaseResponse(data = tag, isSuccessful = true))
+        val created = notesDao.createTagOnDB(tag)                 // 🔧 P6: no param shadowing
+            ?: return Result.Error(error = NetworkError.SERVER_ERROR)
+        _tags.update { it + created }
+        return Result.Success(BaseResponse(data = created, isSuccessful = true, isFromDb = true))
     }
 
     override suspend fun updateTagOnDB(tag: Tag): Result<BaseResponse<Tag>, Error> {
-        val tag =  notesDao.updateTagOnDB(tag)
-        if (tag == null)  return Result.Error(error = NetworkError.NOT_FOUND)
-        return Result.Success(BaseResponse(data = tag, isSuccessful = true))
+        val updated = notesDao.updateTagOnDB(tag)
+            ?: return Result.Error(error = NetworkError.NOT_FOUND)
+        _tags.update { list ->                                    // 🔧 P1: observers now see renames/recolors
+            list.map { if (it.id == updated.id) updated else it }
+        }
+        return Result.Success(BaseResponse(data = updated, isSuccessful = true, isFromDb = true))
     }
 
     override suspend fun deleteTagOnDB(tagId: String?): Result<BaseResponse<Boolean>, Error> {
-        if (tagId.isNullOrEmpty()) Result.Error(error = NetworkError.NOT_FOUND)
-        notesDao.deleteTag(tagId!!)
-        return Result.Success(BaseResponse(data = true, isSuccessful = true))
+        // 🔧 P3: missing `return` fixed + DAO result used (was always reporting success)
+        if (tagId.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
+        val deleted = notesDao.deleteTag(tagId)
+        if (!deleted) return Result.Error(error = NetworkError.SERVER_ERROR)
+        _tags.update { list -> list.filterNot { it.id == tagId } } // 🔧 P2: observers see deletion
+        return Result.Success(BaseResponse(data = true, isSuccessful = true, isFromDb = true))
     }
 
     override suspend fun getTagsFromDB(): Result<BaseResponse<List<Tag>>, Error> {
-        println("NoteRepository.getTagsFromDB called") // Debug log
         val tags = notesDao.getTagsFromDB()
+        _tags.value = tags   // 🔧 refresh observers BEFORE the empty-check (empty list is valid state)
         if (tags.isEmpty())  return Result.Error(error = NetworkError.NOT_FOUND)
-        insertTag(tags)
-        return Result.Success(BaseResponse(data = tags, isSuccessful = true))
+        return Result.Success(BaseResponse(data = tags, isSuccessful = true, isFromDb = true))
     }
 
     /**---------CRUD LOGIC METHODS --------------*/
@@ -204,12 +203,11 @@ class NoteRepository : BaseRepository(),
     suspend fun insertOrUpdateNote(note : Note) : Result<BaseResponse<Note>, Error> {
         return insertUpdateFromDb(note).onSuccess {
             log_d("Insert Update","added ")
-            _notes.update { notes->
-                val index = notes.notes.indexOfFirst {n -> note.id == n.id  }
-                if(index!= -1) notes.notes[index] = note else
-                    notes.notes.add(note)
-                val newList  =ArrayList(notes.notes)
-                notes.copy(notes = newList)
+            _notes.update { current->
+                val newList = ArrayList(current.notes)                    // 1. copy FIRST
+                val index = newList.indexOfFirst { it.id == note.id }     // 2. single O(n) scan
+                if (index != -1) newList[index] = note else newList.add(note)
+                current.copy(notes = newList)
             }
 //              if(existingNote != null ) {
 //                  updateNoteApi(note)
@@ -223,11 +221,9 @@ class NoteRepository : BaseRepository(),
     suspend fun deleteNote(id : String): Result<BaseResponse<Boolean>, Error> {
         return deleteNoteByIdFromDb(id).onSuccess {
             //deleteNoteApi(id)
-            _notes.update {
-                val note = it.notes.find{ note-> id == note.id  }
-                if (it.notes.remove(note)){
-                    it.copy(notes =it.notes)
-                } else it
+            _notes.update { current ->
+                val newList = ArrayList(current.notes.filterNot { n -> n.id == id })
+                if (newList.size != current.notes.size) current.copy(notes = newList) else current
             }
         }
     }

@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
+		228AE49F30012F2D00F53C82 /* UiState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE49E30012F2D00F53C82 /* UiState.swift */; };
+		228AE4A330012F9A00F53C82 /* NotesBridgeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */; };
+		228AE4B130013AAA00F53C82 /* AuthBridgeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */; };
 		630BA1762CF0CF7700D148C8 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */; };
 		630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */; };
 		630BA17E2CF10ED800D148C8 /* CameraPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */; };
@@ -39,7 +42,6 @@
 		63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A552972D91949300A9C006 /* ThemeManager.swift */; };
 		63A5529B2D91949300A9C006 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A552982D91949300A9C006 /* Theme.swift */; };
 		63AA02532D9C64860040E872 /* NoteContents.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63AA02522D9C647C0040E872 /* NoteContents.ext.swift */; };
-		63C00BE12CEB661900A4907C /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE02CEB661100A4907C /* BaseViewModel.swift */; };
 		63C00BE32CEC83A900A4907C /* Any.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE22CEC839E00A4907C /* Any.ext.swift */; };
 		63C00BE62CEC925900A4907C /* BackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE52CEC925300A4907C /* BackButton.swift */; };
 		63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C00BE82CEC942500A4907C /* RulledPage.swift */; };
@@ -88,6 +90,9 @@
 /* Begin PBXFileReference section */
 		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
+		228AE49E30012F2D00F53C82 /* UiState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UiState.swift; sourceTree = "<group>"; };
+		228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesBridgeAdapter.swift; sourceTree = "<group>"; };
+		228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthBridgeAdapter.swift; sourceTree = "<group>"; };
 		630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
 		630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreview.swift; sourceTree = "<group>"; };
 		630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPermission.swift; sourceTree = "<group>"; };
@@ -118,7 +123,6 @@
 		63A552972D91949300A9C006 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		63A552982D91949300A9C006 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		63AA02522D9C647C0040E872 /* NoteContents.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteContents.ext.swift; sourceTree = "<group>"; };
-		63C00BE02CEB661100A4907C /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
 		63C00BE22CEC839E00A4907C /* Any.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Any.ext.swift; sourceTree = "<group>"; };
 		63C00BE52CEC925300A4907C /* BackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackButton.swift; sourceTree = "<group>"; };
 		63C00BE82CEC942500A4907C /* RulledPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulledPage.swift; sourceTree = "<group>"; };
@@ -164,6 +168,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		228AE4A030012F5100F53C82 /* bridge */ = {
+			isa = PBXGroup;
+			children = (
+				228AE4B230013AB000F53C82 /* auth */,
+				228AE4A130012F9400F53C82 /* notes */,
+				228AE49E30012F2D00F53C82 /* UiState.swift */,
+			);
+			path = bridge;
+			sourceTree = "<group>";
+		};
+		228AE4B230013AB000F53C82 /* auth */ = {
+			isa = PBXGroup;
+			children = (
+				228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */,
+			);
+			path = auth;
+			sourceTree = "<group>";
+		};
+		228AE4A130012F9400F53C82 /* notes */ = {
+			isa = PBXGroup;
+			children = (
+				228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */,
+			);
+			path = notes;
+			sourceTree = "<group>";
+		};
 		630BA17F2CF195EA00D148C8 /* location */ = {
 			isa = PBXGroup;
 			children = (
@@ -339,7 +369,6 @@
 		63C00BDF2CEB660800A4907C /* base */ = {
 			isa = PBXGroup;
 			children = (
-				63C00BE02CEB661100A4907C /* BaseViewModel.swift */,
 			);
 			path = base;
 			sourceTree = "<group>";
@@ -556,6 +585,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				228AE4A030012F5100F53C82 /* bridge */,
 				6315C6302DBA649000796C7E /* media */,
 				63CFB91E2DB6F68200093C96 /* file */,
 				63A552992D91949300A9C006 /* theme */,
@@ -655,7 +685,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -674,6 +704,8 @@
 				63CFB9202DB6F6E300093C96 /* FileOps.swift in Sources */,
 				63D089252CAC92CA008FD8CC /* OutlineTextfieldStyle.swift in Sources */,
 				630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */,
+				228AE4A330012F9A00F53C82 /* NotesBridgeAdapter.swift in Sources */,
+				228AE4B130013AAA00F53C82 /* AuthBridgeAdapter.swift in Sources */,
 				639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */,
 				63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */,
 				630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */,
@@ -687,6 +719,7 @@
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
 				636341002F012A1B003835E4 /* NoteTextField.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
+				228AE49F30012F2D00F53C82 /* UiState.swift in Sources */,
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
 				63302FE92E55198D0038B1FD /* Color.ext.swift in Sources */,
 				63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */,
@@ -696,7 +729,6 @@
 				6315C6322DBA649F00796C7E /* MediaManager.swift in Sources */,
 				63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */,
 				63C2ECD32DAB127D00412221 /* NotesViewModel.swift in Sources */,
-				63C00BE12CEB661900A4907C /* BaseViewModel.swift in Sources */,
 				63C00BEF2CECC6FF00A4907C /* ActionButton.swift in Sources */,
 				63C2ECD02DAB125000412221 /* NoteEditorViewModel.swift in Sources */,
 				63D0892D2CAF8D13008FD8CC /* Router.swift in Sources */,

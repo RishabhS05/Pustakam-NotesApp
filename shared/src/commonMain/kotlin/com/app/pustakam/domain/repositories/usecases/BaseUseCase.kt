@@ -17,6 +17,7 @@ import org.koin.core.component.get
 abstract class NoteBaseUseCase: BaseUseCase(){
    protected val noteRepository = repository as NoteRepository
     val notes =  noteRepository.notesState
+    val tags = noteRepository.tagState
     override fun setRepository(): NoteRepository {
         return get<NoteRepository>()
     }
@@ -30,7 +31,7 @@ abstract class BaseUseCase : KoinComponent {
          emit(apiCall())
     }.flowOn(Dispatchers.IO)
 
- open fun setRepository(): BaseRepository = get<BaseRepository>()
+ open fun setRepository(): BaseRepository = get<NoteRepository>()
     suspend fun logoutUser(){
         repository.userLogout()
     }

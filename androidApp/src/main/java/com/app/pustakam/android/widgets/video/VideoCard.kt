@@ -238,9 +238,21 @@ private fun PreviewVideoControllerUi() {
     val state = PlayerUiState(
         progress = 30f,
         noteContent = NoteContentModel.MediaContent(
-            position = 0,
+            position = 0.0,
             noteId = "123434",
             type = ContentType.VIDEO,
+            updatedAt = "2023-10-27T10:00:00Z",
+            createdAt = "2023-10-27T10:00:00Z",
+            id = "media_123",
+            duration = 120000L,
+            localPath = null,
+            url = "https://example.com/video.mp4",
+            title = "Sample Video",
+            mimeType = "video/mp4",
+            sizeBytes = 1024L * 1024L,
+            width = 1920,
+            height = 1080,
+            thumbnailPath = null,
         )
     )
     MyApplicationTheme {

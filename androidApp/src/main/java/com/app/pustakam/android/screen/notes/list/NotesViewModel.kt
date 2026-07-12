@@ -16,11 +16,12 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.component.inject
 
 
 class NotesViewModel : BaseViewModel() {
     private var hasLoaded = false
-    private val getNotesUseCase = GetNotesUseCase()
+    private val getNotesUseCase by inject<GetNotesUseCase>()
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
         isNextPage = true))
 

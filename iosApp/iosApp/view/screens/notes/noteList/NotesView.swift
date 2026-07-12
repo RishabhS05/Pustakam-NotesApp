@@ -3,7 +3,8 @@ import shared
 
 
 struct NotesView: View {
-    @StateObject private var notesHandler = NotesViewModel()
+    @StateObject private var notesViewModel = NotesViewModel()
+    
     @Environment(Router.self) var router: Router
     var loadingUi : some View {
         LoadingUI().frame(alignment: .center)
@@ -39,7 +40,7 @@ struct NotesView: View {
     }
     //List of notes
     var staggeredGrid : some View {
-        StaggeredGrid(columns: 2, items: notesHandler.notes, spacing: 12 ) {
+        StaggeredGrid(columns: 2, items: notesViewModel.state.notes, spacing: 12 ) {
             note in NoteBookView(note: note){
                 router.navigate(to: .NoteEditor(note: note))
             }
@@ -49,11 +50,11 @@ struct NotesView: View {
     var tagsUi : some View {
         ScrollView(.horizontal,showsIndicators: false){
             LazyHStack(alignment:.center,spacing: 8){
-                ForEach(notesHandler.tags) { tag in
+                ForEach(notesViewModel.state.tags) { tag in
                     TagView(tag: tag){}
                 }
                 TagView (tag: Tag(label: "+Tag", color: Color.secondary.tohexColor())){
-                    notesHandler.showSheet = true
+                    notesViewModel.state.showSheet = true
                 }
             }
         }.frame(height: 40)
@@ -63,13 +64,13 @@ struct NotesView: View {
         VStack{
             HStack{
                 Image(systemName: "paintbrush.fill")
-                    .foregroundColor(notesHandler.color)
+                    .foregroundColor(notesViewModel.state.color)
                     .onTapGesture {
-                        notesHandler.showColorPalette = true
+                        notesViewModel.state.showColorPalette = true
                     }
                 TextField(
                     "Tag name" ,
-                    text: $notesHandler.tagName
+                    text: $notesViewModel.state.tagName
                 ).submitLabel(.next)
                 .padding(.horizontal,4)
             }.padding(6)
@@ -77,23 +78,20 @@ struct NotesView: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Theme.Colors.secondary, lineWidth: 1)
                 }.padding(12)
-            if notesHandler.showColorPalette { colorSelector }
+            if notesViewModel.state.showColorPalette { colorSelector }
             Button("Done"){
-                notesHandler.showSheet = false
-                notesHandler.showColorPalette = false
-                notesHandler.createTag()
+                notesViewModel.state.showSheet = false
+                notesViewModel.state.showColorPalette = false
+                notesViewModel.createTag()
             }.buttonStyle(SigninButtonStyle())
         }
     }
     var colorSelector : some View {
-        StatefulPreviewWrapper(value: Color.blue) { binding in
-//        ColorSelector(selectedColor: binding, showAlpha: true)
-            HSVColorPicker(selectedColor: $notesHandler.color)
-    }
+        HSVColorPicker(selectedColor: $notesViewModel.state.color)
     }
     var body: some View {
             ZStack(alignment: .center){
-                if notesHandler.notes.isEmpty { emptyNotesUI
+                if notesViewModel.state.notes.isEmpty { emptyNotesUI
                 }
                 else {
                     ScrollView{
@@ -103,7 +101,7 @@ struct NotesView: View {
                         }
                     }
                 }
-                if notesHandler.isLoading {
+                if notesViewModel.state.isLoading {
                     loadingUi
                 }
                 fab
@@ -116,14 +114,14 @@ struct NotesView: View {
                 }
             }
         // ZStack
-        .sheet(isPresented: $notesHandler.showSheet){
+        .sheet(isPresented: $notesViewModel.state.showSheet){
             createTag
         }
         .padding(8)
             .onAppear {
-                notesHandler.getNotesCall()
+                notesViewModel.getNotesCall()
             }.onDisappear{
-                notesHandler.isLoading = false
+                notesViewModel.state.isLoading = false
             }
             .navigationBarBackButtonHidden(true)
             

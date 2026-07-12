@@ -8,10 +8,7 @@ import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.database.NotesDatabase
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.log_d
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.launch
+// 🔧 F4: coroutine imports removed — DAO writes are synchronous inside transactions now
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.component.inject
@@ -73,12 +70,15 @@ class NotesDao() : KoinComponent {
                                       noteId = row.noteId,
                                       text =  row.text!!,
                                       position = row.position!!,
+                                      // 🔧 timestamps stay String (C3 reverted per review)
                                       createdAt = row.contentCreatedAt,
                                       updatedAt = row.contentUpdatedAt,
                                       metadata =  row.metaData
                                   )
-                              ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO  ->
-                                  NoteContentModel.MediaContent(title = row.title?:"${row.type}-${row.position}",
+                              // 🔧 C1: PDF + GIF now round-trip like every other media format
+                              ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO, ContentType.PDF, ContentType.GIF  ->
+                                  // 🔧 S1: contentTitle = media's OWN column (row.title is the NOTE's title from the join)
+                                  NoteContentModel.MediaContent(title = row.contentTitle?:"${row.type}-${row.position}",
                                   id = row.contentId,
                                   noteId = row.noteId,
                                   url = row.url!!,
@@ -86,7 +86,13 @@ class NotesDao() : KoinComponent {
                                   createdAt = row.contentCreatedAt,
                                   updatedAt = row.contentUpdatedAt,
                                   localPath = row.localPath, duration = row.duration?:0,
-                                  type =  type
+                                  type =  type,
+                                  // 🔧 C1: media metadata columns
+                                  mimeType = row.mimeType ?: "",
+                                  sizeBytes = row.sizeBytes ?: 0,
+                                  width = row.width?.toInt() ?: 0,
+                                  height = row.height?.toInt() ?: 0,
+                                  thumbnailPath = row.thumbnailPath,
                               )
 
                               ContentType.LINK -> NoteContentModel.Link(
@@ -108,7 +114,6 @@ class NotesDao() : KoinComponent {
                                   createdAt = row.contentCreatedAt,
                                   updatedAt = row.contentUpdatedAt,
                               )
-                              else -> null
                           }
                       } else null
                   }.toMutableList() as ArrayList<NoteContentModel>
@@ -123,15 +128,15 @@ class NotesDao() : KoinComponent {
     }
 
     fun insertNotes(notes: Notes) {
+        // 🔧 F4: synchronous writes inside the transaction — the old fire-and-forget
+        //       CoroutineScope(...).launch escaped the transaction entirely:
+        //       no atomicity, races, and the transaction could commit before any write ran
         database.transaction {
-            notes.notes?.forEach{ note ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    insertOrUpdateNoteFromDb(note)
-                }
-            }.apply {
-                log_d("Note ", this.toString())
+            notes.notes.forEach { note ->
+                insertOrUpdateNoteFromDb(note)
             }
         }
+        log_d("Note inserted count ", notes.notes.count())
    }
   private  fun insertOrUpdateNotesContent (noteContent: NoteContentModel) {
         var url = ""
@@ -141,42 +146,41 @@ class NotesDao() : KoinComponent {
         var localPath: String? = null
         var long: Double? = null
         var lat: Double? = null
-        val metadata : RichTextMetadata? = null
-        when (noteContent.type) {
-            ContentType.TEXT -> {
-             text = (noteContent as? NoteContentModel.TextContent)?.text ?: ""
+        // 🔧 metadata was `val ... = null` — NEVER assigned, rich-text metadata was silently dropped
+        var metadata : RichTextMetadata? = null
+        // 🔧 C1: media metadata + per-item title now persisted (S1)
+        var title: String? = null
+        var mimeType: String? = null
+        var sizeBytes: Long? = null
+        var width: Long? = null
+        var height: Long? = null
+        var thumbnailPath: String? = null
+        when (noteContent) {
+            // 🔧 sealed-type when (was switching on ContentType with fragile as? casts per branch)
+            is NoteContentModel.TextContent -> {
+                text = noteContent.text
+                metadata = noteContent.metadata
             }
-            ContentType.VIDEO, ContentType.AUDIO -> {
-               val content =  (noteContent as? NoteContentModel.MediaContent)
-                if (content != null) {
-                    url = content.url
-                    localPath = content.localPath
-                    duration = content.duration
-                }
+            // 🔧 C1: ONE media branch for ALL formats (image/video/audio/docx/pdf/gif/…)
+            is NoteContentModel.MediaContent -> {
+                url = noteContent.url
+                localPath = noteContent.localPath
+                duration = noteContent.duration
+                title = noteContent.title
+                mimeType = noteContent.mimeType
+                sizeBytes = noteContent.sizeBytes
+                width = noteContent.width.toLong()
+                height = noteContent.height.toLong()
+                thumbnailPath = noteContent.thumbnailPath
             }
-            ContentType.IMAGE, ContentType.DOCX -> {
-                val content  =  (noteContent as? NoteContentModel.MediaContent)
-                if (content != null) {
-                    url = content.url
-                    localPath = content.localPath
-                }
+            is NoteContentModel.Location -> {
+                address = noteContent.address
+                lat = noteContent.latitude
+                long = noteContent.longitude
             }
-           ContentType.LOCATION-> {
-              val content =  (noteContent as? NoteContentModel.Location)
-               if (content != null) {
-                   address = content.address
-                   lat = content.latitude
-                   long = content.longitude
-               }
-           }
-
-           ContentType.LINK -> {
-              val content =  (noteContent as? NoteContentModel.Link)
-               if (content != null) {
-                   url = content.url
-               }
-           }
-            else -> {}
+            is NoteContentModel.Link -> {
+                url = noteContent.url
+            }
         }
       queries.insertNoteContentById(
             id = noteContent.id,
@@ -192,7 +196,13 @@ class NotesDao() : KoinComponent {
             long = long,
             lat = lat,
             address = address,
-           metaData =  metadata
+            title = title,
+            mimeType = mimeType,
+            sizeBytes = sizeBytes,
+            width = width,
+            height = height,
+            thumbnailPath = thumbnailPath,
+            metaData =  metadata
         )
     }
     fun  deleteNoteContentById(id : String)= queries.deleteNoteContentById(id)
@@ -211,13 +221,11 @@ class NotesDao() : KoinComponent {
             createdAt = note.createdAt,
             categoryId = note.categoryId,
         )
+           // 🔧 F4: contents written synchronously INSIDE the transaction — the function
+           //       previously returned before contents were saved (fire-and-forget launch)
            database.transaction {
-               note.contents?.forEach { content ->
-                   CoroutineScope(Dispatchers.IO).launch {
-                       insertOrUpdateNotesContent(content)
-                   }
-               }.apply {
-                   log_d("NoteDao Note Content ", this.toString())
+               note.contents.forEach { content ->
+                   insertOrUpdateNotesContent(content)
                }
            }
        log_d("NoteDao end ", note)
@@ -244,11 +252,15 @@ class NotesDao() : KoinComponent {
                                     position = row.position!!,
                                     createdAt = row.contentCreatedAt,
                                     updatedAt = row.contentUpdatedAt,
+                                    // 🔧 metadata was dropped by this mapper (drifted from the list mapper)
+                                    metadata = row.metaData,
                                 )
 
+                            // 🔧 C1: PDF + GIF included; title from contentTitle (S1) —
+                            //       also fixes the drifted "${position}-${type}" fallback (list mapper used type-position)
                             ContentType.IMAGE,ContentType.DOCX,
-                            ContentType.VIDEO , ContentType.AUDIO -> NoteContentModel.MediaContent(
-                                title = row.title?:"${row.position}-${row.type}",
+                            ContentType.VIDEO , ContentType.AUDIO, ContentType.PDF, ContentType.GIF -> NoteContentModel.MediaContent(
+                                title = row.contentTitle?:"${row.type}-${row.position}",
                                 id = row.contentId,
                                 noteId = row.noteId,
                                 url = row.url!!,
@@ -257,7 +269,12 @@ class NotesDao() : KoinComponent {
                                 createdAt = row.contentCreatedAt,
                                 updatedAt = row.contentUpdatedAt,
                                 duration = row.duration?:0,
-                                type = type
+                                type = type,
+                                mimeType = row.mimeType ?: "",
+                                sizeBytes = row.sizeBytes ?: 0,
+                                width = row.width?.toInt() ?: 0,
+                                height = row.height?.toInt() ?: 0,
+                                thumbnailPath = row.thumbnailPath,
                             )
 
                             ContentType.LINK-> NoteContentModel.Link(
@@ -280,7 +297,6 @@ class NotesDao() : KoinComponent {
                                 createdAt = row.contentCreatedAt,
                                 updatedAt = row.contentUpdatedAt,
                             )
-                            else -> null
                         }
                     } else null
                 }.toMutableList() as ArrayList<NoteContentModel>

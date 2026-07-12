@@ -24,6 +24,9 @@ import com.app.pustakam.domain.repositories.usecases.GetTagCase
 import com.app.pustakam.domain.repositories.usecases.LoginUseCase
 import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.ReadUserUseCase
+import com.app.pustakam.domain.repositories.usecases.SetSelectedNoteContentUseCase
+import com.app.pustakam.domain.repositories.usecases.UpdateSelectedMediaContentUseCase
+import com.app.pustakam.domain.repositories.usecases.GetSelectedMediaIndexUseCase
 import com.app.pustakam.domain.repositories.usecases.SignUseCase
 import com.app.pustakam.domain.repositories.usecases.UpdateTagUseCase
 import com.app.pustakam.domain.repositories.usecases.UpdateUserUseCase
@@ -87,6 +90,10 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         factory <DeleteUserUseCase>{ DeleteUserUseCase() }
         factory <UpdateUserUseCase>{ UpdateUserUseCase() }
         factory <ReadUserUseCase>{ ReadUserUseCase() }
+        // 🔧 F5: note-content state use cases (NoteContentBridge + future Android migration)
+        factory <SetSelectedNoteContentUseCase>{ SetSelectedNoteContentUseCase() }
+        factory <UpdateSelectedMediaContentUseCase>{ UpdateSelectedMediaContentUseCase() }
+        factory <GetSelectedMediaIndexUseCase>{ GetSelectedMediaIndexUseCase() }
     }
     modules(sharedPrefModule,getDataSourceFromPlatForm(),repositoriesModules,useCases, networkModule, databaseModule, getDatabaseModule())
 }

@@ -23,6 +23,11 @@ fun createHttpClient(authTokenProvider:()-> String? ): HttpClient = platformHttp
         ignoreUnknownKeys = true
         isLenient = true
         prettyPrint= true
+        // 🔧 C8: sealed NoteContentModel discriminates on "type" (TEXT/MEDIA/LINK/LOCATION);
+        //       the ContentType property serializes as "contentType" to avoid the clash
+        classDiscriminator = "type"
+        // 🔧 C8: server nulls coerce to defaults instead of throwing on non-null fields
+        coerceInputValues = true
     }
     install(ContentNegotiation) { json(appJson) }
     install(Logging ){

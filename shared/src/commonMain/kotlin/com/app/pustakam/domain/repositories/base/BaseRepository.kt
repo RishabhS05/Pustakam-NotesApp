@@ -25,7 +25,10 @@ open class BaseRepository : IRemoteRepository, ILocalRepository, KoinComponent {
     protected val notesDao by inject<NotesDao>()
     protected val userPrefs = get<BasePreferences>()
     val _userAuthState = (userPrefs).userPreferencesFlow
-    protected lateinit var prefs: UserPreference
+    // 🔧 AUTH-FIX: was `lateinit` populated by an async collector — any API call made
+    //             before the first emission crashed with UninitializedPropertyAccessException.
+    //             Defaults are safe: UserPreference("", "", false).
+    protected var prefs: UserPreference = UserPreference()
     init {
         CoroutineScope(Dispatchers.IO).launch {
             _userAuthState.collect { pref ->
@@ -58,8 +61,8 @@ open class BaseRepository : IRemoteRepository, ILocalRepository, KoinComponent {
             = apiClient.profileImage()
 
     override suspend fun userLogout() {
-        _userAuthState.collect{
-            it.copy(token =  "", userId = "", isAuthenticated = false)
-        }
+        // 🔧 AUTH-FIX: old body collected the flow forever (caller hung) and DISCARDED
+        //             the copy — logout never actually cleared anything.
+        userPrefs.clear()
     }
 }

@@ -28,8 +28,9 @@ class NoteContentRepository  : KoinComponent{
     }
 
     fun addAllNoteContent(note: Note){
-        _selectedNoteMediaContent.value = note.contents?.filterIsInstance<NoteContentModel.MediaContent>()
-            ?.sortedBy { it.position }?.toMutableList()?: mutableListOf()
+        _selectedNoteMediaContent.value = note.contents
+            .filterIsInstance<NoteContentModel.MediaContent>()
+            .sortedBy { it.position }
     }
     fun clear(){
         _selectedNoteMediaContent.value.toMutableList().clear()

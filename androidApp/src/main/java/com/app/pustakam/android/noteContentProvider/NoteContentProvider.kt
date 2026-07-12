@@ -16,8 +16,9 @@ import com.app.pustakam.util.getCurrentTimestamp
 /**
  * Factory method  of note content */
 fun addContent(context: Context,note : Note, contentType : ContentType) : NoteContentModel{
-    val position: Long = note.contents?.count()?.toLong() ?: 0
-    val noteId = note.id?: ""
+    // 🔧 C4: position is Double (fractional ordering)
+    val position: Double = note.contents.count().toDouble()
+    val noteId = note.id
     val content: NoteContentModel
     when (contentType) {
         TEXT -> {

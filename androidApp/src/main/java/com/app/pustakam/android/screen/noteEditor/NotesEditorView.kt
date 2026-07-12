@@ -344,7 +344,7 @@ fun RenderWidget(
                     NoteTextField(
                         noteContentModel = (content as NoteContentModel.TextContent),
                         focusRequester = focusRequester,
-                        onUpdate = { onUpdate(content.copy(text = it)) }) {
+                        onUpdate = { onUpdate(content.withText(it)) }) { // 🔧 F2: stamps content updatedAt (was plain copy)
 //                        if (it.selection.length > 0) {
 //                            selectionString.value = if (it.selection.start <= it.selection.end)
 //                                it.text.substring(

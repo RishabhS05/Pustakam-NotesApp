@@ -10,6 +10,11 @@ struct NoteTextFieldWrapper : View {
            placeholder: "Keep your thoughts alive.",
            fontSize: 16
         ).frame(minHeight: 20, maxHeight: .infinity)
+        // 🔧 EDITOR-FIX: onTextChange was NEVER invoked — typed text died inside the
+        //   editor, TextContent saved as "" and reopened notes looked empty.
+        .onChange(of: text) { _, newValue in
+            onTextChange(NSAttributedString(string: newValue))
+        }
     }
 }
 struct NoteTextEditor: View {
@@ -53,9 +58,21 @@ struct NoteTextEditor: View {
                 toolbarRect = rect
                 showToolbar = rect != nil
             }).frame(maxHeight: .infinity)
+              // 🔧 EDITOR-FIX: seed the initial value — onChange doesn't fire for it,
+              //   so previously-saved text rendered as blank on reopen.
+              .onAppear {
+                  if attText.string != text { attText = NSAttributedString(string: text) }
+              }
               .onChange(of: text){
-                attText = NSAttributedString(string : text)
-            }
+                  // downward sync (equality guard prevents ping-pong with the upward sync)
+                  if attText.string != text { attText = NSAttributedString(string : text) }
+              }
+              // 🔧 EDITOR-FIX: upward sync was MISSING entirely — typing updated attText
+              //   (via textViewDidChange) but the $text binding (title, content text)
+              //   never received it. This is why titles/content were lost.
+              .onChange(of: attText) { _, newValue in
+                  if text != newValue.string { text = newValue.string }
+              }
                 .padding(.leading, leftpadding)
                 .accentColor(.brown)
                 .font(.system(size: fontSize))

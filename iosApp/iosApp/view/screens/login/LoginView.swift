@@ -1,18 +1,19 @@
 import SwiftUI
 import shared
 
-class LoginHandler : BaseViewModel {
-    
+// 🔧 AUTH-FIX: no BaseViewModel, no apiHandler casts — auth goes through AuthBridge use cases
+class LoginHandler {
+
+    private let adapter = AuthBridgeAdapter()
+
     func checkLoginCredValidity(req: Login) -> ErrorField? {
         let valmsg  = FieldValidationKt.checkLoginEmailPasswordValidity(req: req)
         return   valmsg != ValidationError.none ?
         ErrorField(showErrorAlert: true, errorMessage : valmsg.getError()) :  nil
     }
-    func loginWithEmail(login :Login) async ->
-    BaseResult<BaseResponse<User>?>  {
-        return await apiHandler(apiCall: {
-            try await baseRepositary.loginUser(login: login)
-        })
+
+    func loginWithEmail(login: Login, onState: @escaping (UiState<User>) -> Void) {
+        adapter.login(login: login, onState: onState)
     }
 }
 
@@ -23,7 +24,10 @@ struct LoginView: View {
     @State private var email : String = ""
     @State private var errorField : ErrorField = ErrorField()
     @State private var isLoading : Bool = false
-    private let loginHandler = LoginHandler()
+    // 🔧 REALTIME-FIX: @State keeps ONE handler instance across View-struct re-renders —
+    //   a plain `let` was recreated on every render, deallocating the old adapter and
+    //   cancelling any in-flight login.
+    @State private var loginHandler = LoginHandler()
     
     private enum Fields {
         case email, password
@@ -87,15 +91,20 @@ struct LoginView: View {
             errorField = validation!
             return
         }
-        Task {
-            isLoading = true
-            let resp =  await loginHandler.loginWithEmail(login: login)
-            isLoading = false
-            if( resp.error != nil && !resp.isSuccessful) {
-                errorField.errorMessage = (resp.error as! NetworkError).getError()
-                errorField.showErrorAlert = !resp.isSuccessful
-            }else {
+        // 🔧 AUTH-FIX: callback state machine on main thread — no Task, no `as!` crash cast
+        loginHandler.loginWithEmail(login: login) { state in
+            switch state {
+            case .loading:
+                isLoading = true
+            case .success:
+                isLoading = false
                 router.navigate(to: .Home)
+            case .failure(let error):
+                isLoading = false
+                errorField.errorMessage = error.message   // typed BridgeError — never crashes
+                errorField.showErrorAlert = true
+            case .idle:
+                break
             }
         }
     }

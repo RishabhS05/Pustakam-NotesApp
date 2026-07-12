@@ -1,176 +1,192 @@
 import shared
-    
-    // note viewmodels are basically ui logic handlers only
-class NoteEditorViewModel: BaseViewModel, ObservableObject {
-    var note: Note? = nil
-    
-    @Published var noteContents = [NoteContentModel]()
-    
-    override init() {
-        super.init()
+import Combine
+import SwiftUI
+
+/// Single UI-state surface for the editor (mirror of the list slice pattern).
+struct NoteEditorUIState {
+    var note: Note? = nil                       // fixes E2: now inside @Published state
+    var title: String = ""                      // fixes V2: title owned by VM, saved reliably
+    var noteContents: [NoteContentModel] = []   // SINGLE source of truth (fixes E4)
+    var isLoading = false
+    var isDeleted = false                       // fixes V3: save() refuses after delete
+    var errorMessage: String? = nil
+
+    /// E3 guard: content actions allowed only once the note exists.
+    var isNoteReady: Bool { note != nil }
+}
+
+class NoteEditorViewModel: ObservableObject {
+
+    @Published var state = NoteEditorUIState()
+
+    private let adapter: NotesBridgeAdapter
+    private let contentBridge: NoteContentBridge
+
+    /// DI per series convention: defaults keep call sites/tests simple. (fixes E1, E6)
+    init(note: Note? = nil,
+         adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
+         contentBridge: NoteContentBridge = NoteContentBridge()) {
+        self.adapter = adapter
+        self.contentBridge = contentBridge
+        load(note: note)
     }
-    
-    func setNote(note : Note?){
-        if note == nil {
-                // if note doesnt exist create a empty notebook
-            Task{  
-                let value =
-                await apiHandler(apiCall: {
-                    try await noteRepositary.getANote(id: nil)
-                })
-                print("value \(String(describing: value.data as? Note))")
-                self.note = value.data as? Note
+
+    deinit { contentBridge.dispose() }          // adapter cleans itself up
+
+    // MARK: - Load
+
+    private func load(note: Note?) {
+        if let note {
+            apply(note: note)
+        } else {
+            // New note: bridge returns a fresh empty Note (pre-generated id/timestamps).
+            adapter.readNote(noteId: nil) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .loading:            self.state.isLoading = true
+                case .success(let note):  self.state.isLoading = false
+                                          if let note { self.apply(note: note) }
+                case .failure(let error): self.state.isLoading = false
+                                          self.state.errorMessage = error.message
+                case .idle: break
+                }
             }
-        }else {
-                // if note already exist
-            self.note = note
-            noteContentRepository.addAllNoteContent(note: note!)
-            self.noteContents = note!.contents!
         }
     }
-    
-    // Add Content into list
-    func addContent(content: NoteContentModel){
-       
-        noteContents += [content]
-        if content.isPlayingMedia() {
-            noteContentRepository.updateNoteContent(note: content as! NoteContentModel.MediaContent)
-            print("media \((content as! NoteContentModel.MediaContent).getMediaUrl())")
+
+    private func apply(note: Note) {
+        state.note = note
+        state.title = note.title ?? ""
+        state.noteContents = note.contents as? [NoteContentModel] ?? []
+        contentBridge.setSelectedNote(note: note)
+    }
+
+    // MARK: - Content editing (single list; note.contents materialized only at save)
+
+    func addContent(content: NoteContentModel) {
+        guard state.isNoteReady else { return }                 // fixes E3 crash window
+        state.noteContents.append(content)
+        if content.isPlayingMedia(), let media = content as? NoteContentModel.MediaContent {
+            contentBridge.updateMediaContent(content: media)    // safe cast (was as!)
         }
     }
-    /***
-     Create new or update note async method
-     */
-    private func  createUpdateNoteCall() async -> BaseResult<BaseResponse<Note>?> {
-        
-        return await apiHandler(apiCall: {
-            print("NoteEditorViewModel note \(String(describing: self.note))")
-            return try await noteRepositary.insertOrUpdateNote(note : self.note!)
-        })
-    }
-    
-    /***
-     Create new or update note exposed method
-     */
-    func createorUpdateNoteCall() {
-        Task {
-         await self.createUpdateNoteCall()
+
+    func updateContent(content: NoteContentModel) {
+        if let index = state.noteContents.firstIndex(where: { $0.id == content.id }) {
+            state.noteContents[index] = content
+        } else {
+            addContent(content: content)
         }
+        // NOTE: no more parallel note.contents bookkeeping (E4) — save() materializes.
     }
-        // delete a note
-    func deleteNoteCall(noteId: String) async -> BaseResult<BaseResponse<DeleteDataModel>?> {
-        return await apiHandler(apiCall: { try await noteRepositary.deleteNote(id: noteId) })
-    }
-    
-    func addNewText(){
-        let text = NoteContentObjectHelper()
-            .createText(noteId: note!.id,
-                        positionedAt: Int64(noteContents.count),
-                        text: "")
+
+    func addNewText() {
+        guard let noteId = state.note?.id else { return }       // fixes E3 (was note!.id)
+        let text = NoteContentObjectHelper.shared.createText(
+            noteId: noteId,
+            positionedAt: Double(state.noteContents.count),     // 🔧 C4: position is Double now
+            text: "")
         addContent(content: text)
     }
- 
-    /***
-     update note content by index
-     
-     1- if index is -1 then add a new Content in the list
-     2- updation is performed first on the Ui list.
-     3- it will call api from repository.
-     */
-    
-    func updateContent(index : Int = -1 , content : NoteContentModel){
-        if let index = noteContents.firstIndex(where: { $0.id == content.id }) {noteContents[index] = content
-            
-         }else  {
-             addContent(content: content)
-        }
-        if let noteIndex = note?.contents?.firstIndex(where: {
-            $0.id == content.id
-        }){
-            note?.contents?[noteIndex] = content
-        }else {
-            note?.contents! += [content]
+
+    func getCapturedData(media: CapturedMedia?) {
+        guard let noteId = state.note?.id else { return }       // fixes E3 (was note!.id)
+        let timeStamp = DateTimeUtilsKt.getCurrentTimestamp()
+
+        switch media {
+        case .image(let image):
+            let type = ContentType.image
+            guard let data = image.pngData() else { return }
+            let path = saveImageFile(data: data,
+                                     in: "\(type.name)/\(noteId)",
+                                     to: "\(timeStamp)\(type.getExt())")
+            saveMedia(type: type, localPath: path, noteId: noteId, timestamp: "\(timeStamp)")
+
+        case .video(let path):
+            let type = ContentType.video
+            guard let saved = copyFile(to: "\(type.name)/\(noteId)",
+                                       fileName: "\(timeStamp)\(type.getExt())",
+                                       from: path) else { return }
+            saveMedia(type: type, localPath: saved.path, noteId: noteId, timestamp: "\(timeStamp)")
+
+        case .audio(let path):
+            let type = ContentType.audio
+            guard let saved = copyFile(to: "\(type.name)/\(noteId)",
+                                       fileName: "\(timeStamp)\(type.getExt())",
+                                       from: path) else { return }
+            saveMedia(type: type, localPath: saved.path, noteId: noteId, timestamp: "\(timeStamp)")
+
+        case .none:
+            break
         }
     }
-    
-    
-    
-    func getCapturedData(media : CapturedMedia?){
-        let timeStamp =  DateTimeUtilsKt.getCurrentTimestamp()
-            switch media {
-                case .image(let image):
-                    let type = ContentType.image
-                    let folderName = "\(type.name)/\(note!.id)"
-                    let fileName = "\(timeStamp)\(type.getExt())"
-                    if let data = image.pngData() {
-                        let localpath = saveImageFile(data: data, in : folderName, to:  fileName)
-                    let image = NoteContentObjectHelper()
-                            .createMedia(
-                                contentType: type,
-                                noteId: note!.id ,
-                                positionedAt: 0 ,
-                                localPath: localpath,
-                                url: "",
-                                duration: 0,
-                                timestamp: "\(timeStamp)"
-                            )
-                        addContent(content: image)
-                        //update note
-                        note?.contents! += [image]
-                        print("Image saved to: \(localpath)")
-                        
-                    }
-                   
-                case .video(let path):
-                    let type = ContentType.video
-                    let folderName = "\(type.name)/\(note!.id)"
-                    let fileName = "\(timeStamp)\(type.getExt())"
-                    guard let savedURL =  copyFile(to: folderName, fileName: fileName, from: path)else { return }
-                    let video = NoteContentObjectHelper().createMedia(
-                                contentType: type,
-                                noteId: note!.id ,
-                                positionedAt: 0 ,
-                                localPath: savedURL.path,
-                                url: "",
-                                duration: 0,
-                                timestamp: "\(timeStamp)"
-                            )
-                    addContent(content: video)
-                    //update note
-                    note?.contents! += [video]
-                    print("Video saved to: \(savedURL.path)")
-            
-                case .audio(let path):
-                    let type = ContentType.audio
-                    let folderName = "\(type.name)/\(note!.id)"
-                    let fileName = "\(timeStamp)\(type.getExt())"
-                 
-                    guard let savedURL =  copyFile(to: folderName, fileName: fileName, from: path) else { return }
-                    let audioFile = NoteContentObjectHelper().createMedia(
-                        contentType: type,
-                        noteId: note!.id ,
-                        positionedAt: 0 ,
-                        localPath: savedURL.path,
-                        url: "",
-                        duration: 0,
-                        timestamp: "\(timeStamp)"
-                    )
-                    addContent(content: audioFile)
-                    note?.contents! += [audioFile]
-                    break
-                    
-                case .none: break
-            
+
+    /// ONE construction/append path for captured media (was triplicated + note.contents).
+    /// Private method (promoted from nested func): reusable by future flows, e.g. file import.
+    /// noteId/timestamp are explicit params now — callers must keep them consistent
+    /// with the saved file's folder/name (the nested version guaranteed this by capture).
+    private func saveMedia(type: ContentType, localPath: String,
+                           noteId: String, timestamp: String) {  // timestamps stay String (platform formats differ)
+        let media = NoteContentObjectHelper.shared.createMedia(
+            contentType: type,
+            noteId: noteId,
+            // 🔧 C4: Double position, appended at end (was hardcoded 0 for every media — ordering bug)
+            positionedAt: Double(state.noteContents.count),
+            localPath: localPath,
+            url: "",
+            duration: 0,
+            timestamp: timestamp,
+            // 🔧 C1: new media-metadata params (Kotlin defaults don't export to Swift — pass explicitly)
+            title: "",
+            mimeType: "",
+            sizeBytes: 0,
+            width: 0,
+            height: 0,
+            thumbnailPath: nil)
+        addContent(content: media)
+    }
+
+    // MARK: - Save / Delete
+
+    /// Replaces createorUpdateNoteCall(). Guarded, materializes state → Note, surfaces errors.
+    func saveNote() {
+        guard !state.isDeleted else { return }                  // fixes V3 (zombie note)
+        guard let note = state.note else { return }             // fixes E5 (was note!)
+
+        // Note is immutable (val) — build the edited copy via the Kotlin helper.
+        // fixes V2 (title saved) + E4 (contents materialized once, at save)
+        let toSave = note.withTitleAndContents(
+            newTitle: state.title,
+            newContents: state.noteContents
+        )
+
+        adapter.createOrUpdateNote(note: toSave) { [weak self] result in
+            if case .failure(let error) = result {
+                self?.state.errorMessage = error.message
+                print("saveNote failed [\(error.code)] \(error.message)")
             }
         }
-    
-        // remove note content from list, db , server and stroage
-    func removeContent(){}
-    
-        //
-    func addContentData() {}
-    
-    
-    func shareNote(){}
-    
+    }
+
+    /// Replaces deleteNoteCall(); View no longer runs Task/casts. (fixes V5)
+    func deleteNote(onDeleted: @escaping () -> Void) {
+        guard let noteId = state.note?.id else { return }
+        adapter.deleteNote(noteId: noteId) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .loading:
+                self.state.isLoading = true
+            case .success:
+                self.state.isLoading = false
+                self.state.isDeleted = true                     // blocks onDisappear save
+                onDeleted()                                     // View dismisses
+            case .failure(let error):
+                self.state.isLoading = false
+                self.state.errorMessage = error.message
+            case .idle: break
+            }
+        }
+    }
+
+    func shareNote() {}     // stub kept (nothing deleted)
 }

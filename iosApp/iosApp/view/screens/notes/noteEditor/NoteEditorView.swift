@@ -6,34 +6,29 @@ struct NoteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showRecorder = false
     @State private var errorField: ErrorField = ErrorField()
-    @State private var title: String = ""
     @State private var noteContent: String = ""
     @State private var isRulledEnabled: Bool = false
-    @State private var isLoading: Bool = false
     @State private var  showDelete : Bool = false
-    @ObservedObject private  var noteEditorViewModel = NoteEditorViewModel()
+    // 🔧 V1 fix: @StateObject (was @ObservedObject + inline init → VM recreated on every
+    //           re-render, wiping edits). Note passed via init — setNote() no longer exists.
+    @StateObject private var noteEditorViewModel: NoteEditorViewModel
     private var cameraPermission = CameraPermission()
     private var micPermission = MicPermission()
     init(note: Note? = nil) {
-        noteEditorViewModel.setNote(note: note)
-        if note != nil {
-            _title = State(initialValue: note!.title ?? "")
-            showDelete = true
-        }
-        else {
-            showDelete = false
-        }
+        _noteEditorViewModel = StateObject(wrappedValue: NoteEditorViewModel(note: note))
+        // title now lives in the VM state (fixes lost-title bug); only showDelete stays local
+        _showDelete = State(initialValue: note != nil)
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
             ScrollView(.vertical){
             VStack(alignment: .leading) {
                 NoteTextEditor(
-                    text: $title,
+                    text: $noteEditorViewModel.state.title,   // 🔧 title owned by VM → actually saved
                     placeholder: "Title : Keep your thoughts alive.",
                     fontSize: 22
                 ).frame(minHeight: 20, maxHeight:.infinity)
-                    ForEach(noteEditorViewModel.noteContents){ noteContent in
+                    ForEach(noteEditorViewModel.state.noteContents){ noteContent in
                         renderWidget(content: noteContent){
                             updatedContent in
                             noteEditorViewModel.updateContent(content: updatedContent)
@@ -47,12 +42,12 @@ struct NoteEditorView: View {
                     showRecorder = false
                 }).frame(alignment : .topTrailing)
             }
-            if isLoading {
+            if noteEditorViewModel.state.isLoading {          // 🔧 spinner driven by VM state
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
             OverlayEditorButtons(
-                showDelete:noteEditorViewModel.note != nil,
+                showDelete: noteEditorViewModel.state.note != nil,  // 🔧 state.note — updates when async note arrives
                 onMediaCapture: {
                     guard cameraPermission.checkCameraPermission() else {
                         setAlert(alertType: .CAMERA)
@@ -122,8 +117,8 @@ struct NoteEditorView: View {
                     text: textContent.text,
                     onTextChange: {
                         newValue in
-                        textContent.text = newValue.string
-                        onUpdate(textContent)
+                        // 🔧 F2 (C2): immutable copy via withText — also stamps content updatedAt
+                        onUpdate(textContent.withText(newText: newValue.string))
                     }
                 )
             case .image :
@@ -148,23 +143,16 @@ struct NoteEditorView: View {
     }
     
     private func saveNote(){
-        noteEditorViewModel.createorUpdateNoteCall()
+        noteEditorViewModel.saveNote()   // 🔧 new VM API (guards deleted-note + materializes title/contents)
     }
-    
+
         // handler call wrappers
     private func callDelete(noteId: String?) {
         guard noteId.isNotNilOrEmpty() else { return }
-        Task {
-            isLoading = true
-            let apiResponse = await noteEditorViewModel.deleteNoteCall(noteId: noteId!)
-            isLoading = false
-            if apiResponse.error != nil {
-                errorField.errorMessage = (apiResponse.error as! NetworkError).getError()
-                errorField.showErrorAlert = apiResponse.isSuccessful == false
-            }
-            if apiResponse.isSuccessful {
-                dismiss()
-            }
+        // 🔧 new VM API: callback-based, no Task, no `as! NetworkError` crash cast.
+        //   Loading spinner comes from state.isLoading; errors surface via state.errorMessage.
+        noteEditorViewModel.deleteNote {
+            dismiss()
         }
     }
     
@@ -181,7 +169,7 @@ struct NoteEditorView: View {
                     secondaryButton: Alert.Button.default(
                         Text("Confirm"),
                         action: {
-                            callDelete(noteId: noteEditorViewModel.note?.id)
+                            callDelete(noteId: noteEditorViewModel.state.note?.id)  // 🔧 state.note
                             resetAlert()
                         }))
             case .CAMERA : return cameraPermission.showAlert { resetAlert() }

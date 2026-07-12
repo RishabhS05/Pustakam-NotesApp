@@ -3,7 +3,7 @@
 import SwiftUI
 import shared
 import AVKit
-class AudioPlayerViewModel : BaseViewModel,ObservableObject {
+class AudioPlayerViewModel : ObservableObject {
     let mediaContent  : NoteContentModel.MediaContent
     @Published var state : PlayerUiState
     private let manager = MediaManager.mediaManager
@@ -12,7 +12,6 @@ class AudioPlayerViewModel : BaseViewModel,ObservableObject {
     init( mediaContent: NoteContentModel.MediaContent){
         self.mediaContent = mediaContent
         self.state =  manager.getPlayingItem(media: mediaContent) ?? PlayerUiState()
-        super.init()
         setupTimeObserver()
     }
     

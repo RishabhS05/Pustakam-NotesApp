@@ -2,111 +2,124 @@ package com.app.pustakam.data.models.response.notes
 
 import com.app.pustakam.data.localdb.database.RichTextMetadata
 import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.UniqueIdGenerator
+// 🔧 C6: UniqueIdGenerator import moved out — id generation lives ONLY in NoteContentObjectHelper
+// 🔧 getCurrentTimestamp kept: withX() helpers stamp updatedAt on every edit
 import com.app.pustakam.util.getCurrentTimestamp
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class SyncStatus { LOCAL_ONLY, SYNCED, PENDING_UPDATE, PENDING_DELETE }
+
+@Serializable
 data class Note(
     @SerialName("_id")
     val id: String,
-    var title: String?,
-    var updates: List<String>? = null,
-    var updatedAt: String?,
-    var createdAt: String?,
-    var categoryId: String? ="",
-    var isSynced : Boolean? = false,
-    var contents: List<NoteContentModel>? = emptyList(),
-    ) {    override fun equals(other: Any?): Boolean {
-        return other is Note && other.id == this.id
-    }
+    val title: String?,
+    val updates: List<String>? = null,
+    val updatedAt: String?,
+    val createdAt: String?,
+    val categoryId: String? ="",
+    val isSynced : Boolean? = false,
+    val contents: List<NoteContentModel> = emptyList(),
+    ) {
+    /** Swift-friendly copy helpers — Kotlin data-class copy() does not export
+     *  usable default arguments to Swift, so immutable edits go through these.
+     *  🔧 every edit stamps updatedAt = getCurrentTimestamp() → "last updated" is always current */
+    fun withTitle(newTitle: String?): Note =
+        copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}")
 
-    override fun hashCode(): Int {
-       return  31 * ( id.hashCode()+
-           (updatedAt?.hashCode() ?: 0) +
-               (createdAt?.hashCode() ?: 0) +
-               (title?.hashCode() ?: 0 ) +
-               (isSynced?.hashCode() ?: 0) +
-               (contents?.count()?.hashCode() ?: 0))
-    }
+    fun withContents(newContents: List<NoteContentModel>): Note =
+        copy(contents = newContents, updatedAt = "${getCurrentTimestamp()}")
+
+    fun withTitleAndContents(newTitle: String?, newContents: List<NoteContentModel>): Note =
+        copy(title = newTitle, contents = newContents, updatedAt = "${getCurrentTimestamp()}")
 }
 
 @Serializable
 sealed class NoteContentModel {
-    abstract val position: Long  // Position in the layout
+    // 🔧 C4: position Long → Double — fractional ordering: insert between a and b = (a+b)/2, no row rewrites
+    abstract val position: Double  // Position in the layout
+    // 🔧 timestamps stay String — platform formats may differ (C3 reverted per review)
     abstract val updatedAt: String?
     abstract val createdAt: String?
+    // 🔧 C8: property serializes as "contentType" — "type" is reserved for the class discriminator
     abstract val type: ContentType
-    abstract val isDeletedContent : Boolean
     @SerialName("_id")
     abstract val id: String
     abstract val noteId : String
-    override fun hashCode(): Int {
-        return  31 * (+id.hashCode()+ noteId.hashCode()  + position.hashCode() + type.hashCode() + (updatedAt?.hashCode() ?: 0) +
-                (createdAt?.hashCode() ?: 0) )
-    }
-    override fun equals(other: Any?): Boolean {
 
-        if (other == null) return false
-        other as NoteContentModel
-        if (position != other.position) return false
-        if (createdAt != other.createdAt) return false
-        if (type != other.type) return false
-        if (id != other.id) return false
-        if (noteId != other.noteId) return false
-
-        return true
-    }
-
+    @Serializable @SerialName("TEXT")
     data class TextContent(
-        var text: String = "",
-        override val updatedAt: String? = "${getCurrentTimestamp()}",
-        override val createdAt: String?= "${getCurrentTimestamp()}",
+        // 🔧 F2 (C2): val — text edits go through withText(), no in-place mutation
+        val text: String = "",
+        // 🔧 C6: id/timestamps are REQUIRED — generated only by NoteContentObjectHelper at creation
+        //       (id logic untouched: timestamp+UUID via UniqueIdGenerator; deserialization can never regenerate)
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        @SerialName("contentType")
         override val type: ContentType = ContentType.TEXT,
-        override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val isDeletedContent: Boolean = false ,
+        override val id: String,
         override val noteId: String ,
-        override val position: Long,
+        override val position: Double,
         val metadata: RichTextMetadata? = null,
-    ) : NoteContentModel()
+    ) : NoteContentModel() {
+        // 🔧 F2 (C2): Swift-friendly immutable edit — stamps the CONTENT's updatedAt
+        //            so per-content timestamps are trustworthy for versioning/sync
+        fun withText(newText: String): TextContent =
+            copy(text = newText, updatedAt = "${getCurrentTimestamp()}")
+    }
+
+    @Serializable @SerialName("MEDIA")
     data class MediaContent(
-        override val position: Long,
+        override val position: Double,
         override val noteId: String,
+        // 🔧 C1: for MEDIA the contentType is real data — IMAGE/VIDEO/AUDIO/PDF/DOCX/GIF…
+        @SerialName("contentType")
         override val type: ContentType ,
-        override val updatedAt: String? = "${getCurrentTimestamp()}" ,
-        override val createdAt: String? = "${getCurrentTimestamp()}",
-        override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val isDeletedContent: Boolean = false,
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        override val id: String,
         val duration: Long = 0,
         val localPath: String? = null,
         val url: String = "",
-        val title: String = "Audio",
+        // 🔧 C1: title default "" (was "Audio" leaking onto every image/video); persisted via new DB column
+        val title: String = "",
+        // 🔧 C1: proper media metadata for all formats (upload/render/sync need these)
+        val mimeType: String = "",
+        val sizeBytes: Long = 0,
+        val width: Int = 0,
+        val height: Int = 0,
+        val thumbnailPath: String? = null,
     ) : NoteContentModel()
 
+    @Serializable @SerialName("LINK")
     data class Link(
         val url: String ="",
-        override val isDeletedContent: Boolean = false,
-        override val updatedAt: String? = "${getCurrentTimestamp()}" ,
-        override val createdAt: String? = "${getCurrentTimestamp()}",
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        @SerialName("contentType")
         override val type: ContentType = ContentType.LINK,
-        override val id: String = UniqueIdGenerator.generateUniqueId(),
-        override val position: Long,
+        override val id: String,
+        override val position: Double,
         override val noteId: String,
     ) : NoteContentModel()
 
+    // 🔧 C8: was @SerialName("LINK") — duplicate discriminator with Link; kotlinx rejects it at runtime
+    @Serializable @SerialName("LOCATION")
     data class Location(
         val latitude: Double =0.0,
         val longitude: Double= 0.0,
         val address: String? = null,
-        override val isDeletedContent: Boolean = false,
-        override val updatedAt: String? = "${getCurrentTimestamp()}",
-        override val createdAt: String? = "${getCurrentTimestamp()}",
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        @SerialName("contentType")
         override val type: ContentType = ContentType.LOCATION,
-        override val id: String= UniqueIdGenerator.generateUniqueId(),
+        override val id: String,
         override val noteId: String,
-        override val position: Long,
+        override val position: Double,
     ) : NoteContentModel()
+
     fun isMediaFile() : Boolean = this is MediaContent
     fun isPlayingMedia(): Boolean = this.type == ContentType.AUDIO || this.type == ContentType.VIDEO
 }
