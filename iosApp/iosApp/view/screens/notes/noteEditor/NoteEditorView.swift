@@ -9,6 +9,9 @@ struct NoteEditorView: View {
     @State private var noteContent: String = ""
     @State private var isRulledEnabled: Bool = false
     @State private var  showDelete : Bool = false
+    // 🔧 14-Jul-2026: NEW — id of the long-pressed content item awaiting delete confirmation.
+    //   The DELETE_CONTENT alert deletes exactly this item (before: image delete removed the whole note).
+    @State private var deleteContentId : String? = nil
     // 🔧 V1 fix: @StateObject (was @ObservedObject + inline init → VM recreated on every
     //           re-render, wiping edits). Note passed via init — setNote() no longer exists.
     @StateObject private var noteEditorViewModel: NoteEditorViewModel
@@ -87,7 +90,6 @@ struct NoteEditorView: View {
                         dismiss()
                     })
                 }
-    
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack{
@@ -97,7 +99,7 @@ struct NoteEditorView: View {
                         ActionButtonWithoutBackground(iconName: "arrow.down.document",
                     action: {},tint : Theme.Colors.secondary)
                             ActionButtonWithoutBackground(iconName: "trash", action: {
-//                                onDelete()
+                                setAlert(message: "Are you sure you want to delete this note?", title: "Delete note", alertType: .DELETE )
                             }, tint: Color.red)
                     }
                 }
@@ -123,15 +125,37 @@ struct NoteEditorView: View {
                 )
             case .image :
                 let contentImage = content as! NoteContentModel.MediaContent
-                 CardImageEditor(content: contentImage, actionClick: {})
+            // 🔧 14-Jul-2026: BUGFIX — was alertType .DELETE, whose Confirm ran callDelete()
+            //   → the WHOLE note was deleted. Now: remember the pressed item's id and raise
+            //   the DELETE_CONTENT alert, which deletes only that item. (CardImageEditor UI untouched.)
+            // 🔧 14-Jul-2026: NEW — actionSave saves the image silently to the Photos gallery.
+            CardImageEditor(content: contentImage, actionClick: {},actionDelete: {
+                askDeleteContent(contentId: contentImage.id, kind: "Image")
+            }, actionSave: {
+                saveMediaToDevice(media: contentImage)
+            }
+                 )
+
             case .video:
                 let contentVideo = content as! NoteContentModel.MediaContent
-                VideoCardPlayer(content: contentVideo)
+                // 🔧 14-Jul-2026: NEW — video had no delete UI; long-press actions bar added
+                //   in VideoCardPlayer (same pattern as CardImageEditor), wired here.
+                //   actionSave saves the video silently to the Photos gallery.
+                VideoCardPlayer(content: contentVideo, actionDelete: {
+                    askDeleteContent(contentId: contentVideo.id, kind: "Video")
+                }, actionSave: {saveMediaToDevice(media: contentVideo)})
             case .audio:
                 let contentAudio = content as! NoteContentModel.MediaContent
 
-                 AudioPlayView(mediaContent: contentAudio)
-                       
+                 // 🔧 14-Jul-2026: NEW — trash button existed inside AudioPlayView but onDelete
+                 //   was never passable through its init; now wired to the same confirm flow.
+                 //   onSave exports the audio via the Files picker (default Documents).
+                 AudioPlayView(mediaContent: contentAudio, onDelete: {
+                    askDeleteContent(contentId: contentAudio.id, kind: "Audio")
+                 }, onSave: {
+                    saveMediaToDevice(media: contentAudio)
+                 })
+
             default : NoteTextFieldWrapper()
         }
                 
@@ -147,8 +171,7 @@ struct NoteEditorView: View {
     }
 
         // handler call wrappers
-    private func callDelete(noteId: String?) {
-        guard noteId.isNotNilOrEmpty() else { return }
+    private func callDelete() {
         // 🔧 new VM API: callback-based, no Task, no `as! NetworkError` crash cast.
         //   Loading spinner comes from state.isLoading; errors surface via state.errorMessage.
         noteEditorViewModel.deleteNote {
@@ -161,6 +184,20 @@ struct NoteEditorView: View {
      */
     func throwAlert() -> Alert {
         switch errorField.alertType {
+        case .DELETE_CONTENT: return (Alert(
+            title: Text("\(errorField.errorMessageTitle)").font(.headline.weight(.heavy)).foregroundColor(.red),
+            message: Text(errorField.errorMessage),
+            primaryButton: Alert.Button.default(Text("Cancel"), action: { resetAlert() }),
+            secondaryButton: Alert.Button.default(
+                Text("Confirm"),
+                action: {
+                    // 🔧 14-Jul-2026: BUGFIX — Confirm did nothing (and image was routed to
+                    //   .DELETE = whole note). Now deletes exactly the long-pressed item.
+                    if let contentId = deleteContentId {
+                        noteEditorViewModel.deleteContent(contentId: contentId)
+                    }
+                    resetAlert()
+                }))) 
             case .DELETE:
                 return Alert(
                     title: Text("\(errorField.errorMessageTitle)").font(.headline.weight(.heavy)).foregroundColor(.red),
@@ -169,7 +206,7 @@ struct NoteEditorView: View {
                     secondaryButton: Alert.Button.default(
                         Text("Confirm"),
                         action: {
-                            callDelete(noteId: noteEditorViewModel.state.note?.id)  // 🔧 state.note
+                            callDelete()  // 🔧 state.note
                             resetAlert()
                         }))
             case .CAMERA : return cameraPermission.showAlert { resetAlert() }
@@ -197,11 +234,21 @@ struct NoteEditorView: View {
         errorField.errorMessageTitle = title
     }
     
+    // 🔧 14-Jul-2026: NEW — one entry point for every content-delete request (image/video/audio).
+    //   Remembers WHICH item was long-pressed, then raises the DELETE_CONTENT confirm alert.
+    //   Usage: askDeleteContent(contentId: content.id, kind: "Image")
+    private func askDeleteContent(contentId: String, kind: String) {
+        deleteContentId = contentId
+        setAlert(message: "Are you sure you want to delete this \(kind)?",
+                 title: "Delete \(kind)", alertType: .DELETE_CONTENT)
+    }
+
     private func resetAlert() {
         errorField.alertType = AlertUCPermission.WARNING
         errorField.errorMessage = ""
         errorField.showErrorAlert = false
         errorField.errorMessageTitle = ""
+        deleteContentId = nil   // 🔧 14-Jul-2026: clear selection on cancel/confirm alike
     }
     
 }

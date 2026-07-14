@@ -9,7 +9,6 @@ import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
 import com.app.pustakam.extensions.getReadableHMS
 import com.app.pustakam.extensions.getTimerFormatedString
-import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.readableTimer
 import com.app.pustakam.extensions.timerRemaining
 import com.app.pustakam.util.log_d
@@ -71,19 +70,35 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
     val state = _playerUiState.asStateFlow()
 
     init {
+        // 🔧 14-Jul-2026: FIX (screen-switch persistence) — this VM is re-created per screen while the
+        //   player is a standalone singleton. Seed selection/playing state from the player so the UI
+        //   comes back "as is" (previously it started blank until the next 1s progress tick).
+        _playerUiState.update {
+            it.copy(
+                currentPlayingId = mediaServiceListener.getCurrentMediaId(),
+                isPlaying = mediaServiceListener.isPlaying()
+            )
+        }
         viewModelScope.launch {
             noteRepository.selectedNoteMediaContent.collectLatest { notesContents ->
                 if (notesContents.isNotEmpty()) {
                     mediaServiceListener.addMediaItemList(notesContents.map { it.toMediaItem() })
-                    val map = notesContents.map {
-                        it.id to PlayerUiState(
-                            noteContent = it, duration = it.duration,
-                            totalDuration =it.duration.getReadableHMS(),
+                    // 🔧 14-Jul-2026: FIX — keep the live state (progress/duration/isPlaying) of ids we
+                    //   already track; a repo re-emission used to reset every card back to 0.
+                    // 🔧 14-Jul-2026: FIX (time calculation) — content.duration is MILLISECONDS
+                    //   (recordings now store ms). getReadableHMS/getTimerFormatedString expect
+                    //   SECONDS, readableTimer expects ms — feed each the unit it wants. The mixed
+                    //   units here were why times were wrong before the first Ready event.
+                    val map = notesContents.associate { content ->
+                        val existing = _playerUiState.value.mediaStates[content.id]
+                        content.id to (existing?.copy(noteContent = content) ?: PlayerUiState(
+                            noteContent = content, duration = content.duration,
+                            totalDuration = (content.duration / 1000).getReadableHMS(),
                             progress = 0f,
-                            timeRemaining = it.duration.getTimerFormatedString(),
+                            timeRemaining = content.duration.readableTimer(),
                             timeElapsed = (0).toLong().readableTimer()
-                        )
-                    }.toMap()
+                        ))
+                    }
                     _playerUiState.update { it.copy(mediaStates = map) }
                 }
             }
@@ -102,11 +117,20 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
                         calculateTimeline(playerState.progress, playerState.mediaId)
                     }
                     is PlayerState.Playing -> { if(playerState.mediaId.isNullOrEmpty()) return@collectLatest
+                        // 🔧 14-Jul-2026: CRASH FIX — was mediaStates[id]!! → NPE when the player
+                        //   emitted a state for a media id not yet in the map (e.g. a just-recorded
+                        //   video). Now we skip the update instead of crashing.
+                        val existing = state.value.mediaStates[playerState.mediaId] ?: return@collectLatest
                         _playerUiState.update {
                         it.copy(
                             currentPlayingId = playerState.mediaId,
-                            mediaStates = state.value.mediaStates + (playerState.mediaId to state.value.mediaStates[playerState.mediaId]!!.copy( isPlaying = playerState.isPlaying
-                            ))
+                            isPlaying = playerState.isPlaying,
+                            // 🔧 14-Jul-2026: FIX — only ONE card may show the playing state; when the
+                            //   player switches tracks the previous card's pause icon used to stick.
+                            mediaStates = state.value.mediaStates.mapValues { (id, mediaState) ->
+                                if (id == playerState.mediaId) existing.copy(isPlaying = playerState.isPlaying)
+                                else mediaState.copy(isPlaying = false)
+                            }
                         )
                     } }
                     is PlayerState.Progress -> {
@@ -114,10 +138,24 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
                     }
                     is PlayerState.Ready -> {
                         if(playerState.mediaId.isNullOrEmpty()) return@collectLatest
+                        // 🔧 14-Jul-2026: FIX (time calculation) — ExoPlayer reports C.TIME_UNSET
+                        //   (negative) while the duration is unknown; writing that into the state
+                        //   produced garbage labels. Skip until a real duration arrives.
+                        if (playerState.duration <= 0) return@collectLatest
+                        // 🔧 14-Jul-2026: CRASH FIX — null-safe map access (was mediaStates[id]!!).
+                        val existing = state.value.mediaStates[playerState.mediaId] ?: return@collectLatest
                         _playerUiState.update {
                             it.copy(
                                 currentPlayingId = playerState.mediaId,
-                                mediaStates = state.value.mediaStates + (playerState.mediaId to state.value.mediaStates[playerState.mediaId]!!.copy( duration = playerState.duration,
+                                // 🔧 14-Jul-2026: FIX — recorded media carries duration=0 metadata; when
+                                //   the real duration arrives from the player, refresh the timer labels
+                                //   too (they used to stay "--:--" for fresh recordings). Player duration
+                                //   is MILLISECONDS: /1000 for the seconds-based HMS label, raw ms for
+                                //   the ms-based readableTimer.
+                                mediaStates = state.value.mediaStates + (playerState.mediaId to existing.copy(
+                                    duration = playerState.duration,
+                                    totalDuration = (playerState.duration / 1000).getReadableHMS(),
+                                    timeRemaining = playerState.duration.readableTimer(),
                                 ))
                             )
                         }
@@ -128,24 +166,26 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
     }
     private fun calculateTimeline(currentProgress: Long, mediaId : String?) {
         if (mediaId.isNullOrEmpty()) return
-        val playingMedia  = getNoteContentPlayerState(mediaId)
-        if(playingMedia.isNotnull()) {
-            val progress =
-                if (currentProgress > 0) ((currentProgress.toFloat() / playingMedia!!.duration.toFloat()) * 100f)
-                else 0f
-
-//           val timeValue =  currentProgress*playingMedia!!.duration.toFloat()
-            _playerUiState.update {
-                it.copy(
-                    currentPlayingId = mediaId,
-                    mediaStates = state.value.mediaStates + (mediaId to state.value.mediaStates[mediaId]!!.copy(progress = progress,
-                        timeRemaining = playingMedia!!.duration.timerRemaining(currentProgress),
-                        timeElapsed = currentProgress.readableTimer()
-                        ))
-                )
-            }
-            log_d("log calculate : $mediaId : duration ${playingMedia!!.duration} progress $progress currentProgress ",  currentProgress)
+        // 🔧 14-Jul-2026: CRASH FIX — single null-safe lookup (was mediaStates[id]!!). If the id
+        //   isn't in the map yet, skip the timeline update instead of crashing.
+        val playingMedia = getNoteContentPlayerState(mediaId) ?: return
+        // 🔧 14-Jul-2026: FIX — guard duration<=0 (fresh recordings) so progress can't become
+        //   Infinity/NaN and break the slider.
+        // 🔧 14-Jul-2026: FIX (time calculation) — clamp to 0..100 so a stale metadata duration
+        //   (legacy notes recorded in seconds) can never push the slider past the end.
+        val progress =
+            (if (currentProgress > 0 && playingMedia.duration > 0) ((currentProgress.toFloat() / playingMedia.duration.toFloat()) * 100f)
+            else 0f).coerceIn(0f, 100f)
+        _playerUiState.update {
+            it.copy(
+                currentPlayingId = mediaId,
+                mediaStates = state.value.mediaStates + (mediaId to playingMedia.copy(progress = progress,
+                    timeRemaining = playingMedia.duration.timerRemaining(currentProgress),
+                    timeElapsed = currentProgress.readableTimer()
+                    ))
+            )
         }
+        log_d("log calculate : $mediaId : duration ${playingMedia.duration} progress $progress currentProgress ",  currentProgress)
     }
 
 
@@ -164,12 +204,16 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
                 is MediaPlayingUIEvent.SelectedMediaChange -> selectionAudioId(audioPlayingIntent.mediaId)
                 is MediaPlayingUIEvent.UpdateProgress -> {
                     mediaServiceListener.onPlayerEvents(MediaPlayingEvent.UpdateProgress(audioPlayingIntent.newProgress, audioPlayingIntent.mediaId))
-                    _playerUiState.update {
-                        it.copy(
-                            currentPlayingId = audioPlayingIntent.mediaId,
-                            mediaStates = state.value.mediaStates + (audioPlayingIntent.mediaId to state.value.mediaStates[audioPlayingIntent.mediaId]!!.copy(progress = audioPlayingIntent.newProgress,
-                            ))
-                        )
+                    // 🔧 14-Jul-2026: CRASH FIX — null-safe map access (was mediaStates[id]!!).
+                    val existing = state.value.mediaStates[audioPlayingIntent.mediaId]
+                    if (existing != null) {
+                        _playerUiState.update {
+                            it.copy(
+                                currentPlayingId = audioPlayingIntent.mediaId,
+                                mediaStates = state.value.mediaStates + (audioPlayingIntent.mediaId to existing.copy(progress = audioPlayingIntent.newProgress,
+                                ))
+                            )
+                        }
                     }
                 }
                 is MediaPlayingUIEvent.SeekToPrevious -> mediaServiceListener.onPlayerEvents(MediaPlayingEvent.SeekToPrevious)
@@ -192,7 +236,8 @@ class PlayMediaViewModel : ViewModel(), KoinComponent {
     }
 
     private suspend fun seekTo(position: Float, mediaId: String) {
-       val duration =  getNoteContentPlayerState(mediaId)?.duration!!
+        // 🔧 14-Jul-2026: CRASH FIX — was `?.duration!!` which still NPEs when the state is null.
+       val duration =  getNoteContentPlayerState(mediaId)?.duration ?: return
         val sliderPosition = ((duration*position)/100f).toLong()
         mediaServiceListener.onPlayerEvents(MediaPlayingEvent.SeekTo(mediaId), position = sliderPosition)
         _playerUiState.update { it.copy( currentPlayingId = mediaId,) }

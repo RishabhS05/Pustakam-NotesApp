@@ -80,6 +80,16 @@ sqldelight {
     databases {
         create("NotesDatabase") {
             packageName.set("com.app.pustakam.database")
+            // 🔧 P1/6: migration infrastructure.
+            // Baseline = CURRENT schema (version 1). Every future schema change:
+            //   1. edit NotesDatabase.sq to the NEW shape
+            //   2. add <version>.sqm next to it with the ALTER/rebuild statements
+            //   3. run: ./gradlew generateCommonMainNotesDatabaseSchema  (commits a new snapshot)
+            // Drivers (AndroidSqliteDriver / NativeSqliteDriver) auto-run .sqm on version bump —
+            // NO app reinstall needed anymore.
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            // Build-time proof that snapshot + migrations == current .sq (catches drift):
+            verifyMigrations.set(true)
         }
     }
 }

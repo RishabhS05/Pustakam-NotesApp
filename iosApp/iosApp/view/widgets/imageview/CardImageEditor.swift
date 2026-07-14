@@ -4,40 +4,97 @@ struct CardImageEditor : View{
     var content : NoteContentModel.MediaContent
     var actionEdit : () -> Void = {}
     var actionClick : () -> Void
+    var actionDelete : () -> Void = {}
+    // 🔧 14-Jul-2026: NEW — save-to-device callback (image → Photos gallery). Default keeps old call sites compiling.
+    var actionSave : () -> Void = {}
+    @State private var showActions : Bool = false
     
     var body: some View {
-        ZStack (alignment: .bottom){
+
+        ZStack(alignment: .bottom) {
+
             AsyncImage(url: URL(fileURLWithPath: content.getMediaUrl())) { phase in
                 if let image = phase.image {
-                      
-                        // Display the loaded image
-                    image.resizable().scaledToFill()
-                    
+                    image
+                        .resizable()
+                        .scaledToFill()
                 } else if phase.error != nil || content.getMediaUrl().isEmpty {
-                      
-                        // Display a placeholder when loading failed
-                    Image("avatar").resizable().scaledToFill()
+                    Image("avatar")
+                        .resizable()
+                        .scaledToFill()
                 } else {
-                        
-                        // Display a placeholder while loading
                     ProgressView()
                 }
             }
-            .frame(width: 200,height: 300)
-            .cornerRadius(12)
-            .padding(12)
+            .frame(width: 200, height: 300)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .contentShape(Rectangle())
             .onTapGesture {
                 actionClick()
             }
-            Image(systemName: "square.and.arrow.up").padding()
-                .font(.system(size: 20))
-                .scaledToFit()
-                .foregroundColor(.brown)
-                .frame(width: 20,height: 20,alignment: .bottomTrailing)
-                .padding(8)
-                .onTapGesture {
-                    actionEdit()
+            .onLongPressGesture {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    showActions = true
                 }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        showActions = false
+                    }
+                }
+            }
+
+            if showActions {
+
+                ZStack(alignment: .bottom) {
+
+                    // Fade only on bottom
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            .black.opacity(0.05),
+                            .black.opacity(0.35),
+                            .black.opacity(0.55)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 90)
+
+                    HStack(spacing: 40) {
+
+                        Button {
+                            actionDelete()
+                        } label: {
+                            Image(systemName: "trash.fill")
+                                .font(.title2)
+                                .foregroundColor(.red)
+                        }
+
+                        // 🔧 14-Jul-2026: NEW — save-to-gallery button
+                        Button {
+                            actionSave()
+                        } label: {
+                            Image(systemName: "square.and.arrow.down.fill")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                        }
+
+                        Button {
+                            actionEdit()
+                        } label: {
+                            Image(systemName: "square.and.arrow.up.fill")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.bottom, 20)
+                }
+                .frame(height: 70)
+                .transition(.opacity)
+            }
         }
+        .frame(width: 200, height: 300)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

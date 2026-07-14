@@ -34,6 +34,12 @@ init {
         return super.onStartCommand(intent, flags, startId)
     }
     override fun onGetSession(controller: MediaSession.ControllerInfo): MediaSession = session
+    // 🔧 14-Jul-2026: FIX (nothing plays after closing & reopening the app) — onDestroy used to
+    //   RELEASE the ExoPlayer. The player is a Koin SINGLETON owned by the app graph, not by this
+    //   service; when the task was swiped away the service died but the process stayed cached, so
+    //   the next launch reused a released player and every play() was silently ignored. The service
+    //   is only a lifecycle guest: release the session, stop playback, but NEVER release the player
+    //   (MediaServiceListener re-prepares it from IDLE on the next play — see ensurePrepared()).
     override fun onDestroy() {
         super.onDestroy()
         session.apply {
@@ -42,7 +48,6 @@ init {
                 player.seekTo(0)
                 player.playWhenReady = false
                 player.stop()
-                player.release()
             }
         }
     }

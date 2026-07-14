@@ -10,7 +10,6 @@ struct NoteEditorUIState {
     var isLoading = false
     var isDeleted = false                       // fixes V3: save() refuses after delete
     var errorMessage: String? = nil
-
     /// E3 guard: content actions allowed only once the note exists.
     var isNoteReady: Bool { note != nil }
 }
@@ -178,14 +177,49 @@ class NoteEditorViewModel: ObservableObject {
                 self.state.isLoading = true
             case .success:
                 self.state.isLoading = false
-                self.state.isDeleted = true                     // blocks onDisappear save
-                onDeleted()                                     // View dismisses
+                self.state.isDeleted = true
+                onDelete(noteId: noteId)
+                onDeleted()
+                // View dismisses
             case .failure(let error):
                 self.state.isLoading = false
                 self.state.errorMessage = error.message
             case .idle: break
             }
         }
+    }
+   private func onDelete(noteId : String) {
+        adapter.deleteNote(noteId: noteId , onState: { _ in })
+    }
+
+    // 🔧 14-Jul-2026: NEW — delete ONE content block (the long-pressed item), note stays.
+    //   Fixes: image delete alert was wired to whole-note delete → entire note vanished.
+    //   Mirrors Android NoteEditorViewModel.removeContent():
+    //     1. media → remove its local file from disk
+    //     2. remove the row from DB via bridge deleteNoteContentUseCase
+    //     3. drop the item from state.noteContents (UI updates instantly)
+    //   Usage (from View, after user confirms the alert):
+    //     noteEditorViewModel.deleteContent(contentId: id)
+    func deleteContent(contentId: String) {
+        guard let content = state.noteContents.first(where: { $0.id == contentId }) else { return }
+
+        // 1. remove local media file (image/video/audio) — safe no-op for text
+        if content.isMediaFile(), let media = content as? NoteContentModel.MediaContent,
+           let localPath = media.localPath {
+            deleteFile(filePath: localPath)
+        }
+
+        // 2. remove from DB (write call — survives screen death, like saveNote)
+        adapter.deleteNoteContent(contentId: contentId) { [weak self] result in
+            if case .failure(let error) = result {
+                self?.state.errorMessage = error.message
+                print("deleteContent failed [\(error.code)] \(error.message)")
+            }
+        }
+
+        // 3. remove from UI state — save() materializes contents from this list,
+        //    so the deleted block can never come back on the next save
+        state.noteContents.removeAll { $0.id == contentId }
     }
 
     func shareNote() {}     // stub kept (nothing deleted)

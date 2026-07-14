@@ -28,9 +28,12 @@ fun Long.getReadableHMS() : String {
     return format
 }
 fun Long.readableTimer(): String {
-    val seconds = this / 1000
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
+    val totalSeconds = this / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    // 🔧 14-Jul-2026: FIX — seconds must be the REMAINDER (was the total: 90s printed as "01:90").
+    //   Pure display-math fix, same behavior contract (receiver is milliseconds) on all platforms.
+    val seconds = totalSeconds % 60
     val format : String  = when {
         hours>= 1 -> hours.pad() +":"+minutes.pad() +":"+seconds.pad()
         else  -> minutes.pad()+":"+seconds.pad()

@@ -21,8 +21,14 @@ import com.app.pustakam.android.permission.hasPermissions
 import com.app.pustakam.extensions.isNotnull
 import java.io.File
 
+// 🔧 14-Jul-2026: CHANGED — takes a lazy `outputFileProvider` instead of a ready File. The Stop
+//   press used to eagerly create a second (forever-empty) file before this function returned early.
+//   The file is now created only when a recording actually starts. The isRecording flag is set HERE
+//   on success (and cleared by clearRecording/saveRecordedVideo), so the UI can't show a recording
+//   state when permission was denied.
+//   Usage: recordingVideo(controller, context, vm) { createFileWithFolders(...) }
 @SuppressLint("MissingPermission")
-fun recordingVideo(controller: LifecycleCameraController, context: Context, imageDataViewModel: ImageDataViewModel, outputFile : File) {
+fun recordingVideo(controller: LifecycleCameraController, context: Context, imageDataViewModel: ImageDataViewModel, outputFileProvider : () -> File) {
     if (imageDataViewModel.recording.isNotnull()) {
         imageDataViewModel.clearRecording()
         return
@@ -30,6 +36,7 @@ fun recordingVideo(controller: LifecycleCameraController, context: Context, imag
     if (!hasPermissions(context, listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO))) {
         return
     }
+    val outputFile = outputFileProvider()
     imageDataViewModel.recording = controller.startRecording(
         FileOutputOptions.Builder(outputFile).build(), AudioConfig.create(true), ContextCompat.getMainExecutor(context)
     ) { event ->
@@ -45,6 +52,7 @@ fun recordingVideo(controller: LifecycleCameraController, context: Context, imag
             }
         }
     }
+    imageDataViewModel.startOrStopRecording(true)
 }
 
 fun takePhoto(

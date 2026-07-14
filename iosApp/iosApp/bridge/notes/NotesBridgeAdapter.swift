@@ -73,7 +73,20 @@ final class NotesBridgeAdapter {
             onError:   { onState(.failure($0)) }
         )
     }
-    
+
+    // 🔧 14-Jul-2026: NEW — delete a single content block (image/video/audio/text) of a note.
+    //   The note itself stays. Wraps Kotlin NotesBridge.deleteNoteContent (existed, was never
+    //   called from any UI path). Write call — not retained, survives screen death (see note above).
+    //   Usage: adapter.deleteNoteContent(contentId: content.id) { state in ... }
+    func deleteNoteContent(contentId: String?, onState: @escaping (UiState<KotlinBoolean>) -> Void) {
+        _ = bridge.deleteNoteContent(
+            contentId: contentId,
+            onLoading: { onState(.loading) },
+            onSuccess: { onState(.success($0)) },
+            onError:   { onState(.failure($0)) }
+        )
+    }
+
     
     /***
      CRUD For TAGS

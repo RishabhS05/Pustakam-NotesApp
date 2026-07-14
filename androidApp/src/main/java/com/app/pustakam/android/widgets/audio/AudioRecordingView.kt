@@ -130,7 +130,11 @@ fun AudioRecordView(modifier: Modifier = Modifier,
                 if (!isRecording) {
                     onAction(AudioRecordingIntent.StartRecordingIntent)
                 } else {
-                    onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.longValue))
+                    // 🔧 14-Jul-2026: FIX (time calculation) — the timer counts SECONDS but every
+                    //   consumer (ExoPlayer, readableTimer/timerRemaining, progress %) works in
+                    //   MILLISECONDS. Store ms so the initial labels/slider are correct before the
+                    //   player reports the real duration.
+                    onAction(AudioRecordingIntent.StopRecordingIntent(duration = elapsedTime.longValue * 1000))
                 }
             }) {
                 val drawable =  Icons.Rounded.Stop

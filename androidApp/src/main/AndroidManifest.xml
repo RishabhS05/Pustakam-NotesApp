@@ -24,6 +24,11 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- 🔧 14-Jul-2026: Save-to-gallery feature. Android 10+ (API 29+) writes to the
+         Gallery via scoped MediaStore with NO runtime permission; this legacy grant
+         only covers pre-Q devices. SAF picker (audio/pdf/docx) needs no permission. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 

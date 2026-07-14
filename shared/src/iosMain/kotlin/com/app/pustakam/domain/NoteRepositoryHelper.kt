@@ -14,8 +14,15 @@ import kotlinx.coroutines.flow.collectLatest
 
 import kotlinx.coroutines.launch
 
+// 🔧 P0/4: superseded by NotesBridge (observeNotes/observeTags) and
+//   NoteContentBridge (observeSelectedMedia) — cancellable observers, use-case-backed.
+//   This helper leaked never-cancelled collectors. Zero Swift callers remain.
+//   Kept until you approve deletion.
+@Deprecated("Use NotesBridge / NoteContentBridge observers instead")
 object NoteRepositoryHelper {
+    @Suppress("DEPRECATION")
     private val noteRepository = KoinHelper.getNoteRepository()
+    @Suppress("DEPRECATION")
     private val noteContentRepository = KoinHelper.getNoteContentRepository()
 
     fun <T> Flow<T>.collectObserver (callback :(T)-> Unit) {

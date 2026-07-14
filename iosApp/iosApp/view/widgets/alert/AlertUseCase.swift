@@ -9,6 +9,7 @@
 public enum AlertUCPermission {
     case WARNING
     case DELETE
+    case DELETE_CONTENT
     case ERROR
     case CAMERA
     case MIC

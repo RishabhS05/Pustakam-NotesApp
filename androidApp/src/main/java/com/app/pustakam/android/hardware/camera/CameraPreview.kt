@@ -103,14 +103,16 @@ val  (timerColor: Color, backgroundColor : Color ) =
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             IconButton(onClick = {
-                val timeStamp = getCurrentTimestamp()
-                recordingVideo(
-                    controller, context, imageViewModel, createFileWithFolders(
+                // 🔧 14-Jul-2026: CHANGED — file is created lazily only when recording starts (the
+                //   Stop press used to create a stray empty file), and the isRecording flag is now
+                //   owned by the ViewModel (recordingVideo/clearRecording set it) instead of being
+                //   toggled blindly here — it stays truthful when permission is denied.
+                recordingVideo(controller, context, imageViewModel) {
+                    val timeStamp = getCurrentTimestamp()
+                    createFileWithFolders(
                         context as Activity, "${ContentType.VIDEO.name.lowercase()}/${timeStamp}", "${timeStamp}${ContentType.VIDEO.getExt()}"
                     )
-                )
-                imageViewModel.startOrStopRecording(!isRecording.value)
-
+                }
             }, modifier = Modifier) {
                 Icon(
                     painter = painterResource(

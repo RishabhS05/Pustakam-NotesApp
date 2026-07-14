@@ -65,12 +65,21 @@ class NoteEditorViewModel : BaseViewModel() {
                 log_d("Loading", "Getting Update data")
                 val note = result.data.data as Note
                 _noteUiState.update {
-                    val noteStatus = if (it.noteStatus == NoteStatus.onBackPress) NoteStatus.onSaveCompletedExit else NoteStatus.onSaveCompleted
-                    it.copy(noteStatus = noteStatus)
+                    // 🔧 14-Jul-2026: FIX (back button) — exit is STICKY: a second racing INSERT
+                    //   success must never downgrade onSaveCompletedExit back to onSaveCompleted
+                    //   (that swallowed the back press). Also reset isLoading — it was left true
+                    //   after every save, so the loading spinner never went away.
+                    val noteStatus = when (it.noteStatus) {
+                        NoteStatus.onBackPress, NoteStatus.onSaveCompletedExit -> NoteStatus.onSaveCompletedExit
+                        else -> NoteStatus.onSaveCompleted
+                    }
+                    it.copy(noteStatus = noteStatus, isLoading = false)
                 }
 
                 _noteContentUiState.update { it.copy(note = note,
                     isAllSetupDone = true) }
+                // 🔧 14-Jul-2026: FIX (I-1) — media captured before the note existed is appended now.
+                consumePendingMediaPaths()
             }
 
             NOTES_CODES.READ -> {
@@ -83,7 +92,13 @@ class NoteEditorViewModel : BaseViewModel() {
                         contents = mutableStateListOf(*note.contents.toTypedArray())
                     )
                 }
-                noteContentRepository.addAllNoteContent(note)
+                // 🔧 14-Jul-2026: FIX (recorded video not playable) — READ replays every time the editor
+                //   comes back to the foreground (ON_CREATE re-delivery). Syncing the playlist from the
+                //   DB copy wiped any media recorded but not yet saved. Sync from the LIVE note instead;
+                //   it equals the DB note right after first load and additionally carries fresh media.
+                noteContentRepository.addAllNoteContent(_noteContentUiState.value.note ?: note)
+                // 🔧 14-Jul-2026: FIX (I-1) — consume paths captured while the note was still loading.
+                consumePendingMediaPaths()
             }
 
             NOTES_CODES.DELETE -> {
@@ -307,21 +322,56 @@ class NoteEditorViewModel : BaseViewModel() {
         noteContentRepository.clear()
     }
 
+    // 🔧 14-Jul-2026: CRASH FIX + PERF — this used to run inside composition and mutate
+    //   the snapshot list INSIDE StateFlow.update{} (which can re-run its lambda), producing
+    //   duplicate items and, with several images at once, a crash. Now it is pure: we build
+    //   ALL new MediaContent items first, mutate the SnapshotStateList exactly once (outside
+    //   the update lambda), then do a single state copy. Callers invoke it from a LaunchedEffect.
+    //
+    // 🔧 14-Jul-2026: FIX (I-1, video lost after Stop→Back) — the old `note ?: return` silently
+    //   DROPPED the captured paths when the note hadn't loaded yet (the View clears them right
+    //   after this call). Paths arriving too early are now stashed in `pendingMediaPaths` and
+    //   consumed as soon as READ/INSERT delivers the note — nothing is ever lost.
+    private var pendingMediaPaths: List<Pair<String, ContentType>> = emptyList()
+
+    private fun consumePendingMediaPaths() {
+        if (pendingMediaPaths.isEmpty()) return
+        val pending = pendingMediaPaths
+        pendingMediaPaths = emptyList()
+        getMediaData(pending)
+    }
+
     fun getMediaData(list: List<Pair<String, ContentType>>) {
-         if(list.isEmpty()) return
-      list.forEach{ path ->
-          _noteContentUiState.update {
-              val note = it.note ?: return
-              val position: Double = note.contents.count().toDouble()   // 🔧 C4
-              val content = NoteContentObjectHelper.createMedia(positionedAt = position,
-                  noteId = note.id,
-                  localPath = path.first ,
-                  contentType = path.second)
-                  .copy(title ="${path.second}-$position",)
-              it.contents.add(content)
-              it.copy(note = note.withContents(note.contents + content),
-                  contents = it.contents, isAllSetupDone = true)
-          }
-      }
+        if (list.isEmpty()) return
+        val currentState = _noteContentUiState.value
+        val note = currentState.note ?: run {
+            pendingMediaPaths = pendingMediaPaths + list   // 🔧 stash instead of dropping
+            return
+        }
+        var position: Double = note.contents.count().toDouble()   // 🔧 C4
+        val newItems = list.map { path ->
+            val content = NoteContentObjectHelper.createMedia(
+                positionedAt = position,
+                noteId = note.id,
+                localPath = path.first,
+                contentType = path.second
+            ).copy(title = "${path.second}-$position")
+            position += 1.0
+            content
+        }
+        // Single mutation of the observed list (safe: called off the composition pass).
+        currentState.contents.addAll(newItems)
+        _noteContentUiState.update {
+            it.copy(
+                note = note.withContents(note.contents + newItems),
+                contents = it.contents,
+                isAllSetupDone = true
+            )
+        }
+        // 🔧 14-Jul-2026: FIX (recorded video not playable) — register the new media into the
+        //   standalone playlist repository so it can play immediately, before the note is saved.
+        //   This is safe now (it wasn't before) because track selection in MediaServiceListener is
+        //   resolved by mediaId with a -1 guard — index drift can no longer mis-select a track.
+        newItems.filter { it.isPlayingMedia() }.forEach { noteContentRepository.updateNoteContent(it) }
     }
 }

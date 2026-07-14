@@ -76,28 +76,39 @@ fun VideoCard(
     val exoPlayer = remember { viewModel.getExoPlayer() }
     val state = viewModel.state.collectAsStateWithLifecycle()
     val mediaState = state.value.mediaStates[noteContent.id] ?: PlayerUiState(noteContent = noteContent)
+    // 🔧 14-Jul-2026: FIX (recorded video not visible) — ONE ExoPlayer can render to only ONE
+    //   surface; previously every VideoCard grabbed it, so the last composed card won and the
+    //   others (including a fresh recording) stayed blank. The surface now belongs exclusively
+    //   to the card whose media is the current selection; other cards show a dark placeholder
+    //   until tapped (play/slider makes them current via the id-based events).
+    val isCurrentMedia = state.value.currentPlayingId == noteContent.id
     Card(modifier = Modifier.requiredWidth(200.dp).requiredHeight(300.dp).padding(8.dp).clickable { }) {
         //Preview Video
         if (mediaState.noteContent.position == noteContent.position)
             Box(Modifier.fillMaxSize()) {
-         VideoPlayer(exoPlayer, Modifier.clickable { onClick() })
+         VideoPlayer(exoPlayer, Modifier.clickable { onClick() }, attachPlayer = isCurrentMedia)
          VideoControllerUi(state = mediaState,
              onAction = viewModel::onPlayingIntent)
         }
     }
 }
 
+// 🔧 14-Jul-2026: CHANGED — `attachPlayer` decides whether this view owns the player's video
+//   surface right now (see VideoCard). `update` re-binds when the selection changes, so the
+//   surface follows the currently selected media without recreating the view.
+//   Usage: VideoPlayer(exoPlayer, attachPlayer = <this media is the current selection>)
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(
     exoPlayer: ExoPlayer,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    attachPlayer: Boolean = true
 ) {
     AndroidView(
         modifier = modifier.fillMaxWidth(),
         factory = { context ->
             PlayerView(context).also {
-                it.player = exoPlayer
+                it.player = if (attachPlayer) exoPlayer else null
                 it.useController = false
                 it.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
                 it.layoutParams = FrameLayout.LayoutParams(
@@ -105,6 +116,9 @@ fun VideoPlayer(
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
             }
+        },
+        update = { view ->
+            view.player = if (attachPlayer) exoPlayer else null
         },
     )
 }

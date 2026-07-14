@@ -33,6 +33,9 @@ class NoteContentRepository  : KoinComponent{
             .sortedBy { it.position }
     }
     fun clear(){
-        _selectedNoteMediaContent.value.toMutableList().clear()
+        // 🔧 14-Jul-2026: FIX — the old body cleared a defensive COPY (`toMutableList().clear()`),
+        //   a silent no-op. Reset the flow value itself. Playback is unaffected: consumers ignore
+        //   empty emissions, so the standalone player keeps playing across screen changes.
+        _selectedNoteMediaContent.value = emptyList()
     }
 }

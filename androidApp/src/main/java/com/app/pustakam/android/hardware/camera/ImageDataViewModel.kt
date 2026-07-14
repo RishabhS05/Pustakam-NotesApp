@@ -3,13 +3,16 @@ package com.app.pustakam.android.hardware.camera
 import android.graphics.Bitmap
 import androidx.camera.video.Recording
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.extension.toBitmap
 import com.app.pustakam.android.fileUtils.saveBitmapToFile
 import com.app.pustakam.extensions.isUrl
 import com.app.pustakam.util.ContentType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 import org.koin.core.component.KoinComponent
 import java.io.File
@@ -50,6 +53,9 @@ data class MediaFileStateHandler(
     val bitmap: Bitmap? = null,
     val editedBitmap: Bitmap? = null,
     val mediaFilePath :String = "",
+    // 🔧 14-Jul-2026: NEW — id of the note content being previewed; lets VideoPreviewScreen drive
+    //   the standalone player by mediaId instead of guessing from the file path.
+    val mediaId: String? = null,
 )
 
 class ImageDataViewModel : ViewModel(), KoinComponent {
@@ -106,13 +112,21 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
         clearRecording()
     }
 
-    fun onSetMediaToPreview(fileUrl: String, contentType: ContentType) {
+    // 🔧 14-Jul-2026: CHANGED — optional mediaId travels with the preview request (see
+    //   MediaFileStateHandler.mediaId). Existing callers without an id keep compiling.
+    fun onSetMediaToPreview(fileUrl: String, contentType: ContentType, mediaId: String? = null) {
         if (fileUrl.isUrl()) {
             //todo handle later api call
         } else {
             when {
-                contentType == ContentType.IMAGE -> onTakenPhotoPreview(fileUrl.toBitmap(), dataStateEvent = DataStateEvent.Saved)
-                contentType == ContentType.VIDEO -> onVideoFullPreview(fileUrl)
+                // 🔧 14-Jul-2026: PERF — decode the (downsampled) bitmap on Dispatchers.IO so
+                //   opening an image no longer blocks the main thread. State is updated on
+                //   completion; StateFlow.update is thread-safe.
+                contentType == ContentType.IMAGE -> viewModelScope.launch(Dispatchers.IO) {
+                    val bitmap = fileUrl.toBitmap()
+                    onTakenPhotoPreview(bitmap, dataStateEvent = DataStateEvent.Saved)
+                }
+                contentType == ContentType.VIDEO -> onVideoFullPreview(fileUrl, mediaId = mediaId)
 //                contentType == ContentType.AUDIO -> onAudioFilePreview(fileUrl)
             }
         }
@@ -124,9 +138,10 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
 //        }
 //    }
 
-    private fun onVideoFullPreview(fileUrl : String, dataStateEvent: DataStateEvent= DataStateEvent.Saved ) {
+    private fun onVideoFullPreview(fileUrl : String, dataStateEvent: DataStateEvent= DataStateEvent.Saved, mediaId: String? = null ) {
         _mediaFileState.update {
-            it.copy(mediaFilePath=fileUrl,dataStateEvent = dataStateEvent, contentType = ContentType.VIDEO)
+            // 🔧 14-Jul-2026: carries mediaId through to VideoPreviewScreen
+            it.copy(mediaFilePath=fileUrl,dataStateEvent = dataStateEvent, contentType = ContentType.VIDEO, mediaId = mediaId)
         }
     }
     fun onTakenPhotoPreview(bitmap: Bitmap,dataStateEvent: DataStateEvent = DataStateEvent.Editing) {
@@ -135,11 +150,16 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
         }
     }
 
+    // 🔧 14-Jul-2026: PERF — compress+write the bitmap to disk on Dispatchers.IO instead of the
+    //   main thread. The path is published to _paths only after a successful write.
     private fun saveImage(file: File) {
-        if (saveBitmapToFile(_mediaFileState.value.editedBitmap!!, file)) {
-            _paths.value += Pair(file.absolutePath, ContentType.IMAGE)
+        val bitmap = _mediaFileState.value.editedBitmap ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            if (saveBitmapToFile(bitmap, file)) {
+                _paths.value += Pair(file.absolutePath, ContentType.IMAGE)
+            }
+            _mediaFileState.update { it.copy(dataStateEvent = DataStateEvent.Saved) }
         }
-        _mediaFileState.update { it.copy(dataStateEvent = DataStateEvent.Saved) }
     }
 
 
@@ -148,6 +168,9 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
         recording?.stop()
         recording?.close()
         recording = null
+        // 🔧 14-Jul-2026: FIX — the VM owns the recording flag now (the View used to toggle it
+        //   blindly, drifting out of sync when permission was denied or recording failed).
+        _isRecording.value = false
     }
 
     fun clearPaths() {
@@ -156,6 +179,7 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
 
     fun saveRecordedVideo(outputFile: File) {
         _paths.value += Pair(outputFile.absolutePath, ContentType.VIDEO)
+        _isRecording.value = false   // 🔧 14-Jul-2026: recording finished — reflect it in state
     }
 
     fun startOrStopRecording(value : Boolean) {

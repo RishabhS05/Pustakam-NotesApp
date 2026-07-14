@@ -66,11 +66,23 @@ struct AudioPlayView: View {
     var onDelete: () -> Void = {}
     // edit the audio
     var onEdit: ()-> Void = {}
+    // 🔧 14-Jul-2026: NEW — save-to-device callback (audio → Files picker, default Documents)
+    var onSave: () -> Void = {}
     @StateObject  private var viewModel : AudioPlayerViewModel
+    // 🔧 14-Jul-2026: BUGFIX — the trash button already called onDelete, but this custom init
+    //   didn't accept it, so callers could never pass one (delete tap silently did nothing).
+    //   onDelete/onEdit/onSave now flow through init; defaults keep old call sites compiling.
+    //   Usage: AudioPlayView(mediaContent: media, onDelete: { ... }, onSave: { ... })
     init(
         mediaContent: NoteContentModel.MediaContent,
+        onDelete: @escaping () -> Void = {},
+        onEdit: @escaping () -> Void = {},
+        onSave: @escaping () -> Void = {}
     ) {
         self.mediaContent = mediaContent
+        self.onDelete = onDelete
+        self.onEdit = onEdit
+        self.onSave = onSave
         _viewModel = StateObject(wrappedValue:AudioPlayerViewModel(mediaContent: mediaContent))
     }
     var body: some View{
@@ -94,7 +106,9 @@ struct AudioPlayView: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .onAppear{
-                MediaManager.mediaManager.selectAndPlayMedia(media: mediaContent)
+                // 🔧 14-Jul-2026: prepare only (no autoplay) — audio no longer auto-starts when a
+                //   note opens or when returning from another screen. Playback starts on tap.
+                MediaManager.mediaManager.prepareMedia(media: mediaContent)
             }
             .padding(.horizontal, 6)
             .padding(.top, 4)
@@ -124,6 +138,14 @@ struct AudioPlayView: View {
                         .frame(width: 20,height: 20)
                         .foregroundColor(Theme.Colors.secondary)
                 }.padding(4)
+
+                // 🔧 14-Jul-2026: NEW — save-to-device button (audio → Files picker)
+                Button(action: onSave) {
+                    Image(systemName: "square.and.arrow.down")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(Theme.Colors.secondary)
+                }.padding(.trailing,4)
 
                 Button(action: onDelete) {
                     Image(systemName: "trash")

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +28,6 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -54,7 +54,7 @@ import com.app.pustakam.util.ContentType
 @OptIn(UnstableApi::class)
 @Composable
 fun AudioPlayerUIState(
-    noteContentModel: NoteContentModel.MediaContent, onDelete: (NoteContentModel) -> Unit = {}
+    noteContentModel: NoteContentModel.MediaContent, onDelete: (NoteContentModel) -> Unit = {}, onSave: () -> Unit = {}
 ) {
     val noteContent = remember { noteContentModel }
     val viewModel: PlayMediaViewModel = viewModel()
@@ -71,7 +71,11 @@ fun AudioPlayerUIState(
         }, onPlay = {
             if (!state.value.isServiceIsRunning) localContext.startServiceWrapper(Intent(localContext, PustakmMediaPlayerService::class.java))
             viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(noteContent.id))
-        })
+        },
+            // 🔧 14-Jul-2026: FIX — was `onSave = {}` (empty), so the save button did nothing.
+            //   Now forwards the caller's onSave (wired in NotesEditorView → SAF picker).
+            onSave = onSave
+        )
     }
 }
 
@@ -79,6 +83,7 @@ fun AudioPlayerUIState(
 @Composable
 fun AudioPlayView(
     state: PlayerUiState, onDelete: () -> Unit = {}, onPlay: () -> Unit = {}, onSeek: (Float) -> Unit = {},
+    onSave : () -> Unit = {}
 ) {
 
     val iconModifier = Modifier.size(28.dp)
@@ -140,6 +145,11 @@ fun AudioPlayView(
                         imageVector = drawable, contentDescription = "", tint = colorScheme.secondary, modifier = iconModifier
                     )
                 }
+                IconButton(onClick = onSave) {
+                    Icon(
+                        Icons.Default.SaveAlt, contentDescription = "", tint = colorScheme.error, modifier = iconModifier
+                    )
+                }
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete, contentDescription = "", tint = colorScheme.error, modifier = iconModifier
@@ -162,17 +172,17 @@ private fun AudioPlayerPreview() {
             duration = 100, noteContent = NoteContentModel.MediaContent(
                 noteId = "",
                 duration = 100, position = 1.0, type = ContentType.AUDIO,
-                updatedAt = TODO(),
-                createdAt = TODO(),
-                id = TODO(),
-                localPath = TODO(),
-                url = TODO(),
-                title = TODO(),
-                mimeType = TODO(),
-                sizeBytes = TODO(),
-                width = TODO(),
-                height = TODO(),
-                thumbnailPath = TODO()
+                updatedAt = "",
+                createdAt = "",
+                id = "1233",
+                localPath = "",
+                url = "",
+                title ="",
+                mimeType = "image",
+                sizeBytes = 0,
+                width = 10,
+                height = 10,
+                thumbnailPath = ""
             )
         )
         AudioPlayView(state = state)

@@ -8,12 +8,17 @@
 import Foundation
 import shared
 
+// 🔧 P0/4: DEPRECATED — the whole repo-direct + casting path is superseded by the
+//   bridges (NotesBridge/NoteContentBridge/AuthBridge) + UiState. Zero conformers
+//   remain (BaseViewModel removed). Kept until you approve deletion of this file.
+@available(*, deprecated, message: "Use NotesBridgeAdapter/AuthBridgeAdapter + UiState instead")
 struct BaseResult<T> {
     let isSuccessful: Bool
     let data: T?
     let error: Error?
 }
 
+@available(*, deprecated, message: "Use the bridge adapters — repositories are not exposed to iOS anymore")
 protocol IBaseHandler {
     var baseRepositary: BaseRepository { get set }
     var noteRepositary: NoteRepository { get set }
