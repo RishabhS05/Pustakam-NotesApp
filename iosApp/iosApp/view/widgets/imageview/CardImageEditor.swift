@@ -8,7 +8,7 @@ struct CardImageEditor : View{
     // 🔧 14-Jul-2026: NEW — save-to-device callback (image → Photos gallery). Default keeps old call sites compiling.
     var actionSave : () -> Void = {}
     @State private var showActions : Bool = false
-    
+
     var body: some View {
 
         ZStack(alignment: .bottom) {
@@ -32,6 +32,8 @@ struct CardImageEditor : View{
             .onTapGesture {
                 actionClick()
             }
+            // 🔧 14-Jul-2026: REVERTED — back to long-press reveal with 2.5s auto-hide
+            //   (the hover/focus experiment didn't work on device).
             .onLongPressGesture {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     showActions = true

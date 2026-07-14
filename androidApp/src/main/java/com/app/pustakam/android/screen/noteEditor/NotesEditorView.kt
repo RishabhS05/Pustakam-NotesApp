@@ -11,9 +11,14 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -58,7 +63,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -279,6 +286,7 @@ fun NoteEditorScreen(
                                     deleteNoteContentId = value.id
                                 )
                             },
+                            onShare = {},
                             onMediaPreview = {
                                 // 🔧 14-Jul-2026: CHANGED — pass the content id so VideoPreviewScreen
                                 //   can drive the standalone player by mediaId (no path guessing).
@@ -379,8 +387,10 @@ fun RenderWidget(
     content: NoteContentModel,
     onUpdate: (content: NoteContentModel) -> Unit,
     onDelete: (content: NoteContentModel) -> Unit,
+    onShare: (content: NoteContentModel) -> Unit,
     onMediaPreview: () -> Unit,
 ) {
+    var focusedMediaId by remember { mutableStateOf<String?>(null) }
     when (content.type) {
         ContentType.TEXT -> {
             Box(
@@ -407,16 +417,54 @@ fun RenderWidget(
             val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
             // 🔧 14-Jul-2026: NEW — wrapped with save-to-device overlay (image → Gallery)
-            MediaSaveOverlay(media = contentImage) {
-                ImageCard(imageUrl = path, modifier = Modifier, onClick = onMediaPreview)
+            ImageCard(
+                imageUrl = path, modifier = Modifier,
+                // 🔧 14-Jul-2026: CHANGED — reveal reverted to LONG-PRESS (2.5s auto-hide inside the
+                //   card, iOS parity). `visible` is true on long-press, false when the timer fires;
+                //   clear the id only if this card still owns it.
+                onShowActions = { visible ->
+                    focusedMediaId = when {
+                        visible -> contentImage.id
+                        focusedMediaId == contentImage.id -> null
+                        else -> focusedMediaId
+                    }
+                },
+                onClick = onMediaPreview){
+                 MediaSaveOverlay(contentImage,
+                     isFocused = focusedMediaId == content.id,
+                     onDelete = {
+                     onDelete(contentImage)
+                 },
+                     onShare =  {}
+                 )
             }
+
         }
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
             // 🔧 14-Jul-2026: NEW — wrapped with save-to-device overlay (video → Gallery)
-            MediaSaveOverlay(media = contentVideo) {
-                VideoCard(contentVideo, onClick = onMediaPreview)
+            VideoCard(
+                contentVideo,
+                modifier = Modifier,
+                // 🔧 14-Jul-2026: CHANGED — same long-press reveal + timed hide as ImageCard.
+                onShowActions =  { visible ->
+                    focusedMediaId = when {
+                        visible -> contentVideo.id
+                        focusedMediaId == contentVideo.id -> null
+                        else -> focusedMediaId
+                    }
+                },
+                onClick = onMediaPreview,
+
+            ) {
+                MediaSaveOverlay(
+                    contentVideo, onDelete = {
+                        onDelete(contentVideo)
+                    },
+                    isFocused = focusedMediaId == contentVideo.id,
+                    onShare = {}
+                )
             }
         }
 
@@ -478,10 +526,13 @@ fun RenderWidget(
 // 🔧 14-Jul-2026: @OptIn required — ModalBottomSheet / rememberModalBottomSheetState are experimental.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediaSaveOverlay(
+fun BoxScope.MediaSaveOverlay(
     media: NoteContentModel.MediaContent,
-    content: @Composable () -> Unit,
+    isFocused : Boolean = false,
+    onDelete: () -> Unit = {},
+    onShare : ()-> Unit ={},
 ) {
+
     val context = LocalContext.current
     // 🔧 14-Jul-2026: PERF — coroutine scope so file copies run off the main thread.
     val scope = rememberCoroutineScope()
@@ -521,31 +572,60 @@ fun MediaSaveOverlay(
             ).show()
         }
     }
-
-    Box {
-        content()
-        IconButton(
-            onClick = {
-                if (isGalleryType) {
-                    // 🔧 14-Jul-2026: CHANGED — was a silent gallery save; now opens the two-option
-                    //   bottom sheet so the user picks Gallery vs. a file location.
-                    showSaveSheet = true
-                } else {
-                    // Opens the picker with the suggested file name; default folder = Downloads.
-                    exportLauncher.launch(suggestedFileName(media))
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.SaveAlt,
-                contentDescription = "Save media to device",
-                tint = colorScheme.primary,
+    if(isFocused)
+        Row(modifier = Modifier.fillMaxWidth()
+            .background(
+            Brush.verticalGradient(
+                listOf(
+                    Color.Transparent,
+                    Color.Black.copy(alpha = .05f),
+                    Color.Black.copy(alpha = .30f),
+                    Color.Black.copy(alpha = .55f)
+                )
             )
+        ).align(Alignment.BottomEnd), horizontalArrangement = Arrangement.End) {
+            IconButton(
+                onClick = {
+                    if (isGalleryType) {
+                        // 🔧 14-Jul-2026: CHANGED — was a silent gallery save; now opens the two-option
+                        //   bottom sheet so the user picks Gallery vs. a file location.
+                        showSaveSheet = true
+                    } else {
+                        // Opens the picker with the suggested file name; default folder = Downloads.
+                        exportLauncher.launch(suggestedFileName(media))
+                    }
+                },
+                modifier = Modifier.padding(2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SaveAlt,
+                    contentDescription = "Save media to device",
+                    tint = colorScheme.primary,
+                )
+            }
+            IconButton(
+                onClick = onShare,
+                modifier = Modifier
+                    .padding(2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = "Save media to device",
+                    tint = colorScheme.primary,
+                )
+            }
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier
+                    .padding(2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Save media to device",
+                    tint = colorScheme.error,
+                )
+            }
         }
-    }
 
     // 🔧 14-Jul-2026: NEW FEATURE — the save-options bottom sheet (IMAGE/VIDEO only).
     //   Row 1 → Save to Gallery (silent MediaStore write).

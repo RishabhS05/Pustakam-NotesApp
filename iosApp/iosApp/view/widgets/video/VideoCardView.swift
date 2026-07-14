@@ -50,7 +50,8 @@ struct VideoCardPlayer : View {
                     mediaManager.resumePlaying(media:content)
                     actionClick()
                 }
-                // 🔧 14-Jul-2026: NEW — long-press shows the actions bar for 2.5s (CardImageEditor parity)
+                // 🔧 14-Jul-2026: REVERTED — back to long-press reveal with 2.5s auto-hide
+                //   (the hover/focus experiment didn't work on device).
                 .onLongPressGesture {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         showActions = true
