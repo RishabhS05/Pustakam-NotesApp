@@ -211,7 +211,8 @@ fun NoteEditorScreen(
     val capturedPaths = imageDataViewModel.paths.collectAsStateWithLifecycle().value
     LaunchedEffect(capturedPaths) {
         if (capturedPaths.isNotEmpty()) {
-            noteEditorViewModel.getMediaData(capturedPaths)
+            // 🔧 15-Jul-2026 Phase 2.3: context enables async thumbnail generation for new media
+            noteEditorViewModel.getMediaData(capturedPaths, context)
             imageDataViewModel.clearPaths()
         }
     }

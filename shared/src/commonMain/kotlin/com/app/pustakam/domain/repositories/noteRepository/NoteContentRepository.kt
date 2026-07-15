@@ -21,7 +21,10 @@ class NoteContentRepository  : KoinComponent{
     fun updateNoteContent(note: NoteContentModel.MediaContent){
         _selectedNoteMediaContent.update { currentList ->
             val newList = currentList.toMutableList()
-            val indexof = newList.indexOf(note)
+            // 🔧 15-Jul-2026: FIX — match by ID, not object equality. indexOf(note) never matched an
+            //   updated COPY (e.g. duration stamped after recording, thumbnailPath added later), so
+            //   every update quietly APPENDED a duplicate media entry to the playlist source.
+            val indexof = newList.indexOfFirst { it.id == note.id }
             if (indexof == -1) newList.add(note) else newList[indexof] = note
             newList.toList() // Ensure immutable list
         }

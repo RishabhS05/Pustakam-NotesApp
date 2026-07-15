@@ -1,5 +1,6 @@
 package com.app.pustakam.data.localdb.database
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.Note
@@ -16,6 +17,10 @@ import org.koin.core.component.inject
 class NotesDao() : KoinComponent {
 
     private val database =  get<NotesDatabase>()
+
+    // 🔧 15-Jul-2026 CRASH FIX: raw driver access for the OPTIONAL runtime FTS5 index (see
+    //   ensureFtsIndex below) — fts statements can't live in the managed schema anymore.
+    private val driver = get<SqlDriver>()
 
     private val queries = database.notesDatabaseQueries
 
@@ -46,6 +51,134 @@ class NotesDao() : KoinComponent {
     fun getTagsFromDB() : List<Tag> = queries.getTags().executeAsList().map{
           Tag(id = it.id, label = it.label, color= it.color)
     }
+   // 🔧 15-Jul-2026 Summary query: one page of LIST-SCREEN summaries — header + snippet + counts +
+   //   thumbnail, computed in SQL (indexed subqueries). Contents are never loaded for the list.
+   fun selectNoteSummariesPage(limit: Int, page: Int): List<com.app.pustakam.data.models.response.notes.NoteSummary> {
+       val offset = ((page - 1) * limit).coerceAtLeast(0)
+       return queries.selectNoteSummariesPage(limit.toLong(), offset.toLong()).executeAsList().map { row ->
+           com.app.pustakam.data.models.response.notes.NoteSummary(
+               id = row.id,
+               title = row.title,
+               categoryId = row.categoryId,
+               createdAt = row.createdAt,
+               updatedAt = row.updatedAt,
+               snippet = row.snippet,
+               contentCount = (row.contentCount ?: 0L).toInt(),
+               imageCount = (row.imageCount ?: 0L).toInt(),
+               videoCount = (row.videoCount ?: 0L).toInt(),
+               audioCount = (row.audioCount ?: 0L).toInt(),
+               docCount = (row.docCount ?: 0L).toInt(),
+               // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: rebase onto the current container (UUID changes on iOS updates)
+               thumbnailPath = com.app.pustakam.util.resolveLocalFilePath(row.thumbnailPath),
+           )
+       }
+   }
+
+   // 🔧 15-Jul-2026 CRASH FIX ("no such module: fts5") — FTS5 is OPTIONAL now. Some devices'
+   //   framework SQLite lacks the fts5 module, so nothing in the managed schema/migrations may
+   //   reference it. Instead, the index is created here AT RUNTIME, once, inside try/catch, and
+   //   ONLY when search is first used — app startup can never touch this path. Devices without
+   //   fts5 permanently fall back to the LIKE query (correct, just slower on huge notes).
+   //   null = not yet probed; true/false = probe result for this process.
+   private var ftsAvailable: Boolean? = null
+
+   private fun ensureFtsIndex(): Boolean {
+       ftsAvailable?.let { return it }
+       val available = try {
+           val existedBefore = ftsTableExists()
+           driver.execute(null,
+               "CREATE VIRTUAL TABLE IF NOT EXISTS NoteContentFts USING fts5(text, content='NoteContent', content_rowid='rowid')", 0).value
+           driver.execute(null,
+               "CREATE TRIGGER IF NOT EXISTS note_content_fts_insert AFTER INSERT ON NoteContent BEGIN " +
+                       "INSERT INTO NoteContentFts(rowid, text) VALUES (new.rowid, new.text); END", 0).value
+           driver.execute(null,
+               "CREATE TRIGGER IF NOT EXISTS note_content_fts_delete AFTER DELETE ON NoteContent BEGIN " +
+                       "INSERT INTO NoteContentFts(NoteContentFts, rowid, text) VALUES ('delete', old.rowid, old.text); END", 0).value
+           driver.execute(null,
+               "CREATE TRIGGER IF NOT EXISTS note_content_fts_update AFTER UPDATE ON NoteContent BEGIN " +
+                       "INSERT INTO NoteContentFts(NoteContentFts, rowid, text) VALUES ('delete', old.rowid, old.text); " +
+                       "INSERT INTO NoteContentFts(rowid, text) VALUES (new.rowid, new.text); END", 0).value
+           // fresh index → build it from the existing content once ('rebuild' is idempotent)
+           if (!existedBefore) {
+               driver.execute(null, "INSERT INTO NoteContentFts(NoteContentFts) VALUES('rebuild')", 0).value
+           }
+           true
+       } catch (t: Throwable) {
+           log_d("NotesDao", "FTS5 unavailable on this device, using LIKE search: ${t.message}")
+           false
+       }
+       ftsAvailable = available
+       return available
+   }
+
+   private fun ftsTableExists(): Boolean = driver.executeQuery(null,
+       "SELECT name FROM sqlite_master WHERE type='table' AND name='NoteContentFts'",
+       { cursor -> QueryResult.Value(cursor.next().value) }, 0).value
+
+   // 🔧 15-Jul-2026 CRASH FIX: the MATCH query runs as a RAW statement (it can't live in the .sq
+   //   file anymore — SQLDelight would require the fts table in the managed schema). Only reached
+   //   when ensureFtsIndex() returned true.
+   private fun searchContentViaFts(match: String): List<com.app.pustakam.data.models.response.notes.NoteSummary> {
+       val results = mutableListOf<com.app.pustakam.data.models.response.notes.NoteSummary>()
+       driver.executeQuery(null,
+           "SELECT n.id, n.categoryId, n.title, n.createdAt, n.updatedAt, SUBSTR(c.text, 1, 200) " +
+                   "FROM NoteContentFts " +
+                   "JOIN NoteContent c ON c.rowid = NoteContentFts.rowid " +
+                   "JOIN Notes n ON n.id = c.noteId " +
+                   "WHERE NoteContentFts MATCH ? " +
+                   "GROUP BY n.id ORDER BY n.updatedAt DESC LIMIT 50",
+           { cursor ->
+               while (cursor.next().value) {
+                   results.add(
+                       com.app.pustakam.data.models.response.notes.NoteSummary(
+                           id = cursor.getString(0)!!,
+                           categoryId = cursor.getString(1),
+                           title = cursor.getString(2),
+                           createdAt = cursor.getString(3),
+                           updatedAt = cursor.getString(4),
+                           snippet = cursor.getString(5),
+                       )
+                   )
+               }
+               QueryResult.Unit
+           }, 1) { bindString(0, match) }.value
+       return results
+   }
+
+   // 🔧 15-Jul-2026 Phase 2.2: full-text search — content matches (FTS5 where the device supports
+   //   it, LIKE fallback everywhere else — never crashes either way) merged with title matches.
+   //   Deduped by note id (content match wins: it carries the snippet), newest first. Raw input is
+   //   wrapped as a quoted prefix phrase so FTS5 operators in user input can't break MATCH syntax.
+   fun searchNotes(rawQuery: String): List<com.app.pustakam.data.models.response.notes.NoteSummary> {
+       val trimmed = rawQuery.trim()
+       if (trimmed.isEmpty()) return emptyList()
+       val merged = LinkedHashMap<String, com.app.pustakam.data.models.response.notes.NoteSummary>()
+       val contentMatches = try {
+           if (ensureFtsIndex()) {
+               searchContentViaFts("\"" + trimmed.replace("\"", "") + "\"*")
+           } else {
+               queries.searchContentTextLike(trimmed).executeAsList().map { row ->
+                   com.app.pustakam.data.models.response.notes.NoteSummary(
+                       id = row.id, title = row.title, categoryId = row.categoryId,
+                       createdAt = row.createdAt, updatedAt = row.updatedAt, snippet = row.snippet,
+                   )
+               }
+           }
+       } catch (t: Throwable) {
+           // belt-and-braces: a search must never crash the app — worst case, no content matches
+           log_d("NotesDao", "content search failed: ${t.message}")
+           emptyList()
+       }
+       contentMatches.forEach { merged[it.id] = it }
+       queries.searchTitles(trimmed).executeAsList().forEach { row ->
+           if (!merged.containsKey(row.id)) merged[row.id] = com.app.pustakam.data.models.response.notes.NoteSummary(
+               id = row.id, title = row.title, categoryId = row.categoryId,
+               createdAt = row.createdAt, updatedAt = row.updatedAt,
+           )
+       }
+       return merged.values.sortedByDescending { it.updatedAt ?: "" }
+   }
+
    // 🔧 15-Jul-2026 Phase 0.1: paging is OPT-IN — `limit > 0 && page > 0` fetches ONE page of note
    //   ids (indexed, keyset-cheap) and maps each via the existing selectNoteById mapper. Legacy
    //   callers (limit = 0, e.g. the iOS bridge) keep the original load-everything behavior, so

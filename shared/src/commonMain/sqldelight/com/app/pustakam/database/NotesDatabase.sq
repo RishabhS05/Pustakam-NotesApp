@@ -38,6 +38,12 @@ metaData TEXT AS RichTextMetadata
 --   it via migration 1.sqm (v1 -> v2).
 CREATE INDEX idx_notecontent_note_position ON NoteContent(noteId, position);
 
+-- 🔧 15-Jul-2026 CRASH FIX ("no such module: fts5"): the FTS5 virtual table + triggers were
+--   REMOVED from this schema. Some devices' framework SQLite is built WITHOUT the fts5 module
+--   (crashed at Schema.create on a real device), so the managed schema must only contain SQL
+--   every device supports. FTS5 is now created AT RUNTIME, only where supported and only when
+--   search is first used — see NotesDao.ensureFtsIndex(); other devices use searchContentTextLike.
+
 CREATE TABLE Tags(
 id TEXT NOT NULL PRIMARY KEY,
 color TEXT,
@@ -120,6 +126,33 @@ SELECT id FROM Notes
 ORDER BY id
 LIMIT :limit OFFSET :offset;
 
+-- 🔧 15-Jul-2026 Summary query: everything the LIST SCREEN needs, WITHOUT loading contents.
+--   snippet: first non-empty TEXT block (may be NULL — media/doc-only notes are normal!);
+--   per-type counts let the card describe textless notes ("3 photos · 1 audio");
+--   thumbnail: first visual media's thumbnailPath (falls back to the file itself).
+--   Every subquery hits idx_notecontent_note_position.
+selectNoteSummariesPage:
+SELECT
+    n.id,
+    n.categoryId,
+    n.title,
+    n.createdAt,
+    n.updatedAt,
+    (SELECT SUBSTR(c.text, 1, 200) FROM NoteContent c
+        WHERE c.noteId = n.id AND c.type = 'TEXT' AND c.text IS NOT NULL AND c.text != ''
+        ORDER BY c.position LIMIT 1) AS snippet,
+    (SELECT COUNT(*) FROM NoteContent c WHERE c.noteId = n.id) AS contentCount,
+    (SELECT COUNT(*) FROM NoteContent c WHERE c.noteId = n.id AND c.type IN ('IMAGE','GIF')) AS imageCount,
+    (SELECT COUNT(*) FROM NoteContent c WHERE c.noteId = n.id AND c.type = 'VIDEO') AS videoCount,
+    (SELECT COUNT(*) FROM NoteContent c WHERE c.noteId = n.id AND c.type = 'AUDIO') AS audioCount,
+    (SELECT COUNT(*) FROM NoteContent c WHERE c.noteId = n.id AND c.type IN ('PDF','DOCX')) AS docCount,
+    (SELECT COALESCE(c.thumbnailPath, c.localPath, c.url) FROM NoteContent c
+        WHERE c.noteId = n.id AND c.type IN ('IMAGE','VIDEO','GIF')
+        ORDER BY c.position LIMIT 1) AS thumbnailPath
+FROM Notes n
+ORDER BY n.id
+LIMIT :limit OFFSET :offset;
+
 selectWithAllContent:
 SELECT
     Notes.id AS noteId,
@@ -150,6 +183,29 @@ FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
 ORDER BY Notes.id, NoteContent.position;
 -- LIMIT ? OFFSET ?;
+
+-- 🔧 15-Jul-2026 CRASH FIX: content search that works on EVERY SQLite build (no fts5 module
+--   required). Used as the fallback when the device lacks FTS5; capable devices get the faster
+--   MATCH variant at runtime (NotesDao.searchContentViaFts). Same result shape.
+searchContentTextLike:
+SELECT
+    n.id, n.categoryId, n.title, n.createdAt, n.updatedAt,
+    SUBSTR(c.text, 1, 200) AS snippet
+FROM NoteContent c
+JOIN Notes n ON n.id = c.noteId
+WHERE c.type = 'TEXT' AND c.text LIKE '%' || :query || '%'
+GROUP BY n.id
+ORDER BY n.updatedAt DESC
+LIMIT 50;
+
+-- 🔧 15-Jul-2026 Phase 2.2: title search (titles are not in the FTS index) — merged with the
+--   content matches in the DAO.
+searchTitles:
+SELECT id, categoryId, title, createdAt, updatedAt
+FROM Notes
+WHERE title LIKE '%' || :query || '%'
+ORDER BY updatedAt DESC
+LIMIT 50;
 
 createTag:
 INSERT OR REPLACE INTO Tags(id, label, color)

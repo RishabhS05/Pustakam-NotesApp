@@ -58,13 +58,14 @@ sealed interface TagIntent{
     data class ShowOrHideUIAlerts(val dialog: DialogEnum): TagIntent
 }
 @Composable
-fun NotesView(onNavigateNote: (note: Note) -> Unit) {
+fun NotesView(onNavigateNote: (noteId: String) -> Unit) {
     val notesViewModel: NotesViewModel = viewModel()
      val state =  notesViewModel.notesUIState.collectAsStateWithLifecycle().value
          .apply {
+             // 🔧 15-Jul-2026 Summary query: the list renders summaries; navigation only needs the id
              when {
-                 notes.isEmpty -> { EmptyNoteUI(modifier = Modifier.fillMaxSize())}
-                 notes.isNotEmpty() -> NotesListView(this,
+                 summaries.isEmpty() -> { EmptyNoteUI(modifier = Modifier.fillMaxSize())}
+                 summaries.isNotEmpty() -> NotesListView(this,
                      onNavigateNote = onNavigateNote,
                      // 🔧 15-Jul-2026 Phase 0.1: next page loads when the grid reaches its end
                      onLoadMore = notesViewModel::callGetNotes,
@@ -82,7 +83,7 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
 @Composable
 fun NotesListView(
     state : NotesUIState,
-    onNavigateNote: (note: Note) -> Unit,
+    onNavigateNote: (noteId: String) -> Unit,
     // 🔧 15-Jul-2026 Phase 0.1: called when the last card composes (scroll reached the end);
     //   the ViewModel guards against duplicate/past-the-end fetches.
     onLoadMore: () -> Unit = {},
@@ -106,7 +107,7 @@ fun NotesListView(
 
     }
     }
-    val notes = state.notes
+    val notes = state.summaries   // 🔧 15-Jul-2026 Summary query: cards render summaries
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         modifier = Modifier
@@ -129,7 +130,7 @@ fun NotesListView(
                 .height(12.dp))
         }
         items(notes.size) { index ->
-            NoteCardView(note = notes[index]) { onNavigateNote(notes[index]) }
+            NoteCardView(summary = notes[index]) { onNavigateNote(notes[index].id) }
             // 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger — fires once per list growth
             //   (keyed on size) when the LAST card enters composition.
             if (index == notes.size - 1) {

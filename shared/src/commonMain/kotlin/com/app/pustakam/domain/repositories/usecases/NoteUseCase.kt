@@ -32,6 +32,20 @@ class GetNotesUseCase : NoteBaseUseCase() {
         getBaseApiCall { noteRepository.getAllNotes(page, limit) }
 }
 
+// 🔧 15-Jul-2026 Summary query: list-screen fetch — light summaries (snippet/counts/thumbnail),
+//   never the full contents. Observe results via `noteSummaries` (exposed on NoteBaseUseCase).
+class GetNoteSummariesUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(page: Int, limit: Int) =
+        getBaseApiCall { noteRepository.getNoteSummaries(page, limit) }
+}
+
+// 🔧 15-Jul-2026 Phase 2.2: FTS5 search across note text + titles; returns NoteSummary results
+//   (content matches carry a snippet). Empty query returns an empty list.
+class SearchNotesUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(query: String) =
+        getBaseApiCall { noteRepository.searchNotes(query) }
+}
+
 class DeleteNoteContentUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(id: String?) =
         getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }

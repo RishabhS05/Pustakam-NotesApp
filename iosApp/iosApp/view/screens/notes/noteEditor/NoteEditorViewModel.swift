@@ -21,6 +21,11 @@ class NoteEditorViewModel: ObservableObject {
     private let adapter: NotesBridgeAdapter
     private let contentBridge: NoteContentBridge
 
+    // 🔧 15-Jul-2026 iOS parity (dirty-row saves): ids of content blocks touched since the last
+    //   successful save — save writes ONLY these rows plus the note header (Android parity).
+    //   Contents loaded from the DB start clean.
+    private var dirtyContentIds = Set<String>()
+
     /// DI per series convention: defaults keep call sites/tests simple. (fixes E1, E6)
     init(note: Note? = nil,
          adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
@@ -34,21 +39,19 @@ class NoteEditorViewModel: ObservableObject {
 
     // MARK: - Load
 
+    // 🔧 15-Jul-2026 iOS parity (summary query): ALWAYS re-read by id. The list navigates with a
+    //   contents-less stub (NoteSummary.toNoteStub) now, and the DB is the source of truth anyway —
+    //   using the passed object as-is could show stale contents. nil id still means "create new".
     private func load(note: Note?) {
-        if let note {
-            apply(note: note)
-        } else {
-            // New note: bridge returns a fresh empty Note (pre-generated id/timestamps).
-            adapter.readNote(noteId: nil) { [weak self] result in
-                guard let self else { return }
-                switch result {
-                case .loading:            self.state.isLoading = true
-                case .success(let note):  self.state.isLoading = false
-                                          if let note { self.apply(note: note) }
-                case .failure(let error): self.state.isLoading = false
-                                          self.state.errorMessage = error.message
-                case .idle: break
-                }
+        adapter.readNote(noteId: note?.id) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .loading:            self.state.isLoading = true
+            case .success(let note):  self.state.isLoading = false
+                                      if let note { self.apply(note: note) }
+            case .failure(let error): self.state.isLoading = false
+                                      self.state.errorMessage = error.message
+            case .idle: break
             }
         }
     }
@@ -64,6 +67,7 @@ class NoteEditorViewModel: ObservableObject {
 
     func addContent(content: NoteContentModel) {
         guard state.isNoteReady else { return }                 // fixes E3 crash window
+        dirtyContentIds.insert(content.id)   // 🔧 15-Jul-2026 iOS parity: new block → must be saved
         state.noteContents.append(content)
         if content.isPlayingMedia(), let media = content as? NoteContentModel.MediaContent {
             contentBridge.updateMediaContent(content: media)    // safe cast (was as!)
@@ -71,6 +75,7 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     func updateContent(content: NoteContentModel) {
+        dirtyContentIds.insert(content.id)   // 🔧 15-Jul-2026 iOS parity: touched → will be saved
         if let index = state.noteContents.firstIndex(where: { $0.id == content.id }) {
             state.noteContents[index] = content
         } else {
@@ -143,6 +148,26 @@ class NoteEditorViewModel: ObservableObject {
             height: 0,
             thumbnailPath: nil)
         addContent(content: media)
+        // 🔧 15-Jul-2026 iOS parity (Phase 2.3): thumbnail generated AFTER the media is already
+        //   visible, off the main thread; on completion the LATEST version of the content is
+        //   updated by id (never clobbers meanwhile edits) — updateContent marks it dirty too.
+        generateThumbnailAsync(for: media)
+    }
+
+    // 🔧 15-Jul-2026 iOS parity (Phase 2.3): background thumbnail job (Android
+    //   generateThumbnailsFor parity). Images and videos only; audio has no thumbnail.
+    private func generateThumbnailAsync(for media: NoteContentModel.MediaContent) {
+        guard media.type == ContentType.image || media.type == ContentType.video,
+              let path = media.localPath, !path.isEmpty else { return }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let thumb = generateThumbnail(sourcePath: path, type: media.type) else { return }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                let latest = self.state.noteContents.first { $0.id == media.id }
+                    as? NoteContentModel.MediaContent ?? media
+                self.updateContent(content: latest.withThumbnail(path: thumb))
+            }
+        }
     }
 
     // MARK: - Save / Delete
@@ -152,6 +177,17 @@ class NoteEditorViewModel: ObservableObject {
         guard !state.isDeleted else { return }                  // fixes V3 (zombie note)
         guard let note = state.note else { return }             // fixes E5 (was note!)
 
+        // 🔧 15-Jul-2026 iOS parity (Phase 2.1): split oversized plain-text blocks BEFORE the
+        //   upsert — never while typing. Shared TextBlockSplitter (same as Android): paragraph
+        //   boundaries, fractional positions, rich-text blocks skipped. New chunks join the
+        //   dirty set so the dirty-row save writes them.
+        if let split = TextBlockSplitter.shared.splitOversized(contents: state.noteContents) {
+            state.noteContents = split.contents as? [NoteContentModel] ?? state.noteContents
+            split.changedIds.forEach { id in
+                if let id = id as? String { dirtyContentIds.insert(id) }
+            }
+        }
+
         // Note is immutable (val) — build the edited copy via the Kotlin helper.
         // fixes V2 (title saved) + E4 (contents materialized once, at save)
         let toSave = note.withTitleAndContents(
@@ -159,10 +195,19 @@ class NoteEditorViewModel: ObservableObject {
             newContents: state.noteContents
         )
 
-        adapter.createOrUpdateNote(note: toSave) { [weak self] result in
-            if case .failure(let error) = result {
+        // 🔧 15-Jul-2026 iOS parity (Phase 0.4): dirty-row save — only touched content rows are
+        //   written (plus the header). The snapshot is cleared on success; anything edited DURING
+        //   the save stays dirty for the next one (Android parity).
+        let dirtySnapshot = dirtyContentIds
+        adapter.createOrUpdateNote(note: toSave, dirtyContentIds: dirtySnapshot) { [weak self] result in
+            switch result {
+            case .success:
+                self?.dirtyContentIds.subtract(dirtySnapshot)
+            case .failure(let error):
                 self?.state.errorMessage = error.message
                 print("saveNote failed [\(error.code)] \(error.message)")
+            case .loading, .idle:
+                break
             }
         }
     }
@@ -201,12 +246,19 @@ class NoteEditorViewModel: ObservableObject {
     //   Usage (from View, after user confirms the alert):
     //     noteEditorViewModel.deleteContent(contentId: id)
     func deleteContent(contentId: String) {
+        dirtyContentIds.remove(contentId)   // 🔧 15-Jul-2026 iOS parity: deleted → nothing to save
         guard let content = state.noteContents.first(where: { $0.id == contentId }) else { return }
 
         // 1. remove local media file (image/video/audio) — safe no-op for text
         if content.isMediaFile(), let media = content as? NoteContentModel.MediaContent,
            let localPath = media.localPath {
-            deleteFile(filePath: localPath)
+            // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: resolve first — stored paths keep the OLD container
+            //   UUID after an app update, so deleting at the raw path would orphan the real file.
+            deleteFile(filePath: LocalFilePathResolver_iosKt.resolveLocalFilePath(path: localPath) ?? localPath)
+            // thumbnail lives in Documents/thumbnails — remove it with its media
+            if let thumb = LocalFilePathResolver_iosKt.resolveLocalFilePath(path: media.thumbnailPath) {
+                deleteFile(filePath: thumb)
+            }
         }
 
         // 2. remove from DB (write call — survives screen death, like saveNote)

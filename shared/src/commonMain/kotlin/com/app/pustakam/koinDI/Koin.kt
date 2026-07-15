@@ -19,10 +19,12 @@ import com.app.pustakam.domain.repositories.usecases.DeleteNoteContentUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteTagUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteUserUseCase
+import com.app.pustakam.domain.repositories.usecases.GetNoteSummariesUseCase
 import com.app.pustakam.domain.repositories.usecases.GetNotesUseCase
 import com.app.pustakam.domain.repositories.usecases.GetTagCase
 import com.app.pustakam.domain.repositories.usecases.LoginUseCase
 import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
+import com.app.pustakam.domain.repositories.usecases.SearchNotesUseCase
 import com.app.pustakam.domain.repositories.usecases.ReadUserUseCase
 import com.app.pustakam.domain.repositories.usecases.SetSelectedNoteContentUseCase
 import com.app.pustakam.domain.repositories.usecases.UpdateSelectedMediaContentUseCase
@@ -79,6 +81,10 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         factory <DeleteNoteUseCase>{ DeleteNoteUseCase() }
         factory <ReadNoteUseCase>{ ReadNoteUseCase() }
         factory <GetNotesUseCase>{ GetNotesUseCase() }
+        // 🔧 15-Jul-2026 Summary query: list-screen summaries
+        factory <GetNoteSummariesUseCase>{ GetNoteSummariesUseCase() }
+        // 🔧 15-Jul-2026 Phase 2.2: full-text search
+        factory <SearchNotesUseCase>{ SearchNotesUseCase() }
         factory <DeleteNoteContentUseCase>{ DeleteNoteContentUseCase() }
         factory <GetTagCase>{ GetTagCase() }
         factory <CreateTagUseCase>{ CreateTagUseCase() }

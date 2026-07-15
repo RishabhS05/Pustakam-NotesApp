@@ -39,10 +39,18 @@ struct NotesView: View {
     // Padding to keep the button away from screen edges
     }
     //List of notes
+    // 🔧 15-Jul-2026 iOS parity (summary query + paging): the grid renders NoteSummary cards —
+    //   contents never load for the list. Navigation passes a contents-less stub; the editor
+    //   re-reads the full note by id. The last card's onAppear pulls the next page.
     var staggeredGrid : some View {
-        StaggeredGrid(columns: 2, items: notesViewModel.state.notes, spacing: 12 ) {
-            note in NoteBookView(note: note){
-                router.navigate(to: .NoteEditor(note: note))
+        StaggeredGrid(columns: 2, items: notesViewModel.state.summaries, spacing: 12 ) {
+            summary in NoteBookView(summary: summary){
+                router.navigate(to: .NoteEditor(note: summary.toNoteStub()))
+            }
+            .onAppear {
+                if summary.id == notesViewModel.state.summaries.last?.id {
+                    notesViewModel.loadNextPage()
+                }
             }
         }
     }
@@ -91,7 +99,7 @@ struct NotesView: View {
     }
     var body: some View {
             ZStack(alignment: .center){
-                if notesViewModel.state.notes.isEmpty { emptyNotesUI
+                if notesViewModel.state.summaries.isEmpty { emptyNotesUI
                 }
                 else {
                     ScrollView{
@@ -110,6 +118,14 @@ struct NotesView: View {
                 ToolbarItem(placement: .topBarLeading){
                     HStack{
                         Text("Notes")
+                    }
+                }
+                // 🔧 15-Jul-2026 iOS parity (FTS search): entry point to the search screen
+                ToolbarItem(placement: .topBarTrailing){
+                    Button {
+                        router.navigate(to: .Search)
+                    } label: {
+                        Image(systemName: "magnifyingglass")
                     }
                 }
             }

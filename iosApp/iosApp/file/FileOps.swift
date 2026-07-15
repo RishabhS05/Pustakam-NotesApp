@@ -183,3 +183,53 @@ func copyFile(to folderName: String, fileName: String, from sourceURL: URL) -> U
         return nil
     }
 }
+
+// 🔧 15-Jul-2026 iOS parity (Phase 2.3): lazy thumbnails — a small JPEG (max ~512px, q0.7) written
+//   under Documents/thumbnails/, so list cards never decode the full image or open a video stream.
+//   Android counterpart: fileUtils/FileOps.kt generateThumbnail(). Returns the thumbnail's path,
+//   or nil on failure (callers keep their current fallback behavior).
+//   • IMAGE/GIF: UIImage downscale via UIGraphicsImageRenderer
+//   • VIDEO:     frame at ~1s via AVAssetImageGenerator (skips black lead-ins), fallback frame 0
+//   Usage: generateThumbnail(sourcePath: media.localPath!, type: media.type)
+import AVFoundation
+
+private let thumbnailMaxDimension: CGFloat = 512
+
+func generateThumbnail(sourcePath: String, type: ContentType) -> String? {
+    let sourceURL = URL(fileURLWithPath: sourcePath)
+    guard FileManager.default.fileExists(atPath: sourcePath) else { return nil }
+
+    var image: UIImage?
+    if type == ContentType.image || type == ContentType.gif {
+        image = UIImage(contentsOfFile: sourcePath)
+    } else if type == ContentType.video {
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: sourceURL))
+        generator.appliesPreferredTrackTransform = true
+        if let cg = try? generator.copyCGImage(at: CMTime(seconds: 1, preferredTimescale: 600), actualTime: nil) {
+            image = UIImage(cgImage: cg)
+        } else if let cg = try? generator.copyCGImage(at: .zero, actualTime: nil) {
+            image = UIImage(cgImage: cg)
+        }
+    }
+    guard let source = image else { return nil }
+
+    // proportional downscale so the longest side is thumbnailMaxDimension
+    let longest = max(source.size.width, source.size.height)
+    let scale = longest > thumbnailMaxDimension ? thumbnailMaxDimension / longest : 1
+    let targetSize = CGSize(width: max(source.size.width * scale, 1),
+                            height: max(source.size.height * scale, 1))
+    let scaled = UIGraphicsImageRenderer(size: targetSize).image { _ in
+        source.draw(in: CGRect(origin: .zero, size: targetSize))
+    }
+    guard let data = scaled.jpegData(compressionQuality: 0.7),
+          let folderURL = createFolder(named: "thumbnails") else { return nil }
+    let thumbURL = folderURL.appendingPathComponent(
+        sourceURL.deletingPathExtension().lastPathComponent + "_thumb.jpg")
+    do {
+        try data.write(to: thumbURL)
+        return thumbURL.path
+    } catch {
+        print("Failed to write thumbnail: \(error)")
+        return nil
+    }
+}

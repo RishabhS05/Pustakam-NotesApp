@@ -28,8 +28,9 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         composable(
             route = Route.Notes
         ) {
-            NotesView(onNavigateNote = {
-                navController.navigateTo(Route.NotesEditor+"/${it.id}")
+            // 🔧 15-Jul-2026 Summary query: the list emits the note ID (cards are summaries now)
+            NotesView(onNavigateNote = { noteId ->
+                navController.navigateTo(Route.NotesEditor+"/${noteId}")
             })
         }
         composable(
@@ -66,7 +67,10 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         composable(
             route = Route.Search
         ) {
-            SearchView(onNavigate = {})
+            // 🔧 15-Jul-2026 Phase 2.2: search results open the tapped note in the editor
+            SearchView(onNavigateNote = { noteId ->
+                navController.navigateTo(Route.NotesEditor + "/${noteId}")
+            })
         }
 
         /** Routes For handling videos and Images*/

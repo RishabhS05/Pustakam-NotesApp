@@ -5,6 +5,7 @@ import com.app.pustakam.util.ContentType
 // 🔧 C6: UniqueIdGenerator import moved out — id generation lives ONLY in NoteContentObjectHelper
 // 🔧 getCurrentTimestamp kept: withX() helpers stamp updatedAt on every edit
 import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.util.resolveLocalFilePath // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -91,7 +92,13 @@ sealed class NoteContentModel {
         val width: Int = 0,
         val height: Int = 0,
         val thumbnailPath: String? = null,
-    ) : NoteContentModel()
+    ) : NoteContentModel() {
+        // 🔧 15-Jul-2026 Phase 2.3 (iOS parity): Swift-friendly immutable edit — Kotlin data-class
+        //   copy() does not export usable defaults to Swift; both platforms attach the generated
+        //   thumbnail through this helper. Stamps updatedAt like the other withX() helpers.
+        fun withThumbnail(path: String?): MediaContent =
+            copy(thumbnailPath = path, updatedAt = "${getCurrentTimestamp()}")
+    }
 
     @Serializable @SerialName("LINK")
     data class Link(
@@ -123,6 +130,9 @@ sealed class NoteContentModel {
     fun isMediaFile() : Boolean = this is MediaContent
     fun isPlayingMedia(): Boolean = this.type == ContentType.AUDIO || this.type == ContentType.VIDEO
 }
-fun NoteContentModel.MediaContent.getMediaUrl(): String = localPath?.takeIf { it.isNotEmpty() }
+// 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: localPath goes through resolveLocalFilePath — on iOS the app
+//   container UUID changes on every update, so stored absolute paths are re-anchored onto the
+//   current container at read time (Android actual is a pass-through). Fixes playback + image cards.
+fun NoteContentModel.MediaContent.getMediaUrl(): String = resolveLocalFilePath(localPath)
         ?: url.takeIf { it.isNotEmpty() }
         ?: ""

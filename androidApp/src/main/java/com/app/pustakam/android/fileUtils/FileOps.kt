@@ -44,6 +44,70 @@ fun deleteFile(filePath : String){
         file.delete()
     }
 }
+
+// 🔧 15-Jul-2026 Phase 2.3: lazy thumbnails — a small JPEG (max ~512px, q70) written next to the
+//   app's files under thumbnails/, so lists and placeholders never decode the full image or a
+//   video stream. Returns the thumbnail's absolute path, or null when generation fails (callers
+//   simply keep the current fallback behavior).
+//   • IMAGE/GIF: bounds-decode + inSampleSize (no full-size bitmap in memory)
+//   • VIDEO:     first frame at ~1s via MediaMetadataRetriever, scaled down
+//   Usage: generateThumbnail(context, media.localPath!!, media.type)
+private const val THUMBNAIL_MAX_DIMENSION = 512
+
+fun generateThumbnail(context: Context, sourcePath: String, contentType: ContentType): String? {
+    return try {
+        val source = File(sourcePath)
+        if (!source.exists()) return null
+        val bitmap: Bitmap = when (contentType) {
+            ContentType.IMAGE, ContentType.GIF -> decodeDownsampled(sourcePath)
+            ContentType.VIDEO -> {
+                val retriever = android.media.MediaMetadataRetriever()
+                try {
+                    retriever.setDataSource(sourcePath)
+                    val frame = retriever.getFrameAtTime(1_000_000) // ~1s in — skips black lead-ins
+                        ?: retriever.getFrameAtTime(0)
+                    frame?.let { scaleDown(it) }
+                } finally {
+                    retriever.release()
+                }
+            }
+            else -> null
+        } ?: return null
+        val thumbDir = File(context.filesDir, "thumbnails").apply { mkdirs() }
+        val thumbFile = File(thumbDir, "${source.nameWithoutExtension}_thumb.jpg")
+        FileOutputStream(thumbFile).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out)
+        }
+        thumbFile.absolutePath
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+// 🔧 15-Jul-2026 Phase 2.3: decode at reduced resolution straight from disk.
+private fun decodeDownsampled(path: String): Bitmap? {
+    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    android.graphics.BitmapFactory.decodeFile(path, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+    var sampleSize = 1
+    while (bounds.outWidth / (sampleSize * 2) >= THUMBNAIL_MAX_DIMENSION ||
+        bounds.outHeight / (sampleSize * 2) >= THUMBNAIL_MAX_DIMENSION
+    ) sampleSize *= 2
+    val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sampleSize }
+    return android.graphics.BitmapFactory.decodeFile(path, opts)
+}
+
+// 🔧 15-Jul-2026 Phase 2.3: proportional scale so the longest side is THUMBNAIL_MAX_DIMENSION.
+private fun scaleDown(bitmap: Bitmap): Bitmap {
+    val longest = maxOf(bitmap.width, bitmap.height)
+    if (longest <= THUMBNAIL_MAX_DIMENSION) return bitmap
+    val scale = THUMBNAIL_MAX_DIMENSION.toFloat() / longest
+    return Bitmap.createScaledBitmap(
+        bitmap, (bitmap.width * scale).toInt().coerceAtLeast(1),
+        (bitmap.height * scale).toInt().coerceAtLeast(1), true
+    )
+}
 fun saveBitmapToFile(bitmap: Bitmap, filePath: String): Boolean {
     val file = File(filePath)
    return saveBitmapToFile(bitmap,file)

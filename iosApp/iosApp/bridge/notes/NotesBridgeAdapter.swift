@@ -28,6 +28,12 @@ final class NotesBridgeAdapter {
         closeables.append(bridge.observeNotes(onChange: onChange))
     }
 
+    // 🔧 15-Jul-2026 iOS parity: live list-screen summaries (title/snippet/counts/thumbnail) —
+    //   the list never loads full note contents anymore. Same stream Android renders.
+    func observeNoteSummaries(onChange: @escaping ([NoteSummary]) -> Void) {
+        closeables.append(bridge.observeNoteSummaries(onChange: onChange))
+    }
+
     func observeTags(onChange: @escaping ([Tag]) -> Void) {
         closeables.append(bridge.observeTags(onChange: onChange))
     }
@@ -39,6 +45,28 @@ final class NotesBridgeAdapter {
             page: Int32(page),
             onLoading: { onState(.loading) },
             onSuccess: { onState(.success($0)) },
+            onError:   { onState(.failure($0)) }
+        ))
+    }
+
+    // 🔧 15-Jul-2026 iOS parity: one page of summaries (Android NOTES_PAGE_SIZE parity = 20).
+    //   Usage: adapter.getNoteSummaries(page: 1, limit: 20) { state in ... }
+    func getNoteSummaries(page: Int, limit: Int, onState: @escaping (UiState<NSArray>) -> Void) {
+        closeables.append(bridge.getNoteSummaries(
+            page: Int32(page),
+            limit: Int32(limit),
+            onLoading: { onState(.loading) },
+            onSuccess: { onState(.success($0 as NSArray?)) },
+            onError:   { onState(.failure($0)) }
+        ))
+    }
+
+    // 🔧 15-Jul-2026 iOS parity: FTS5 search — results are NoteSummary items with a snippet.
+    func searchNotes(query: String, onState: @escaping (UiState<NSArray>) -> Void) {
+        closeables.append(bridge.searchNotes(
+            query: query,
+            onLoading: { onState(.loading) },
+            onSuccess: { onState(.success($0 as NSArray?)) },
             onError:   { onState(.failure($0)) }
         ))
     }
@@ -59,6 +87,18 @@ final class NotesBridgeAdapter {
     func createOrUpdateNote(note: Note, onState: @escaping (UiState<Note>) -> Void) {
         _ = bridge.createOrUpdateNote(
             note: note,
+            onLoading: { onState(.loading) },
+            onSuccess: { onState(.success($0)) },
+            onError:   { onState(.failure($0)) }
+        )
+    }
+
+    // 🔧 15-Jul-2026 iOS parity (dirty-row saves): writes only the touched content rows + the note
+    //   header. Write call — not retained, survives screen death (see note above).
+    func createOrUpdateNote(note: Note, dirtyContentIds: Set<String>, onState: @escaping (UiState<Note>) -> Void) {
+        _ = bridge.createOrUpdateNote(
+            note: note,
+            dirtyContentIds: dirtyContentIds,
             onLoading: { onState(.loading) },
             onSuccess: { onState(.success($0)) },
             onError:   { onState(.failure($0)) }

@@ -10,6 +10,7 @@ import com.app.pustakam.android.screen.notes.list.TagIntent
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.data.models.response.notes.NoteSummary
 import com.app.pustakam.util.ContentType
 
 open class BaseUIState (open val isLoading : Boolean,
@@ -45,6 +46,9 @@ data class NotesUIState(
     val isNextPage : Boolean = true,
     val tagDataIntent : TagIntent? = null,
     val notes: ArrayList<Note> = arrayListOf(),
+    // 🔧 15-Jul-2026 Summary query: what the list actually renders now — light summaries
+    //   (title/snippet/counts/thumbnail); full Note contents never load for the list screen.
+    val summaries: List<NoteSummary> = emptyList(),
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
 //Note ActionState

@@ -5,10 +5,9 @@ import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.domain.repositories.usecases.GetNotesUseCase
+import com.app.pustakam.domain.repositories.usecases.GetNoteSummariesUseCase
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.NOTES_PAGE_SIZE
-import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -23,16 +22,18 @@ import org.koin.core.component.inject
 
 class NotesViewModel : BaseViewModel() {
     private var hasLoaded = false
-    private val getNotesUseCase by inject<GetNotesUseCase>()
+    // 🔧 15-Jul-2026 Summary query: the list now fetches/observes light summaries —
+    //   full Note contents never load for the list screen.
+    private val getNoteSummariesUseCase by inject<GetNoteSummariesUseCase>()
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
         isNextPage = true))
 
     val notesUIState = _notesUiState
         .onStart {
             viewModelScope.launch {
-                getNotesUseCase.notes.collect {notes ->
+                getNoteSummariesUseCase.noteSummaries.collect { summaries ->
                     _notesUiState.update {currentState ->
-                        currentState.copy(notes = notes.notes, isLoading = false )
+                        currentState.copy(summaries = summaries, isLoading = false )
                     }
                 }
             }
@@ -50,10 +51,11 @@ class NotesViewModel : BaseViewModel() {
             NOTES_CODES.GET_NOTES -> {
                 // 🔧 15-Jul-2026 Phase 0.1: a page smaller than NOTES_PAGE_SIZE means the DB has no
                 //   more notes — stop asking (isNextPage was never updated before; it stayed true).
-                val fetchedCount = (result.data.data as? Notes)?.notes?.size ?: 0
+                // 🔧 15-Jul-2026 Summary query: the payload is now a page of NoteSummary items.
+                val fetchedCount = (result.data.data as? List<*>)?.size ?: 0
                 _notesUiState.update {
                     it.copy(
-                        isLoading = false, notes = it.notes,
+                        isLoading = false,
                         successMessage = result.data.message,
                         page = it.page + 1, isNextPage = fetchedCount >= NOTES_PAGE_SIZE
                     )
@@ -74,7 +76,7 @@ class NotesViewModel : BaseViewModel() {
     }
 
     override suspend fun logoutUserForcefully() {
-        getNotesUseCase.logoutUser()
+        getNoteSummariesUseCase.logoutUser()
     }
 
 
@@ -84,8 +86,8 @@ class NotesViewModel : BaseViewModel() {
         //   page fetches while one is already in flight.
         if (!state.isNextPage || state.isLoading) return
         makeAWish(NOTES_CODES.GET_NOTES) {
-            // 🔧 15-Jul-2026 Phase 0.1: paged overload — loads one page instead of the whole DB
-            getNotesUseCase.invoke(page = state.page, limit = NOTES_PAGE_SIZE)
+            // 🔧 15-Jul-2026 Summary query: one page of summaries instead of full notes
+            getNoteSummariesUseCase.invoke(page = state.page, limit = NOTES_PAGE_SIZE)
         }
     }
 

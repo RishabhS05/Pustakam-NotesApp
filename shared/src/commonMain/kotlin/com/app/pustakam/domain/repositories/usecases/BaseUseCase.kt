@@ -18,6 +18,8 @@ abstract class NoteBaseUseCase: BaseUseCase(){
    protected val noteRepository = repository as NoteRepository
     val notes =  noteRepository.notesState
     val tags = noteRepository.tagState
+    // 🔧 15-Jul-2026 Summary query: list-screen summaries stream
+    val noteSummaries = noteRepository.noteSummariesState
     override fun setRepository(): NoteRepository {
         return get<NoteRepository>()
     }

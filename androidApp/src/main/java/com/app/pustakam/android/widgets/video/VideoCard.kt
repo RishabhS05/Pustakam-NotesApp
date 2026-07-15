@@ -63,6 +63,8 @@ import androidx.media3.ui.PlayerView
 
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
+// 🔧 15-Jul-2026 Phase 2.3: thumbnail placeholder for non-current video cards
+import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
 import com.app.pustakam.android.theme.typography
@@ -124,11 +126,23 @@ fun VideoCard(
             //Preview Video
             if (mediaState.noteContent.position == noteContent.position)
                 Box(Modifier.fillMaxSize()) {
-                    VideoPlayer(
-                        exoPlayer,
-                        Modifier,
-                        attachPlayer = isCurrentMedia
-                    )
+                    // 🔧 15-Jul-2026 Phase 2.3: only the CURRENT selection binds the player surface;
+                    //   other cards show their THUMBNAIL (small JPEG, generated at capture) instead
+                    //   of a blank detached surface — no full video decode just to draw a card.
+                    if (isCurrentMedia) {
+                        VideoPlayer(
+                            exoPlayer,
+                            Modifier,
+                            attachPlayer = true
+                        )
+                    } else {
+                        val thumbnail = mediaState.noteContent.thumbnailPath ?: noteContent.thumbnailPath
+                        if (!thumbnail.isNullOrEmpty()) {
+                            LoadImage(url = thumbnail, modifier = Modifier.fillMaxSize())
+                        } else {
+                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.75f)))
+                        }
+                    }
                     VideoControllerUi(
                         state = mediaState,
                         onAction = viewModel::onPlayingIntent

@@ -3,15 +3,18 @@ package com.app.pustakam.bridge
 
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.Note
+import com.app.pustakam.data.models.response.notes.NoteSummary
 import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.domain.repositories.usecases.CreateORUpdateNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.CreateTagUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteNoteContentUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteTagUseCase
+import com.app.pustakam.domain.repositories.usecases.GetNoteSummariesUseCase
 import com.app.pustakam.domain.repositories.usecases.GetNotesUseCase
 import com.app.pustakam.domain.repositories.usecases.GetTagCase
 import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
+import com.app.pustakam.domain.repositories.usecases.SearchNotesUseCase
 import com.app.pustakam.domain.repositories.usecases.UpdateTagUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +47,9 @@ class NotesBridge : KoinComponent {
 
     // ---- injected use cases (resolved lazily, per-bridge instances) ----
     private val getNotesUseCase: GetNotesUseCase by inject()
+    // 🔧 15-Jul-2026 iOS parity: list summaries + full-text search
+    private val getNoteSummariesUseCase: GetNoteSummariesUseCase by inject()
+    private val searchNotesUseCase: SearchNotesUseCase by inject()
     private val readNoteUseCase: ReadNoteUseCase by inject()
     private val upsertNoteUseCase: CreateORUpdateNoteUseCase by inject()
     private val deleteNoteUseCase: DeleteNoteUseCase by inject()
@@ -74,6 +80,24 @@ class NotesBridge : KoinComponent {
         onError: (BridgeError) -> Unit
     ): Closeable = subscribeTo(scope, { readNoteUseCase(noteId) }, onLoading, onSuccess, onError)
 
+    // 🔧 15-Jul-2026 iOS parity: one page of LIST-SCREEN summaries (title/snippet/counts/thumbnail)
+    //   — contents never load for the list. Content arrives via observeNoteSummaries.
+    fun getNoteSummaries(
+        page: Int,
+        limit: Int,
+        onLoading: () -> Unit,
+        onSuccess: (List<NoteSummary>?) -> Unit,
+        onError: (BridgeError) -> Unit
+    ): Closeable = subscribeTo(scope, { getNoteSummariesUseCase(page, limit) }, onLoading, onSuccess, onError)
+
+    // 🔧 15-Jul-2026 iOS parity: FTS5 search across note text + titles (results carry a snippet).
+    fun searchNotes(
+        query: String,
+        onLoading: () -> Unit,
+        onSuccess: (List<NoteSummary>?) -> Unit,
+        onError: (BridgeError) -> Unit
+    ): Closeable = subscribeTo(scope, { searchNotesUseCase(query) }, onLoading, onSuccess, onError)
+
     /** Insert or update (repo decides by id) + pushes into notesState → list auto-refreshes. */
     fun createOrUpdateNote(
         note: Note,
@@ -81,6 +105,16 @@ class NotesBridge : KoinComponent {
         onSuccess: (Note?) -> Unit,
         onError: (BridgeError) -> Unit
     ): Closeable = subscribeTo(writeScope, { upsertNoteUseCase(note) }, onLoading, onSuccess, onError) // 🔧 write survives dispose()
+
+    // 🔧 15-Jul-2026 iOS parity (dirty-row saves): writes ONLY the given content rows + the note
+    //   header, instead of rewriting every row on each save. Same overload Android uses.
+    fun createOrUpdateNote(
+        note: Note,
+        dirtyContentIds: Set<String>,
+        onLoading: () -> Unit,
+        onSuccess: (Note?) -> Unit,
+        onError: (BridgeError) -> Unit
+    ): Closeable = subscribeTo(writeScope, { upsertNoteUseCase(note, dirtyContentIds) }, onLoading, onSuccess, onError)
 
     /** Delete by id. Success payload is Boolean → Swift sees KotlinBoolean?. */
     fun deleteNote(
@@ -133,6 +167,11 @@ class NotesBridge : KoinComponent {
     /** Live notes list — fires on every insert/update/delete anywhere in the app. */
     fun observeNotes(onChange: (Notes) -> Unit): Closeable =
         getNotesUseCase.notes.watch(scope) { onChange(it) }
+
+    // 🔧 15-Jul-2026 iOS parity: live list-screen summaries — kept in sync by the repository on
+    //   every save/delete (Note.toSummary), same stream Android renders.
+    fun observeNoteSummaries(onChange: (List<NoteSummary>) -> Unit): Closeable =
+        getNoteSummariesUseCase.noteSummaries.watch(scope) { onChange(it) }
 
     /** Live tag list — requires the 2-line `tags` accessor from §1. */
     fun observeTags(onChange: (List<Tag>) -> Unit): Closeable =

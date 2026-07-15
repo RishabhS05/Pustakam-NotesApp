@@ -5,7 +5,9 @@ import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.DeleteDataModel
 import com.app.pustakam.data.models.response.notes.Note
+import com.app.pustakam.data.models.response.notes.NoteSummary
 import com.app.pustakam.data.models.response.notes.Notes
+import com.app.pustakam.data.models.response.notes.toSummary
 
 import com.app.pustakam.domain.repositories.base.BaseRepository
 import com.app.pustakam.extensions.isNotnull
@@ -32,6 +34,10 @@ class NoteRepository : BaseRepository(),
     //            layer and no never-cancelled CoroutineScope(io) leaking per instance
     val notesState: StateFlow<Notes> = _notes.asStateFlow()
     val tagState: StateFlow<List<Tag>> = _tags.asStateFlow()
+    // 🔧 15-Jul-2026 Summary query: LIST-SCREEN source of truth — light summaries, never contents.
+    //   Kept in sync by getNoteSummaries (paged fetch) and by insertOrUpdateNote/deleteNote below.
+    private val _noteSummaries = MutableStateFlow<List<NoteSummary>>(emptyList())
+    val noteSummariesState: StateFlow<List<NoteSummary>> = _noteSummaries.asStateFlow()
     /** create an blank note
      */
     private fun createNewEmptyNote(tagId  : String = ""): Note {
@@ -226,6 +232,13 @@ class NoteRepository : BaseRepository(),
                 if (index != -1) newList[index] = note else newList.add(note)
                 current.copy(notes = newList)
             }
+            // 🔧 15-Jul-2026 Summary query: keep the list-screen summaries in sync without a re-query
+            _noteSummaries.update { current ->
+                val summary = note.toSummary()
+                val index = current.indexOfFirst { s -> s.id == note.id }
+                if (index != -1) current.toMutableList().apply { this[index] = summary }
+                else current + summary
+            }
 //              if(existingNote != null ) {
 //                  updateNoteApi(note)
 //              }else upsertNewNoteApi(note)
@@ -242,6 +255,8 @@ class NoteRepository : BaseRepository(),
                 val newList = ArrayList(current.notes.filterNot { n -> n.id == id })
                 if (newList.size != current.notes.size) current.copy(notes = newList) else current
             }
+            // 🔧 15-Jul-2026 Summary query: mirror the deletion into the summaries flow
+            _noteSummaries.update { current -> current.filterNot { s -> s.id == id } }
         }
     }
     /** method for decision logic (A note)
@@ -264,6 +279,25 @@ class NoteRepository : BaseRepository(),
      * - read from local db
      * - call read api from server
      * */
+    // 🔧 15-Jul-2026 Summary query: paged LIST-SCREEN fetch — summaries only, contents never load.
+    //   page 1 replaces the flow, later pages append (deduped by id), mirroring insertNotes.
+    suspend fun getNoteSummaries(page: Int, limit: Int): Result<BaseResponse<List<NoteSummary>>, Error> {
+        val summaries = notesDao.selectNoteSummariesPage(limit = limit, page = page)
+        _noteSummaries.update { current ->
+            if (page > 1) {
+                val existingIds = current.map { it.id }.toSet()
+                current + summaries.filterNot { it.id in existingIds }
+            } else summaries
+        }
+        return Result.Success(BaseResponse(data = summaries, isSuccessful = true, isFromDb = true))
+    }
+
+    // 🔧 15-Jul-2026 Phase 2.2: full-text search (FTS5 content matches + title matches) — see DAO.
+    suspend fun searchNotes(query: String): Result<BaseResponse<List<NoteSummary>>, Error> {
+        val results = notesDao.searchNotes(query)
+        return Result.Success(BaseResponse(data = results, isSuccessful = true, isFromDb = true))
+    }
+
     // 🔧 15-Jul-2026 Phase 0.1: limit = 0 (default) keeps the legacy load-everything behavior
     //   (iOS bridge path); limit > 0 loads one page (Android list opts in with NOTES_PAGE_SIZE).
     suspend fun getAllNotes(page: Int = 0, limit: Int = 0): Result<BaseResponse<Notes>, Error> {

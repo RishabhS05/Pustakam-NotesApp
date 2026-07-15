@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.fileUtils.deleteFile
+import com.app.pustakam.android.fileUtils.generateThumbnail
 import com.app.pustakam.android.noteContentProvider.addContent
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.NOTES_CODES
@@ -20,6 +21,7 @@ import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.NoteContentObjectHelper
+import com.app.pustakam.data.models.response.notes.TextBlockSplitter
 import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
@@ -32,6 +34,7 @@ import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.log_d
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -185,6 +188,15 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     private fun updateNoteObject() {
+        // 🔧 15-Jul-2026 Phase 2.1: split oversized plain-text blocks BEFORE the upsert (never
+        //   while typing). The SnapshotStateList is mutated outside the update{} lambda, and every
+        //   changed/new chunk is marked dirty so the dirty-row save picks it up.
+        TextBlockSplitter.splitOversized(_noteContentUiState.value.contents.toList())?.let { split ->
+            dirtyContentIds.addAll(split.changedIds)
+            val live = _noteContentUiState.value.contents
+            live.clear()
+            live.addAll(split.contents)
+        }
         // old code built the copy and DISCARDED it — title was never saved.
         // Now: write title + materialize the edited contents back into state before upsert.
         _noteContentUiState.update {
@@ -322,6 +334,8 @@ class NoteEditorViewModel : BaseViewModel() {
         if (find?.isMediaFile() == true) {
             find as NoteContentModel.MediaContent
             find.localPath?.let { deleteFile(filePath = it) }
+            // 🔧 15-Jul-2026 (iOS-parity cleanup): the media's thumbnail file goes with it
+            find.thumbnailPath?.let { deleteFile(filePath = it) }
         }
         viewModelScope.launch {
             deleteNoteContentUseCase.invoke(value)
@@ -370,7 +384,12 @@ class NoteEditorViewModel : BaseViewModel() {
         getMediaData(pending)
     }
 
-    fun getMediaData(list: List<Pair<String, ContentType>>) {
+    // 🔧 15-Jul-2026 Phase 2.3: application context for async thumbnail generation (safe to hold —
+    //   never an Activity). Set by getMediaData; used again when pending paths are consumed.
+    private var appContext: Context? = null
+
+    fun getMediaData(list: List<Pair<String, ContentType>>, context: Context? = null) {
+        if (context != null) appContext = context.applicationContext
         if (list.isEmpty()) return
         val currentState = _noteContentUiState.value
         val note = currentState.note ?: run {
@@ -404,5 +423,27 @@ class NoteEditorViewModel : BaseViewModel() {
         newItems.filter { it.isPlayingMedia() }.forEach { noteContentRepository.updateNoteContent(it) }
         // 🔧 15-Jul-2026 Phase 0.4: captured media blocks are new rows → mark for saving
         dirtyContentIds.addAll(newItems.map { it.id })
+        // 🔧 15-Jul-2026 Phase 2.3: lazy thumbnails — generated off the main thread AFTER the media
+        //   is already visible; when ready, the content is upserted (dirty + playlist repo included)
+        //   so the list card and the VideoCard placeholder render the small JPEG, never the full file.
+        generateThumbnailsFor(newItems)
+    }
+
+    // 🔧 15-Jul-2026 Phase 2.3: one IO job per visual media without a thumbnail. On completion the
+    //   LATEST version of the content is looked up by id (never clobbers edits made meanwhile).
+    private fun generateThumbnailsFor(items: List<NoteContentModel.MediaContent>) {
+        val context = appContext ?: return
+        items.filter {
+            it.thumbnailPath.isNullOrEmpty() && !it.localPath.isNullOrEmpty() &&
+                    (it.type == VIDEO || it.type == IMAGE || it.type == ContentType.GIF)
+        }.forEach { media ->
+            viewModelScope.launch(Dispatchers.IO) {
+                val thumb = generateThumbnail(context, media.localPath!!, media.type) ?: return@launch
+                val latest = _noteContentUiState.value.contents
+                    .filterIsInstance<NoteContentModel.MediaContent>()
+                    .firstOrNull { it.id == media.id } ?: media
+                updateContent(content = latest.copy(thumbnailPath = thumb))
+            }
+        }
     }
 }
