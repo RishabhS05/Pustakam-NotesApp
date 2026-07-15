@@ -10,39 +10,41 @@ Legend: ✅ done · 🟡 partial/needs work · ❌ not started
 
 ### 1.1 Shared KMM (`shared/`)
 
-| Feature | Status | Notes |
-|---|---|---|
-| Notes CRUD (offline, SQLDelight) | ✅ | use-case layer, Koin DI, Result/Error handling |
-| Tags CRUD | ✅ | tags-state fixes documented (piece 4) |
+| Feature                                                 | Status | Notes                                                            | 
+|---------------------------------------------------------|---|------------------------------------------------------------------|
+| Notes CRUD (offline, SQLDelight)                        | ✅ | use-case layer, Koin DI, Result/Error handling                   |
+| Tags CRUD                                               | ✅ | tags-state fixes documented (piece 4)                            |
 | Content types: text, image, video, audio, link, location | ✅ | model refactor C1/C4/C6/C8 applied; PDF/GIF/DOCX round-trip ready |
-| iOS bridge (use-cases-only, no lib) | 🟡 | NotesBridge applied; NoteContentBridge use-case rework pending |
-| Auth use cases (login/signup) | 🟡 | exist; API calls commented (offline phase) |
-| Preferences (DataStore) | ✅ | |
-| Sync engine | ❌ | `SyncStatus` enum added; repo API calls commented — Phase 3 |
-| Note versioning / change history | ❌ | `updates: List<String>` reserved as version pointers |
-| DRAWING content type | ❌ | prerequisite for canvas — see §4.1 |
+| iOS bridge (use-cases-only, no lib)                     | ✅ | NotesBridge applied; NoteContentBridge use-case rework pending   |
+| Auth use cases (login/signup)                           | 🟡 | exist; API calls commented (offline phase)                       |
+| Preferences (DataStore)                                 | ✅ |                                                                  |
+| Sync engine                                             | ❌ | `SyncStatus` enum added; repo API calls commented — Phase 3      |
+| Note versioning / change history                        | ❌ | `updates: List<String>` reserved as version pointers             |
+| DRAWING content type                                    | ❌ | prerequisite for canvas — see §4.1                               |
+| File reader (.md,.pdf,.docx,.json)                      | ❌| NA                                                               |                                                                       |
+| export into zip                                         |   ❌     | all the notes would be shared with in a bundle                   |
 
 ### 1.2 Android (`androidApp/`)
 
-| Feature | Status | Notes |
-|---|---|---|
-| Notes list + editor (Compose) | ✅ | staggered grid, multi-content editor |
-| Camera capture (image/video) | ✅ | permissions + hardware manager |
-| Audio record + playback | ✅ | media3, visualizer, PlayerViewModel |
-| Video playback | ✅ | media3 |
-| Location content | ✅ | location service/client |
-| Bluetooth manager | 🟡 | present; purpose to define |
-| Drawing canvas | ❌ | §4.1 |
-| Rich text formatting | 🟡 | RichTextMetadata plumbing exists, never persisted until recent fix; no UI |
-| Image/video editing | ❌ | §4.4 |
-| Export (MD/JPEG/PDF/MP4) | ❌ | §4.6 |
-| Share sheet | ❌ | §4.7 |
+| Feature                            | Status | Notes                                                                     |
+|------------------------------------|---|---------------------------------------------------------------------------|
+| Notes list + editor (Compose)      | ✅ | staggered grid, multi-content editor                                      |
+| Camera capture (image/video)       | ✅ | permissions + hardware manager                                            |
+| Audio record + playback            | ✅ | media3, visualizer, PlayerViewModel                                       |
+| Video playback                     | ✅ | media3                                                                    |
+| Location content                   | ✅ | location service/client                                                   |
+| Bluetooth manager                  | 🟡 | present; purpose to define                                                |
+| Drawing canvas                     | ❌ | §4.1                                                                      |
+| Rich text formatting               | 🟡 | RichTextMetadata plumbing exists, never persisted until recent fix; no UI |
+| Image/video editing                | ❌ | §4.4                                                                      |
+| Export (MD/JPEG/PDF/MP4)           | ❌ | §4.6                                                                      |
+| Share sheet                        | ❌ | §4.7                                                                      |
 
 ### 1.3 iOS (`iosApp/`)
 
 | Feature | Status | Notes |
 |---|---|---|
-| Notes list + editor (SwiftUI) | 🟡 | works; clean bridge/VM migration in progress (docs applied partially) |
+| Notes list + editor (SwiftUI) | ✅ | works; clean bridge/VM migration |
 | Camera capture | ✅ | |
 | Audio record + playback + visualizers | ✅ | |
 | Video playback | ✅ | |
