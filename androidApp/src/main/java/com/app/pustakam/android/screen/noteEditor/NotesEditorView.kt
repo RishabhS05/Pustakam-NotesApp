@@ -309,18 +309,26 @@ fun NoteEditorScreen(
                     }
                 }
             }
-            if (stateEditor.showAudioRecorder)
-                AudioRecording(
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    noteContentModel = noteEditorViewModel.addNewContent(
+            if (stateEditor.showAudioRecorder) {
+                // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key, related) — addNewContent used
+                //   to run in the composition body, creating a NEW content object + file on EVERY
+                //   recomposition while recording. remember{} creates exactly one per recorder
+                //   session (the slot resets when the recorder leaves composition).
+                val recordingContent = remember {
+                    noteEditorViewModel.addNewContent(
                         context,
                         contentType = ContentType.AUDIO
-                    ) as NoteContentModel.MediaContent,
+                    ) as NoteContentModel.MediaContent
+                }
+                AudioRecording(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    noteContentModel = recordingContent,
                     onStop = {
                         noteEditorViewModel.updateContent(content = it)
                         noteEditorViewModel.startStopAudioRecording(false)
                     },
                 )
+            }
         }
     })
 

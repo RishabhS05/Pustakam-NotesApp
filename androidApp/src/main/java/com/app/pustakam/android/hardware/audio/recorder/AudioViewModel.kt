@@ -79,6 +79,14 @@ class AudioViewModel : ViewModel(), KoinComponent {
             noteContentModel = it.noteContentModel?.copy(duration = duration),) }
     }
 
+    // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key) — the View calls this right after it
+    //   hands the finished recording to onStop. Resetting to idle guarantees the retained
+    //   ViewModel's stale `stop` state can never re-deliver the same content on a later
+    //   recomposition or when the recorder is opened again.
+    fun consumeStop() {
+        _audioState.update { it.copy(audioLifecycle = AudioLifecycle.idle, noteContentModel = null) }
+    }
+
    private fun pauseRecording() {
        _audioState.update { it.copy(audioLifecycle = AudioLifecycle.pause) }
         audioRecorder.pause()

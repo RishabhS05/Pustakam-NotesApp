@@ -23,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
+// 🔧 15-Jul-2026: one-shot onStop delivery
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -72,9 +74,15 @@ fun AudioRecording(modifier: Modifier = Modifier,
     }
     val state = viewModel.state.collectAsStateWithLifecycle()
     val levelState = viewModel.audioLevels.collectAsStateWithLifecycle()
-    state.value.apply {
-        when {
-            audioLifecycle == AudioLifecycle.stop -> state.value.noteContentModel?.let { onStop(it) }
+    // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key) — onStop used to fire from the
+    //   composition body on EVERY recomposition while the state was `stop`, adding the same
+    //   content id twice; and since the ViewModel is retained, reopening the recorder re-read the
+    //   PREVIOUS session's stale `stop` and re-added the previous recording too. LaunchedEffect
+    //   delivers it exactly once, then consumeStop() resets the state so it can never re-fire.
+    LaunchedEffect(state.value.audioLifecycle) {
+        if (state.value.audioLifecycle == AudioLifecycle.stop) {
+            state.value.noteContentModel?.let { onStop(it) }
+            viewModel.consumeStop()
         }
     }
     AudioRecordView(state = state, levelState = levelState,

@@ -290,9 +290,21 @@ class NoteEditorViewModel : BaseViewModel() {
     }
     fun addContentData(content: NoteContentModel){
         dirtyContentIds.add(content.id)   // 🔧 15-Jul-2026 Phase 0.4: new block → must be saved
+        // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key) — UPSERT by id: if the id is already
+        //   in the list, replace it instead of appending a duplicate (a re-delivered event, e.g.
+        //   the audio recorder's stop, used to add the same content twice and crash the keyed
+        //   LazyColumn). The SnapshotStateList is mutated exactly once OUTSIDE the update{} lambda,
+        //   which can re-run on contention (same pattern as the 14-Jul getMediaData fix).
+        val liveContents = _noteContentUiState.value.contents
+        val existingIndex = liveContents.indexOfFirst { it.id == content.id }
+        if (existingIndex != -1) liveContents[existingIndex] = content else liveContents.add(content)
         _noteContentUiState.update {
-            it.contents.add(content)
-            val updatedNote = it.note?.let { n -> n.withContents(n.contents + content) }
+            val updatedNote = it.note?.let { n ->
+                val newContents = n.contents.toMutableList()
+                val i = newContents.indexOfFirst { c -> c.id == content.id }
+                if (i != -1) newContents[i] = content else newContents.add(content)
+                n.withContents(newContents)
+            }
             it.copy(note = updatedNote, contents = it.contents, isAllSetupDone = true)
         }
     }
