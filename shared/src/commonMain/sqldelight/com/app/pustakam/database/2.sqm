@@ -1,0 +1,8 @@
+-- 🔧 15-Jul-2026 · migration v2 -> v3 — INTENTIONALLY EMPTY.
+-- This migration originally created the FTS5 table + triggers, which CRASHED on devices whose
+-- framework SQLite lacks the fts5 module ("no such module: fts5"). FTS5 is now created at
+-- RUNTIME with a capability check (NotesDao.ensureFtsIndex) instead of in the managed schema.
+-- The file must remain (version count = migrations + 1) so:
+--   • devices stuck at v2 (failed old migration rolled back) upgrade cleanly by executing nothing
+--   • devices that DID reach v3 with the old migration don't hit a downgrade crash
+-- Leftover NoteContentFts tables/triggers on those devices are reused via CREATE ... IF NOT EXISTS.
