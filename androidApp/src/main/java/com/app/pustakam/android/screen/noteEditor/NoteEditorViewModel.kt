@@ -51,6 +51,12 @@ class NoteEditorViewModel : BaseViewModel() {
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
 
+    // 🔧 15-Jul-2026 Phase 0.4: dirty-row saves — ids of content blocks touched since the last
+    //   successful save. Save writes ONLY these rows (plus the cheap note header) instead of
+    //   rewriting every content row of the note. Contents loaded from the DB start clean.
+    private val dirtyContentIds = mutableSetOf<String>()
+    private var lastSavedDirtyIds: Set<String> = emptySet()
+
 
     //default methods
     override fun onLoading(taskCode: TaskCode) {
@@ -78,6 +84,10 @@ class NoteEditorViewModel : BaseViewModel() {
 
                 _noteContentUiState.update { it.copy(note = note,
                     isAllSetupDone = true) }
+                // 🔧 15-Jul-2026 Phase 0.4: the saved snapshot is clean now; anything edited DURING
+                //   the save stays dirty for the next one.
+                dirtyContentIds.removeAll(lastSavedDirtyIds)
+                lastSavedDirtyIds = emptySet()
                 // 🔧 14-Jul-2026: FIX (I-1) — media captured before the note existed is appended now.
                 consumePendingMediaPaths()
             }
@@ -89,7 +99,9 @@ class NoteEditorViewModel : BaseViewModel() {
                     it.copy(
                         titleTextState = it.titleTextState, note = note,
                         isAllSetupDone = true,
-                        contents = mutableStateListOf(*note.contents.toTypedArray())
+                        // 🔧 15-Jul-2026 Phase 0.3: sort ONCE here (DB already orders by position;
+                        //   this guarantees it) — the LazyColumn no longer re-sorts every frame.
+                        contents = mutableStateListOf(*note.contents.sortedBy { c -> c.position }.toTypedArray())
                     )
                 }
                 // 🔧 14-Jul-2026: FIX (recorded video not playable) — READ replays every time the editor
@@ -150,8 +162,10 @@ class NoteEditorViewModel : BaseViewModel() {
             }
         }
         updateNoteObject()
+        // 🔧 15-Jul-2026 Phase 0.4: snapshot the dirty ids for THIS save; cleared on INSERT success.
+        lastSavedDirtyIds = dirtyContentIds.toSet()
         makeAWish(NOTES_CODES.INSERT) {
-            createUpdateNoteUseCase.invoke(_noteContentUiState.value.note!!)
+            createUpdateNoteUseCase.invoke(_noteContentUiState.value.note!!, lastSavedDirtyIds)
         }
     }
 
@@ -245,6 +259,7 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteUiState.update { it.copy(LocationState = value) }
     }
     fun updateContent(index: Int = -1, content: NoteContentModel) {
+        dirtyContentIds.add(content.id)   // 🔧 15-Jul-2026 Phase 0.4: touched → will be saved
         if(index== -1) {
             addContentData(content)
         }else{
@@ -274,6 +289,7 @@ class NoteEditorViewModel : BaseViewModel() {
         return content
     }
     fun addContentData(content: NoteContentModel){
+        dirtyContentIds.add(content.id)   // 🔧 15-Jul-2026 Phase 0.4: new block → must be saved
         _noteContentUiState.update {
             it.contents.add(content)
             val updatedNote = it.note?.let { n -> n.withContents(n.contents + content) }
@@ -288,6 +304,7 @@ class NoteEditorViewModel : BaseViewModel() {
  * Remove a note content for note
  * */
     fun removeContent(value: String) {
+        dirtyContentIds.remove(value)   // 🔧 15-Jul-2026 Phase 0.4: deleted → nothing to save
         val find = _noteContentUiState.value.note?.contents?.find { value == it.id }
 
         if (find?.isMediaFile() == true) {
@@ -373,5 +390,7 @@ class NoteEditorViewModel : BaseViewModel() {
         //   This is safe now (it wasn't before) because track selection in MediaServiceListener is
         //   resolved by mediaId with a -1 guard — index drift can no longer mis-select a track.
         newItems.filter { it.isPlayingMedia() }.forEach { noteContentRepository.updateNoteContent(it) }
+        // 🔧 15-Jul-2026 Phase 0.4: captured media blocks are new rows → mark for saving
+        dirtyContentIds.addAll(newItems.map { it.id })
     }
 }

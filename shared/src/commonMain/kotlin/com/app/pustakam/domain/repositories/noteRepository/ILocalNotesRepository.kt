@@ -12,7 +12,8 @@ import com.app.pustakam.util.Result
 interface ILocalNotesRepository {
     suspend fun insertUpdateFromDb(note: Note) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteByIdFromDb(id : String?) : Result<BaseResponse<Boolean>, Error>
-    suspend fun getNotesFromDb(page: Int) : Result<BaseResponse<Notes>, Error>
+    // 🔧 15-Jul-2026 Phase 0.1: limit added — 0 = load everything (legacy), > 0 = one page
+    suspend fun getNotesFromDb(page: Int, limit: Int = 0) : Result<BaseResponse<Notes>, Error>
     suspend fun getNoteByIdFromDb(id :String?) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteContentFromDb(id :String? ) : Result<BaseResponse<Boolean>, Error>
     suspend fun createTagOnDB(tag : Tag): Result<BaseResponse<Tag>, Error>

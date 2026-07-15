@@ -7,6 +7,8 @@ import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.domain.repositories.usecases.GetNotesUseCase
 import com.app.pustakam.data.models.BaseResponse
+import com.app.pustakam.data.models.response.notes.NOTES_PAGE_SIZE
+import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
 import com.app.pustakam.util.Result
@@ -46,11 +48,14 @@ class NotesViewModel : BaseViewModel() {
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         when (taskCode) {
             NOTES_CODES.GET_NOTES -> {
+                // 🔧 15-Jul-2026 Phase 0.1: a page smaller than NOTES_PAGE_SIZE means the DB has no
+                //   more notes — stop asking (isNextPage was never updated before; it stayed true).
+                val fetchedCount = (result.data.data as? Notes)?.notes?.size ?: 0
                 _notesUiState.update {
                     it.copy(
                         isLoading = false, notes = it.notes,
                         successMessage = result.data.message,
-                        page = it.page + 1, isNextPage = it.isNextPage
+                        page = it.page + 1, isNextPage = fetchedCount >= NOTES_PAGE_SIZE
                     )
                 }
             }
@@ -74,9 +79,13 @@ class NotesViewModel : BaseViewModel() {
 
 
     fun callGetNotes() {
-        if (!_notesUiState.value.isNextPage) return
+        val state = _notesUiState.value
+        // 🔧 15-Jul-2026 Phase 0.1: isLoading guard — the scroll trigger must not queue duplicate
+        //   page fetches while one is already in flight.
+        if (!state.isNextPage || state.isLoading) return
         makeAWish(NOTES_CODES.GET_NOTES) {
-            getNotesUseCase.invoke(page = _notesUiState.value.page)
+            // 🔧 15-Jul-2026 Phase 0.1: paged overload — loads one page instead of the whole DB
+            getNotesUseCase.invoke(page = state.page, limit = NOTES_PAGE_SIZE)
         }
     }
 

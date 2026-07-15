@@ -46,8 +46,18 @@ class NotesDao() : KoinComponent {
     fun getTagsFromDB() : List<Tag> = queries.getTags().executeAsList().map{
           Tag(id = it.id, label = it.label, color= it.color)
     }
-   fun selectAllNotesFromDb(limit : Int = 10, page : Int = 0): Notes {
-      val offset = (page - 1) * limit
+   // 🔧 15-Jul-2026 Phase 0.1: paging is OPT-IN — `limit > 0 && page > 0` fetches ONE page of note
+   //   ids (indexed, keyset-cheap) and maps each via the existing selectNoteById mapper. Legacy
+   //   callers (limit = 0, e.g. the iOS bridge) keep the original load-everything behavior, so
+   //   nothing truncates for platforms that don't page yet.
+   fun selectAllNotesFromDb(limit : Int = 0, page : Int = 0): Notes {
+      if (limit > 0 && page > 0) {
+          val pagedOffset = ((page - 1) * limit).coerceAtLeast(0)
+          val ids = queries.selectNoteIdsPage(limit.toLong(), pagedOffset.toLong()).executeAsList()
+          val pagedNotes = arrayListOf<Note>()
+          ids.forEach { id -> selectNoteById(id)?.let { pagedNotes.add(it) } }
+          return Notes(notes = pagedNotes, count = pagedNotes.size, page = page)
+      }
       val notesWithContent = arrayListOf<Note>()
       val results  =  queries.selectWithAllContent().executeAsList()
       val grouped = results.groupBy { it.noteId }
@@ -212,7 +222,11 @@ class NotesDao() : KoinComponent {
         val note  = selectNoteById(id)
         return note == null
     }
-    fun insertOrUpdateNoteFromDb(note: Note) : Note {
+    // 🔧 15-Jul-2026 Phase 0.4: dirty-row saves — `dirtyContentIds` limits the write to the content
+    //   rows that actually changed (a 5,000-block note no longer rewrites 5,000 rows per save).
+    //   null = legacy full write (iOS bridge and sync paths are unchanged). The note HEADER row is
+    //   always written — it is one cheap row and carries title/updatedAt.
+    fun insertOrUpdateNoteFromDb(note: Note, dirtyContentIds: Set<String>? = null) : Note {
         log_d("NoteDao insert", note)
         queries.insertOrUpdateNote(
             id = note.id,
@@ -224,7 +238,10 @@ class NotesDao() : KoinComponent {
            // 🔧 F4: contents written synchronously INSIDE the transaction — the function
            //       previously returned before contents were saved (fire-and-forget launch)
            database.transaction {
-               note.contents.forEach { content ->
+               val contentsToWrite =
+                   if (dirtyContentIds == null) note.contents
+                   else note.contents.filter { it.id in dirtyContentIds }
+               contentsToWrite.forEach { content ->
                    insertOrUpdateNotesContent(content)
                }
            }

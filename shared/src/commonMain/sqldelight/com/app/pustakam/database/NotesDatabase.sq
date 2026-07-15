@@ -33,6 +33,11 @@ thumbnailPath TEXT,
 metaData TEXT AS RichTextMetadata
 );
 
+-- 🔧 15-Jul-2026 Phase 0.2: composite index — every content fetch filters by noteId and sorts by
+--   position; without this the JOIN/WHERE scans the whole NoteContent table. Existing installs get
+--   it via migration 1.sqm (v1 -> v2).
+CREATE INDEX idx_notecontent_note_position ON NoteContent(noteId, position);
+
 CREATE TABLE Tags(
 id TEXT NOT NULL PRIMARY KEY,
 color TEXT,
@@ -105,6 +110,15 @@ ORDER BY NoteContent.position;
 
 deleteById :
 DELETE FROM Notes WHERE  id = ? ;
+
+-- 🔧 15-Jul-2026 Phase 0.1: one PAGE of note ids for the list screen. Paging happens on Notes ids
+--   (LIMIT on the joined query would cut a note in the middle of its contents). The DAO then loads
+--   each id with the existing selectById mapper. Ordered by id = creation order (ids are
+--   timestamp-prefixed, see UniqueIdGenerator).
+selectNoteIdsPage:
+SELECT id FROM Notes
+ORDER BY id
+LIMIT :limit OFFSET :offset;
 
 selectWithAllContent:
 SELECT

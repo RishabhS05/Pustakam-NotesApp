@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+// 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -64,6 +66,8 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
                  notes.isEmpty -> { EmptyNoteUI(modifier = Modifier.fillMaxSize())}
                  notes.isNotEmpty() -> NotesListView(this,
                      onNavigateNote = onNavigateNote,
+                     // 🔧 15-Jul-2026 Phase 0.1: next page loads when the grid reaches its end
+                     onLoadMore = notesViewModel::callGetNotes,
                      modifier = Modifier.fillMaxSize(),
                      paddingValues = PaddingValues(0.dp)
                  )
@@ -79,6 +83,9 @@ fun NotesView(onNavigateNote: (note: Note) -> Unit) {
 fun NotesListView(
     state : NotesUIState,
     onNavigateNote: (note: Note) -> Unit,
+    // 🔧 15-Jul-2026 Phase 0.1: called when the last card composes (scroll reached the end);
+    //   the ViewModel guards against duplicate/past-the-end fetches.
+    onLoadMore: () -> Unit = {},
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues = PaddingValues(0.dp)
 ) {
@@ -123,6 +130,11 @@ fun NotesListView(
         }
         items(notes.size) { index ->
             NoteCardView(note = notes[index]) { onNavigateNote(notes[index]) }
+            // 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger — fires once per list growth
+            //   (keyed on size) when the LAST card enters composition.
+            if (index == notes.size - 1) {
+                LaunchedEffect(notes.size) { onLoadMore() }
+            }
         }
     }
 }

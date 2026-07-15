@@ -273,7 +273,13 @@ fun NoteEditorScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn {
                 state.value.contents.let {
-                    itemsIndexed(it.sortedBy { content -> content.position.inc() }) { index, contentValue ->
+                    // 🔧 15-Jul-2026 Phase 0.3: no more sortedBy on EVERY recomposition (O(n·log n)
+                    //   per frame at scale) — contents are kept sorted at load (READ sorts once) and
+                    //   all inserts append with increasing positions. This also fixes a latent bug:
+                    //   `index` fed to updateContent(index, ..) was an index into the SORTED COPY,
+                    //   not into `contents`. Stable `key = content.id` lets Compose reuse item state
+                    //   instead of rebinding every card when the list changes.
+                    itemsIndexed(it, key = { _, content -> content.id }) { index, contentValue ->
                         RenderWidget(
                             content = contentValue,
                             focusRequester = focusRequester,

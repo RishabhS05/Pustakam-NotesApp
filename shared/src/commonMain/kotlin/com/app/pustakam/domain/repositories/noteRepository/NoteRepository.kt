@@ -40,10 +40,19 @@ class NoteRepository : BaseRepository(),
         return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId)
     }
     fun insertNotes(notes : Notes){
-        _notes.update {
-            val list : ArrayList<Note> = arrayListOf()
-            list+=notes.notes
-            it.copy(notes = list, page =  notes.page)
+        _notes.update { current ->
+            // 🔧 15-Jul-2026 Phase 0.1: page merge — page 2+ APPENDS (deduped by id) instead of
+            //   replacing the list, otherwise loading the next page would erase the previous one.
+            //   page <= 1 (fresh load or legacy full load, page 0) replaces, as before.
+            val list: ArrayList<Note> = if (notes.page > 1) {
+                ArrayList(current.notes).apply {
+                    val existingIds = map { it.id }.toSet()
+                    addAll(notes.notes.filterNot { it.id in existingIds })
+                }
+            } else {
+                arrayListOf<Note>().apply { addAll(notes.notes) }
+            }
+            current.copy(notes = list, page = notes.page)
         }
         log_d("NoteRepository insert Notes" , _notes.value.notes.count())
     }
@@ -96,10 +105,15 @@ class NoteRepository : BaseRepository(),
 
     /**-----------------------LOCAL DATABASE -------------*/
 
-    /** insert or update a note data from local db */
-    override suspend fun insertUpdateFromDb(note: Note): Result<BaseResponse<Note>, Error> {
+    /** insert or update a note data from local db
+     * 🔧 15-Jul-2026 Phase 0.4: optional dirtyContentIds — when provided, only those content rows
+     *   are rewritten (see NotesDao). null keeps the legacy full write. */
+    override suspend fun insertUpdateFromDb(note: Note): Result<BaseResponse<Note>, Error> =
+        insertUpdateFromDb(note, dirtyContentIds = null)
+
+    suspend fun insertUpdateFromDb(note: Note, dirtyContentIds: Set<String>?): Result<BaseResponse<Note>, Error> {
        return try {
-            val newNote = notesDao.insertOrUpdateNoteFromDb(note)
+            val newNote = notesDao.insertOrUpdateNoteFromDb(note, dirtyContentIds)
             return if(newNote.isNotnull()) {
                 val response = BaseResponse(data = newNote , isSuccessful = true,
                     isFromDb = true)
@@ -124,9 +138,11 @@ class NoteRepository : BaseRepository(),
         else  Result.Error(error = NetworkError.SERVER_ERROR)
     }
 
-    /** get notes data from local db */
-    override suspend fun getNotesFromDb( page: Int ): Result<BaseResponse<Notes>, Error> {
-        val notes  = notesDao.selectAllNotesFromDb(page)
+    /** get notes data from local db
+     * 🔧 15-Jul-2026 Phase 0.1: limit param added (limit > 0 = paged). Also fixes a latent bug:
+     *   `selectAllNotesFromDb(page)` passed page POSITIONALLY as the DAO's `limit` parameter. */
+    override suspend fun getNotesFromDb( page: Int, limit: Int ): Result<BaseResponse<Notes>, Error> {
+        val notes  = notesDao.selectAllNotesFromDb(limit = limit, page = page)
         val response = BaseResponse(data = notes ,
             isSuccessful = true,
             isFromDb = true)
@@ -200,8 +216,9 @@ class NoteRepository : BaseRepository(),
     // step 3 call api to upsert the data or sync with server
     // step 4 again update the local db with sync data.
      */
-    suspend fun insertOrUpdateNote(note : Note) : Result<BaseResponse<Note>, Error> {
-        return insertUpdateFromDb(note).onSuccess {
+    // 🔧 15-Jul-2026 Phase 0.4: dirtyContentIds flows through to the DAO (null = full write)
+    suspend fun insertOrUpdateNote(note : Note, dirtyContentIds: Set<String>? = null) : Result<BaseResponse<Note>, Error> {
+        return insertUpdateFromDb(note, dirtyContentIds).onSuccess {
             log_d("Insert Update","added ")
             _notes.update { current->
                 val newList = ArrayList(current.notes)                    // 1. copy FIRST
@@ -247,8 +264,10 @@ class NoteRepository : BaseRepository(),
      * - read from local db
      * - call read api from server
      * */
-    suspend fun getAllNotes(page: Int = 0): Result<BaseResponse<Notes>, Error> {
-        return getNotesFromDb(page).onSuccess { notes->
+    // 🔧 15-Jul-2026 Phase 0.1: limit = 0 (default) keeps the legacy load-everything behavior
+    //   (iOS bridge path); limit > 0 loads one page (Android list opts in with NOTES_PAGE_SIZE).
+    suspend fun getAllNotes(page: Int = 0, limit: Int = 0): Result<BaseResponse<Notes>, Error> {
+        return getNotesFromDb(page, limit).onSuccess { notes->
             if(notes.data?.notes?.count()!! > 0){
               insertNotes(notes = notes.data)
             }
