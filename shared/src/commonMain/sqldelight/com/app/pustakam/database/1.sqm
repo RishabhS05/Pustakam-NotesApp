@@ -1,0 +1,5 @@
+-- 🔧 15-Jul-2026 Phase 0.2 · migration v1 -> v2
+-- Adds the composite index for content lookups (WHERE noteId = ? ORDER BY position).
+-- File name must be "1.sqm" (SQLDelight migration naming: migrates schema version 1 to 2);
+-- the project's date-platform file naming convention cannot apply to .sqm files.
+CREATE INDEX IF NOT EXISTS idx_notecontent_note_position ON NoteContent(noteId, position);
