@@ -123,11 +123,12 @@ private fun MediaCountBadges(summary: NoteSummary, modifier: Modifier = Modifier
 @Composable
 private fun CountBadge(icon: ImageVector, count: Int) {
     if (count <= 0) return
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = colorScheme.onPrimaryContainer,
             modifier = Modifier.size(14.dp))
         Text(
-            " $count",
+            if (count > 1000 ) "{$count/1000}k" else "$count",
             style = MaterialTheme.typography.labelSmall.copy(color = colorScheme.onPrimaryContainer)
         )
     }

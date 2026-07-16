@@ -24,9 +24,9 @@ struct NoteBookView : View {
             ZStack{
                 VStack(alignment: .leading, spacing: 6){
                     Text(summary.title?.isEmpty == false ? summary.title! : "No Title ?")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: 14, weight: .medium))
                         .lineLimit(2)
-                        .padding(.top, 12)
+                        .padding(.top, 24)
                         .padding(.horizontal, 12)
                     if let snippet = summary.snippet, !snippet.isEmpty {
                         Text(snippet)
@@ -42,15 +42,13 @@ struct NoteBookView : View {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFill()
-                            .frame(maxWidth: width - 16, maxHeight: 70)
-                            .clipped()
+                            .frame(width: width - 16, height: (height/2) - 8)
                             .cornerRadius(6)
                             .padding(.horizontal, 8)
                     }
                     Spacer(minLength: 8)
                 }
                 .frame(maxWidth: width, maxHeight: height, alignment: .topLeading)
-                    .padding(.vertical, 23)
                 HStack{
                     Spacer()
                     Text("\(summary.updatedAt?.toLocalFormat(showTime: false) ?? "")")
@@ -84,9 +82,10 @@ struct NoteBookView : View {
     @ViewBuilder
     private func countBadge(systemName: String, count: Int) -> some View {
         if count > 0 {
+            let displayCount = count > 1000 ? "\(count / 1000)k" : "\(count)"
             HStack(spacing: 2) {
                 Image(systemName: systemName).font(.system(size: 11))
-                Text("\(count)").font(.system(size: 12, weight: .medium))
+                Text(displayCount).font(.system(size: 12, weight: .medium))
             }
         }
     }
