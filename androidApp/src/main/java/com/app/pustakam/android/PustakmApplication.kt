@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.Build
 import com.app.pustakam.android.di.getAndroidSpecifics
 import com.app.pustakam.koinDI.initKoin
+import com.google.firebase.FirebaseApp
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 
@@ -16,6 +17,7 @@ class PustakmApplication : Application(){
     override fun onCreate() {
         super.onCreate()
         initKoin {
+            FirebaseApp.initializeApp(this@PustakmApplication)
             androidLogger(level = Level.INFO)
             androidContext(this@PustakmApplication)
             modules(getAndroidSpecifics())

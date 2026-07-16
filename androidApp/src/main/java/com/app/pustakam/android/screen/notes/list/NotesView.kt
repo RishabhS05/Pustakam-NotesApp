@@ -59,6 +59,7 @@ sealed interface TagIntent{
 }
 @Composable
 fun NotesView(onNavigateNote: (noteId: String) -> Unit) {
+
     val notesViewModel: NotesViewModel = viewModel()
      val state =  notesViewModel.notesUIState.collectAsStateWithLifecycle().value
          .apply {

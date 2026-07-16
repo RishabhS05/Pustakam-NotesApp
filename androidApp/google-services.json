@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "2535427474",
+    "project_id": "pustakm-efcd8",
+    "storage_bucket": "pustakm-efcd8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:2535427474:android:79caa9f69b732767c9854b",
+        "android_client_info": {
+          "package_name": "com.app.pustakam.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAjfbzwRNofOV1c6YITmLw5SDb9tKTgs8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
