@@ -24,6 +24,7 @@ object Route {
     const val Authentication = "AUTH"
     const val ImagePreview = "IMAGE_PREVIEW"
     const val VideoPreview = "VIDEO_PREVIEW"
+    const val BookReader = "BOOK_READER"   // 🔧 18-Jul-2026: page-flip book reader
 }
 @Stable
 class PustakmNavController(

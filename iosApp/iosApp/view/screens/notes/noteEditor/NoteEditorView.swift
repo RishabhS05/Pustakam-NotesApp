@@ -12,6 +12,11 @@ struct NoteEditorView: View {
     // 🔧 14-Jul-2026: NEW — id of the long-pressed content item awaiting delete confirmation.
     //   The DELETE_CONTENT alert deletes exactly this item (before: image delete removed the whole note).
     @State private var deleteContentId : String? = nil
+    // 🔧 18-Jul-2026: NEW FEATURE (file import) — import options / picker / link prompt state
+    @State private var showImportOptions = false
+    @State private var showFilePicker = false
+    @State private var showLinkPrompt = false
+    @State private var importLink = ""
     // 🔧 V1 fix: @StateObject (was @ObservedObject + inline init → VM recreated on every
     //           re-render, wiping edits). Note passed via init — setNote() no longer exists.
     @StateObject private var noteEditorViewModel: NoteEditorViewModel
@@ -75,10 +80,28 @@ struct NoteEditorView: View {
                 }, onAddTextField: {
                     noteEditorViewModel.addNewText()
                 },
-                onArrowButton: {}
+                onArrowButton: {},
+                onImportFile: { showImportOptions = true }   // 🔧 18-Jul-2026: import entry point
             )
             .frame(alignment: .bottomTrailing)
             .padding()
+        }
+        // 🔧 18-Jul-2026: NEW FEATURE (file import) — choose device picker or link download
+        .confirmationDialog("Import files", isPresented: $showImportOptions, titleVisibility: .visible) {
+            Button("Import files from device") { showFilePicker = true }
+            Button("Import from link") { importLink = ""; showLinkPrompt = true }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showFilePicker) {
+            MultiFilePicker { urls in noteEditorViewModel.importFiles(urls: urls) }
+        }
+        .alert("Import from link", isPresented: $showLinkPrompt) {
+            TextField("https://example.com/file.pdf", text: $importLink)
+                .textInputAutocapitalization(.never).keyboardType(.URL)
+            Button("Import") { noteEditorViewModel.importFromLink(importLink) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Downloads the file behind any URL. If the link has no file, you'll see “No file found”.")
         }
         .alert(isPresented: $errorField.showErrorAlert) {
             throwAlert()
@@ -93,6 +116,12 @@ struct NoteEditorView: View {
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack{
+                        // 🔧 18-Jul-2026: NEW — open this note as a real page-curl book
+                        ActionButtonWithoutBackground(iconName: "book", action: {
+                            if let noteId = noteEditorViewModel.state.note?.id {
+                                router.navigate(to: .BookReader(noteId: noteId))
+                            }
+                        }, tint: Theme.Colors.secondary)
                         ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
                             saveNote()
                         }, tint :Theme.Colors.secondary)
@@ -156,9 +185,33 @@ struct NoteEditorView: View {
                     saveMediaToDevice(media: contentAudio)
                  })
 
+            // 🔧 18-Jul-2026: file-import — document formats render as tappable file cards
+            case .pdf, .docx, .epub, .txt, .md, .other:
+                let contentDoc = content as! NoteContentModel.MediaContent
+                DocumentFileCardView(
+                    media: contentDoc,
+                    onOpen: {
+                        // open the book at exactly this file's page
+                        if let noteId = noteEditorViewModel.state.note?.id {
+                            router.navigate(to: .BookReader(noteId: noteId, startContentId: contentDoc.id))
+                        }
+                    },
+                    onDelete: { askDeleteContent(contentId: contentDoc.id, kind: "File") },
+                    onSave: { saveMediaToDevice(media: contentDoc) }
+                )
+
+            // 🔧 18-Jul-2026: GIF gets the image card (was falling into the text default)
+            case .gif:
+                let contentGif = content as! NoteContentModel.MediaContent
+                CardImageEditor(content: contentGif, actionClick: {}, actionDelete: {
+                    askDeleteContent(contentId: contentGif.id, kind: "Image")
+                }, actionSave: {
+                    saveMediaToDevice(media: contentGif)
+                })
+
             default : NoteTextFieldWrapper()
         }
-                
+
     }
     
     

@@ -429,6 +429,65 @@ class NoteEditorViewModel : BaseViewModel() {
         generateThumbnailsFor(newItems)
     }
 
+    // 🔧 18-Jul-2026: NEW FEATURE (file import) — device multi-pick: copy on IO, then append once.
+    fun importDeviceFiles(context: Context, uris: List<android.net.Uri>) {
+        if (uris.isEmpty()) return
+        appContext = context.applicationContext
+        val note = _noteContentUiState.value.note ?: run {
+            _noteUiState.update { it.copy(error = "Note is still loading. Try again.") }; return
+        }
+        _noteUiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val items = com.app.pustakam.android.fileimport.FileImportManager.importUris(
+                context.applicationContext, note.id, note.contents.count().toDouble(), uris
+            )
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                _noteUiState.update { it.copy(isLoading = false) }
+                if (items.isEmpty()) _noteUiState.update { it.copy(error = "Couldn't import the selected files.") }
+                else addImportedContents(items)
+            }
+        }
+    }
+
+    // 🔧 18-Jul-2026: NEW FEATURE (file import) — link import: download if it IS a file, else "No file found".
+    fun importFromLink(context: Context, url: String) {
+        if (url.isBlank()) return
+        appContext = context.applicationContext
+        val note = _noteContentUiState.value.note ?: run {
+            _noteUiState.update { it.copy(error = "Note is still loading. Try again.") }; return
+        }
+        _noteUiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = com.app.pustakam.android.fileimport.FileImportManager.importFromUrl(
+                context.applicationContext, note.id, note.contents.count().toDouble(), url
+            )
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                _noteUiState.update { it.copy(isLoading = false) }
+                when (result) {
+                    is com.app.pustakam.android.fileimport.ImportResult.Success -> addImportedContents(result.contents)
+                    is com.app.pustakam.android.fileimport.ImportResult.NoFileFound ->
+                        _noteUiState.update { it.copy(error = "No file found at this link.") }
+                    is com.app.pustakam.android.fileimport.ImportResult.Failed ->
+                        _noteUiState.update { it.copy(error = result.message) }
+                }
+            }
+        }
+    }
+
+    // 🔧 18-Jul-2026: same safe mutation pattern as getMediaData — list touched ONCE outside update{}
+    private fun addImportedContents(items: List<NoteContentModel.MediaContent>) {
+        if (items.isEmpty()) return
+        val currentState = _noteContentUiState.value
+        val note = currentState.note ?: return
+        currentState.contents.addAll(items)
+        _noteContentUiState.update {
+            it.copy(note = note.withContents(note.contents + items), contents = it.contents, isAllSetupDone = true)
+        }
+        items.filter { it.isPlayingMedia() }.forEach { noteContentRepository.updateNoteContent(it) }
+        dirtyContentIds.addAll(items.map { it.id })   // 🔧 imported blocks are new rows → saved next save
+        generateThumbnailsFor(items)
+    }
+
     // 🔧 15-Jul-2026 Phase 2.3: one IO job per visual media without a thumbnail. On completion the
     //   LATEST version of the content is looked up by id (never clobbers edits made meanwhile).
     private fun generateThumbnailsFor(items: List<NoteContentModel.MediaContent>) {

@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MenuBook   // 🔧 18-Jul-2026: open-as-book action
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.SaveAs
@@ -93,8 +94,10 @@ import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.audio.AudioRecording
+import com.app.pustakam.android.widgets.document.DocumentFileCard   // 🔧 18-Jul-2026: file-import cards
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
+import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet   // 🔧 18-Jul-2026: import sheet
 import com.app.pustakam.android.widgets.textField.NoteTextField
 import com.app.pustakam.android.widgets.video.VideoCard
 import com.app.pustakam.data.models.CameraData
@@ -118,6 +121,19 @@ fun NoteEditorScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+
+    // 🔧 18-Jul-2026: NEW FEATURE (file import) — sheet visibility + SAF multi-document picker
+    var showImportSheet by remember { mutableStateOf(false) }
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (uris.isNotEmpty()) noteEditorViewModel.importDeviceFiles(context, uris)
+    }
+    if (showImportSheet) ImportFilesSheet(
+        onDismiss = { showImportSheet = false },
+        onPickFromDevice = { filePickerLauncher.launch(arrayOf("*/*")) },   // any file type
+        onImportFromLink = { link -> noteEditorViewModel.importFromLink(context, link) },
+    )
 
     OnLifecycleEvent { _, event ->
         when (event) {
@@ -224,6 +240,15 @@ fun NoteEditorScreen(
                 )
             }
         }, actions = {
+            // 🔧 18-Jul-2026: NEW — open this note as a real page-flip book
+            IconButton(onClick = {
+                state.value.note?.id?.let { navigateTo(Route.BookReader + "/${it}") }
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.MenuBook,
+                    contentDescription = "Open as book",
+                )
+            }
             IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
                 Icon(
                     imageVector = Icons.Filled.Save,
@@ -268,6 +293,7 @@ fun NoteEditorScreen(
                 onCameraAction = {
                     noteEditorViewModel.preparePermissionDialog(contentType = ContentType.IMAGE)
                 },
+                onImportFile = { showImportSheet = true },   // 🔧 18-Jul-2026: import sheet trigger
             )
         }
     }, contentList = { focusRequester ->
@@ -294,6 +320,12 @@ fun NoteEditorScreen(
                                 )
                             },
                             onShare = {},
+                            // 🔧 18-Jul-2026: imported document taps open the book at THIS page
+                            onOpenDocument = {
+                                state.value.note?.id?.let {
+                                    navigateTo(Route.BookReader + "/${it}?contentId=${contentValue.id}")
+                                }
+                            },
                             onMediaPreview = {
                                 // 🔧 14-Jul-2026: CHANGED — pass the content id so VideoPreviewScreen
                                 //   can drive the standalone player by mediaId (no path guessing).
@@ -404,6 +436,7 @@ fun RenderWidget(
     onDelete: (content: NoteContentModel) -> Unit,
     onShare: (content: NoteContentModel) -> Unit,
     onMediaPreview: () -> Unit,
+    onOpenDocument: () -> Unit = {},   // 🔧 18-Jul-2026: open imported file in the book reader
 ) {
     var focusedMediaId by remember { mutableStateOf<String?>(null) }
     when (content.type) {
@@ -514,9 +547,29 @@ fun RenderWidget(
             Text(contentLink.url, modifier = Modifier.clickable {})
         }
 
-        ContentType.DOCX -> {
+        // 🔧 18-Jul-2026: file-import — every document format renders as a tappable file card
+        //   (tap → book reader page, long-press → save/share/delete overlay)
+        ContentType.DOCX, ContentType.PDF, ContentType.TXT,
+        ContentType.MD, ContentType.EPUB, ContentType.OTHER -> {
             val contentDoc = content as NoteContentModel.MediaContent
-            contentDoc.localPath ?: contentDoc.url
+            DocumentFileCard(
+                media = contentDoc,
+                onClick = onOpenDocument,
+                onShowActions = { visible ->
+                    focusedMediaId = when {
+                        visible -> contentDoc.id
+                        focusedMediaId == contentDoc.id -> null
+                        else -> focusedMediaId
+                    }
+                },
+            ) {
+                MediaSaveOverlay(
+                    contentDoc,
+                    isFocused = focusedMediaId == contentDoc.id,
+                    onDelete = { onDelete(contentDoc) },
+                    onShare = {}
+                )
+            }
         }
 
         ContentType.LOCATION -> {
@@ -524,8 +577,28 @@ fun RenderWidget(
 
         }
 
-        ContentType.PDF -> {}
-        ContentType.GIF -> {}
+        // 🔧 18-Jul-2026: GIF now renders like an image card (was an empty branch)
+        ContentType.GIF -> {
+            val contentGif = content as NoteContentModel.MediaContent
+            ImageCard(
+                imageUrl = contentGif.localPath ?: contentGif.url, modifier = Modifier,
+                onShowActions = { visible ->
+                    focusedMediaId = when {
+                        visible -> contentGif.id
+                        focusedMediaId == contentGif.id -> null
+                        else -> focusedMediaId
+                    }
+                },
+                onClick = onMediaPreview
+            ) {
+                MediaSaveOverlay(
+                    contentGif,
+                    isFocused = focusedMediaId == contentGif.id,
+                    onDelete = { onDelete(contentGif) },
+                    onShare = {}
+                )
+            }
+        }
     }
 }
 

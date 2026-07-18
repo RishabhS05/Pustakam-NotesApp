@@ -34,7 +34,8 @@ fun addContent(context: Context,note : Note, contentType : ContentType) : NoteCo
             content = NoteContentObjectHelper.createLocation(positionedAt = position,
                 noteId = noteId)
         }
-        GIF, PDF, AUDIO , DOCX, VIDEO, IMAGE -> {
+        // 🔧 18-Jul-2026: file-import types — same media path (keeps `val content` exhaustive)
+        GIF, PDF, AUDIO , DOCX, VIDEO, IMAGE, TXT, MD, EPUB, OTHER -> {
             val timeStamp = getCurrentTimestamp()
             val folderName = "${contentType.name.lowercase()}/${noteId}"
             val fileName = "${timeStamp}${contentType.getExt()}"

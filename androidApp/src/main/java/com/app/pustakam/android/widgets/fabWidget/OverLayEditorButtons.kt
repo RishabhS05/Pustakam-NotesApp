@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AttachFile   // 🔧 18-Jul-2026: file-import action
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -29,7 +30,8 @@ fun OverLayEditorButtons(
     onCameraAction: () -> Unit = {},
     onRecordMic: () -> Unit = {},
     onArrowButton: ()-> Unit ={},
-    onLocation : () -> Unit = {}
+    onLocation : () -> Unit = {},
+    onImportFile : () -> Unit = {}   // 🔧 18-Jul-2026: NEW — opens the import sheet (device/link)
 ) {
     var showArrow = remember { mutableStateOf(false) }
     val cardColors = CardDefaults.cardColors(containerColor = colorScheme.secondary)
@@ -118,6 +120,22 @@ fun OverLayEditorButtons(
                                 Icon(
                                     imageVector = Icons.Filled.LocationOn,
                                     contentDescription = "location",
+                                    modifier = iconModifier
+                                )
+                            }
+                            // 🔧 18-Jul-2026: NEW — import files (device picker / any link)
+                            Card(
+                                onClick = {
+                                    onArrowButton()
+                                    onImportFile()
+                                    showOrHide()
+                                },
+                                colors = cardColors,
+                                elevation = cardElevation
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AttachFile,
+                                    contentDescription = "Import files from device or link",
                                     modifier = iconModifier
                                 )
                             }

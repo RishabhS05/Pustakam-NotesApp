@@ -3,8 +3,12 @@ package com.app.pustakam.android.screen.navigation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.NavType   // 🔧 18-Jul-2026: optional contentId arg
+import androidx.navigation.navArgument   // 🔧 18-Jul-2026: optional contentId arg
+import androidx.navigation.navDeepLink   // 🔧 18-Jul-2026: widget → book deep link
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
+import com.app.pustakam.android.screen.bookReader.BookReaderScreen   // 🔧 18-Jul-2026: book reader
 import com.app.pustakam.android.extension.sharedViewModel
 import com.app.pustakam.android.hardware.camera.CameraStreamingScreen
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
@@ -71,6 +75,24 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             SearchView(onNavigateNote = { noteId ->
                 navController.navigateTo(Route.NotesEditor + "/${noteId}")
             })
+        }
+
+        // 🔧 18-Jul-2026: NEW — page-flip book reader; deep-linked from the home-screen widget
+        composable(
+            route = Route.BookReader + "/{noteId}?contentId={contentId}",
+            // 🔧 18-Jul-2026: contentId is optional — nullable + default keeps plain routes valid
+            arguments = listOf(navArgument("contentId") {
+                type = NavType.StringType; nullable = true; defaultValue = null
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "pustakam://book/{noteId}" })
+        ) { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getString("noteId") ?: ""
+            val contentId = backStackEntry.arguments?.getString("contentId")
+            BookReaderScreen(
+                noteId = noteId,
+                startContentId = contentId,
+                onBack = navController::upPress
+            )
         }
 
         /** Routes For handling videos and Images*/

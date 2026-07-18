@@ -54,7 +54,36 @@
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT"/>
             </intent-filter>
+            <!-- 🔧 18-Jul-2026: deep link used by the Book home-screen widget → opens the reader -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pustakam" android:host="book" />
+            </intent-filter>
         </activity>
+        <!-- 🔧 18-Jul-2026: home-screen "Book" widget — opens the last-read note as a book -->
+        <receiver
+            android:name=".widgets.bookwidget.BookWidgetProvider"
+            android:exported="true"
+            android:label="Pustakam Book">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/book_widget_info" />
+        </receiver>
+        <!-- 🔧 18-Jul-2026: content:// grants so DOCX/EPUB/other files open in system viewers -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
         <service android:name=".services.locationService.LocationService" android:foregroundServiceType="location"
             tools:ignore="ForegroundServicePermission" />
         <service

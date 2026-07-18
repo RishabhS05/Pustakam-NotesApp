@@ -154,6 +154,56 @@ class NoteEditorViewModel: ObservableObject {
         generateThumbnailAsync(for: media)
     }
 
+    // MARK: - File import (18-Jul-2026)
+
+    // 🔧 18-Jul-2026: NEW FEATURE (file import) — device multi-pick: copy on background, append on main
+    func importFiles(urls: [URL]) {
+        guard let noteId = state.note?.id else {
+            state.errorMessage = "Note is still loading. Try again."
+            return
+        }
+        guard !urls.isEmpty else { return }
+        state.isLoading = true
+        let startPosition = Double(state.noteContents.count)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let items = FileImportService.importPicked(urls: urls, noteId: noteId, startPosition: startPosition)
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.state.isLoading = false
+                guard !items.isEmpty else {
+                    self.state.errorMessage = "Couldn't import the selected files."
+                    return
+                }
+                items.forEach { self.addContent(content: $0) }          // dirty + playlist handled inside
+                items.forEach { self.generateThumbnailAsync(for: $0) }  // image/video thumbs only
+            }
+        }
+    }
+
+    // 🔧 18-Jul-2026: NEW FEATURE (file import) — link import: download if it IS a file, else "No file found"
+    func importFromLink(_ url: String) {
+        guard let noteId = state.note?.id else {
+            state.errorMessage = "Note is still loading. Try again."
+            return
+        }
+        guard !url.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        state.isLoading = true
+        FileImportService.importFromLink(url, noteId: noteId,
+                                         startPosition: Double(state.noteContents.count)) { [weak self] result in
+            guard let self else { return }
+            self.state.isLoading = false
+            switch result {
+            case .success(let items):
+                items.forEach { self.addContent(content: $0) }
+                items.forEach { self.generateThumbnailAsync(for: $0) }
+            case .noFileFound:
+                self.state.errorMessage = "No file found at this link."
+            case .failed(let message):
+                self.state.errorMessage = message
+            }
+        }
+    }
+
     // 🔧 15-Jul-2026 iOS parity (Phase 2.3): background thumbnail job (Android
     //   generateThumbnailsFor parity). Images and videos only; audio has no thumbnail.
     private func generateThumbnailAsync(for media: NoteContentModel.MediaContent) {

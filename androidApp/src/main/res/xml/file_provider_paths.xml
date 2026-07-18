@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 🔧 18-Jul-2026: FileProvider roots — imported note files live under filesDir -->
+<paths>
+    <files-path name="app_files" path="." />
+    <cache-path name="app_cache" path="." />
+</paths>

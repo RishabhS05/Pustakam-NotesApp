@@ -28,10 +28,22 @@ struct iOSApp: App {
                             case .Home : HomeView()
                             case .Camera(let onDone):
                                 CameraPreview(onCapture: onDone)
+                            // 🔧 18-Jul-2026: page-curl book reader destination
+                            case .BookReader(let noteId, let startContentId):
+                                BookReaderView(noteId: noteId, startContentId: startContentId)
                             default: LoginView()
                         }
                     }
-            }.environment(router)
+            }
+            // 🔧 18-Jul-2026: widget deep link pustakam://book/<noteId> → open the book reader
+            .onOpenURL { url in
+                guard url.scheme == "pustakam", url.host == "book" else { return }
+                let noteId = url.lastPathComponent
+                if !noteId.isEmpty && noteId != "book" {
+                    router.navigate(to: .BookReader(noteId: noteId))
+                }
+            }
+            .environment(router)
                 .environment(themeManager)
                 .preferredColorScheme(themeManager.getTheme())
         }

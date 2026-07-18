@@ -10,4 +10,8 @@
     <string name="exo_controls_shuffle_on_description">Shuffle on</string>
     <string name="media_notification_channel" />
     <string name="media_notification_channel_description" />
+    <!-- 🔧 18-Jul-2026: Book home-screen widget strings -->
+    <string name="book_widget_description">Opens your last note as a real book</string>
+    <string name="book_widget_default_title">Pustakam</string>
+    <string name="book_widget_open_hint">Tap to open your book</string>
 </resources>

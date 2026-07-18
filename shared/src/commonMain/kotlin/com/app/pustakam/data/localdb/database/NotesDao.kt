@@ -219,7 +219,9 @@ class NotesDao() : KoinComponent {
                                       metadata =  row.metaData
                                   )
                               // 🔧 C1: PDF + GIF now round-trip like every other media format
-                              ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO, ContentType.PDF, ContentType.GIF  ->
+                              // 🔧 18-Jul-2026: file-import — TXT/MD/EPUB/OTHER round-trip as media rows too
+                              ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO, ContentType.PDF, ContentType.GIF,
+                              ContentType.TXT, ContentType.MD, ContentType.EPUB, ContentType.OTHER  ->
                                   // 🔧 S1: contentTitle = media's OWN column (row.title is the NOTE's title from the join)
                                   NoteContentModel.MediaContent(title = row.contentTitle?:"${row.type}-${row.position}",
                                   id = row.contentId,
@@ -408,8 +410,10 @@ class NotesDao() : KoinComponent {
 
                             // 🔧 C1: PDF + GIF included; title from contentTitle (S1) —
                             //       also fixes the drifted "${position}-${type}" fallback (list mapper used type-position)
+                            // 🔧 18-Jul-2026: file-import — TXT/MD/EPUB/OTHER round-trip as media rows too
                             ContentType.IMAGE,ContentType.DOCX,
-                            ContentType.VIDEO , ContentType.AUDIO, ContentType.PDF, ContentType.GIF -> NoteContentModel.MediaContent(
+                            ContentType.VIDEO , ContentType.AUDIO, ContentType.PDF, ContentType.GIF,
+                            ContentType.TXT, ContentType.MD, ContentType.EPUB, ContentType.OTHER -> NoteContentModel.MediaContent(
                                 title = row.contentTitle?:"${row.type}-${row.position}",
                                 id = row.contentId,
                                 noteId = row.noteId,

@@ -16,6 +16,7 @@ struct OverlayEditorButtons : View {
     var onRecordMic: () -> Void = {}
     var onAddTextField : () -> Void = {}
     var onArrowButton: () -> Void = {}
+    var onImportFile: () -> Void = {}   // 🔧 18-Jul-2026: NEW — opens the import options (device/link)
     var body: some View {
         VStack(alignment: .center) {
               if showArrow {
@@ -34,6 +35,12 @@ struct OverlayEditorButtons : View {
                       ActionButton(iconName: "note.text.badge.plus", action: {
                           onArrowButton()
                           onAddTextField()
+                          showArrow.toggle()
+                      })
+                      // 🔧 18-Jul-2026: NEW — import files (device picker / any link)
+                      ActionButton(iconName: "paperclip", action: {
+                          onArrowButton()
+                          onImportFile()
                           showArrow.toggle()
                       })
                       ActionButton(iconName: "square.and.arrow.up", action: {

@@ -261,13 +261,6 @@
 			path = ui;
 			sourceTree = "<group>";
 		};
-		633E376F2E5389CF00FABC05 /* theme */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = theme;
-			sourceTree = "<group>";
-		};
 		6343B13F2CB4230100186B67 /* login */ = {
 			isa = PBXGroup;
 			children = (
@@ -379,13 +372,6 @@
 			path = note;
 			sourceTree = "<group>";
 		};
-		63C00BDF2CEB660800A4907C /* base */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = base;
-			sourceTree = "<group>";
-		};
 		63C00BE42CEC924C00A4907C /* button */ = {
 			isa = PBXGroup;
 			children = (
@@ -460,7 +446,6 @@
 		63D089152CABD616008FD8CC /* view */ = {
 			isa = PBXGroup;
 			children = (
-				633E376F2E5389CF00FABC05 /* theme */,
 				63D089192CABD653008FD8CC /* screens */,
 				63D089182CABD636008FD8CC /* widgets */,
 			);
@@ -490,7 +475,6 @@
 		63D089192CABD653008FD8CC /* screens */ = {
 			isa = PBXGroup;
 			children = (
-				63C00BDF2CEB660800A4907C /* base */,
 				63FD32A72CBEAD9C0047ED10 /* notification */,
 				63FD32A62CBEAD8C0047ED10 /* search */,
 				63FD32A52CBEAD5E0047ED10 /* home */,
