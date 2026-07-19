@@ -1,3 +1,12 @@
+//
+//  LinkImportResult.swift
+//  iosApp
+//
+//  Created by Rishabh on 19/07/26.
+//  Copyright © 2026 orgName. All rights reserved.
+//
+
+
 // 🔧 18-Jul-2026: NEW FEATURE (file import) — iOS side of multi-file + link import.
 //   Mirrors Android fileimport/FileImportManager: files land in Documents/imported/<noteId>/,
 //   MediaContent is built by the SHARED FileImportHelper (single source of type resolution).
@@ -6,38 +15,6 @@ import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 import shared
-
-// 🔧 18-Jul-2026: outcome of a link import — noFileFound drives the exact "No file found" UX
-enum LinkImportResult {
-    case success([NoteContentModel.MediaContent])
-    case noFileFound
-    case failed(String)
-}
-
-// 🔧 18-Jul-2026: SwiftUI wrapper over UIDocumentPickerViewController — ANY type, multi-select
-struct MultiFilePicker: UIViewControllerRepresentable {
-    let onPicked: ([URL]) -> Void
-
-    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        // asCopy gives sandbox-safe temporary copies — no security-scope juggling needed
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
-        picker.allowsMultipleSelection = true
-        picker.delegate = context.coordinator
-        return picker
-    }
-
-    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
-
-    func makeCoordinator() -> Coordinator { Coordinator(onPicked: onPicked) }
-
-    final class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let onPicked: ([URL]) -> Void
-        init(onPicked: @escaping ([URL]) -> Void) { self.onPicked = onPicked }
-        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            onPicked(urls)
-        }
-    }
-}
 
 enum FileImportService {
 
@@ -122,3 +99,38 @@ enum FileImportService {
         task.resume()
     }
 }
+
+
+// 🔧 18-Jul-2026: outcome of a link import — noFileFound drives the exact "No file found" UX
+enum LinkImportResult {
+    case success([NoteContentModel.MediaContent])
+    case noFileFound
+    case failed(String)
+}
+
+// 🔧 18-Jul-2026: SwiftUI wrapper over UIDocumentPickerViewController — ANY type, multi-select
+struct MultiFilePicker: UIViewControllerRepresentable {
+    let onPicked: ([URL]) -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        // asCopy gives sandbox-safe temporary copies — no security-scope juggling needed
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
+        picker.allowsMultipleSelection = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPicked: onPicked) }
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPicked: ([URL]) -> Void
+        init(onPicked: @escaping ([URL]) -> Void) { self.onPicked = onPicked }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            onPicked(urls)
+        }
+    }
+}
+
+

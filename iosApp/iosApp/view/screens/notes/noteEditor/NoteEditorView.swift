@@ -185,15 +185,17 @@ struct NoteEditorView: View {
                     saveMediaToDevice(media: contentAudio)
                  })
 
-            // 🔧 18-Jul-2026: file-import — document formats render as tappable file cards
+            // 🔧 19-Jul-2026: notebook widget — file's real pages flip inline, "n/total" at bottom
+            //   (DocumentFileCardView kept for reuse elsewhere). Full open = ONLY this file (single).
             case .pdf, .docx, .epub, .txt, .md, .other:
                 let contentDoc = content as! NoteContentModel.MediaContent
-                DocumentFileCardView(
+                InlineBookFileView(
                     media: contentDoc,
-                    onOpen: {
-                        // open the book at exactly this file's page
+                    onOpenFull: {
                         if let noteId = noteEditorViewModel.state.note?.id {
-                            router.navigate(to: .BookReader(noteId: noteId, startContentId: contentDoc.id))
+                            router.navigate(to: .BookReader(noteId: noteId,
+                                                            startContentId: contentDoc.id,
+                                                            single: true))
                         }
                     },
                     onDelete: { askDeleteContent(contentId: contentDoc.id, kind: "File") },

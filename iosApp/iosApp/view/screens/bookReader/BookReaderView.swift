@@ -69,37 +69,45 @@ enum BookPagesBuilder {
         let contents = (note.contents as? [NoteContentModel] ?? []).sorted { $0.position < $1.position }
         let title = (note.title?.isEmpty == false ? note.title! : "Untitled note")
         pages.append(.cover(title: title, subtitle: "\(contents.count) entries"))
-
-        for content in contents {
-            switch content {
-            case let text as NoteContentModel.TextContent:
-                pages.append(contentsOf: paginate(text.text, sourceId: text.id))
-
-            case let media as NoteContentModel.MediaContent:
-                switch media.type {
-                case .image, .gif:
-                    pages.append(.image(path: resolved(media.localPath) ?? media.url,
-                                        title: media.title, sourceId: media.id))
-                case .video, .audio:
-                    pages.append(.media(media))
-                case .pdf:
-                    pages.append(contentsOf: pdfSheets(media))
-                case .txt, .md:
-                    pages.append(contentsOf: textFilePages(media))
-                default:
-                    pages.append(.docFile(media))   // docx / epub / other → QuickLook page
-                }
-
-            case let link as NoteContentModel.Link:
-                pages.append(.link(url: link.url, sourceId: link.id))
-
-            case let loc as NoteContentModel.Location:
-                pages.append(.location(lat: loc.latitude, lon: loc.longitude,
-                                       address: loc.address, sourceId: loc.id))
-            default: break
-            }
-        }
+        // 🔧 19-Jul-2026: DRY — whole-note book delegates to the single-content builder
+        //   (Self. avoids shadowing by the local `pages` array)
+        for content in contents { pages.append(contentsOf: Self.pages(for: content)) }
         return pages
+    }
+
+    // 🔧 19-Jul-2026: single-file book — ONLY the tapped document's pages (fix: opening the 2nd
+    //   file no longer flips through the 1st file first). Reused by the inline editor widget too.
+    static func buildForContent(_ content: NoteContentModel) -> [BookPageItem] { pages(for: content) }
+
+    // 🔧 19-Jul-2026: ONE content → its pages; the shared core every builder calls (DRY)
+    static func pages(for content: NoteContentModel) -> [BookPageItem] {
+        switch content {
+        case let text as NoteContentModel.TextContent:
+            return paginate(text.text, sourceId: text.id)
+
+        case let media as NoteContentModel.MediaContent:
+            switch media.type {
+            case .image, .gif:
+                return [.image(path: resolved(media.localPath) ?? media.url,
+                               title: media.title, sourceId: media.id)]
+            case .video, .audio:
+                return [.media(media)]
+            case .pdf:
+                return pdfSheets(media)
+            case .txt, .md:
+                return textFilePages(media)
+            default:
+                return [.docFile(media)]   // docx / epub / other → QuickLook page
+            }
+
+        case let link as NoteContentModel.Link:
+            return [.link(url: link.url, sourceId: link.id)]
+
+        case let loc as NoteContentModel.Location:
+            return [.location(lat: loc.latitude, lon: loc.longitude,
+                              address: loc.address, sourceId: loc.id)]
+        default: return []
+        }
     }
 
     // 🔧 18-Jul-2026: word-boundary pagination (Android parity)
@@ -147,19 +155,20 @@ enum BookPagesBuilder {
 struct BookReaderView: View {
     let noteId: String
     var startContentId: String? = nil
+    var singleContent: Bool = false   // 🔧 19-Jul-2026: open ONLY the tapped file as a book
 
     @Environment(\.dismiss) private var dismiss
     @State private var adapter = NotesBridgeAdapter()
     @State private var pages: [BookPageItem] = []
     @State private var isLoading = true
-    @State private var errorMessage: String? = nil
     @State private var currentIndex = 0
     @State private var startIndex = 0
 
     var body: some View {
         ZStack {
             BookPalette.desk.ignoresSafeArea()
-            if isLoading {
+            // 🔧 19-Jul-2026: FIX — loader ONLY while pages aren't built; never over loaded pages
+            if pages.isEmpty && isLoading {
                 LoadingUI()
             } else if !pages.isEmpty {
                 BookPageCurlView(pages: pages, startIndex: startIndex) { index in
@@ -182,30 +191,37 @@ struct BookReaderView: View {
                 BackButton(action: { dismiss() })
             }
         }
-        .alert("Book", isPresented: .constant(errorMessage != nil)) {
-            Button("OK") { errorMessage = nil; dismiss() }
-        } message: { Text(errorMessage ?? "") }
         .onAppear { loadNote() }
     }
 
     private func loadNote() {
         adapter.readNote(noteId: noteId) { result in
             switch result {
-            case .loading: isLoading = true
+            // 🔧 19-Jul-2026: FIX — a late Loading emission must not bring the loader back
+            case .loading: if pages.isEmpty { isLoading = true }
             case .success(let note):
                 isLoading = false
                 if let note {
-                    pages = BookPagesBuilder.build(note: note)
-                    startIndex = startContentId.flatMap { id in
-                        pages.firstIndex { $0.sourceContentId == id }
-                    } ?? 0
+                    // 🔧 19-Jul-2026: single-file mode → ONLY the tapped content's pages (DRY builder)
+                    if singleContent, let id = startContentId,
+                       let content = (note.contents as? [NoteContentModel])?.first(where: { $0.id == id }) {
+                        pages = BookPagesBuilder.buildForContent(content)
+                        startIndex = 0
+                    } else {
+                        pages = BookPagesBuilder.build(note: note)
+                        startIndex = startContentId.flatMap { id in
+                            pages.firstIndex { $0.sourceContentId == id }
+                        } ?? 0
+                    }
                     currentIndex = startIndex
                     // 🔧 18-Jul-2026: remember this book for the home-screen widget
                     BookWidgetStore.saveLastBook(noteId: note.id, title: note.title ?? "Untitled note")
                 }
             case .failure(let error):
-                isLoading = false
-                errorMessage = error.message
+                // 🔧 19-Jul-2026: FIX (first-load "No record found") — the read flow can emit a
+                //   local-miss failure BEFORE data arrives; never flash it. Keep the loader when
+                //   nothing is built yet, ignore once pages exist.
+                print("BookReader read failed (suppressed for UX): \(error.message)")
             case .idle: break
             }
         }
@@ -328,11 +344,14 @@ struct BookPageContentView: View {
 
         case .image(let path, let title, _):
             VStack(spacing: 8) {
-                if FileManager.default.fileExists(atPath: path), let ui = UIImage(contentsOfFile: path) {
-                    Image(uiImage: ui).resizable().scaledToFit()
-                } else {
-                    AsyncImage(url: URL(string: path)) { img in img.resizable().scaledToFit() }
-                        placeholder: { ProgressView() }
+                // 🔧 19-Jul-2026: pinch/double-tap zoom; scaledToFit — image never fills/crops
+                ZoomableView {
+                    if FileManager.default.fileExists(atPath: path), let ui = UIImage(contentsOfFile: path) {
+                        Image(uiImage: ui).resizable().scaledToFit()
+                    } else {
+                        AsyncImage(url: URL(string: path)) { img in img.resizable().scaledToFit() }
+                            placeholder: { ProgressView() }
+                    }
                 }
                 if !title.isEmpty {
                     Text(title).font(.caption.italic()).foregroundColor(BookPalette.ink.opacity(0.7)).lineLimit(1)
@@ -341,7 +360,8 @@ struct BookPageContentView: View {
 
         case .pdf(let path, let pageIndex, let pageCount, let title, _):
             VStack(spacing: 6) {
-                PdfSheetView(path: path, pageIndex: pageIndex)
+                // 🔧 19-Jul-2026: pinch/double-tap zoom on PDF sheets
+                ZoomableView { PdfSheetView(path: path, pageIndex: pageIndex) }
                 Text("\(title) — \(pageIndex + 1)/\(pageCount)")
                     .font(.caption2).foregroundColor(BookPalette.ink.opacity(0.6)).lineLimit(1)
             }

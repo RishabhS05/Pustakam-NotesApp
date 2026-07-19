@@ -29,8 +29,8 @@ struct iOSApp: App {
                             case .Camera(let onDone):
                                 CameraPreview(onCapture: onDone)
                             // 🔧 18-Jul-2026: page-curl book reader destination
-                            case .BookReader(let noteId, let startContentId):
-                                BookReaderView(noteId: noteId, startContentId: startContentId)
+                            case .BookReader(let noteId, let startContentId, let single):
+                                BookReaderView(noteId: noteId, startContentId: startContentId, singleContent: single)
                             default: LoginView()
                         }
                     }

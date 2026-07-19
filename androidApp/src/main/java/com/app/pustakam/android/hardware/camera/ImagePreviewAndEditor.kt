@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.screen.navigation.Route
+import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on preview
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.getCurrentTimestamp
 
@@ -68,8 +69,9 @@ fun ImagePreviewAndEditor(
         state.bitmap?.asImageBitmap()?.let {
             Image(
                 it, contentDescription = "Image Preview",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillHeight
+                // 🔧 19-Jul-2026: FIX — preview no longer fills/crops; whole image fits + zoomable
+                modifier = Modifier.fillMaxSize().zoomable(),
+                contentScale = ContentScale.Fit
             )
         }
         Row(

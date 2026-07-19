@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +40,7 @@ private enum class FlipDirection { FORWARD, BACKWARD }
 fun BookPager(
     pageCount: Int,
     initialPage: Int = 0,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxSize(),
     onPageChanged: (Int) -> Unit = {},
     pageContent: @Composable (Int) -> Unit,
 ) {
@@ -148,7 +149,7 @@ fun BookPager(
             Box(Modifier.fillMaxSize()) { pageContent(basePage) }
             // spine shadow on the base grows as the leaf lifts
             Box(
-                Modifier
+                Modifier.fillMaxWidth()
                     .fillMaxHeight()
                     .width(32.dp)
                     .align(Alignment.CenterStart)

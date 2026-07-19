@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.animation)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
+    implementation(libs.androidx.material3)
 
     debugImplementation(libs.compose.ui.tooling)
 }

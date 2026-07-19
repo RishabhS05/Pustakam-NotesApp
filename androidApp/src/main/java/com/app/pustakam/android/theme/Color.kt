@@ -65,7 +65,7 @@ val surfaceBrightDark = Color(0xFF37393c)
 val outlineDark = Color(0xFF8a9199)
 val outlineVarientDark = Color(0xFF41484e)
 val bookmarkDefault = Color(0xFFFF6F46)
-
+val PaperColor = Color(0xFFFAF3E3)
 
 //darkbrown
 val DarkBrown0 = Color(0xFF382320)

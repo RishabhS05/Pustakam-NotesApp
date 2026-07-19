@@ -2,6 +2,7 @@ package com.app.pustakam.android.screen.bookReader
 
 // 🔧 18-Jul-2026: NEW FEATURE (book reader) — opens a note as a REAL book: paper pages, spine,
 //   3D page-flip; renders text, images, PDFs (page-per-page), audio/video, docs, links, locations.
+import PaperColor
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -34,7 +35,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -69,6 +69,7 @@ import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.bookwidget.BookWidgetUpdater
 import com.app.pustakam.android.widgets.document.iconForContentType
 import com.app.pustakam.android.widgets.document.readableSize
+import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on pages
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.FileImportHelper
@@ -78,7 +79,7 @@ import java.io.File
 import kotlin.math.min
 
 // 🔧 18-Jul-2026: warm paper palette — a book stays paper-colored in any app theme
-private val PaperColor = Color(0xFFFAF3E3)
+
 private val PaperInk = Color(0xFF3E2F1C)
 private val CoverColor = Color(0xFF5D4033)
 
@@ -86,13 +87,14 @@ private val CoverColor = Color(0xFF5D4033)
 fun BookReaderScreen(
     noteId: String,
     startContentId: String? = null,
+    singleContent: Boolean = false,   // 🔧 19-Jul-2026: open ONLY the tapped file as a book
     bookReaderViewModel: BookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val state by bookReaderViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(noteId) { bookReaderViewModel.load(context, noteId, startContentId) }
+    LaunchedEffect(noteId) { bookReaderViewModel.load(context, noteId, startContentId, singleContent) }
     // 🔧 18-Jul-2026: remember this book for the home-screen widget once it opens
     LaunchedEffect(state.note?.id) {
         state.note?.let { BookWidgetUpdater.saveLastBook(context, it.id, it.title ?: "Untitled note") }
@@ -100,7 +102,9 @@ fun BookReaderScreen(
 
     Box(Modifier.fillMaxSize().background(Color(0xFF241C14))) {   // dark desk behind the book
         when {
-            state.isLoading -> LoadingUI()
+            // 🔧 19-Jul-2026: FIX — loader ONLY while pages aren't built; never over loaded pages,
+            //   and no error flash on first load (VM suppresses transient read failures).
+            state.pages.isEmpty() && state.isLoading -> LoadingUI()
             state.error != null -> SnackBarUi(error = state.error!!) { bookReaderViewModel.clearError(); onBack() }
             state.pages.isNotEmpty() -> {
                 var pageIndex by remember { mutableIntStateOf(state.startPageIndex) }
@@ -190,8 +194,9 @@ fun BookPageContent(page: BookPage) {
             Column(Modifier.fillMaxSize().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 AsyncImage(
                     model = page.path, contentDescription = page.title,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.weight(1f).fillMaxWidth().padding(4.dp)
+                    contentScale = ContentScale.Fit,   // never fills/crops — full image visible
+                    // 🔧 19-Jul-2026: pinch/double-tap zoom on image pages
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(4.dp).zoomable()
                 )
                 if (page.title.isNotBlank()) Text(
                     page.title, style = typography.labelMedium.copy(fontStyle = FontStyle.Italic),
@@ -260,7 +265,9 @@ private fun PdfBookPage(page: BookPage.PdfSheet) {
         bitmap?.let {
             Image(
                 bitmap = it.asImageBitmap(), contentDescription = "${page.title} page ${page.pageIndex + 1}",
-                contentScale = ContentScale.Fit, modifier = Modifier.weight(1f).fillMaxWidth()
+                contentScale = ContentScale.Fit,
+                // 🔧 19-Jul-2026: pinch/double-tap zoom on PDF sheets
+                modifier = Modifier.weight(1f).fillMaxWidth().zoomable()
             )
         } ?: Box(Modifier.weight(1f).fillMaxWidth()) { LoadingUI() }
         Text(

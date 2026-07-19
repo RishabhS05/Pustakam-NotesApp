@@ -3,9 +3,7 @@ import SwiftUI
 struct LoadingUI : View {
     var body: some View {
             VStack {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint:.brown))
-                    .scaleEffect(x: 1.5, y: 1.5)
+            BookLoadingView()
             }
             .frame(width: 100,
                    height: 100, alignment: .center)

@@ -31,6 +31,7 @@ google-services = "4.5.0"
 firebase-bom = "34.16.0"
 
 firebase-crashlytics-plugin = "3.0.7"
+material3 = "1.4.0"
 [libraries]
 
 #compose
@@ -98,6 +99,7 @@ androidx-animation = { group = "androidx.compose.animation", name = "animation",
 # firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

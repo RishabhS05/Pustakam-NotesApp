@@ -94,7 +94,8 @@ import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.audio.AudioRecording
-import com.app.pustakam.android.widgets.document.DocumentFileCard   // 🔧 18-Jul-2026: file-import cards
+// 🔧 19-Jul-2026: DocumentFileCard kept for reuse elsewhere; editor now shows the notebook widget
+import com.app.pustakam.android.widgets.document.InlineBookFileWidget
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet   // 🔧 18-Jul-2026: import sheet
@@ -320,10 +321,11 @@ fun NoteEditorScreen(
                                 )
                             },
                             onShare = {},
-                            // 🔧 18-Jul-2026: imported document taps open the book at THIS page
+                            // 🔧 19-Jul-2026: FIX — single=true opens ONLY this file as a book
+                            //   (no more flipping through earlier files' pages first)
                             onOpenDocument = {
                                 state.value.note?.id?.let {
-                                    navigateTo(Route.BookReader + "/${it}?contentId=${contentValue.id}")
+                                    navigateTo(Route.BookReader + "/${it}?contentId=${contentValue.id}&single=true")
                                 }
                             },
                             onMediaPreview = {
@@ -552,9 +554,10 @@ fun RenderWidget(
         ContentType.DOCX, ContentType.PDF, ContentType.TXT,
         ContentType.MD, ContentType.EPUB, ContentType.OTHER -> {
             val contentDoc = content as NoteContentModel.MediaContent
-            DocumentFileCard(
+            // 🔧 19-Jul-2026: notebook widget — file's real pages flip inline, "n/total" at bottom
+            InlineBookFileWidget(
                 media = contentDoc,
-                onClick = onOpenDocument,
+                onOpenFull = onOpenDocument,
                 onShowActions = { visible ->
                     focusedMediaId = when {
                         visible -> contentDoc.id

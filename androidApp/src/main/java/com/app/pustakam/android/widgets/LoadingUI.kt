@@ -9,15 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.app.pustakam.android.widgets.bookwidget.BookLoadingAnimation
 
 @Composable
 fun LoadingUI(modifier: Modifier = Modifier, alignment: Alignment = Alignment.Center) {
     Box(modifier = modifier
         .fillMaxSize()) {
-        CircularProgressIndicator(
-            strokeWidth = 6.dp, color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.secondary,
-            strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
+        BookLoadingAnimation(
             modifier = Modifier.align(alignment)
         )
     }

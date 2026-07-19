@@ -79,18 +79,24 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
 
         // 🔧 18-Jul-2026: NEW — page-flip book reader; deep-linked from the home-screen widget
         composable(
-            route = Route.BookReader + "/{noteId}?contentId={contentId}",
+            route = Route.BookReader + "/{noteId}?contentId={contentId}&single={single}",
             // 🔧 18-Jul-2026: contentId is optional — nullable + default keeps plain routes valid
-            arguments = listOf(navArgument("contentId") {
-                type = NavType.StringType; nullable = true; defaultValue = null
-            }),
+            arguments = listOf(
+                navArgument("contentId") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                },
+                // 🔧 19-Jul-2026: single=true → book contains ONLY the tapped file's pages
+                navArgument("single") { type = NavType.BoolType; defaultValue = false },
+            ),
             deepLinks = listOf(navDeepLink { uriPattern = "pustakam://book/{noteId}" })
         ) { backStackEntry ->
             val noteId = backStackEntry.arguments?.getString("noteId") ?: ""
             val contentId = backStackEntry.arguments?.getString("contentId")
+            val single = backStackEntry.arguments?.getBoolean("single") ?: false
             BookReaderScreen(
                 noteId = noteId,
                 startContentId = contentId,
+                singleContent = single,
                 onBack = navController::upPress
             )
         }
