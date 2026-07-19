@@ -54,7 +54,8 @@ struct InlineBookFileView: View {
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 0,
                                               bottomTrailingRadius: 12, topTrailingRadius: 12))
         }
-        .frame(height: 380)
+        // 🔧 20-Jul-2026: size to the device — ~42% of screen height, clamped to a sane range
+        .frame(height: min(max(UIScreen.main.bounds.height * 0.42, 260), 460))
         .padding(6)
         .background(RoundedRectangle(cornerRadius: 16).fill(NotebookPalette.cover))
         .padding(.vertical, 6)

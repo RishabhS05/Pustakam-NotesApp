@@ -17,6 +17,8 @@ struct NoteEditorView: View {
     @State private var showFilePicker = false
     @State private var showLinkPrompt = false
     @State private var importLink = ""
+    // 🔧 20-Jul-2026: NEW — path of the image shown in the full-screen preview (nil = hidden)
+    @State private var previewImagePath: String? = nil
     // 🔧 V1 fix: @StateObject (was @ObservedObject + inline init → VM recreated on every
     //           re-render, wiping edits). Note passed via init — setNote() no longer exists.
     @StateObject private var noteEditorViewModel: NoteEditorViewModel
@@ -95,6 +97,15 @@ struct NoteEditorView: View {
         .sheet(isPresented: $showFilePicker) {
             MultiFilePicker { urls in noteEditorViewModel.importFiles(urls: urls) }
         }
+        // 🔧 20-Jul-2026: NEW — full-screen zoomable image preview (opened from an image card tap)
+        .fullScreenCover(isPresented: Binding(
+            get: { previewImagePath != nil },
+            set: { if !$0 { previewImagePath = nil } }
+        )) {
+            if let path = previewImagePath {
+                ImagePreviewView(path: path) { previewImagePath = nil }
+            }
+        }
         .alert("Import from link", isPresented: $showLinkPrompt) {
             TextField("https://example.com/file.pdf", text: $importLink)
                 .textInputAutocapitalization(.never).keyboardType(.URL)
@@ -158,7 +169,10 @@ struct NoteEditorView: View {
             //   → the WHOLE note was deleted. Now: remember the pressed item's id and raise
             //   the DELETE_CONTENT alert, which deletes only that item. (CardImageEditor UI untouched.)
             // 🔧 14-Jul-2026: NEW — actionSave saves the image silently to the Photos gallery.
-            CardImageEditor(content: contentImage, actionClick: {},actionDelete: {
+            CardImageEditor(content: contentImage, actionClick: {
+                // 🔧 20-Jul-2026: NEW — tap opens the full-screen zoomable image preview (was a no-op)
+                previewImagePath = contentImage.getMediaUrl()
+            },actionDelete: {
                 askDeleteContent(contentId: contentImage.id, kind: "Image")
             }, actionSave: {
                 saveMediaToDevice(media: contentImage)
