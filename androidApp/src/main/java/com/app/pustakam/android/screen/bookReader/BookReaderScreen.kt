@@ -167,9 +167,7 @@ fun BookPageContent(page: BookPage) {
                     page.title, style = typography.headlineMedium.copy(fontFamily = FontFamily.Serif),
                     color = PaperColor, textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(12.dp))
                 Box(Modifier.width(60.dp).height(2.dp).background(PaperColor.copy(alpha = .6f)))
-                Spacer(Modifier.height(12.dp))
                 Text(page.subtitle, style = typography.titleSmall, color = PaperColor.copy(alpha = .8f))
             }
         }
@@ -270,10 +268,10 @@ private fun PdfBookPage(page: BookPage.PdfSheet) {
                 modifier = Modifier.weight(1f).fillMaxWidth().zoomable()
             )
         } ?: Box(Modifier.weight(1f).fillMaxWidth()) { LoadingUI() }
-        Text(
-            "${page.title} — ${page.pageIndex + 1}/${page.pageCount}",
-            style = typography.labelSmall, color = PaperInk.copy(alpha = .6f), maxLines = 1
-        )
+//        Text(
+//            "${page.title} — ${page.pageIndex + 1}/${page.pageCount}",
+//            style = typography.labelSmall, color = PaperInk.copy(alpha = .6f), maxLines = 1
+//        )
     }
 }
 

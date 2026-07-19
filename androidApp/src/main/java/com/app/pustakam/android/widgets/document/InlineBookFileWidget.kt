@@ -77,20 +77,22 @@ fun InlineBookFileWidget(
         building = false
     }
     var currentPage by remember(media.id) { mutableIntStateOf(0) }
-
+    val cornerShape = RoundedCornerShape(8.dp)
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp)
-            .height(380.dp)
-            .background(NotebookCover, RoundedCornerShape(16.dp))
+            .height(350.dp)
+            .background(NotebookCover,cornerShape )
     ) {
         Row(Modifier.fillMaxSize().padding(2.dp)) {
             SpiralBinding()
             Box(
                 Modifier
                     .weight(1f)
-                    .background(NotebookPaper, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp))
+                    .padding(4.dp)
+                    .background(NotebookPaper, cornerShape)
+
             ) {
                 Column(Modifier.fillMaxSize()) {
                     // header — file name; long-press reveals actions, expand opens the full book

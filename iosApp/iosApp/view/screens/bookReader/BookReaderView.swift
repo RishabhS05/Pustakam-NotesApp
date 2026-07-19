@@ -310,7 +310,7 @@ struct BookPageContentView: View {
                     .frame(width: 14)
                 Spacer()
             }
-            pageBody.padding(.horizontal, 22).padding(.vertical, 26)
+            pageBody.padding(.horizontal, 4).padding(.vertical, 4)
         }
     }
 
@@ -362,8 +362,8 @@ struct BookPageContentView: View {
             VStack(spacing: 6) {
                 // 🔧 19-Jul-2026: pinch/double-tap zoom on PDF sheets
                 ZoomableView { PdfSheetView(path: path, pageIndex: pageIndex) }
-                Text("\(title) — \(pageIndex + 1)/\(pageCount)")
-                    .font(.caption2).foregroundColor(BookPalette.ink.opacity(0.6)).lineLimit(1)
+//                Text("\(title) — \(pageIndex + 1)/\(pageCount)")
+//                    .font(.caption2).foregroundColor(BookPalette.ink.opacity(0.6)).lineLimit(1)
             }
 
         case .media(let media):

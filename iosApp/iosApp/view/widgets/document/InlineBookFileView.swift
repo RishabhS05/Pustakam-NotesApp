@@ -58,6 +58,7 @@ struct InlineBookFileView: View {
         .padding(6)
         .background(RoundedRectangle(cornerRadius: 16).fill(NotebookPalette.cover))
         .padding(.vertical, 6)
+        .padding(.horizontal,12)
         .onAppear(perform: buildPages)
     }
 
