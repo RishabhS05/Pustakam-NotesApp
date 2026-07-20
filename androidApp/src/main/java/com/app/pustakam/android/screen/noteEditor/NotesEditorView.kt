@@ -28,11 +28,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.IosShare   // 🔧 20-Jul-2026: export action
 import androidx.compose.material.icons.filled.MenuBook   // 🔧 18-Jul-2026: open-as-book action
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.SaveAs
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.DropdownMenu   // 🔧 20-Jul-2026: export format menu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -101,9 +104,12 @@ import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet   // 🔧 18-Jul-2026: import sheet
 import com.app.pustakam.android.widgets.textField.NoteTextField
 import com.app.pustakam.android.widgets.video.VideoCard
+import com.app.pustakam.android.export.NoteExporter
+import com.app.pustakam.android.export.shareExportedFile
 import com.app.pustakam.data.models.CameraData
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.getMediaUrl
+import com.app.pustakam.export.ExportFormat
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.extensions.toLocalFormat
 import com.app.pustakam.util.ContentType
@@ -122,6 +128,25 @@ fun NoteEditorScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+
+    // 🔧 20-Jul-2026: NEW FEATURE (export) — format menu + a spinner while the file is generated
+    var showExportMenu by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    val exportScope = rememberCoroutineScope()
+    val runExport: (ExportFormat) -> Unit = { format ->
+        val note = noteEditorViewModel.noteContentUiState.value.note
+        if (note == null) {
+            Toast.makeText(context, "Nothing to export yet", Toast.LENGTH_SHORT).show()
+        } else {
+            isExporting = true
+            exportScope.launch {
+                val file = withContext(Dispatchers.IO) { NoteExporter.export(context, note, format) }
+                isExporting = false
+                if (file != null) shareExportedFile(context, file, format)
+                else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // 🔧 18-Jul-2026: NEW FEATURE (file import) — sheet visibility + SAF multi-document picker
     var showImportSheet by remember { mutableStateOf(false) }
@@ -249,6 +274,23 @@ fun NoteEditorScreen(
                     imageVector = Icons.Filled.MenuBook,
                     contentDescription = "Open as book",
                 )
+            }
+            // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word (share sheet)
+            Box {
+                IconButton(onClick = { showExportMenu = true }, enabled = !isExporting) {
+                    Icon(imageVector = Icons.Filled.IosShare, contentDescription = "Export note")
+                }
+                DropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
+                    DropdownMenuItem(text = { Text("Export as PDF") }, onClick = {
+                        showExportMenu = false; runExport(ExportFormat.PDF)
+                    })
+                    DropdownMenuItem(text = { Text("Export as Image") }, onClick = {
+                        showExportMenu = false; runExport(ExportFormat.IMAGE)
+                    })
+                    DropdownMenuItem(text = { Text("Export as Word (DOCX)") }, onClick = {
+                        showExportMenu = false; runExport(ExportFormat.DOCX)
+                    })
+                }
             }
             IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
                 Icon(

@@ -19,6 +19,9 @@ struct NoteEditorView: View {
     @State private var importLink = ""
     // 🔧 20-Jul-2026: NEW — path of the image shown in the full-screen preview (nil = hidden)
     @State private var previewImagePath: String? = nil
+    // 🔧 20-Jul-2026: NEW FEATURE (export) — format chooser + spinner while generating
+    @State private var showExportOptions = false
+    @State private var isExporting = false
     // 🔧 V1 fix: @StateObject (was @ObservedObject + inline init → VM recreated on every
     //           re-render, wiping edits). Note passed via init — setNote() no longer exists.
     @StateObject private var noteEditorViewModel: NoteEditorViewModel
@@ -52,7 +55,7 @@ struct NoteEditorView: View {
                     showRecorder = false
                 }).frame(alignment : .topTrailing)
             }
-            if noteEditorViewModel.state.isLoading {          // 🔧 spinner driven by VM state
+            if noteEditorViewModel.state.isLoading || isExporting {  // 🔧 spinner: VM state or export
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
@@ -106,6 +109,13 @@ struct NoteEditorView: View {
                 ImagePreviewView(path: path) { previewImagePath = nil }
             }
         }
+        // 🔧 20-Jul-2026: NEW FEATURE (export) — pick a format, generate off-main, then share
+        .confirmationDialog("Export note", isPresented: $showExportOptions, titleVisibility: .visible) {
+            Button("Export as PDF") { runExport(.pdf) }
+            Button("Export as Image") { runExport(.image) }
+            Button("Export as Word (DOCX)") { runExport(.docx) }
+            Button("Cancel", role: .cancel) {}
+        }
         .alert("Import from link", isPresented: $showLinkPrompt) {
             TextField("https://example.com/file.pdf", text: $importLink)
                 .textInputAutocapitalization(.never).keyboardType(.URL)
@@ -132,6 +142,10 @@ struct NoteEditorView: View {
                             if let noteId = noteEditorViewModel.state.note?.id {
                                 router.navigate(to: .BookReader(noteId: noteId))
                             }
+                        }, tint: Theme.Colors.secondary)
+                        // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word
+                        ActionButtonWithoutBackground(iconName: "square.and.arrow.up.on.square", action: {
+                            showExportOptions = true
                         }, tint: Theme.Colors.secondary)
                         ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
                             saveNote()
@@ -237,6 +251,19 @@ struct NoteEditorView: View {
     
     private func saveNote(){
         noteEditorViewModel.saveNote()   // 🔧 new VM API (guards deleted-note + materializes title/contents)
+    }
+
+    // 🔧 20-Jul-2026: NEW FEATURE (export) — generate the file off-main, then open the share sheet
+    private func runExport(_ format: ExportFormat) {
+        guard let note = noteEditorViewModel.state.note else { return }
+        isExporting = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let url = NoteExporter.export(note: note, format: format)
+            DispatchQueue.main.async {
+                isExporting = false
+                if let url { NoteExporter.share(url: url) }
+            }
+        }
     }
 
         // handler call wrappers
