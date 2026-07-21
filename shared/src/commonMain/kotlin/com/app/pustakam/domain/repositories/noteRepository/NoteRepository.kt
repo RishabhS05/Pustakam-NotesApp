@@ -1,6 +1,5 @@
 package com.app.pustakam.domain.repositories.noteRepository
 
-import com.app.pustakam.data.localdb.preferences.IAppPreferences
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.DeleteDataModel
@@ -43,7 +42,14 @@ class NoteRepository : BaseRepository(),
     private fun createNewEmptyNote(tagId  : String = ""): Note {
         val date = getCurrentTimestamp().toString()
         val id = UniqueIdGenerator.generateUniqueId()
-        return Note(id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId)
+        // 🔧 21-Jul-2026 databasev2.md §2.4: stamp offline-first sync fields at creation.
+        //   ownerId = the signed-in user's id from prefs; version = a fresh generated-uuid string
+        //   (never hardcoded); syncStatus starts PENDING so the sync queue picks it up.
+        return Note(
+            id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId,
+            ownerId = prefs.userId,
+            syncStatus = "PENDING",
+        ).apply { withNextVersion() }
     }
     fun insertNotes(notes : Notes){
         _notes.update { current ->

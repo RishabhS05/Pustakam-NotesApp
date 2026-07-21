@@ -203,6 +203,11 @@ class NotesDao() : KoinComponent {
                   title = note.title,
                   createdAt = note.noteCreatedAt,
                   updatedAt = note.noteUpdatedAt,
+                  // 🔧 21-Jul-2026 databasev2.md §2.4: hydrate offline-first sync fields from the row
+                  ownerId = note.ownerId,
+                  version = note.version,
+                  syncStatus = note.syncStatus,
+                  deleted = note.deleted == 1L,
                   contents = rows.mapNotNull { row ->
                       if (row.contentId != null&& !row.type.isNullOrEmpty()) {
                           val type = ContentType.valueOf(row.type)
@@ -369,6 +374,11 @@ class NotesDao() : KoinComponent {
             updatedAt = note.updatedAt,
             createdAt = note.createdAt,
             categoryId = note.categoryId,
+            // 🔧 21-Jul-2026 databasev2.md §2.4: persist offline-first sync fields
+            ownerId = note.ownerId,
+            version = note.version,
+            syncStatus = note.syncStatus,
+            deleted = if (note.deleted) 1L else 0L,
         )
            // 🔧 F4: contents written synchronously INSIDE the transaction — the function
            //       previously returned before contents were saved (fire-and-forget launch)
@@ -392,6 +402,11 @@ class NotesDao() : KoinComponent {
                 title = note.title,
                 createdAt = note.noteCreatedAt,
                 updatedAt = note.noteUpdatedAt,
+                // 🔧 21-Jul-2026 databasev2.md §2.4: hydrate offline-first sync fields from the row
+                ownerId = note.ownerId,
+                version = note.version,
+                syncStatus = note.syncStatus,
+                deleted = note.deleted == 1L,
                 contents = rows.mapNotNull { row ->
                     if (row.contentId != null&&!row.type.isNullOrEmpty()) {
                         val type = ContentType.valueOf(row.type)

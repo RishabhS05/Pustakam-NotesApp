@@ -1,6 +1,7 @@
 package com.app.pustakam.data.models.response.notes
 
 import com.app.pustakam.data.localdb.database.RichTextMetadata
+import com.app.pustakam.data.localdb.database.Version
 import com.app.pustakam.util.ContentType
 // 🔧 C6: UniqueIdGenerator import moved out — id generation lives ONLY in NoteContentObjectHelper
 // 🔧 getCurrentTimestamp kept: withX() helpers stamp updatedAt on every edit
@@ -22,19 +23,26 @@ data class Note(
     val createdAt: String?,
     val categoryId: String? ="",
     val isSynced : Boolean? = false,
+    // 🔧 21-Jul-2026 databasev2.md §2.4: offline-first sync fields. ownerId + version are
+    //   app-generated uuid strings (never hardcoded) — set in NoteRepository.createNewEmptyNote.
+    val ownerId: String? = null,
+    val version: String = "",
+    val syncStatus: String = "PENDING",
+    val deleted: Boolean = false,
     val contents: List<NoteContentModel> = emptyList(),
     ) {
     /** Swift-friendly copy helpers — Kotlin data-class copy() does not export
      *  usable default arguments to Swift, so immutable edits go through these.
      *  🔧 every edit stamps updatedAt = getCurrentTimestamp() → "last updated" is always current */
+    fun withNextVersion () : String = Version.nextVersion(ownerId, version)
     fun withTitle(newTitle: String?): Note =
-        copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}")
+        copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}", version = withNextVersion(), syncStatus = "PENDING")
 
     fun withContents(newContents: List<NoteContentModel>): Note =
-        copy(contents = newContents, updatedAt = "${getCurrentTimestamp()}")
+        copy(contents = newContents, updatedAt = "${getCurrentTimestamp()}", version = withNextVersion(), syncStatus = "PENDING")
 
     fun withTitleAndContents(newTitle: String?, newContents: List<NoteContentModel>): Note =
-        copy(title = newTitle, contents = newContents, updatedAt = "${getCurrentTimestamp()}")
+        copy(title = newTitle, contents = newContents, updatedAt = "${getCurrentTimestamp()}", version = withNextVersion(), syncStatus = "PENDING")
 }
 
 @Serializable

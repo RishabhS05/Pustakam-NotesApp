@@ -1,11 +1,18 @@
 import com.app.pustakam.data.localdb.database.RichTextMetadata;
 
+-- 🔧 21-Jul-2026 databasev2.md §2.4: offline-first sync fields — ownerId/version are app-generated
+--   uuid strings (never hardcoded), syncStatus drives the sync queue, deleted = soft delete tombstone.
+--   Existing installs get these via migration 3.sqm (v3 -> v4).
 CREATE TABLE Notes (
  id TEXT NOT NULL PRIMARY KEY,
  categoryId TEXT,
  title TEXT,
  createdAt TEXT,
- updatedAt TEXT
+ updatedAt TEXT,
+ ownerId TEXT,
+ version TEXT NOT NULL DEFAULT '',
+ syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+ deleted INTEGER NOT NULL DEFAULT 0
 );
 
 -- 🔧 C4: position INTEGER → REAL (fractional ordering)
@@ -48,18 +55,20 @@ CREATE TABLE Tags(
 id TEXT NOT NULL PRIMARY KEY,
 color TEXT,
 label TEXT);
+-- 🔧 21-Jul-2026 databasev2.md §2.4: now persists sync fields (ownerId/version/syncStatus/deleted)
 insertOrUpdateNote:
-INSERT OR REPLACE INTO Notes(id, categoryId, title, createdAt,updatedAt)
-VALUES(?,?,?,?,?);
+INSERT OR REPLACE INTO Notes(id, categoryId, title, createdAt, updatedAt, ownerId, version, syncStatus, deleted)
+VALUES(?,?,?,?,?,?,?,?,?);
 
 -- 🔧 C1/S1: now persists title + media metadata
 insertNoteContentById:
 INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration, title, mimeType, sizeBytes, width, height, thumbnailPath, metaData )
 VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ? ,?);
 
+-- 🔧 21-Jul-2026 databasev2.md §2.4: an edit re-marks the row dirty (syncStatus) and stamps version
 updateNotesById:
 UPDATE Notes
-SET title = ?, updatedAt = ?
+SET title = ?, updatedAt = ?, version = ?, syncStatus = ?
 WHERE id = ?;
 
 updateNoteContentById:
@@ -90,6 +99,10 @@ SELECT
     Notes.title,
     Notes.createdAt AS noteCreatedAt,
     Notes.updatedAt AS noteUpdatedAt,
+    Notes.ownerId, -- 🔧 21-Jul-2026 databasev2.md §2.4: sync fields flow to the Note model
+    Notes.version,
+    Notes.syncStatus,
+    Notes.deleted,
     NoteContent.id AS contentId,
     NoteContent.type,
     NoteContent.position,
@@ -160,6 +173,10 @@ SELECT
     Notes.title,
     Notes.createdAt AS noteCreatedAt,
     Notes.updatedAt AS noteUpdatedAt,
+    Notes.ownerId, -- 🔧 21-Jul-2026 databasev2.md §2.4: sync fields flow to the Note model
+    Notes.version,
+    Notes.syncStatus,
+    Notes.deleted,
     NoteContent.id AS contentId,
     NoteContent.type,
     NoteContent.position,

@@ -1,0 +1,8 @@
+-- 🔧 21-Jul-2026 · migration v3 -> v4 (databasev2.md §2.4) — offline-first sync fields on Notes.
+--   ownerId/version are POPULATED BY THE APP with generated-uuid strings (never hardcoded) at note
+--   creation — see NoteRepository.createNewEmptyNote. The DEFAULTs below only backfill rows that
+--   already existed before this migration; new rows always carry app-generated values.
+ALTER TABLE Notes ADD COLUMN ownerId TEXT;
+ALTER TABLE Notes ADD COLUMN version TEXT NOT NULL DEFAULT '';
+ALTER TABLE Notes ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE Notes ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0;
