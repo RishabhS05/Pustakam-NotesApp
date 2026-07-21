@@ -36,13 +36,13 @@ data class Note(
      *  🔧 every edit stamps updatedAt = getCurrentTimestamp() → "last updated" is always current */
     fun withNextVersion () : String = Version.nextVersion(ownerId, version)
     fun withTitle(newTitle: String?): Note =
-        copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}", version = withNextVersion(), syncStatus = "PENDING")
+        copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
 
     fun withContents(newContents: List<NoteContentModel>): Note =
-        copy(contents = newContents, updatedAt = "${getCurrentTimestamp()}", version = withNextVersion(), syncStatus = "PENDING")
+        copy(contents = newContents, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
 
     fun withTitleAndContents(newTitle: String?, newContents: List<NoteContentModel>): Note =
-        copy(title = newTitle, contents = newContents, updatedAt = "${getCurrentTimestamp()}", version = withNextVersion(), syncStatus = "PENDING")
+        copy(title = newTitle, contents = newContents, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
 }
 
 @Serializable

@@ -125,7 +125,7 @@ class NoteRepository : BaseRepository(),
 
     suspend fun insertUpdateFromDb(note: Note, dirtyContentIds: Set<String>?): Result<BaseResponse<Note>, Error> {
        return try {
-            val newNote = notesDao.insertOrUpdateNoteFromDb(note, dirtyContentIds)
+            val newNote = notesDao.insertOrUpdateNoteFromDb(note.apply {withNextVersion()}, dirtyContentIds)
             return if(newNote.isNotnull()) {
                 val response = BaseResponse(data = newNote , isSuccessful = true,
                     isFromDb = true)
