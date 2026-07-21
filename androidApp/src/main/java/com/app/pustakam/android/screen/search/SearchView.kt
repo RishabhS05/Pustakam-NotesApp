@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.search
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,19 +36,9 @@ fun SearchView(onNavigateNote: (noteId: String) -> Unit) {
     val viewModel: SearchViewModel = viewModel()
     val state = viewModel.state.collectAsStateWithLifecycle().value
     Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = viewModel::onQueryChange,
-            singleLine = true,
-            placeholder = { Text("Search your notes…") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-            trailingIcon = {
-                if (state.isSearching) CircularProgressIndicator(
-                    strokeWidth = 2.dp, modifier = Modifier.padding(12.dp)
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+        SearchBar(text= state.query, placeholder = "Search", onQueryChange = viewModel::onQueryChange, onClick = {},
+            showMicrophone = true ,
+            onMicrophoneClick = {            } )
         when {
             state.query.isBlank() -> CenterHint("Search across every note — text, titles.")
             state.results.isEmpty() && !state.isSearching -> CenterHint("No notes match \"${state.query}\".")

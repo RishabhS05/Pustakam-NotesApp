@@ -11,28 +11,16 @@ struct SearchView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                TextField(
-                    "Search your notes…",
-                    text: Binding(
-                        get: { viewModel.state.query },
-                        set: { viewModel.onQueryChange($0) }
-                    )
-                )
-                .textFieldStyle(.plain)
-                .autocorrectionDisabled()
-                if viewModel.state.isSearching {
-                    ProgressView().controlSize(.small)
-                }
+           SearchBar(
+            text :  Binding(
+                get: { viewModel.state.query },
+                set: { viewModel.onQueryChange($0) }
+            ),
+            placeholder: "Search notes, text, and titles", showMicrophone: true, onMicrophoneClick: {
+                
             }
+           )
             .padding(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Theme.Colors.secondary, lineWidth: 1)
-            )
-            .padding(.horizontal, 12)
 
             if viewModel.state.query.trimmingCharacters(in: .whitespaces).isEmpty {
                 centerHint("Search across every note — text, titles.")

@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
 
@@ -37,6 +38,9 @@ sealed class Screen(val route: String) {
 
         data object NotificationScreen : BottomNavigationItem(
             "Notification", selectedIcon = Icons.Default.Notifications, unselectedIcon = Icons.Default.Notifications, hasNotification = false, route = Route.Notification
+        )
+        data object SettingsScreen : BottomNavigationItem(
+            "Settings", selectedIcon = Icons.Default.Settings, unselectedIcon = Icons.Default.Settings, hasNotification = false, route = Route.Settings
         )
     }
 }

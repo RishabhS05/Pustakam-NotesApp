@@ -11,6 +11,7 @@
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		2287BB29300D69F800F6D3E2 /* ImagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB28300D69F800F6D3E2 /* ImagePreviewView.swift */; };
 		2287BB32300E5C2A00F6D3E2 /* NoteExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */; };
+		2287BB3A300FFD1A00F6D3E2 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB39300FFD1A00F6D3E2 /* SearchBar.swift */; };
 		228AE49F30012F2D00F53C82 /* UiState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE49E30012F2D00F53C82 /* UiState.swift */; };
 		228AE4A330012F9A00F53C82 /* NotesBridgeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */; };
 		228AE4B130013AAA00F53C82 /* AuthBridgeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */; };
@@ -127,6 +128,7 @@
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		2287BB28300D69F800F6D3E2 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteExporter.swift; sourceTree = "<group>"; };
+		2287BB39300FFD1A00F6D3E2 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		228AE49E30012F2D00F53C82 /* UiState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UiState.swift; sourceTree = "<group>"; };
 		228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesBridgeAdapter.swift; sourceTree = "<group>"; };
 		228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthBridgeAdapter.swift; sourceTree = "<group>"; };
@@ -657,6 +659,7 @@
 		63FD32A62CBEAD8C0047ED10 /* search */ = {
 			isa = PBXGroup;
 			children = (
+				2287BB39300FFD1A00F6D3E2 /* SearchBar.swift */,
 				63FD32A82CBEAEB20047ED10 /* SearchView.swift */,
 				A15JUL26SEARCHVM0000000002 /* SearchViewModel.swift */,
 			);
@@ -910,6 +913,7 @@
 				63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */,
 				22A0C18E300C3BC4008D5904 /* BookLoadingView.swift in Sources */,
 				6315C6322DBA649F00796C7E /* MediaManager.swift in Sources */,
+				2287BB3A300FFD1A00F6D3E2 /* SearchBar.swift in Sources */,
 				2287BB29300D69F800F6D3E2 /* ImagePreviewView.swift in Sources */,
 				63C00BE92CEC945900A4907C /* RulledPage.swift in Sources */,
 				63C2ECD32DAB127D00412221 /* NotesViewModel.swift in Sources */,

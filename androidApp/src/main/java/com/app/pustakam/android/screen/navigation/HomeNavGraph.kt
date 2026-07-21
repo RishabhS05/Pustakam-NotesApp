@@ -20,6 +20,7 @@ import com.app.pustakam.android.screen.noteEditor.NoteEditorScreen
 import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
+import com.app.pustakam.android.screen.settings.SettingsScreen
 import com.app.pustakam.data.models.CameraData
 
 
@@ -28,7 +29,6 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         route = Route.Home,
         startDestination = Route.Notes,
     ) {
-
         composable(
             route = Route.Notes
         ) {
@@ -60,14 +60,14 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             NoteEditorScreen(id = noteId,
                 noteEditorViewModel = viewModel,
                 imageDataViewModel = imageViewModel,
-                onBack =
-                navController::upPress, navController::navigateTo)
+                onBack = navController::upPress, navController::navigateTo)
         }
         composable(
             route = Route.Notification
         ) {
             NotificationView(onNavigate = {})
         }
+
         composable(
             route = Route.Search
         ) {
@@ -76,7 +76,11 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
                 navController.navigateTo(Route.NotesEditor + "/${noteId}")
             })
         }
-
+        composable(
+            route = Route.Settings
+        ) {
+            SettingsScreen(onNavigate = navController::navigateTo,  onBack = navController::upPress)
+        }
         // 🔧 18-Jul-2026: NEW — page-flip book reader; deep-linked from the home-screen widget
         composable(
             route = Route.BookReader + "/{noteId}?contentId={contentId}&single={single}",

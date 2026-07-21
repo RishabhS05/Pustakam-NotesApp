@@ -52,29 +52,33 @@ import sideBrownGradient
 @Composable
 fun NoteCardView(modifier: Modifier = Modifier, summary: NoteSummary,
                  onClick: () -> Unit = {}) {
-    Card(shape = RoundedCornerShape(5),
+    // 🎨 20-Jul-2026 — Granth spec §5 note card: IVORY surface (not the accent) + hairline border + md
+    //   radius (14dp). Saffron stays an accent (fold corner), never the whole card. Softer elevation.
+    Card(shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = colorScheme.primaryContainer,
+            containerColor = colorScheme.surface,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp,
-            hoveredElevation = 16.dp, focusedElevation = 16.dp,  pressedElevation = 12.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp,
+            hoveredElevation = 4.dp, focusedElevation = 4.dp,  pressedElevation = 2.dp),
         modifier = modifier.fillMaxWidth(0.5f).clickable { onClick() }
         .heightIn(min = 100.dp, max = 300.dp).wrapContentHeight().padding(4.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.fillMaxWidth()) {
+                // 🎨 20-Jul-2026 — serif card title, ink text on ivory (spec §3 card title / §2.2 text)
                 Text(
                     if (!summary.title.isNullOrEmpty()) summary.title.toString() else "Title?",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        color = colorScheme.onPrimaryContainer
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = colorScheme.onSurface
                     ), modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
                 )
+                // 🎨 20-Jul-2026 — meta date as tertiary text (spec §2.2 text-3), no heavy gradient chip
                 Text(
                     summary.updatedAt?.toLocalFormat(showTime = false).toString(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = baseWhite
-                    ), modifier = Modifier.background(brush = Brush.horizontalGradient(sideBrownGradient),
-                        shape = RoundedCornerShape(10)).align(Alignment.TopEnd).padding(4.dp)
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = colorScheme.onSurfaceVariant
+                    ), modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
                 )
             }
             // Text snippet — only when the note actually has text.
@@ -82,7 +86,7 @@ fun NoteCardView(modifier: Modifier = Modifier, summary: NoteSummary,
                 Text(
                     summary.snippet!!,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = colorScheme.onPrimaryContainer
+                        color = colorScheme.onSurfaceVariant // 🎨 secondary text on ivory (spec §2.2)
                     ),
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis,
@@ -125,11 +129,11 @@ private fun CountBadge(icon: ImageVector, count: Int) {
     if (count <= 0) return
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = colorScheme.onPrimaryContainer,
+        Icon(icon, contentDescription = null, tint = colorScheme.onSurfaceVariant, // 🎨 secondary on ivory
             modifier = Modifier.size(14.dp))
         Text(
             if (count > 1000 ) "{$count/1000}k" else "$count",
-            style = MaterialTheme.typography.labelSmall.copy(color = colorScheme.onPrimaryContainer)
+            style = MaterialTheme.typography.labelSmall.copy(color = colorScheme.onSurfaceVariant)
         )
     }
 }

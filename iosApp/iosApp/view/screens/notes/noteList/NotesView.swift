@@ -29,10 +29,13 @@ struct NotesView: View {
                         .font(.system(size: 16, weight:.semibold))
                         .foregroundStyle(.white)
                         .padding(.trailing, 12)
-                }.background(Theme.Colors.secondary)
+                }
+                // 🎨 20-Jul-2026 — FAB carries the signature saffron→copper accent gradient (spec §2.1 / §5)
+                .background(Theme.Colors.accentGradient)
             }
             .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 5)
+            // 🎨 20-Jul-2026 — spec §4 shadow-fab (warm copper glow)
+            .shadow(color: Theme.Elevation.fab, radius: Theme.Elevation.fabRadius, x: 0, y: Theme.Elevation.fabY)
             .frame(alignment:.bottomTrailing)
         }
     }.padding(12)
@@ -99,6 +102,8 @@ struct NotesView: View {
     }
     var body: some View {
             ZStack(alignment: .center){
+                // 🎨 20-Jul-2026 — warm parchment page background (spec §2.2 `bg`) so the notes list is not
+                //   a stark white page behind the cards. Sits under everything, ignores safe area.
                 if notesViewModel.state.summaries.isEmpty { emptyNotesUI
                 }
                 else {
@@ -133,14 +138,13 @@ struct NotesView: View {
         .sheet(isPresented: $notesViewModel.state.showSheet){
             createTag
         }
-        .padding(8)
+        .padding(.vertical,8)
             .onAppear {
                 notesViewModel.getNotesCall()
             }.onDisappear{
                 notesViewModel.state.isLoading = false
             }
             .navigationBarBackButtonHidden(true)
-            
     }
     var emptyNotesUI : some View {
         HStack{

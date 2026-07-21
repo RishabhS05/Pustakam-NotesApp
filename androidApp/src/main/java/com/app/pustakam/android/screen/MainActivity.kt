@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +53,8 @@ fun AppUi(navController: PustakmNavController = rememberPustakmNavController()) 
     Scaffold(topBar = {
         if (currentRoute.isNotnull() && navController.shouldShowTopBar) TopAppBar(title = {
             Text(text = currentRoute!!, textAlign = TextAlign.Center)
-        })
+        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colorScheme.background)
+        )
     }, bottomBar = {
         if (navController.shouldShowBottomBar) BottomBar(navController = navController)
     }, floatingActionButton = {
@@ -62,7 +65,8 @@ fun AppUi(navController: PustakmNavController = rememberPustakmNavController()) 
                 }
             }
         }
-    }) { paddingValues ->
+    }
+        ) { paddingValues ->
         AppNavGraph(
             navController, modifier = Modifier.padding(paddingValues)
         )

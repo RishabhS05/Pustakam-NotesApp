@@ -11,13 +11,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 import com.app.pustakam.android.theme.typography
+import amoledTheme
 import darkTheme
 import lightTheme
 import shapes
 
+// 🎨 20-Jul-2026 — Granth spec §2 / §6 Appearance: three theme modes (Light/Dark/AMOLED). Additive —
+//   the existing isDarkTheme boolean path is preserved; AMOLED is opt-in via the new isAmoled flag.
 @Composable
 fun MyApplicationTheme(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isAmoled: Boolean = false, // 🎨 opt-in true-black OLED mode (settings "AMOLED" tile)
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -26,6 +30,7 @@ fun MyApplicationTheme(
 //            if (isDarkTheme) dynamicDarkColorScheme(context)
 //            else dynamicLightColorScheme(context)
 //        }
+        isAmoled -> amoledTheme          // 🎨 true-black OLED variant
         isDarkTheme -> darkTheme
         else -> lightTheme
     }
@@ -55,14 +60,15 @@ data class ExtendedColorScheme(
     val extra: ColorFamily = extendedLight.extra,
 )
 
+// 🎨 20-Jul-2026 — warm surface-2 variants (spec §2.2 `surface-2`) replace the placeholder grays.
 val extendedLight = ExtendedColorScheme(
     extra = ColorFamily(
-        backgroundVariant = Color(0xFFEEEEEE), // Example light variant
+        backgroundVariant = Color(0xFFF6EEDB), // Granth surface-2 (light)
     ),
 )
 val extendedDark = ExtendedColorScheme(
     extra = ColorFamily(
-        backgroundVariant = Color(0xFF333333), // Example dark variant
+        backgroundVariant = Color(0xFF2A2219), // Granth surface-2 (dark)
     ),
 )
 

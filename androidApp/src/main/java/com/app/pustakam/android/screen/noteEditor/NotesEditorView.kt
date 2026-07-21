@@ -50,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -262,10 +263,13 @@ fun NoteEditorScreen(
         TopAppBar(title = {
             state.value.note?.updatedAt?.let {
                 Text(
-                    it.toLocalFormat(), style = typography.titleMedium
+                    it.toLocalFormat(), style = typography.titleSmall
                 )
             }
-        }, actions = {
+        }, colors = TopAppBarDefaults.topAppBarColors(
+            colorScheme.background,
+        ) ,
+            actions = {
             // 🔧 18-Jul-2026: NEW — open this note as a real page-flip book
             IconButton(onClick = {
                 state.value.note?.id?.let { navigateTo(Route.BookReader + "/${it}") }
@@ -437,7 +441,7 @@ fun NotesEditor(
             Column {
                 TextField(
                     value = state.value.titleTextState.value,
-                    textStyle = typography.titleLarge,
+                    textStyle = typography.headlineLarge,
                     placeholder = {
                         Text(
                             "Title : Keep your thoughts alive.",
@@ -447,8 +451,10 @@ fun NotesEditor(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
                         cursorColor = colorScheme.tertiary
                     ),
                     onValueChange = {
@@ -463,7 +469,6 @@ fun NotesEditor(
                         .focusRequester(focusRequester)
                         .padding(top = 2.dp)
                 )
-                HorizontalDivider(color = colorScheme.outline, thickness = 2.dp)
                 contentList(focusRequester)
             }
         }

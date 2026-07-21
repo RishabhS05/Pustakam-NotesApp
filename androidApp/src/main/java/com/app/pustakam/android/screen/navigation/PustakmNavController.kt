@@ -24,6 +24,7 @@ object Route {
     const val Authentication = "AUTH"
     const val ImagePreview = "IMAGE_PREVIEW"
     const val VideoPreview = "VIDEO_PREVIEW"
+    const val Settings = "SETTINGS"
     const val BookReader = "BOOK_READER"   // 🔧 18-Jul-2026: page-flip book reader
 }
 @Stable
@@ -33,14 +34,15 @@ class PustakmNavController(
     val navigationScreen = listOf(
         Screen.HomeScreen.NotesScreen,
         Screen.HomeScreen.SearchScreen,
-        Screen.HomeScreen.NotificationScreen
-
+        Screen.HomeScreen.NotificationScreen,
+        Screen.HomeScreen.SettingsScreen
     )
     val shouldShowBottomBar
         get() = when (navController.currentBackStackEntry?.destination?.route) {
             Route.Notes,
             Route.Search,
             Route.Notification,
+            Route.Settings
                 -> true
 
             else -> false

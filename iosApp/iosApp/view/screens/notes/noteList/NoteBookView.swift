@@ -23,18 +23,22 @@ struct NoteBookView : View {
             let height = geo.size.height
             ZStack{
                 VStack(alignment: .leading, spacing: 6){
+                    // 🎨 20-Jul-2026 — serif card title on ivory (spec §3 card title 14.5/18, §5 note card)
                     Text(summary.title?.isEmpty == false ? summary.title! : "No Title ?")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(Theme.Fonts.cardTitle)
+                        .foregroundColor(Theme.Colors.text)
                         .lineLimit(2)
                         .padding(.top, 24)
                         .padding(.horizontal, 12)
                     if let snippet = summary.snippet, !snippet.isEmpty {
                         Text(snippet)
                             .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(Theme.Colors.text2) // 🎨 secondary text (spec §2.2)
                             .lineLimit(4)
                             .padding(.horizontal, 12)
                     } else {
                         mediaCountBadges
+                            .foregroundColor(Theme.Colors.text2) // 🎨 count badges read as secondary text
                             .padding(.horizontal, 12)
                     }
                     if let thumb = summary.thumbnailPath, !thumb.isEmpty,
@@ -51,22 +55,45 @@ struct NoteBookView : View {
                 .frame(maxWidth: width, maxHeight: height, alignment: .topLeading)
                 HStack{
                     Spacer()
+                    // 🎨 20-Jul-2026 — meta date as tertiary text (spec §2.2 text-3), no heavy gray chip
                     Text("\(summary.updatedAt?.toLocalFormat(showTime: false) ?? "")")
-                        .font(.system(size: 14, weight: .regular))
-                        .background(.gray.gradient)
-                        .cornerRadius(4)
-                        .foregroundColor(Theme.Colors.onSurface)
+                        .font(Theme.Fonts.metaCaption)
+                        .foregroundColor(Theme.Colors.text3)
+                        .padding(.top, 8)
+                        .padding(.trailing, 10)
                 }
                 .frame(width :width,
                         height : height,
                         alignment: .topTrailing)
+                // 🎨 20-Jul-2026 — copper fold corner = the ONLY loud accent on the card (spec §5 manuscript fold motif)
+                foldCorner
+                    .frame(width: width, height: height, alignment: .topTrailing)
             }
-            .background(Theme.Colors.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+            // 🎨 20-Jul-2026 — card is an IVORY surface with a hairline border (spec §5 note card / prototype .ncard),
+            //   NOT a solid accent fill. This fixes the "wall of orange" — primary/saffron is an accent, not a card bg.
+            .background(Theme.Colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 14)) // spec §4 radius md (cards)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Theme.Colors.border, lineWidth: 1)
+                )
+                .shadow(color: Theme.Elevation.card, radius: Theme.Elevation.cardRadius, x: 0, y: Theme.Elevation.cardY)
                 .onTapGesture {
                     onClick()
                 }
         }
+    }
+
+    // 🎨 20-Jul-2026 — copper triangle fold in the top-right (spec §5 "corner fold" manuscript motif).
+    private var foldCorner: some View {
+        Path { p in
+            let s: CGFloat = 20
+            p.move(to: CGPoint(x: -s, y: 0))
+            p.addLine(to: CGPoint(x: 0, y: 0))
+            p.addLine(to: CGPoint(x: 0, y: s))
+            p.closeSubpath()
+        }
+        .fill(Theme.Colors.saffron.opacity(0.9))
     }
 
     // 🔧 15-Jul-2026 iOS parity: compact "what's inside" row for notes without text.

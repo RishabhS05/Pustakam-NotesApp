@@ -34,6 +34,8 @@ struct NoteEditorView: View {
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // 🎨 20-Jul-2026 — warm parchment editor page (spec §2.2 `bg`); distraction-free surface (spec §6)
+            Theme.Colors.background.edgesIgnoringSafeArea(.all)
             ScrollView(.vertical){
             VStack(alignment: .leading) {
                 NoteTextEditor(

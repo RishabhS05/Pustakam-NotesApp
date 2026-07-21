@@ -12,6 +12,36 @@ struct Theme {
         static let surface = Color("surface")
         static let background = Color("background")
 
+        // 🎨 20-Jul-2026 — Granth spec §2 palette. All resolve from Assets.xcassets/colors/* colorsets
+        //   (light+dark defined per set). Additive: the eight tokens above are kept and now also carry
+        //   the warm values. Brand primitives (spec §2.1):
+        static let ivory = Color("ivory")
+        static let parchment = Color("parchment")
+        static let sand = Color("sand")
+        static let saffron = Color("saffron")
+        static let saffronDeep = Color("saffronDeep")
+        static let copper = Color("copper")
+        static let gold = Color("gold")
+        static let forest = Color("forest")          // success / sync-complete
+        static let indigo = Color("indigo")          // links / info
+        static let ink = Color("ink")                // darkest text
+        // Semantic tokens (spec §2.2):
+        static let surface2 = Color("surface2")
+        static let surfaceRaise = Color("surfaceRaise")  // nav / sheets
+        static let text2 = Color("text2")            // secondary text
+        static let text = Color("text")            // secondary text
+        static let text3 = Color("text3")            // tertiary / meta
+        static let border = Color("border")
+        static let accent = Color("accent")
+        static let link = Color("link")
+
+        // Signature gradient (spec §2.1): 135° saffron → copper. Used on FAB, primary button, hero, seal.
+        static let accentGradient = LinearGradient(
+            colors: [saffron, copper],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+
 //        static let baseWhite = Color(hex: "#FFFFFF")
 //        static let primaryLight = Color(hex: "#97D2FF")
 //        static let inversePrimaryLight = Color(hex: "#92CDFA")
@@ -75,22 +105,68 @@ struct Theme {
         static let gtWpMedium = "GTWalsheimPro-Medium"
         static let gtWpLight = "GTWalsheimPro-Light"
         static let gtWpThin = "GTWalsheimPro-Thin"
-        
+
         static let largeTitle = Font.custom(gtWpMedium, size: 24)
         static let topbarTitle = Font.custom(gtWpMedium, size: 22)
-        
+
         static let title = Font.custom(gtWpMedium, size: 18)
         static let selectTitle = Font.custom(gtWpMedium, size: 18)
         static let body = Font.custom(gtWpMedium,size: 18)
         static let body2 = Font.custom(gtWpRegular, size: 16)
         static let caption = Font.custom(gtWpLight,size: 14)
+
+        // 🎨 20-Jul-2026 — Granth spec §3 type scale. Display = serif (system serif design, HIG-native,
+        //   no font binary needed; swap for Noto Serif later); Body/UI = SF Pro (system). iOS titles keep
+        //   serif with -0.02em tracking (apply via .tracking(-0.4) at the call site). Additive to the gtWp* set.
+        static let displayXL = Font.system(size: 30, weight: .semibold, design: .serif)   // page title 30/33
+        static let displayL  = Font.system(size: 26, weight: .semibold, design: .serif)   // note-title editor 26/30
+        static let sectionTitle = Font.system(size: 18, weight: .semibold, design: .serif) // 17–20/24
+        static let cardTitle = Font.system(size: 15, weight: .semibold, design: .serif)   // 14.5/18
+        static let readerBody = Font.system(size: 17, weight: .regular, design: .serif)   // 17/31
+        static let bodyText = Font.system(size: 15, weight: .regular, design: .default)   // 15/26 sans
+        static let metaCaption = Font.system(size: 12, weight: .medium, design: .default) // 11–12/16
+        static let codeText = Font.system(size: 13, weight: .regular, design: .monospaced) // 12–13/20
      }
-     
+
      // Define Spacing
+     // 🎨 20-Jul-2026 — Granth spec §4 spacing (4pt base). small/medium/large kept for back-compat;
+     //   named steps + screen gutter added. Additive.
      struct Spacing {
          static let small: CGFloat = 8
          static let medium: CGFloat = 16
          static let large: CGFloat = 24
+         static let xs: CGFloat = 4
+         static let sm: CGFloat = 8
+         static let md: CGFloat = 12
+         static let lg: CGFloat = 16
+         static let xl: CGFloat = 20
+         static let xxl: CGFloat = 24
+         static let xxxl: CGFloat = 32
+         static let gutter: CGFloat = 20      // screen gutter
+     }
+
+     // 🎨 20-Jul-2026 — Granth spec §4 radius. FAB is a full circle on iOS (spec §8), so use .infinity/Circle().
+     struct Radius {
+         static let sm: CGFloat = 8    // chips / code
+         static let md: CGFloat = 14   // cards / inputs
+         static let lg: CGFloat = 22   // search / hero
+         static let xl: CGFloat = 30   // sheets
+     }
+
+     // 🎨 20-Jul-2026 — Granth spec §4 elevation. Use as .shadow(color:radius:x:y:).
+     struct Elevation {
+         // shadow-1 (cards)
+         static let card = Color.black.opacity(0.06)
+         static let cardRadius: CGFloat = 6
+         static let cardY: CGFloat = 2
+         // shadow-2 (hero / dialog)
+         static let hero = Color.black.opacity(0.12)
+         static let heroRadius: CGFloat = 20
+         static let heroY: CGFloat = 6
+         // shadow-fab
+         static let fab = Color(red: 166/255, green: 92/255, blue: 52/255).opacity(0.40)
+         static let fabRadius: CGFloat = 24
+         static let fabY: CGFloat = 8
      }
 }
 struct Images {

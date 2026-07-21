@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme.colorScheme // 🎨 20-Jul-2026 warm page bg
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 // 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger
@@ -113,10 +114,8 @@ fun NotesListView(
         columns = StaggeredGridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(sideblueGradient),
-                alpha = 0.2f
-            ),
+            // 🎨 20-Jul-2026 — warm parchment page (spec §2.2 `bg`), replacing the leftover blue gradient.
+            .background(colorScheme.background),
         contentPadding = PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

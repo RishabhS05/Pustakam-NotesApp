@@ -30,6 +30,7 @@ struct HomeView : View {
             }
             .tag(2)
         }
+        .background(Theme.Colors.background)
         .navigationBarBackButtonHidden(true)
         .navigationTitle(title.capitalized)
     }
