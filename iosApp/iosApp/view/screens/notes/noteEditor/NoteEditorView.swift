@@ -34,8 +34,6 @@ struct NoteEditorView: View {
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
-            // 🎨 20-Jul-2026 — warm parchment editor page (spec §2.2 `bg`); distraction-free surface (spec §6)
-            Theme.Colors.background.edgesIgnoringSafeArea(.all)
             ScrollView(.vertical){
             VStack(alignment: .leading) {
                 NoteTextEditor(
@@ -128,40 +126,40 @@ struct NoteEditorView: View {
         }
         .alert(isPresented: $errorField.showErrorAlert) {
             throwAlert()
-        }.padding(.horizontal, 12)
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackButton(action: {
-                        dismiss()
-                    })
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack{
-                        // 🔧 18-Jul-2026: NEW — open this note as a real page-curl book
-                        ActionButtonWithoutBackground(iconName: "book", action: {
-                            if let noteId = noteEditorViewModel.state.note?.id {
-                                router.navigate(to: .BookReader(noteId: noteId))
-                            }
-                        }, tint: Theme.Colors.secondary)
-                        // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word
-                        ActionButtonWithoutBackground(iconName: "square.and.arrow.up.on.square", action: {
-                            showExportOptions = true
-                        }, tint: Theme.Colors.secondary)
-                        ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
-                            saveNote()
-                        }, tint :Theme.Colors.secondary)
-                        ActionButtonWithoutBackground(iconName: "arrow.down.document",
-                    action: {},tint : Theme.Colors.secondary)
-                            ActionButtonWithoutBackground(iconName: "trash", action: {
-                                setAlert(message: "Are you sure you want to delete this note?", title: "Delete note", alertType: .DELETE )
-                            }, tint: Color.red)
-                    }
-                }
-            }.onDisappear {
-                saveNote()
+        }
+        .padding(.horizontal, 12)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                BackButton(action: {
+                    dismiss()
+                })
             }
+            
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack{
+                    // 🔧 18-Jul-2026: NEW — open this note as a real page-curl book
+                    ActionButtonWithoutBackground(iconName: "book", action: {
+                        if let noteId = noteEditorViewModel.state.note?.id {
+                            router.navigate(to: .BookReader(noteId: noteId))
+                        }
+                    }, tint: Theme.Colors.secondary)
+                    // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word
+                    ActionButtonWithoutBackground(iconName: "square.and.arrow.up.on.square", action: {
+                        showExportOptions = true
+                    }, tint: Theme.Colors.secondary)
+                    ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
+                        saveNote()
+                    }, tint :Theme.Colors.secondary)
+                    ActionButtonWithoutBackground(iconName: "arrow.down.document",
+                action: {},tint : Theme.Colors.secondary)
+                        ActionButtonWithoutBackground(iconName: "trash", action: {
+                            setAlert(message: "Are you sure you want to delete this note?", title: "Delete note", alertType: .DELETE )
+                        }, tint: Color.red)
+                }
+            }
+        }
+        .onDisappear {saveNote() }
     }
     
     

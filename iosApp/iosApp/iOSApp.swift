@@ -16,6 +16,7 @@ struct iOSApp: App {
 
             NavigationStack(path: $router.navPath){
                 AppView()
+                    
                     .navigationDestination(for: Router.Destination.self){
                         destination in
                         switch destination {
@@ -26,6 +27,7 @@ struct iOSApp: App {
                             case .Notification : NotificationView()
                             case .Search : SearchView()
                             case .Home : HomeView()
+                            case .Settings : SettingsView()
                             case .Camera(let onDone):
                                 CameraPreview(onCapture: onDone)
                             // 🔧 18-Jul-2026: page-curl book reader destination

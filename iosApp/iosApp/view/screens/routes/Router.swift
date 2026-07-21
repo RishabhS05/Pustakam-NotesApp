@@ -13,6 +13,7 @@ import shared
         case Notification
         case Search
         case Home
+        case Settings
         case Camera (onCapture : (CapturedMedia?) -> Void)
         // 🔧 18-Jul-2026: NEW — page-curl book reader (noteId so the widget deep link works too)
         // 🔧 19-Jul-2026: single=true → book contains ONLY the tapped file's pages

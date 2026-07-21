@@ -13,29 +13,45 @@ struct HomeView : View {
     }
     var body: some View {
         TabView(selection: $selectedTab){
-            NotesView().tabItem {
+            NotesView()
+                .background(Theme.Colors.background)
+                .tabItem {
                 Image(systemName: "note.text.badge.plus")
                 Text("Notes")
             }
             .tag(0)
-            SearchView().tabItem {
+            SearchView()
+                .background(Theme.Colors.background)
+                .tabItem {
                 Image(systemName: "magnifyingglass")
                 Text("Search")
             }
             .tag(1)
             
-            NotificationView().tabItem {
+            NotificationView()
+                .background(Theme.Colors.background)
+                .tabItem {
                 Image(systemName: "bell.fill")
                 Text("Notification")
             }
             .tag(2)
+            
+            SettingsView()
+                .background(Theme.Colors.background)
+                .tabItem {
+                Image(systemName: "gearshape.fill")
+                Text("Settings")
+            }
+            .tag(3)
         }
-        .background(Theme.Colors.background)
         .navigationBarBackButtonHidden(true)
         .navigationTitle(title.capitalized)
+     
     }
 }
 
 #Preview {
     HomeView()
 }
+
+

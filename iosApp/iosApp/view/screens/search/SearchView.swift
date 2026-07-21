@@ -16,12 +16,11 @@ struct SearchView: View {
                 get: { viewModel.state.query },
                 set: { viewModel.onQueryChange($0) }
             ),
-            placeholder: "Search notes, text, and titles", showMicrophone: true, onMicrophoneClick: {
+            placeholder: "Search notes, tags, titles…", showMicrophone: true, onMicrophoneClick: {
                 
             }
            )
             .padding(10)
-
             if viewModel.state.query.trimmingCharacters(in: .whitespaces).isEmpty {
                 centerHint("Search across every note — text, titles.")
             } else if viewModel.state.results.isEmpty && !viewModel.state.isSearching {

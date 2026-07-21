@@ -134,6 +134,7 @@ struct NotesView: View {
                     }
                 }
             }
+           
         // ZStack
         .sheet(isPresented: $notesViewModel.state.showSheet){
             createTag

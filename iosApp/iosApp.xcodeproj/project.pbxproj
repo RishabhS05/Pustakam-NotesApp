@@ -12,6 +12,7 @@
 		2287BB29300D69F800F6D3E2 /* ImagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB28300D69F800F6D3E2 /* ImagePreviewView.swift */; };
 		2287BB32300E5C2A00F6D3E2 /* NoteExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */; };
 		2287BB3A300FFD1A00F6D3E2 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB39300FFD1A00F6D3E2 /* SearchBar.swift */; };
+		2287BB3F3010096700F6D3E2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB3E3010095F00F6D3E2 /* SettingsView.swift */; };
 		228AE49F30012F2D00F53C82 /* UiState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE49E30012F2D00F53C82 /* UiState.swift */; };
 		228AE4A330012F9A00F53C82 /* NotesBridgeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */; };
 		228AE4B130013AAA00F53C82 /* AuthBridgeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */; };
@@ -129,6 +130,7 @@
 		2287BB28300D69F800F6D3E2 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteExporter.swift; sourceTree = "<group>"; };
 		2287BB39300FFD1A00F6D3E2 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
+		2287BB3E3010095F00F6D3E2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		228AE49E30012F2D00F53C82 /* UiState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UiState.swift; sourceTree = "<group>"; };
 		228AE4A230012F9A00F53C82 /* NotesBridgeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesBridgeAdapter.swift; sourceTree = "<group>"; };
 		228AE4B030013AA100F53C82 /* AuthBridgeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthBridgeAdapter.swift; sourceTree = "<group>"; };
@@ -248,6 +250,14 @@
 				2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */,
 			);
 			path = export;
+			sourceTree = "<group>";
+		};
+		2287BB3B301008AB00F6D3E2 /* settings */ = {
+			isa = PBXGroup;
+			children = (
+				2287BB3E3010095F00F6D3E2 /* SettingsView.swift */,
+			);
+			path = settings;
 			sourceTree = "<group>";
 		};
 		228AE4A030012F5100F53C82 /* bridge */ = {
@@ -582,6 +592,7 @@
 		63D089192CABD653008FD8CC /* screens */ = {
 			isa = PBXGroup;
 			children = (
+				2287BB3B301008AB00F6D3E2 /* settings */,
 				22A0C186300C1A02008D5904 /* bookReader */,
 				63FD32A72CBEAD9C0047ED10 /* notification */,
 				63FD32A62CBEAD8C0047ED10 /* search */,
@@ -769,7 +780,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 2660;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2660;
 				ORGANIZATIONNAME = orgName;
 				TargetAttributes = {
 					22A0C167300C1834008D5904 = {
@@ -891,6 +902,7 @@
 				630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */,
 				228AE4A330012F9A00F53C82 /* NotesBridgeAdapter.swift in Sources */,
 				228AE4B130013AAA00F53C82 /* AuthBridgeAdapter.swift in Sources */,
+				2287BB3F3010096700F6D3E2 /* SettingsView.swift in Sources */,
 				639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */,
 				63D0891E2CABD6C2008FD8CC /* SignupView.swift in Sources */,
 				630BA1872CF2658000D148C8 /* Date.ext.swift in Sources */,
@@ -974,7 +986,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1011,7 +1022,6 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1074,6 +1084,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -1098,6 +1109,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -1141,6 +1153,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1159,6 +1172,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
@@ -1172,7 +1186,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1207,7 +1220,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6G4333N2D5;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
