@@ -3,8 +3,11 @@ package com.app.pustakam.android.screen.navigation
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,8 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 fun BottomBar(
     navController: PustakmNavController = rememberPustakmNavController(),
 ) {
-
-    NavigationBar {
+    NavigationBar(containerColor = colorScheme.surfaceBright) {
         val currentRoute = navController.currentRoute()
         navController.navigationScreen.forEach { item ->
             NavigationBarItem(
@@ -26,7 +28,6 @@ fun BottomBar(
                 },
                 icon = {
                     BadgedBox(badge = { }) { }
-
                     Icon(
                         imageVector = (if (item.route == currentRoute) item.selectedIcon else item.unselectedIcon),
                         contentDescription = item.title
