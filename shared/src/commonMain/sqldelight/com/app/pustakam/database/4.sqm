@@ -1,0 +1,6 @@
+-- 📖 23-Jul-2026 · migration v4 -> v5 — per-document reading progress on NoteContent.
+--   Replaces the DataStore-based last-page tracking: progress now travels WITH the media row, so it
+--   survives sync, and a PDF/doc reopens on the page the reader stopped at.
+--   Defaults backfill existing rows as "never opened" (0/0), which the reader treats as page 1.
+ALTER TABLE NoteContent ADD COLUMN totalPages INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE NoteContent ADD COLUMN progressPage INTEGER NOT NULL DEFAULT 0;
