@@ -2,7 +2,7 @@ package com.app.pustakam.android.widgets.colorPalete// build.gradle (module)
 // implementation("androidx.compose.material3:material3:<latest>")
 // implementation("androidx.compose.foundation:foundation:<latest>")
 
-import DarkBrown1
+import com.app.pustakam.android.theme.DarkBrown1
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -25,8 +24,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.app.pustakam.android.widgets.PrimaryFilledButton
-import toHexString
+import com.app.pustakam.android.theme.toHexString
 import kotlin.math.roundToInt
 
 @Composable

@@ -8,12 +8,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 import com.app.pustakam.android.theme.typography
-import amoledTheme
-import darkTheme
-import lightTheme
+import com.app.pustakam.android.theme.amoledTheme
+import com.app.pustakam.android.theme.darkTheme
+import com.app.pustakam.android.theme.lightTheme
 import shapes
 
 // 🎨 20-Jul-2026 — Granth spec §2 / §6 Appearance: three theme modes (Light/Dark/AMOLED). Additive —

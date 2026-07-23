@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -20,8 +21,15 @@ import com.app.pustakam.android.screen.navigation.BottomBar
 import com.app.pustakam.android.screen.navigation.PustakmNavController
 import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.screen.navigation.rememberPustakmNavController
+import com.app.pustakam.android.theme.ThemeMode
 import com.app.pustakam.android.widgets.fabWidget.AddNewNoteFAB
+import com.app.pustakam.data.localdb.preferences.BasePreferences
 import com.app.pustakam.extensions.isNotnull
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.map
+import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
 
@@ -29,7 +37,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            // 🎨 22-Jul-2026 — Granth spec §6: the persisted Appearance pick drives the whole app.
+            //   SYSTEM defers to isSystemInDarkTheme() so scheduled Dark Mode keeps working.
+            val themeMode = rememberGranthThemeMode()
+            val isDark = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK, ThemeMode.AMOLED -> true
+            }
+            MyApplicationTheme(isDarkTheme = isDark, isAmoled = themeMode.isAmoled) {
                 AppUi()
             }
         }
@@ -45,6 +61,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+// 🎨 22-Jul-2026 — reads the persisted Appearance pick from the shared DataStore (same
+//   "granth.themeMode" key iOS uses). Emits on every change, so picking a tile in Settings
+//   retints the app immediately and the choice survives restart.
+@Composable
+private fun rememberGranthThemeMode(): ThemeMode {
+    val prefs = koinInject<BasePreferences>()
+    val modeFlow = remember(prefs) { prefs.userPreferencesFlow.map { ThemeMode.from(it.themeMode) } }
+    val mode by modeFlow.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
+    return mode
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

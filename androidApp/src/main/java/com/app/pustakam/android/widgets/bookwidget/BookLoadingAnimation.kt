@@ -9,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -35,10 +36,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
-import tertiaryLight
+import com.app.pustakam.android.R
+import com.app.pustakam.android.theme.tertiaryLight
+import io.ktor.http.ContentType
 
 @Composable
 fun BookLoadingAnimation(
@@ -173,12 +177,11 @@ fun BookLoadingAnimation(
             val currentLine = overall.toInt().coerceAtMost(totalLines - 1)
             val lineProgress = overall - currentLine
 
-            Icon(
-                imageVector = Icons.Default.Edit,
+           Image(
+                painter = painterResource(R.drawable.ic_pencil),
                 contentDescription = null,
-                tint = tertiaryLight,
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(28.dp)
                     .offset(
                         x = (8 + lineProgress * 24).dp,
                         y = (currentLine * 14).dp

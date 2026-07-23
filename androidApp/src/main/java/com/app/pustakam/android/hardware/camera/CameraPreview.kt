@@ -1,6 +1,6 @@
 package com.app.pustakam.android.hardware.camera
 
-import Gray4
+import com.app.pustakam.android.theme.Gray4
 import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import baseWhite
+import com.app.pustakam.android.theme.baseWhite
 import com.app.pustakam.android.R
 import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.screen.navigation.Route
@@ -43,7 +43,7 @@ import com.app.pustakam.android.widgets.audio.RecordingTimer
 import com.app.pustakam.extensions.isNotnull
 import com.app.pustakam.util.ContentType
 import com.app.pustakam.util.getCurrentTimestamp
-import orange30
+import com.app.pustakam.android.theme.orange30
 
 @Composable
 fun CameraStreamingScreen(

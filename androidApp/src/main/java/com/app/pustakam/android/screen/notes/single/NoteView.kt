@@ -1,7 +1,6 @@
 package com.app.pustakam.android.screen.notes.single
 
 import android.content.res.Configuration
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,17 +28,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import baseWhite
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.data.models.response.notes.NoteSummary
 import com.app.pustakam.extensions.toLocalFormat
-import sideBrownGradient
 
 // 🔧 15-Jul-2026 Summary query: the card renders a NoteSummary (was a full Note whose contents it
 //   never used). What it shows, top to bottom:

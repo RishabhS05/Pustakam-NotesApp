@@ -1,6 +1,7 @@
 import shared
 import SwiftUI
 import Firebase
+import FirebaseCrashlytics
 @main
 struct iOSApp: App {
    @State var themeManager = ThemeManager()
@@ -47,17 +48,35 @@ struct iOSApp: App {
             }
             .environment(router)
                 .environment(themeManager)
+                // 🎨 22-Jul-2026 — nil for .system so the app follows the OS appearance.
                 .preferredColorScheme(themeManager.getTheme())
+                // 🎨 22-Jul-2026 — inject \.palette *after* preferredColorScheme so the AMOLED
+                //   override sees the scheme iOS actually resolved.
+                .themedRoot(mode: themeManager.mode)
         }
 	}
 }
 
-class AppDelegate: UIResponder, UIApplicationDelegate {
+
+final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization
-        FirebaseApp.configure()
-        KoinKt.doInitKoin(appDeclaration: {_ in})
         return true
     }
+}
 
+// 🐛 23-Jul-2026: breadcrumbs for the PDF path. A CoreGraphics abort gives a stack with no clue
+//   WHICH file killed it; these keys ride along with the next crash report so the offending
+//   document is identifiable.
+enum CrashBreadcrumb {
+    static func openingDocument(contentId: String, path: String?, pageCount: Int) {
+        let crashlytics = Crashlytics.crashlytics()
+        crashlytics.setCustomValue(contentId, forKey: "doc.contentId")
+        crashlytics.setCustomValue(pageCount, forKey: "doc.pageCount")
+        crashlytics.setCustomValue((path as NSString?)?.lastPathComponent ?? "nil", forKey: "doc.file")
+        crashlytics.log("opening document \(contentId) pages=\(pageCount)")
+    }
+
+    static func rejectedUnreadablePdf(path: String?) {
+        Crashlytics.crashlytics().log("rejected unreadable pdf: \((path as NSString?)?.lastPathComponent ?? "nil")")
+    }
 }

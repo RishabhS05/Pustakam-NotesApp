@@ -35,6 +35,10 @@ struct Theme {
         static let accent = Color("accent")
         static let link = Color("link")
 
+        // 🎨 22-Jul-2026 — alias for the recessed fill used by track/groove shapes (progress bars,
+        //   sliders). ContinueReadingCard already referenced this name; it resolves to surface2.
+        static let surfaceSecondary = surface2
+
         // Signature gradient (spec §2.1): 135° saffron → copper. Used on FAB, primary button, hero, seal.
         static let accentGradient = LinearGradient(
             colors: [saffron, copper],

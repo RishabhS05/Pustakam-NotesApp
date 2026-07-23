@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,7 +24,6 @@ import androidx.compose.runtime.Composable
 // 🔧 15-Jul-2026: one-shot onStop delivery
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -53,7 +50,7 @@ import com.app.pustakam.android.hardware.audio.recorder.AudioViewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import orange20
+import com.app.pustakam.android.theme.orange20
 import kotlin.math.sin
 
 

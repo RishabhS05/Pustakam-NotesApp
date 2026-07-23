@@ -36,6 +36,13 @@ struct DocumentFileCardView: View {
     var onDelete: () -> Void = {}
     var onSave: () -> Void = {}
 
+    // 📖 23-Jul-2026: "<current>/<total>" once the document has been opened (Android inline-card
+    //   parity). progressPage is 0-based on both platforms, so display is +1.
+    private var readingProgressLabel: String {
+        guard media.hasReadingProgress() else { return "" }
+        return "\(Int(media.progressPage) + 1)/\(Int(media.totalPages))"
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
@@ -50,7 +57,10 @@ struct DocumentFileCardView: View {
                 Text(media.title.isEmpty ? (media.localPath as NSString?)?.lastPathComponent ?? "File" : media.title)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(2)
-                let subtitle = [media.type.name, readableFileSize(media.sizeBytes)]
+                // 📖 23-Jul-2026: show the SAME reading position as the reader — both read
+                //   MediaContent.progressPage/totalPages, so "3/4" here matches "3 / 4" in the
+                //   reader. Documents never opened have no progress and show nothing extra.
+                let subtitle = [media.type.name, readableFileSize(media.sizeBytes), readingProgressLabel]
                     .filter { !$0.isEmpty }.joined(separator: " · ")
                 Text(subtitle).font(.caption).foregroundColor(.secondary)
             }

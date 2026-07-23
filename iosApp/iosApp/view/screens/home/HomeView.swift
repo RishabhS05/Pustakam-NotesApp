@@ -1,13 +1,15 @@
 import SwiftUI
 
 struct HomeView : View {
-  
     @State var selectedTab = 0
+    // 🎨 22-Jul-2026 — palette drives the tab bar tint so the accent follows the chosen theme
+    @Environment(\.palette) private var palette
     var title : String {
         switch(selectedTab) {
             case 0 :  return "Notes"
             case 1 :  return "Search"
             case 2 :  return "Notification"
+            case 3 :  return "Settings"
             default : return "Notes"
         }
     }
@@ -46,12 +48,26 @@ struct HomeView : View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationTitle(title.capitalized)
-     
+        // 🎨 22-Jul-2026 — saffron/copper accent on the selected tab instead of the system blue
+        .tint(palette.accent)
+
     }
 }
 
-#Preview {
-    HomeView()
+// 🎨 22-Jul-2026 — previews per theme so the tab bar tint can be checked without running the app
+#Preview("Home — Light") {
+    HomeView().environment(\.palette, ThemePalette(mode: .light, scheme: .light))
+        .preferredColorScheme(.light)
+}
+
+#Preview("Home — Dark") {
+    HomeView().environment(\.palette, ThemePalette(mode: .dark, scheme: .dark))
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Home — AMOLED") {
+    HomeView().environment(\.palette, ThemePalette(mode: .amoled, scheme: .dark))
+        .preferredColorScheme(.dark)
 }
 
 

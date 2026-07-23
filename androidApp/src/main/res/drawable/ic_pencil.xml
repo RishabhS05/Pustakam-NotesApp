@@ -1,0 +1,68 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="64dp"
+        android:height="64dp"
+        android:viewportWidth="64"
+        android:viewportHeight="64">
+
+    <group
+            android:name="pencil"
+            android:pivotX="32"
+            android:pivotY="32"
+            android:rotation="-18">
+
+        <!-- Pencil Tip -->
+        <path
+                android:fillColor="#2F2F2F"
+                android:pathData="M6,32 L12,28 L12,36 Z" />
+
+        <!-- Wood -->
+        <path
+                android:fillColor="#D8B18A"
+                android:pathData="M12,28 L20,26 L20,38 L12,36 Z" />
+
+        <!-- Pencil Body -->
+        <path
+                android:fillColor="#A65C34"
+                android:pathData="M20,27 H54 V38 H20 Z" />
+
+        <!-- Top Highlight -->
+        <path
+                android:fillColor="#D98A53"
+                android:pathData="M20,26 H48 V30 H20 Z" />
+
+        <!-- Bottom Highlight -->
+        <path
+                android:fillColor="#D98A53"
+                android:pathData="M20,34 H48 V38 H20 Z" />
+
+        <!-- Ferrule -->
+        <path
+                android:fillColor="#C6C6C6"
+                android:pathData="M48,26 H53 V38 H48 Z" />
+
+        <!-- Ferrule Line 1 -->
+        <path
+                android:fillColor="#A5A5A5"
+                android:pathData="M49.6,26 H50.4 V38 H49.6 Z" />
+
+        <!-- Ferrule Line 2 -->
+        <path
+                android:fillColor="#A5A5A5"
+                android:pathData="M51.6,26 H52.4 V38 H51.6 Z" />
+
+        <!-- Eraser -->
+        <path
+                android:fillColor="#A65C34"
+                android:pathData="M53,28
+                              A2,2 0 0,1 55,26
+                              H58
+                              A2,2 0 0,1 60,28
+                              V36
+                              A2,2 0 0,1 58,38
+                              H55
+                              A2,2 0 0,1 53,36
+                              Z" />
+
+    </group>
+
+</vector>

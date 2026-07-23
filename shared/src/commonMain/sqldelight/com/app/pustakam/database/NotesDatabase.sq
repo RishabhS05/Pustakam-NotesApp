@@ -37,6 +37,10 @@ sizeBytes INTEGER,
 width INTEGER,
 height INTEGER,
 thumbnailPath TEXT,
+-- 📖 23-Jul-2026: reading progress lives ON the media row, so a document reopens where it was left
+--   (replaces the DataStore last-page tracking). totalPages = 0 until the doc has been opened once.
+totalPages INTEGER NOT NULL DEFAULT 0,
+progressPage INTEGER NOT NULL DEFAULT 0,
 metaData TEXT AS RichTextMetadata
 );
 
@@ -62,8 +66,15 @@ VALUES(?,?,?,?,?,?,?,?,?);
 
 -- 🔧 C1/S1: now persists title + media metadata
 insertNoteContentById:
-INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration, title, mimeType, sizeBytes, width, height, thumbnailPath, metaData )
-VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ? ,?);
+INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration, title, mimeType, sizeBytes, width, height, thumbnailPath, totalPages, progressPage, metaData )
+VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?);
+
+-- 📖 23-Jul-2026: reading progress is written on its own, not through a full row rewrite — the
+--   reader saves on exit and must not clobber concurrent edits to the rest of the content row.
+updateReadingProgress:
+UPDATE NoteContent
+SET progressPage = ?, totalPages = ?, updatedAt = ?
+WHERE id = ?;
 
 -- 🔧 21-Jul-2026 databasev2.md §2.4: an edit re-marks the row dirty (syncStatus) and stamps version
 updateNotesById:
@@ -121,6 +132,8 @@ SELECT
     NoteContent.width,
     NoteContent.height,
     NoteContent.thumbnailPath,
+    NoteContent.totalPages, -- 📖 23-Jul-2026: per-document reading progress
+    NoteContent.progressPage,
     NoteContent.metaData
 FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
@@ -195,6 +208,8 @@ SELECT
     NoteContent.width,
     NoteContent.height,
     NoteContent.thumbnailPath,
+    NoteContent.totalPages, -- 📖 23-Jul-2026: per-document reading progress
+    NoteContent.progressPage,
     NoteContent.metaData
 FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId

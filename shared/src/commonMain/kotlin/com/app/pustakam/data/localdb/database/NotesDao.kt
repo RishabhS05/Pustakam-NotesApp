@@ -8,6 +8,7 @@ import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.Notes
 import com.app.pustakam.database.NotesDatabase
 import com.app.pustakam.util.ContentType
+import com.app.pustakam.util.getCurrentTimestamp
 import com.app.pustakam.util.log_d
 // 🔧 F4: coroutine imports removed — DAO writes are synchronous inside transactions now
 import org.koin.core.component.KoinComponent
@@ -243,6 +244,9 @@ class NotesDao() : KoinComponent {
                                   width = row.width?.toInt() ?: 0,
                                   height = row.height?.toInt() ?: 0,
                                   thumbnailPath = row.thumbnailPath,
+                                  // 📖 23-Jul-2026: reading progress travels with the media row
+                                  totalPages = (row.totalPages ?: 0L).toInt(),
+                                  progressPage = (row.progressPage ?: 0L).toInt(),
                               )
 
                               ContentType.LINK -> NoteContentModel.Link(
@@ -305,6 +309,9 @@ class NotesDao() : KoinComponent {
         var width: Long? = null
         var height: Long? = null
         var thumbnailPath: String? = null
+        // 📖 23-Jul-2026: reading progress persisted with the media row
+        var totalPages: Long = 0
+        var progressPage: Long = 0
         when (noteContent) {
             // 🔧 sealed-type when (was switching on ContentType with fragile as? casts per branch)
             is NoteContentModel.TextContent -> {
@@ -322,6 +329,8 @@ class NotesDao() : KoinComponent {
                 width = noteContent.width.toLong()
                 height = noteContent.height.toLong()
                 thumbnailPath = noteContent.thumbnailPath
+                totalPages = noteContent.totalPages.toLong()
+                progressPage = noteContent.progressPage.toLong()
             }
             is NoteContentModel.Location -> {
                 address = noteContent.address
@@ -352,7 +361,20 @@ class NotesDao() : KoinComponent {
             width = width,
             height = height,
             thumbnailPath = thumbnailPath,
+            totalPages = totalPages,
+            progressPage = progressPage,
             metaData =  metadata
+        )
+    }
+
+    // 📖 23-Jul-2026: save the reader's position for ONE document. Targeted update — a full row
+    //   rewrite here would clobber edits made to the rest of the content row while reading.
+    fun updateReadingProgress(contentId: String, progressPage: Int, totalPages: Int) {
+        queries.updateReadingProgress(
+            progressPage = progressPage.toLong(),
+            totalPages = totalPages.toLong(),
+            updatedAt = "${getCurrentTimestamp()}",
+            id = contentId
         )
     }
     fun  deleteNoteContentById(id : String)= queries.deleteNoteContentById(id)
@@ -444,6 +466,9 @@ class NotesDao() : KoinComponent {
                                 width = row.width?.toInt() ?: 0,
                                 height = row.height?.toInt() ?: 0,
                                 thumbnailPath = row.thumbnailPath,
+                                // 📖 23-Jul-2026: reading progress travels with the media row
+                                totalPages = (row.totalPages ?: 0L).toInt(),
+                                progressPage = (row.progressPage ?: 0L).toInt(),
                             )
 
                             ContentType.LINK-> NoteContentModel.Link(

@@ -1,6 +1,6 @@
 package com.app.pustakam.android.widgets.colorPalete
 
-import DarkBrown1
+import com.app.pustakam.android.theme.DarkBrown1
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,9 +28,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.app.pustakam.android.theme.toHexString
 import com.app.pustakam.android.widgets.PrimaryFilledButton
 import com.app.pustakam.data.models.Tag
-import toHexString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

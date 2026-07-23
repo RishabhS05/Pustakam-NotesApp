@@ -224,8 +224,11 @@ class NoteEditorViewModel: ObservableObject {
 
     /// Replaces createorUpdateNoteCall(). Guarded, materializes state → Note, surfaces errors.
     func saveNote() {
-        guard !state.isDeleted else { return }                  // fixes V3 (zombie note)
-        guard let note = state.note else { return }             // fixes E5 (was note!)
+
+        guard !state.isDeleted,             // fixes V3 (zombie note)
+        let note = state.note,
+              !note.title!.isEmpty ,
+              !note.contents.isEmpty  else { return }             // fixes E5 (was note!)
 
         // 🔧 15-Jul-2026 iOS parity (Phase 2.1): split oversized plain-text blocks BEFORE the
         //   upsert — never while typing. Shared TextBlockSplitter (same as Android): paragraph
