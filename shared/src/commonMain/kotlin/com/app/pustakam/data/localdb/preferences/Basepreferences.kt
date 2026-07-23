@@ -92,9 +92,9 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         }
     }
 
-//    val readingModeFlow: Flow<String> = dataStore.data
-//        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
-//        .map { it[BasePreferences.PreferencesKeys.READING_MODE] ?: "page" }
+    val readingModeFlow: Flow<String> = dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[BasePreferences.PreferencesKeys.READING_MODE] ?: "page" }
 
     // 🎨 22-Jul-2026 — persist the Appearance tile pick (spec §6)
     override suspend fun setThemeMode(mode: String) {

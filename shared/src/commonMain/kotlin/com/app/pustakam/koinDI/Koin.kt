@@ -16,6 +16,7 @@ import com.app.pustakam.domain.repositories.usecases.AppUserCase
 import com.app.pustakam.domain.repositories.usecases.CreateORUpdateNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.CreateTagUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteNoteContentUseCase
+import com.app.pustakam.domain.repositories.usecases.UpdateReadingProgressUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteTagUseCase
 import com.app.pustakam.domain.repositories.usecases.DeleteUserUseCase
@@ -86,6 +87,8 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         // 🔧 15-Jul-2026 Phase 2.2: full-text search
         factory <SearchNotesUseCase>{ SearchNotesUseCase() }
         factory <DeleteNoteContentUseCase>{ DeleteNoteContentUseCase() }
+        // 📖 23-Jul-2026: reader progress persistence (mirror of DeleteNoteContentUseCase)
+        factory <UpdateReadingProgressUseCase>{ UpdateReadingProgressUseCase() }
         factory <GetTagCase>{ GetTagCase() }
         factory <CreateTagUseCase>{ CreateTagUseCase() }
         factory <UpdateTagUseCase>{ UpdateTagUseCase() }

@@ -369,9 +369,15 @@ fun NoteEditorScreen(
                             onShare = {},
                             // 🔧 19-Jul-2026: FIX — single=true opens ONLY this file as a book
                             //   (no more flipping through earlier files' pages first)
+                            // 📖 23-Jul-2026 FIX — save first so a JUST-ADDED file exists in the DB
+                            //   before the reader reads it; without this the reader fell back to the
+                            //   whole note and showed the previously-added pdf.
                             onOpenDocument = {
-                                state.value.note?.id?.let {
-                                    navigateTo(Route.BookReader + "/${it}?contentId=${contentValue.id}&single=true")
+                                val cid = contentValue.id
+                                noteEditorViewModel.saveThenOpen {
+                                    state.value.note?.id?.let {
+                                        navigateTo(Route.BookReader + "/${it}?contentId=${cid}&single=true")
+                                    }
                                 }
                             },
                             onMediaPreview = {

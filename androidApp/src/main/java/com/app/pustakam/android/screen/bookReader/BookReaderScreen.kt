@@ -2,7 +2,7 @@ package com.app.pustakam.android.screen.bookReader
 
 // 🔧 18-Jul-2026: NEW FEATURE (book reader) — opens a note as a REAL book: paper pages, spine,
 //   3D page-flip; renders text, images, PDFs (page-per-page), audio/video, docs, links, locations.
-import PaperColor
+import com.app.pustakam.android.theme.PaperColor
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -111,7 +111,11 @@ fun BookReaderScreen(
                 BookPager(
                     pageCount = state.pages.size,
                     initialPage = state.startPageIndex,
-                    onPageChanged = { pageIndex = it },
+                    onPageChanged = {
+                        pageIndex = it
+                        // 📖 23-Jul-2026: persist progress on every turn (page-curl mode)
+                        bookReaderViewModel.onPageChanged(it)
+                    },
                 ) { index ->
                     BookPageContent(page = state.pages[index])
                 }

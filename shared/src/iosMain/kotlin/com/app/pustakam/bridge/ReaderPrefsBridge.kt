@@ -1,13 +1,12 @@
 package com.app.pustakam.bridge
 
-import com.app.pustakam.data.localdb.database.NotesDao
+import com.app.pustakam.domain.repositories.usecases.UpdateReadingProgressUseCase
 import com.app.pustakam.koinDI.KoinHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -34,9 +33,10 @@ class ReaderPrefsBridge : KoinComponent {
         writeScope.launch { prefs.setReadingMode(mode) }
     }
 
-    // 📖 23-Jul-2026: reading progress moved OFF preferences and onto the media row itself, so it
-    //   travels with the document. Saved on exiting the reader (see saveReadingProgress).
-    private val notesDao: NotesDao by inject()
+    // 📖 23-Jul-2026: reading progress lives on the document's media row. The bridge goes through the
+    //   SAME use case Android uses (UpdateReadingProgressUseCase) — never the DAO directly — so the
+    //   platform side only ever sees a use case.
+    private val updateReadingProgressUseCase: UpdateReadingProgressUseCase by inject()
 
     /**
      * Persist where the reader stopped for ONE document.
@@ -45,9 +45,7 @@ class ReaderPrefsBridge : KoinComponent {
     fun saveReadingProgress(contentId: String, page: Int, totalPages: Int) {
         if (contentId.isEmpty()) return
         writeScope.launch {
-            withContext(Dispatchers.Default) {
-                notesDao.updateReadingProgress(contentId, page, totalPages)
-            }
+            updateReadingProgressUseCase(contentId, page, totalPages).collect { }
         }
     }
 

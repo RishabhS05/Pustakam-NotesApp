@@ -16,6 +16,8 @@ interface ILocalNotesRepository {
     suspend fun getNotesFromDb(page: Int, limit: Int = 0) : Result<BaseResponse<Notes>, Error>
     suspend fun getNoteByIdFromDb(id :String?) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteContentFromDb(id :String? ) : Result<BaseResponse<Boolean>, Error>
+    // 📖 23-Jul-2026: persist reading progress onto a document's media row (mirror of delete flow)
+    suspend fun updateReadingProgressFromDb(contentId : String, progressPage : Int, totalPages : Int) : Result<BaseResponse<Boolean>, Error>
     suspend fun createTagOnDB(tag : Tag): Result<BaseResponse<Tag>, Error>
     suspend fun updateTagOnDB(tag : Tag): Result<BaseResponse<Tag>, Error>
     suspend fun deleteTagOnDB(tag : String?): Result<BaseResponse<Boolean>, Error>

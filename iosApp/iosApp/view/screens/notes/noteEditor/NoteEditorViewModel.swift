@@ -42,6 +42,14 @@ class NoteEditorViewModel: ObservableObject {
     // 🔧 15-Jul-2026 iOS parity (summary query): ALWAYS re-read by id. The list navigates with a
     //   contents-less stub (NoteSummary.toNoteStub) now, and the DB is the source of truth anyway —
     //   using the passed object as-is could show stale contents. nil id still means "create new".
+    // 📖 23-Jul-2026: re-read the current note when the editor returns to the foreground (e.g. back
+    //   from the book reader) so document cards show the reading position the reader just saved.
+    //   Goes through the SAME read path (adapter.readNote → ReadNoteUseCase); no direct DB access.
+    func refresh() {
+        guard let id = state.note?.id, !id.isEmpty else { return }
+        load(note: state.note)
+    }
+
     private func load(note: Note?) {
         adapter.readNote(noteId: note?.id) { [weak self] result in
             guard let self else { return }
@@ -223,6 +231,33 @@ class NoteEditorViewModel: ObservableObject {
     // MARK: - Save / Delete
 
     /// Replaces createorUpdateNoteCall(). Guarded, materializes state → Note, surfaces errors.
+    // 📖 23-Jul-2026 FIX (full-screen reader stuck on the loader for a JUST-ADDED file): imported
+    //   files live only in the in-memory note until a save; the reader reads the DB, so a not-yet-
+    //   saved note/content isn't found and the read fails → the reader spins on the loader forever.
+    //   This flushes the current note through the SAME create/update bridge (→ use case), then runs
+    //   onSaved so navigation happens only after the file exists in the DB. No title requirement:
+    //   a file-only note must still open.
+    func saveThenOpen(onSaved: @escaping () -> Void) {
+        guard !state.isDeleted, let note = state.note, !state.noteContents.isEmpty else {
+            onSaved(); return
+        }
+        let toSave = note.withTitleAndContents(newTitle: state.title, newContents: state.noteContents)
+        let dirtySnapshot = dirtyContentIds
+        adapter.createOrUpdateNote(note: toSave, dirtyContentIds: dirtySnapshot) { [weak self] result in
+            switch result {
+            case .success:
+                self?.dirtyContentIds.subtract(dirtySnapshot)
+                onSaved()
+            case .failure(let error):
+                // still navigate — the reader will show its own error if the file truly can't load
+                print("saveThenOpen failed [\(error.code)] \(error.message)")
+                onSaved()
+            case .loading, .idle:
+                break
+            }
+        }
+    }
+
     func saveNote() {
 
         guard !state.isDeleted,             // fixes V3 (zombie note)

@@ -160,6 +160,9 @@ struct NoteEditorView: View {
             }
         }
         .onDisappear {saveNote() }
+        // 📖 23-Jul-2026: re-read on return (e.g. back from the book reader) so document cards show
+        //   the reading position the reader just saved. Without this the count stayed stale.
+        .onAppear { noteEditorViewModel.refresh() }
     }
     
     
@@ -220,10 +223,15 @@ struct NoteEditorView: View {
                 InlineBookFileView(
                     media: contentDoc,
                     onOpenFull: {
-                        if let noteId = noteEditorViewModel.state.note?.id {
-                            router.navigate(to: .BookReader(noteId: noteId,
-                                                            startContentId: contentDoc.id,
-                                                            single: true))
+                        // 📖 23-Jul-2026 FIX — save first so a JUST-ADDED file exists in the DB
+                        //   before the reader reads it; without this the reader spun on the loader.
+                        let cid = contentDoc.id
+                        noteEditorViewModel.saveThenOpen {
+                            if let noteId = noteEditorViewModel.state.note?.id {
+                                router.navigate(to: .BookReader(noteId: noteId,
+                                                                startContentId: cid,
+                                                                single: true))
+                            }
                         }
                     },
                     onDelete: { askDeleteContent(contentId: contentDoc.id, kind: "File") },

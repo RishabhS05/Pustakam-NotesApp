@@ -13,10 +13,15 @@ import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
+import com.app.pustakam.domain.repositories.usecases.UpdateReadingProgressUseCase
 import com.app.pustakam.util.Error
 import com.app.pustakam.util.Result
 import com.app.pustakam.util.log_d
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,20 +53,65 @@ data class BookUiState(
 
 class BookReaderViewModel : BaseViewModel() {
     private val readNoteUseCase by inject<ReadNoteUseCase>()
+    // 📖 23-Jul-2026: progress persistence via its own use case (mirror of the delete-content flow)
+    private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
+
+    private companion object {
+        // 📖 23-Jul-2026: progress writes must survive the ViewModel being cleared (viewModelScope
+        //   is already cancelled inside onCleared), so they run on this app-lifetime scope.
+        private val saveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    }
 
     private var appContext: Context? = null
     private var startContentId: String? = null
     // 🔧 19-Jul-2026: FIX — open ONE file as its own book (tapped doc card), not the whole note
     private var singleContentMode: Boolean = false
 
+    // 📖 23-Jul-2026: the document whose reading progress is being tracked, and the last shown page.
+    private var progressContentId: String? = null
+    private var lastKnownPage: Int = 0
+    private var totalPages: Int = 0
+
     fun load(context: Context, noteId: String, startContentId: String? = null, singleContent: Boolean = false) {
         appContext = context.applicationContext
         this.startContentId = startContentId
         this.singleContentMode = singleContent && startContentId != null
         makeAWish(NOTES_CODES.READ) { readNoteUseCase.invoke(noteId) }
+    }
+
+    // 📖 23-Jul-2026: called from the reader UI on EVERY page change, in EVERY mode (page-curl AND
+    //   scroll). Persists progressPage/totalPages onto the document's media row via the SAME
+    //   ReadNoteUseCase — no DAO/prefs exposed to the UI. Debounced so scrolling doesn't spam the DB.
+    fun onPageChanged(index: Int) {
+        lastKnownPage = index
+        scheduleProgressSave()
+    }
+
+    private var saveJob: Job? = null
+    private fun scheduleProgressSave() {
+        val contentId = progressContentId ?: return
+        if (totalPages <= 0) return
+        val page = lastKnownPage.coerceIn(0, totalPages - 1)
+        saveJob?.cancel()
+        // saveScope OUTLIVES this ViewModel so backing out doesn't drop the pending write
+        saveJob = saveScope.launch {
+            delay(350)
+            updateReadingProgressUseCase(contentId, page, totalPages).collect { }
+        }
+    }
+
+    override fun onCleared() {
+        // final flush on teardown (back-out / process death) on the surviving scope
+        saveJob?.cancel()
+        val contentId = progressContentId
+        if (contentId != null && totalPages > 0) {
+            val page = lastKnownPage.coerceIn(0, totalPages - 1)
+            saveScope.launch { updateReadingProgressUseCase(contentId, page, totalPages).collect { } }
+        }
+        super.onCleared()
     }
 
     override fun onLoading(taskCode: TaskCode) {
@@ -81,10 +131,34 @@ class BookReaderViewModel : BaseViewModel() {
             } else BookPageFactory.buildForNote(note)
             val start = if (singleContentMode) 0
             else startContentId?.let { id -> pages.indexOfFirst { it.sourceContentId == id } } ?: -1
+
+            // 📖 23-Jul-2026: track the document this book represents so progress can be saved onto it.
+            //   Single-file mode = the opened file; whole-note book = the first paged document (its
+            //   page indices are what we count). Resume from its saved progressPage when present.
+            val progressContent = if (singleContentMode) {
+                note.contents.filterIsInstance<NoteContentModel.MediaContent>()
+                    .firstOrNull { it.id == startContentId }
+            } else {
+                note.contents.filterIsInstance<NoteContentModel.MediaContent>()
+                    .firstOrNull { it.id == pages.firstNotNullOfOrNull { p -> p.sourceContentId } }
+            }
+            progressContentId = progressContent?.id
+            totalPages = pages.size
+
+            val savedPage = progressContent
+                ?.takeIf { it.hasReadingProgress() }
+                ?.progressPage
+                ?.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+            val resolvedStart = when {
+                singleContentMode -> savedPage ?: 0
+                start >= 0 -> start
+                else -> savedPage ?: 0
+            }
+            lastKnownPage = resolvedStart
             _uiState.update {
                 it.copy(
                     isLoading = false, error = null, note = note, pages = pages,
-                    startPageIndex = if (start >= 0) start else 0
+                    startPageIndex = resolvedStart
                 )
             }
         }

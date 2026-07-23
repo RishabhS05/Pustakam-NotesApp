@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.core.component.get
 import org.koin.core.component.inject
 
@@ -169,6 +170,26 @@ class NoteEditorViewModel : BaseViewModel() {
         lastSavedDirtyIds = dirtyContentIds.toSet()
         makeAWish(NOTES_CODES.INSERT) {
             createUpdateNoteUseCase.invoke(_noteContentUiState.value.note!!, lastSavedDirtyIds)
+        }
+    }
+
+    // 📖 23-Jul-2026 FIX (opening a just-added file showed the OLD pdf): added files live only in the
+    //   in-memory note until a save; the full-screen reader reads the DB, so a not-yet-saved file
+    //   isn't found and the reader falls back to the whole-note book (the first/existing pdf).
+    //   This flushes the current note to the DB through the SAME create/update use case, then runs
+    //   onSaved so navigation happens only after the file exists on disk. Isolated on its own scope
+    //   so it never touches the INSERT/back-press status flow.
+    fun saveThenOpen(onSaved: () -> Unit) {
+        updateNoteObject()
+        val note = _noteContentUiState.value.note ?: run { onSaved(); return }
+        val dirty = dirtyContentIds.toSet()
+        viewModelScope.launch(Dispatchers.IO) {
+            createUpdateNoteUseCase.invoke(note, dirty).collect { result ->
+                if (result is Result.Success || result is Result.Error) {
+                    dirtyContentIds.removeAll(dirty)
+                    withContext(Dispatchers.Main) { onSaved() }
+                }
+            }
         }
     }
 
