@@ -49,15 +49,38 @@ data class BookUiState(
     val note: Note? = null,
     val pages: List<BookPage> = emptyList(),
     val startPageIndex: Int = 0,
+    // 📖 25-Jul-2026: reader layout — page curl vs continuous scroll. Same persisted value the
+    //   Settings screen and the iOS reader use; switching it does NOT rebuild `pages`.
+    val readingMode: ReadingMode = ReadingMode.PAGE,
 )
 
 class BookReaderViewModel : BaseViewModel() {
     private val readNoteUseCase by inject<ReadNoteUseCase>()
     // 📖 23-Jul-2026: progress persistence via its own use case (mirror of the delete-content flow)
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
+    // 📖 25-Jul-2026: reading-mode preference — SAME BasePreferences the Settings screen writes, so
+    //   the reader's toggle and Settings stay in sync. UI never sees the shared prefs type directly.
+    private val userPrefs by inject<com.app.pustakam.data.localdb.preferences.BasePreferences>()
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
+
+    init {
+        // 📖 25-Jul-2026: observe the reading mode so a change from Settings is reflected live while
+        //   the reader is open (mirror of iOS observeReadingMode). `pages` are untouched by this.
+        viewModelScope.launch(Dispatchers.IO) {
+            userPrefs.readingModeFlow.collect { raw ->
+                _uiState.update { it.copy(readingMode = ReadingMode.from(raw)) }
+            }
+        }
+    }
+
+    // 📖 25-Jul-2026: flip reading mode from the reader's toolbar (persists to the same prefs)
+    fun toggleReadingMode() {
+        val next = _uiState.value.readingMode.toggled()
+        _uiState.update { it.copy(readingMode = next) }
+        viewModelScope.launch(Dispatchers.IO) { userPrefs.setReadingMode(next.key) }
+    }
 
     private companion object {
         // 📖 23-Jul-2026: progress writes must survive the ViewModel being cleared (viewModelScope

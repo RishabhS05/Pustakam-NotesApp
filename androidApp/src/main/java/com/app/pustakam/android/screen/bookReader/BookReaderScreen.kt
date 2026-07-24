@@ -30,11 +30,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List // 📖 25-Jul-2026 scroll-mode toggle
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MenuBook // 📖 25-Jul-2026 page-curl toggle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -108,16 +111,32 @@ fun BookReaderScreen(
             state.error != null -> SnackBarUi(error = state.error!!) { bookReaderViewModel.clearError(); onBack() }
             state.pages.isNotEmpty() -> {
                 var pageIndex by remember { mutableIntStateOf(state.startPageIndex) }
-                BookPager(
-                    pageCount = state.pages.size,
-                    initialPage = state.startPageIndex,
-                    onPageChanged = {
-                        pageIndex = it
-                        // 📖 23-Jul-2026: persist progress on every turn (page-curl mode)
-                        bookReaderViewModel.onPageChanged(it)
-                    },
-                ) { index ->
-                    BookPageContent(page = state.pages[index])
+                // 📖 25-Jul-2026: PAGE keeps the existing curl pager (untouched); SCROLL lays the SAME
+                //   pages out in a LazyColumn reusing the SAME BookPageContent composables. `pages` is
+                //   built once by the VM — switching mode never rebuilds it, so the PDF isn't re-parsed.
+                when (state.readingMode) {
+                    ReadingMode.PAGE ->
+                        BookPager(
+                            pageCount = state.pages.size,
+                            initialPage = state.startPageIndex,
+                            onPageChanged = {
+                                pageIndex = it
+                                // 📖 23-Jul-2026: persist progress on every turn (page-curl mode)
+                                bookReaderViewModel.onPageChanged(it)
+                            },
+                        ) { index ->
+                            BookPageContent(page = state.pages[index])
+                        }
+
+                    ReadingMode.SCROLL ->
+                        BookScrollReader(
+                            pages = state.pages,
+                            startPageIndex = state.startPageIndex,
+                            onPageChanged = {
+                                pageIndex = it
+                                bookReaderViewModel.onPageChanged(it)   // 📖 same progress save as page mode
+                            },
+                        )
                 }
                 // page counter chip
                 Text(
@@ -132,7 +151,57 @@ fun BookReaderScreen(
             }
         }
         IconButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(6.dp)) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Close book", tint = PaperColor)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Close book", tint = colorScheme.secondary)
+        }
+        // 📖 25-Jul-2026: reading-mode toggle (parity with the iOS reader toolbar). Only shown once
+        //   pages exist. Writes the SAME persisted pref Settings uses.
+        if (state.pages.isNotEmpty()) {
+            IconButton(
+                onClick = { bookReaderViewModel.toggleReadingMode() },
+                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+            ) {
+                Icon(
+                    if (state.readingMode == ReadingMode.PAGE) Icons.AutoMirrored.Filled.List
+                    else Icons.Filled.MenuBook,
+                    contentDescription = if (state.readingMode == ReadingMode.PAGE) "Switch to scrolling"
+                    else "Switch to page curl",
+                    tint = colorScheme.secondary
+                )
+            }
+        }
+    }
+}
+
+// 📖 25-Jul-2026: NEW — continuous reading mode (iOS BookScrollReader parity). Reuses the SAME
+//   BookPageContent sheets stacked in a LazyColumn, so long PDFs/text read as one document. Each
+//   sheet keeps a book-page height so PDF/image pages have room. Reports the top-most visible page
+//   for progress, exactly like the curl pager's onPageChanged.
+@Composable
+private fun BookScrollReader(
+    pages: List<BookPage>,
+    startPageIndex: Int,
+    onPageChanged: (Int) -> Unit,
+) {
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState(
+        initialFirstVisibleItemIndex = startPageIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+    )
+    // report the top-most fully/partly visible sheet as the current page (debounced by the VM)
+    androidx.compose.runtime.LaunchedEffect(listState) {
+        androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex }
+            .collect { onPageChanged(it) }
+    }
+    androidx.compose.foundation.lazy.LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(pages.size) { index ->
+            // each sheet gets a fixed, generous height so PDF/image pages render at a readable size;
+            // the SAME BookPageContent composable page-curl mode uses (no duplication).
+            Box(Modifier.fillMaxWidth().height(560.dp)) {
+                BookPageContent(page = pages[index])
+            }
         }
     }
 }

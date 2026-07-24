@@ -66,8 +66,11 @@ struct NoteBookView : View {
                         height : height,
                         alignment: .topTrailing)
                 // 🎨 20-Jul-2026 — copper fold corner = the ONLY loud accent on the card (spec §5 manuscript fold motif)
+                // 🐛 25-Jul-2026 TAP FIX: this full-frame overlay was on top of the ZStack and swallowed
+                //   the card's tap (the note wouldn't open). It's pure decoration — opt it out of hit-testing.
                 foldCorner
                     .frame(width: width, height: height, alignment: .topTrailing)
+                    .allowsHitTesting(false)
             }
             // 🎨 20-Jul-2026 — card is an IVORY surface with a hairline border (spec §5 note card / prototype .ncard),
             //   NOT a solid accent fill. This fixes the "wall of orange" — primary/saffron is an accent, not a card bg.
@@ -78,6 +81,8 @@ struct NoteBookView : View {
                         .stroke(Theme.Colors.border, lineWidth: 1)
                 )
                 .shadow(color: Theme.Elevation.card, radius: Theme.Elevation.cardRadius, x: 0, y: Theme.Elevation.cardY)
+                // 🐛 25-Jul-2026 TAP FIX: make the WHOLE card rect tappable (not just the opaque areas)
+                .contentShape(Rectangle())
                 .onTapGesture {
                     onClick()
                 }

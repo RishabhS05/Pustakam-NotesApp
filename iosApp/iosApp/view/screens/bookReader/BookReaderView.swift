@@ -243,11 +243,24 @@ struct BookReaderView: View {
                     }
                     .ignoresSafeArea(edges: .bottom)
                 case .scroll:
-                    BookScrollReader(pages: pages, startIndex: startIndex) { index in
-                        currentIndex = index
-                        saveProgress()   // 📖 same for scrolling
+                    // 📖 25-Jul-2026: when the book IS a single PDF, scroll mode uses Apple's native
+                    //   in-app PDFView (traditional reader): it loads the file ONCE and scrolls/zooms/
+                    //   counts pages lazily itself — no 1,443 hand-built sheets, no burst renders, low
+                    //   memory. Page-curl mode still uses the paper-curl sheets. Mixed-content notes
+                    //   (text+images+pdf) keep the stacked-sheet scroll below.
+                    if let pdfPath = singlePdfPath {
+                        NativePdfScrollView(path: pdfPath, startPageIndex: startIndex) { index in
+                            currentIndex = index
+                            saveProgress()
+                        }
+                        .ignoresSafeArea(edges: .bottom)
+                    } else {
+                        BookScrollReader(pages: pages, startIndex: startIndex) { index in
+                            currentIndex = index
+                            saveProgress()   // 📖 same for scrolling
+                        }
+                        .ignoresSafeArea(edges: .bottom)
                     }
-                    .ignoresSafeArea(edges: .bottom)
                 }
                 VStack {
                     Spacer()
@@ -286,6 +299,21 @@ struct BookReaderView: View {
         }
         // 📖 23-Jul-2026: persist the position when the reader closes (Android saves in onDispose)
         .onDisappear { saveProgress() }
+    }
+
+    // 📖 25-Jul-2026: the book is a single PDF when every page is a .pdf sheet from ONE file (i.e. a
+    //   tapped PDF opened as its own book). In that case scroll mode hands the file to a native
+    //   PDFView instead of the hand-built sheet stack. Mixed notes return nil and keep the stack.
+    private var singlePdfPath: String? {
+        // require EVERY page to be a .pdf sheet from the SAME file — no cover, no other content — so
+        // page index i in `pages` maps 1:1 to PDF page i (progress/counter stay correct).
+        guard !pages.isEmpty else { return nil }
+        var path: String? = nil
+        for page in pages {
+            guard case .pdf(let p, _, _, _, _) = page else { return nil }
+            if path == nil { path = p } else if path != p { return nil }
+        }
+        return path
     }
 
     // 📖 23-Jul-2026: write the reading position onto the document's MediaContent row
@@ -548,6 +576,71 @@ final class ResumeAwareScrollView: UIScrollView {
     }
 }
 
+// MARK: - Native PDF reader (single-PDF scroll mode)
+
+// 📖 25-Jul-2026: for a book that is ONE PDF, scroll mode uses Apple's native in-app PDFView instead
+//   of the hand-built sheet stack. PDFView opens the file ONCE and does continuous scroll, pinch-zoom,
+//   page counting and lazy page rendering itself — so a 1,443-page book loads instantly and stays
+//   low-memory (this is the "traditional PDF reader" that used to be fast). It renders INSIDE the app;
+//   no external viewer is launched. Reports the current page for progress and resumes to startPageIndex.
+struct NativePdfScrollView: UIViewRepresentable {
+    let path: String
+    let startPageIndex: Int
+    let onPageChanged: (Int) -> Void
+
+    func makeUIView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.backgroundColor = .clear
+        pdfView.displayMode = .singlePageContinuous   // traditional vertical scroll
+        pdfView.displayDirection = .vertical
+        pdfView.autoScales = true                      // fit-to-width, pinch to zoom from there
+        pdfView.usePageViewController(false)
+        // load the document ONCE, off the main thread, then attach on main
+        let target = path
+        DispatchQueue.global(qos: .userInitiated).async {
+            let document = PDFDocument(url: URL(fileURLWithPath: target))
+            DispatchQueue.main.async {
+                guard let document else { return }
+                pdfView.document = document
+                // resume to the saved page once the document is attached
+                let clamped = max(0, min(startPageIndex, document.pageCount - 1))
+                if let page = document.page(at: clamped) { pdfView.go(to: page) }
+            }
+        }
+        // observe page changes for the progress counter
+        context.coordinator.observe(pdfView)
+        return pdfView
+    }
+
+    func updateUIView(_ pdfView: PDFView, context: Context) {
+        context.coordinator.onPageChanged = onPageChanged
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPageChanged: onPageChanged) }
+
+    final class Coordinator: NSObject {
+        var onPageChanged: (Int) -> Void
+        private weak var pdfView: PDFView?
+        init(onPageChanged: @escaping (Int) -> Void) { self.onPageChanged = onPageChanged }
+
+        func observe(_ pdfView: PDFView) {
+            self.pdfView = pdfView
+            NotificationCenter.default.addObserver(
+                self, selector: #selector(pageChanged),
+                name: .PDFViewPageChanged, object: pdfView)
+        }
+
+        @objc private func pageChanged() {
+            guard let pdfView, let current = pdfView.currentPage,
+                  let document = pdfView.document else { return }
+            let index = document.index(for: current)
+            onPageChanged(index)
+        }
+
+        deinit { NotificationCenter.default.removeObserver(self) }
+    }
+}
+
 // MARK: - Native page-curl container
 
 // 🔧 18-Jul-2026: UIPageViewController(.pageCurl) — the REAL paper-curl transition, wrapped for SwiftUI
@@ -754,6 +847,49 @@ struct BookPageContentView: View {
     }
 }
 
+// 📖 25-Jul-2026: process-wide cache of rendered PDF sheets, keyed by "path#pageIndex". Switching
+//   page-curl ↔ scroll tears down and rebuilds every sheet; without a cache each toggle (and every
+//   re-scroll past a page) re-opened the PDFDocument and re-rendered the SAME bitmap — the "multiple
+//   instances of the document" waste. NSCache auto-evicts under memory pressure, so big books stay safe.
+enum PdfSheetCache {
+    private static let cache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>()
+        c.countLimit = 24   // keep a small working set of recently-seen pages
+        return c
+    }()
+    static func key(path: String, pageIndex: Int) -> NSString { "\(path)#\(pageIndex)" as NSString }
+    static func image(path: String, pageIndex: Int) -> UIImage? { cache.object(forKey: key(path: path, pageIndex: pageIndex)) }
+    static func store(_ image: UIImage, path: String, pageIndex: Int) { cache.setObject(image, forKey: key(path: path, pageIndex: pageIndex)) }
+}
+
+// 🐛 25-Jul-2026 iOS-16 CRASH/LAG FIX ("CGBitmapContextInfoCreate: unable to allocate 8029312 bytes"
+//   repeated across ~10 threads at once): scroll mode mounts many PdfSheetViews together and EACH one
+//   fired its own full-res render concurrently — a dozen simultaneous ~8 MB bitmap allocations exhaust
+//   memory on a real device (esp. iOS 16), which is the burst of allocation failures + the scroll lag.
+//   This gate caps how many PDF pages render AT ONCE, so memory stays bounded and scrolling stays smooth.
+actor PdfRenderGate {
+    static let shared = PdfRenderGate(limit: 2)   // at most 2 pages rendering concurrently
+    private let limit: Int
+    private var active = 0
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    init(limit: Int) { self.limit = limit }
+
+    /// Returns true once a render slot is held. Returns false if the task was cancelled while waiting
+    /// (a page scrolled past), so the caller does NOT need to release — the slot was never granted.
+    func acquire() async -> Bool {
+        if Task.isCancelled { return false }
+        if active < limit { active += 1; return true }
+        await withCheckedContinuation { waiters.append($0) }
+        // resumed either by a release (slot is ours) — honour cancellation but the slot IS granted here
+        active += 1
+        return true
+    }
+    func release() {
+        active -= 1
+        if !waiters.isEmpty { waiters.removeFirst().resume() }
+    }
+}
+
 // 🔧 18-Jul-2026: one PDF page rendered as an image via PDFKit thumbnails (crisp + cheap)
 struct PdfSheetView: View {
     let path: String
@@ -779,8 +915,24 @@ struct PdfSheetView: View {
             // 🐛 23-Jul-2026: .task (not .onAppear) so it re-runs when the sheet is reused for a new
             //   page, and is tied to the view lifecycle. Renders off the main actor.
             if image != nil { return }
+            // 📖 25-Jul-2026: reuse the already-rendered page across mode switches / re-scrolls
+            if let cached = PdfSheetCache.image(path: path, pageIndex: pageIndex) {
+                image = cached; didFinish = true; return
+            }
+            // 🐛 25-Jul-2026 iOS-16: throttle concurrent renders so a fast scroll never fires a burst
+            //   of huge bitmap allocations at once. A page scrolled past before its turn is skipped so
+            //   the gate is never held for work no longer needed.
+            let acquired = await PdfRenderGate.shared.acquire()
+            guard acquired, !Task.isCancelled else {
+                if acquired { await PdfRenderGate.shared.release() }
+                didFinish = true
+                return
+            }
             let rendered = await Self.render(path: path, pageIndex: pageIndex)
+            await PdfRenderGate.shared.release()
+            if Task.isCancelled { return }
             await MainActor.run {
+                if let rendered { PdfSheetCache.store(rendered, path: path, pageIndex: pageIndex) }
                 image = rendered
                 didFinish = true
             }
@@ -789,6 +941,19 @@ struct PdfSheetView: View {
 
     // 🐛 23-Jul-2026: renders one sheet off-main. `path` is already the verified path the builder
     //   opened, so PDFDocument here mirrors the builder exactly.
+    // 🐛 25-Jul-2026 CRASH FIX (scroll mode: "CGBitmapContextCreateImage: invalid context 0x0"):
+    //   scroll mode eagerly renders EVERY PDF sheet, so it reaches pages page-curl never did. A page
+    //   whose .mediaBox reports a zero/negative/non-finite width or height produced a 0-size (or NaN)
+    //   CGSize, and PDFKit's thumbnail(of:) then asked CoreGraphics for a 0x0 bitmap context → the
+    //   invalid-context abort. This clamps the render size to a finite, positive box (falling back to
+    //   .cropBox, then a sane default) so a malformed page degrades to a blank sheet, never a crash.
+    private static let fallbackPageSize = CGSize(width: 612, height: 792) // US-Letter @72dpi
+    // 🐛 25-Jul-2026 iOS-16 MEMORY FIX: was 1600 (@scale 2 → ~8 MB/page, the "unable to allocate
+    //   8029312 bytes" failures). A book sheet is ~560pt tall on screen, so ~1100px longest side is
+    //   crisp on a 2–3× display while roughly HALVING each bitmap (~3–4 MB), which — with the render
+    //   gate above — keeps peak memory bounded during a fast scroll on a real device.
+    private static let maxRenderDimension: CGFloat = 1100
+
     private static func render(path: String, pageIndex: Int) async -> UIImage? {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
@@ -798,10 +963,25 @@ struct PdfSheetView: View {
                     continuation.resume(returning: nil)
                     return
                 }
-                let bounds = pdfPage.bounds(for: .mediaBox)
-                let scale = min(2.0, 1600.0 / max(bounds.width, 1))
-                let rendered = pdfPage.thumbnail(of: CGSize(width: bounds.width * scale,
-                                                            height: bounds.height * scale), for: .mediaBox)
+                // pick a usable box: mediaBox, else cropBox, else a sane default — never 0/NaN
+                var bounds = pdfPage.bounds(for: .mediaBox)
+                if !bounds.width.isFinite || !bounds.height.isFinite ||
+                    bounds.width <= 1 || bounds.height <= 1 {
+                    bounds = pdfPage.bounds(for: .cropBox)
+                }
+                let width = (bounds.width.isFinite && bounds.width > 1) ? bounds.width : Self.fallbackPageSize.width
+                let height = (bounds.height.isFinite && bounds.height > 1) ? bounds.height : Self.fallbackPageSize.height
+                // longest-side clamp (handles portrait AND landscape pages) at ≤1.5× native
+                let longest = max(width, height)
+                let scale = min(1.5, Self.maxRenderDimension / max(longest, 1))
+                let targetSize = CGSize(width: max(width * scale, 1), height: max(height * scale, 1))
+                // final guard: a non-finite/degenerate size must never reach CoreGraphics
+                guard targetSize.width >= 1, targetSize.height >= 1,
+                      targetSize.width.isFinite, targetSize.height.isFinite else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let rendered = pdfPage.thumbnail(of: targetSize, for: bounds.width > 1 ? .mediaBox : .cropBox)
                 continuation.resume(returning: rendered)
             }
         }
