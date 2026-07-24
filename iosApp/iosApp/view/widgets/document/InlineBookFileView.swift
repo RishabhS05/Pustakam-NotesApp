@@ -20,10 +20,17 @@ struct InlineBookFileView: View {
     var onOpenFull: () -> Void = {}
     var onDelete: () -> Void = {}
     var onSave: () -> Void = {}
+    // 🔧 25-Jul-2026: NEW — share callback (ImageCardView-style actions on the document card)
+    var onShare: () -> Void = {}
 
     @State private var pages: [BookPageItem] = []
     @State private var building = true
     @State private var currentIndex = 0
+    // 📖 25-Jul-2026: the page to open the inline preview at — the LAST page the reader left off on
+    //   (media.progressPage), so the card shows e.g. 847/1443 instead of always 1/1443.
+    @State private var startIndex = 0
+    // 🔧 25-Jul-2026: long-press actions overlay (delete / share / save), ImageCardView pattern
+    @State private var showActions = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -36,12 +43,24 @@ struct InlineBookFileView: View {
                         ProgressView().tint(NotebookPalette.cover)
                     } else if !pages.isEmpty {
                         // 🔧 19-Jul-2026: SAME page-curl + renderers as the full reader (DRY)
-                        BookPageCurlView(pages: pages, startIndex: 0) { index in
+                        // 📖 25-Jul-2026: open at the saved reading page, not always page 1
+                        BookPageCurlView(pages: pages, startIndex: startIndex) { index in
                             currentIndex = index
                         }
                     }
+                    // 🔧 25-Jul-2026: ImageCardView-style long-press actions (delete / share / save).
+                    //   Overlaid on the preview so it mirrors the image card without touching ImageCard.
+                    if showActions && !pages.isEmpty { actionsOverlay }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .onLongPressGesture {
+                    withAnimation(.easeInOut(duration: 0.25)) { showActions = true }
+                    // auto-hide after 2.5s — SAME timing as ImageCardView
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                        withAnimation(.easeInOut(duration: 0.5)) { showActions = false }
+                    }
+                }
                 // 🔧 19-Jul-2026: "<selected>/<total>" instead of dots — e.g. 2/20
                 if !pages.isEmpty {
                     Text("\(currentIndex + 1)/\(pages.count)")
@@ -100,14 +119,48 @@ struct InlineBookFileView: View {
         .frame(maxHeight: .infinity)
     }
 
+    // 🔧 25-Jul-2026: bottom actions bar — delete / share / save. SAME icons/layout/behavior as
+    //   CardImageEditor's overlay (mirrored, not shared — ImageCardView is left untouched).
+    private var actionsOverlay: some View {
+        VStack {
+            Spacer()
+            ZStack(alignment: .bottom) {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.05), .black.opacity(0.35), .black.opacity(0.55)],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 90)
+                HStack(spacing: 40) {
+                    Button { onDelete() } label: {
+                        Image(systemName: "trash.fill").font(.title2).foregroundColor(.red)
+                    }
+                    Button { onSave() } label: {   // download to device
+                        Image(systemName: "square.and.arrow.down.fill").font(.title2).foregroundColor(.white)
+                    }
+                    Button { onShare() } label: {  // share sheet
+                        Image(systemName: "square.and.arrow.up.fill").font(.title2).foregroundColor(.white)
+                    }
+                }
+                .padding(.bottom, 16)
+            }
+            .frame(height: 70)
+            .transition(.opacity)
+        }
+    }
+
     // 🔧 19-Jul-2026: pages built by the SHARED builder, off the main thread
     private func buildPages() {
         guard pages.isEmpty else { return }
         building = true
         DispatchQueue.global(qos: .userInitiated).async {
             let built = BookPagesBuilder.buildForContent(media)
+            // 📖 25-Jul-2026: resume the inline preview at the last-read page (clamped to the count)
+            let resume = media.hasReadingProgress()
+                ? min(max(Int(media.progressPage), 0), max(built.count - 1, 0)) : 0
             DispatchQueue.main.async {
                 pages = built
+                startIndex = resume
+                currentIndex = resume
                 building = false
             }
         }

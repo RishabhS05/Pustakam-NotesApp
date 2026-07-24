@@ -78,7 +78,17 @@ fun InlineBookFileWidget(
         pages = withContext(Dispatchers.IO) { BookPageFactory.buildForContent(media) }
         building = false
     }
+    // 📖 25-Jul-2026: the inline preview opens at the LAST page the reader left off on
+    //   (media.progressPage), clamped to the built page count — so the card shows e.g. 847/1443,
+    //   not always 1/1443. progressPage is 0-based (same as the reader).
+    val resumePage = remember(media.id, pages.size) {
+        if (media.hasReadingProgress() && pages.isNotEmpty())
+            media.progressPage.coerceIn(0, pages.size - 1) else 0
+    }
     var currentPage by remember(media.id) { mutableIntStateOf(0) }
+    // 📖 25-Jul-2026: seed the "n/total" label with the resume page so it reads correctly before the
+    //   first flip (the pager itself starts at resumePage via initialPage).
+    LaunchedEffect(resumePage) { currentPage = resumePage }
     val cornerShape = RoundedCornerShape(8.dp)
     // 🔧 20-Jul-2026: size to the device — ~42% of screen height, clamped to a sane range
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
@@ -136,6 +146,7 @@ fun InlineBookFileWidget(
                             )
                             pages.isNotEmpty() -> BookPager(
                                 pageCount = pages.size,
+                                initialPage = resumePage,   // 📖 25-Jul-2026: open at the last-read page
                                 onPageChanged = { currentPage = it },
                             ) { index -> BookPageContent(page = pages[index]) }
                         }

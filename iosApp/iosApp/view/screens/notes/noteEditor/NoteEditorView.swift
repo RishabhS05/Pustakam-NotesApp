@@ -235,7 +235,9 @@ struct NoteEditorView: View {
                         }
                     },
                     onDelete: { askDeleteContent(contentId: contentDoc.id, kind: "File") },
-                    onSave: { saveMediaToDevice(media: contentDoc) }
+                    onSave: { saveMediaToDevice(media: contentDoc) },
+                    // 🔧 25-Jul-2026: share the document file via the system share sheet (reuses NoteExporter.share)
+                    onShare: { shareMediaFile(media: contentDoc) }
                 )
 
             // 🔧 18-Jul-2026: GIF gets the image card (was falling into the text default)
@@ -259,6 +261,18 @@ struct NoteEditorView: View {
     
     private func saveNote(){
         noteEditorViewModel.saveNote()   // 🔧 new VM API (guards deleted-note + materializes title/contents)
+    }
+
+    // 🔧 25-Jul-2026: NEW — share a document/media file via the system share sheet (ImageCardView-style
+    //   actions on the inline document card). Reuses NoteExporter.share; resolves the container-safe path
+    //   (stored absolute paths go stale across app updates).
+    private func shareMediaFile(media: NoteContentModel.MediaContent) {
+        guard let path = LocalFilePathResolver_iosKt.resolveLocalFilePath(path: media.localPath) ?? media.localPath,
+              !path.isEmpty, FileManager.default.fileExists(atPath: path) else {
+            noteEditorViewModel.state.errorMessage = "File not available to share."
+            return
+        }
+        NoteExporter.share(url: URL(fileURLWithPath: path))
     }
 
     // 🔧 20-Jul-2026: NEW FEATURE (export) — generate the file off-main, then open the share sheet

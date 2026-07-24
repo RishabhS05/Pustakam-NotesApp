@@ -168,6 +168,11 @@ fun NoteEditorScreen(
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
+            // 📖 25-Jul-2026: on return from the reader, refresh so the inline document card shows the
+            //   last-read page. Guarded inside the VM to skip when there are unsaved edits.
+            Lifecycle.Event.ON_RESUME -> {
+                noteEditorViewModel.refreshOnResume(id)
+            }
 
             else -> {}
         }
@@ -619,11 +624,14 @@ fun RenderWidget(
                     }
                 },
             ) {
+                // 🔧 25-Jul-2026: document card share wired (ImageCardView-style actions on the doc card).
+                //   ImageCard/GIF/video shares are intentionally left as-is per request — only the document.
+                val docShareContext = androidx.compose.ui.platform.LocalContext.current
                 MediaSaveOverlay(
                     contentDoc,
                     isFocused = focusedMediaId == contentDoc.id,
                     onDelete = { onDelete(contentDoc) },
-                    onShare = {}
+                    onShare = { com.app.pustakam.android.export.shareMediaFile(docShareContext, contentDoc) }
                 )
             }
         }

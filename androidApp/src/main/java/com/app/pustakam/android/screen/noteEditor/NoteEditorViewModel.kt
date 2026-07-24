@@ -202,6 +202,15 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
+    // 📖 25-Jul-2026: refresh the note when the editor comes back to the foreground (e.g. returning
+    //   from the reader) so the inline document card shows the last page just read. SAFE-GUARDED: only
+    //   re-reads when there are NO unsaved edits — a dirty editor keeps its in-memory state untouched,
+    //   so this can never clobber work in progress. Reuses the existing, proven read path.
+    fun refreshOnResume(id: String?) {
+        if (dirtyContentIds.isNotEmpty()) return   // don't overwrite unsaved edits
+        readFromDataBase(id)
+    }
+
     fun deleteNote(noteId: String) {
         makeAWish(NOTES_CODES.DELETE) {
             deleteNoteUseCase.invoke(noteId)
