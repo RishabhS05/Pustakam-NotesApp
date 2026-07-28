@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Granth — Notes & Knowledge · Interactive Prototype</title>
+<style>
+/* ============================================================
+   GRANTH — DESIGN TOKENS
+   "Preserving India's timeless knowledge with modern technology"
+   ============================================================ */
+:root{
+  /* Brand palette */
+  --c-ivory:#FBF7EC; --c-parchment:#F2E8D2; --c-sand:#E6D7B8;
+  --c-saffron:#E8941A; --c-saffron-deep:#D17C0A;
+  --c-copper:#A65C34; --c-gold:#C9A227;
+  --c-forest:#2F5D4A; --c-indigo:#33407C; --c-ink:#2A2118;
+
+  /* Type */
+  --font-display:"Iowan Old Style","Palatino Linotype",Palatino,"Noto Serif",Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,monospace;
+
+  /* Radii / elevation / spacing */
+  --r-sm:8px; --r-md:14px; --r-lg:22px; --r-xl:30px;
+  --sp:4px;
+  --shadow-1:0 1px 2px rgba(42,33,24,.06),0 2px 6px rgba(42,33,24,.05);
+  --shadow-2:0 6px 20px rgba(42,33,24,.12);
+  --shadow-fab:0 8px 24px rgba(166,92,52,.40);
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+/* ---- LIGHT (default) ---- */
+[data-theme="light"]{
+  --bg:#EDE2C8; --bg-grad1:#F2E8D2; --bg-grad2:#E7D8B9;
+  --surface:#FBF7EC; --surface-2:#F6EEDB; --surface-raise:#FFFFFF;
+  --text:#2A2118; --text-2:#6B5B45; --text-3:#9C8A6E;
+  --border:rgba(42,33,24,.10); --border-strong:rgba(42,33,24,.18);
+  --accent:#A65C34; --accent-2:#E8941A; --link:#33407C;
+  --chip:#EFE3C9; --texture:.55;
+}
+/* ---- DARK (warm dark ink) ---- */
+[data-theme="dark"]{
+  --bg:#16120D; --bg-grad1:#1C1711; --bg-grad2:#120E0A;
+  --surface:#221B14; --surface-2:#2A2219; --surface-raise:#2E261C;
+  --text:#EFE4CE; --text-2:#B7A684; --text-3:#7E7158;
+  --border:rgba(239,228,206,.10); --border-strong:rgba(239,228,206,.18);
+  --accent:#D98A53; --accent-2:#E8941A; --link:#8E9BD8;
+  --chip:#2C2419; --texture:.30;
+}
+/* ---- AMOLED ---- */
+[data-theme="amoled"]{
+  --bg:#000000; --bg-grad1:#070605; --bg-grad2:#000000;
+  --surface:#0C0A07; --surface-2:#13100B; --surface-raise:#171309;
+  --text:#F0E6D0; --text-2:#AE9D7C; --text-3:#6E6248;
+  --border:rgba(240,230,208,.09); --border-strong:rgba(240,230,208,.16);
+  --accent:#E8941A; --accent-2:#F4A93D; --link:#94A1E0;
+  --chip:#15110B; --texture:.18;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--font-body);
+  background:
+    radial-gradient(1200px 800px at 15% -10%, #2c2a44 0%, transparent 55%),
+    radial-gradient(1000px 900px at 110% 110%, #3a2a1d 0%, transparent 55%),
+    #14110d;
+  color:#fff; min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:28px 16px 60px;
+}
+
+/* ---------- Stage chrome ---------- */
+.stage-head{width:100%;max-width:1180px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;margin-bottom:26px}
+.brand{display:flex;align-items:center;gap:14px}
+.seal{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#E8941A,#A65C34);box-shadow:0 6px 18px rgba(166,92,52,.5)}
+.brand h1{font-family:var(--font-display);font-size:24px;font-weight:600;color:#F6EEDB;letter-spacing:.3px}
+.brand p{font-size:12.5px;color:#b7ab93;margin-top:2px}
+.controls{display:flex;gap:10px;flex-wrap:wrap}
+.seg{display:flex;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);
+  border-radius:999px;padding:4px;backdrop-filter:blur(6px)}
+.seg button{border:0;background:transparent;color:#cdbfa6;font-size:12.5px;font-weight:600;
+  padding:7px 14px;border-radius:999px;cursor:pointer;transition:.25s var(--ease);font-family:var(--font-body)}
+.seg button.on{background:linear-gradient(145deg,#E8941A,#A65C34);color:#fff;box-shadow:0 4px 12px rgba(166,92,52,.4)}
+.seg .lbl{align-self:center;color:#7d7460;font-size:10.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:0 10px 0 4px}
+
+.layout{display:flex;gap:34px;align-items:flex-start;max-width:1180px;width:100%;justify-content:center;flex-wrap:wrap}
+
+/* ---------- Phone frame ---------- */
+.phone{position:relative;width:390px;height:820px;border-radius:54px;
+  background:#0a0a0a;padding:13px;box-shadow:0 40px 90px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.06);flex:0 0 auto}
+.notch{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:130px;height:30px;
+  background:#0a0a0a;border-radius:0 0 18px 18px;z-index:30}
+.screen{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;
+  background:linear-gradient(160deg,var(--bg-grad1),var(--bg-grad2));color:var(--text);
+  display:flex;flex-direction:column}
+/* subtle paper texture */
+.screen::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:var(--texture);z-index:0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(166,92,52,.05) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(201,162,39,.05) 0, transparent 40%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  background-size:auto,auto,120px}
+
+/* status bar */
+.statusbar{position:relative;z-index:5;display:flex;justify-content:space-between;align-items:center;
+  padding:16px 26px 6px;font-size:13px;font-weight:600;color:var(--text)}
+.statusbar .r{display:flex;gap:6px;align-items:center}
+
+.view{position:relative;z-index:2;flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.view::-webkit-scrollbar{display:none}
+.pad{padding:6px 20px 130px}
+
+/* ---------- Headers ---------- */
+.greet{font-family:var(--font-display);font-size:13px;color:var(--text-2);letter-spacing:.04em}
+.title-xl{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.1;margin-top:2px}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}
+.section-h h3{font-family:var(--font-display);font-size:17px;font-weight:600}
+.section-h a{font-size:12.5px;color:var(--accent);font-weight:600;text-decoration:none;cursor:pointer}
+.divider{height:14px;background-repeat:no-repeat;background-position:center;background-size:contain;opacity:.5;margin:6px 0}
+
+/* ---------- Search ---------- */
+.search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:13px 16px;margin-top:18px;box-shadow:var(--shadow-1);cursor:text}
+.search svg{flex:0 0 auto}
+.search span{color:var(--text-3);font-size:14.5px}
+
+/* ---------- Continue writing ---------- */
+.continue{margin-top:18px;border-radius:var(--r-lg);padding:18px;cursor:pointer;
+  background:linear-gradient(135deg,#A65C34,#7e3f20);color:#fdf3e3;box-shadow:var(--shadow-2);position:relative;overflow:hidden}
+.continue::after{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,148,26,.5),transparent 70%)}
+.continue .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.8;font-weight:700}
+.continue h4{font-family:var(--font-display);font-size:19px;margin:7px 0 6px;position:relative}
+.continue p{font-size:13px;opacity:.85;line-height:1.5}
+.continue .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin-top:14px;overflow:hidden}
+.continue .bar i{display:block;height:100%;width:62%;background:#E8941A;border-radius:3px}
+.continue .meta{font-size:11px;opacity:.8;margin-top:7px}
+
+/* ---------- Quick actions ---------- */
+.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.qa .a{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:13px 6px;
+  text-align:center;cursor:pointer;transition:.2s var(--ease);box-shadow:var(--shadow-1)}
+.qa .a:active{transform:scale(.95)}
+.qa .ic{width:38px;height:38px;border-radius:12px;margin:0 auto 7px;display:grid;place-items:center}
+.qa .a span{font-size:11px;color:var(--text-2);font-weight:600}
+
+/* ---------- horizontal cards ---------- */
+.hscroll{display:flex;gap:13px;overflow-x:auto;padding:2px 0 6px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.ncard{flex:0 0 162px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:15px;box-shadow:var(--shadow-1);cursor:pointer;transition:.2s var(--ease);position:relative}
+.ncard:active{transform:translateY(2px)}
+.ncard .fold{position:absolute;top:0;right:0;width:0;height:0;border-top:22px solid var(--accent-2);
+  border-left:22px solid transparent;border-radius:0 var(--r-md) 0 0;opacity:.9}
+.ncard h5{font-family:var(--font-display);font-size:14.5px;font-weight:600;margin-bottom:6px;line-height:1.25}
+.ncard p{font-size:11.5px;color:var(--text-2);line-height:1.45;height:48px;overflow:hidden}
+.ncard .tagrow{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.tag{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:999px;letter-spacing:.02em}
+.ncard .ft{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:10px;color:var(--text-3)}
+
+/* ---------- folders grid ---------- */
+.folders{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.folder{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:14px;box-shadow:var(--shadow-1);cursor:pointer}
+.folder .fi{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto}
+.folder .ft b{font-family:var(--font-display);font-size:14px;display:block}
+.folder .ft span{font-size:11px;color:var(--text-3)}
+
+/* ---------- list rows (Notes List) ---------- */
+.listrow{display:flex;gap:13px;padding:15px 4px;border-bottom:1px solid var(--border);cursor:pointer}
+.listrow .accent{width:4px;border-radius:4px;flex:0 0 auto}
+.listrow .body{flex:1;min-width:0}
+.listrow h5{font-family:var(--font-display);font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.listrow .pin{color:var(--accent-2)}
+.listrow p{font-size:12.5px;color:var(--text-2);line-height:1.4;margin:5px 0 8px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.listrow .meta{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--text-3);align-items:center}
+.listrow .meta b{color:var(--text-2);font-weight:600}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--forest,#2F5D4A);display:inline-block}
+
+/* grid view */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.grid2 .ncard{flex:none;width:auto}
+.grid2 .ncard p{height:auto;max-height:64px}
+
+/* compact */
+.compact .listrow{padding:10px 4px}
+.compact .listrow p{display:none}
+
+/* view toggle */
+.viewbar{display:flex;align-items:center;justify-content:space-between;margin:14px 0 4px}
+.viewseg{display:flex;background:var(--chip);border-radius:999px;padding:3px}
+.viewseg button{border:0;background:transparent;padding:6px 11px;border-radius:999px;cursor:pointer;color:var(--text-3);display:grid;place-items:center}
+.viewseg button.on{background:var(--surface-raise);box-shadow:var(--shadow-1);color:var(--accent)}
+.filterchips{display:flex;gap:8px;overflow-x:auto;margin:12px -20px 0;padding:0 20px;scrollbar-width:none}
+.filterchips::-webkit-scrollbar{display:none}
+.fchip{flex:0 0 auto;font-size:12px;font-weight:600;padding:7px 14px;border-radius:999px;
+  border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer}
+.fchip.on{background:var(--accent);color:#fff;border-color:transparent}
+
+/* ---------- Editor ---------- */
+.ed-top{display:flex;align-items:center;justify-content:space-between;padding:6px 4px 0}
+.ed-actions{display:flex;gap:16px;color:var(--text-2)}
+.ed-title{font-family:var(--font-display);font-size:26px;font-weight:600;margin:18px 0 4px;line-height:1.15}
+.ed-meta{display:flex;gap:14px;font-size:11px;color:var(--text-3);margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.ed-body{font-size:15px;line-height:1.72;color:var(--text)}
+.ed-body p{margin-bottom:14px}
+.ed-body h2{font-family:var(--font-display);font-size:19px;margin:20px 0 10px}
+.ed-body .chk{display:flex;align-items:flex-start;gap:10px;margin-bottom:11px;font-size:14.5px}
+.ed-body .box{width:20px;height:20px;border-radius:6px;border:2px solid var(--border-strong);flex:0 0 auto;margin-top:1px}
+.ed-body .box.on{background:var(--forest,#2F5D4A);border-color:var(--forest,#2F5D4A);display:grid;place-items:center}
+.ed-body .done{color:var(--text-3);text-decoration:line-through}
+.codeblk{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;
+  font-family:var(--font-mono);font-size:12px;line-height:1.6;margin:14px 0;color:var(--text)}
+.codeblk .kw{color:var(--indigo,#33407C)}.codeblk .st{color:var(--forest,#2F5D4A)}
+[data-theme="dark"] .codeblk .kw,[data-theme="amoled"] .codeblk .kw{color:#8E9BD8}
+[data-theme="dark"] .codeblk .st,[data-theme="amoled"] .codeblk .st{color:#7fb89a}
+.callout{border-left:3px solid var(--accent-2);background:var(--surface);padding:12px 14px;border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:13.5px;color:var(--text-2);margin:14px 0;font-style:italic}
+.embed{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin:14px 0;box-shadow:var(--shadow-1)}
+.embed .ico{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto}
+.embed b{font-size:13px}.embed span{font-size:11px;color:var(--text-3)}
+.embed .wave{flex:1;display:flex;gap:2px;align-items:center;height:26px}
+.embed .wave i{flex:1;background:var(--accent);border-radius:2px;opacity:.65}
+
+/* formatting toolbar */
+.fmtbar{position:absolute;bottom:0;left:0;right:0;z-index:8;background:var(--surface-raise);
+  border-top:1px solid var(--border);display:flex;gap:4px;padding:10px 12px;overflow-x:auto;scrollbar-width:none;box-shadow:0 -4px 20px rgba(0,0,0,.08)}
+.fmtbar::-webkit-scrollbar{display:none}
+.fbtn{flex:0 0 auto;width:40px;height:40px;border-radius:11px;border:0;background:transparent;color:var(--text-2);
+  display:grid;place-items:center;cursor:pointer;font-weight:700;font-size:15px}
+.fbtn:active{background:var(--chip)}
+.fbtn.sep{width:1px;background:var(--border);border-radius:0;margin:6px 4px;pointer-events:none}
+
+/* ---------- Reader ---------- */
+.reader .pad{padding:10px 26px 130px}
+.reader-prog{position:absolute;top:0;left:0;height:3px;background:var(--accent-2);z-index:9;width:34%}
+.reader h1{font-family:var(--font-display);font-size:27px;font-weight:600;line-height:1.18;margin:22px 0 6px}
+.reader .by{font-size:12px;color:var(--text-3);margin-bottom:22px}
+.reader p{font-family:var(--font-display);font-size:17px;line-height:1.85;margin-bottom:18px;color:var(--text)}
+.reader .hl{background:linear-gradient(transparent 60%,rgba(232,148,26,.35) 0)}
+.reader .dropcap::first-letter{font-size:54px;float:left;line-height:.8;padding:6px 10px 0 0;
+  font-family:var(--font-display);color:var(--accent)}
+.reader-tools{display:flex;justify-content:center;gap:10px;margin:20px 0}
+.rtool{width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);
+  display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-1);color:var(--text-2)}
+
+/* ---------- Settings ---------- */
+.profile{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:16px;margin-top:16px;box-shadow:var(--shadow-1)}
+.avatar{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--font-display);
+  font-size:22px;background:linear-gradient(145deg,#33407C,#2F5D4A);flex:0 0 auto}
+.profile b{font-family:var(--font-display);font-size:17px}
+.profile span{font-size:12px;color:var(--text-3)}
+.profile .pro{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.08em;color:#7e3f20;
+  background:linear-gradient(145deg,#E8941A,#C9A227);padding:5px 9px;border-radius:8px}
+.setgroup{margin-top:20px}
+.setgroup .gl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:0 4px 8px}
+.setlist{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-1)}
+.setrow{display:flex;align-items:center;gap:13px;padding:14px 15px;border-bottom:1px solid var(--border);cursor:pointer}
+.setrow:last-child{border-bottom:0}
+.setrow .si{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto}
+.setrow .sl{flex:1}.setrow .sl b{font-size:14px;font-weight:600;display:block}
+.setrow .sl span{font-size:11.5px;color:var(--text-3)}
+.setrow .val{font-size:12.5px;color:var(--text-3)}
+.toggle{width:44px;height:26px;border-radius:999px;background:var(--accent);position:relative;flex:0 0 auto}
+.toggle.off{background:var(--border-strong)}
+.toggle i{position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle.off i{left:3px}
+
+/* theme picker tiles */
+.themetiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+.ttile{border-radius:var(--r-md);border:2px solid var(--border);padding:10px;cursor:pointer;text-align:center}
+.ttile.on{border-color:var(--accent)}
+.ttile .sw{height:42px;border-radius:8px;margin-bottom:7px;border:1px solid var(--border)}
+.ttile span{font-size:11px;font-weight:600;color:var(--text-2)}
+
+/* ---------- Design system view ---------- */
+.ds h3{font-family:var(--font-display);font-size:18px;margin:22px 0 12px}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.swatch{border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border);background:var(--surface)}
+.swatch .col{height:48px}.swatch .n{font-size:9.5px;padding:6px;color:var(--text-2);font-weight:600}
+.swatch .hex{font-size:8.5px;color:var(--text-3);padding:0 6px 6px;font-family:var(--font-mono)}
+.typerow{padding:10px 0;border-bottom:1px solid var(--border)}
+.typerow small{font-size:10px;color:var(--text-3);font-family:var(--font-mono)}
+.btn-demo{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0}
+.btn{padding:11px 20px;border-radius:999px;border:0;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--font-body)}
+.btn.pri{background:linear-gradient(145deg,#E8941A,#A65C34);color:#fff;box-shadow:var(--shadow-2)}
+.btn.sec{background:var(--surface);color:var(--accent);border:1.5px solid var(--accent)}
+.btn.gho{background:transparent;color:var(--text-2)}
+.input-demo{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);padding:13px 15px;font-size:14px;color:var(--text-3);margin:6px 0}
+.chips-demo{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+
+/* ---------- FAB ---------- */
+.fab{position:absolute;right:20px;bottom:96px;width:60px;height:60px;border-radius:20px;z-index:15;
+  background:linear-gradient(145deg,#E8941A,#A65C34);box-shadow:var(--shadow-fab);display:grid;place-items:center;
+  cursor:pointer;border:0;transition:.2s var(--ease)}
+.fab:active{transform:scale(.92) rotate(8deg)}
+.ios .fab{border-radius:50%}
+
+/* ---------- Bottom nav ---------- */
+.tabbar{position:absolute;bottom:0;left:0;right:0;z-index:12;display:flex;justify-content:space-around;
+  align-items:center;padding:10px 12px 22px;background:var(--surface-raise);border-top:1px solid var(--border);
+  backdrop-filter:blur(12px)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--text-3);
+  font-size:10px;font-weight:600;border:0;background:transparent;flex:1}
+.tab.on{color:var(--accent)}
+/* Material 3 active pill */
+.android .tab.on .ti{background:color-mix(in srgb,var(--accent) 22%,transparent);padding:4px 16px;border-radius:999px}
+.tab .ti{padding:4px 16px;transition:.2s var(--ease)}
+
+/* Material vs iOS header treatment */
+.ios .title-xl{letter-spacing:-.02em}
+.android .title-xl{font-family:var(--font-body);font-weight:700;font-size:26px}
+.android .ed-title,.android .reader h1,.android .ncard h5,.android .listrow h5,.android .folder .ft b{}
+
+/* hide views */
+.v{display:none}.v.show{display:block;animation:fade .35s var(--ease)}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* side note panel */
+.sidenote{max-width:330px;flex:1 1 280px;color:#cdbfa6;font-size:13px;line-height:1.7}
+.sidenote h2{font-family:var(--font-display);color:#F6EEDB;font-size:20px;margin-bottom:12px}
+.sidenote ul{list-style:none;margin-top:10px}
+.sidenote li{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);display:flex;gap:10px}
+.sidenote li b{color:#E8941A}
+.legend{display:flex;gap:7px;align-items:center;margin-top:4px;font-size:12px}
+@media(max-width:900px){.sidenote{display:none}}
+</style>
+</head>
+<body data-theme="light">
+
+<div class="stage-head">
+  <div class="brand">
+    <div class="seal">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 5v14M20 5v14M4 19h16M8 9h8M8 13h6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="#fff"/></svg>
+    </div>
+    <div>
+      <h1>Granth</h1>
+      <p>Notes &amp; Knowledge — preserving timeless knowledge with modern technology</p>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="seg">
+      <span class="lbl">Theme</span>
+      <button data-th="light" class="on" onclick="setTheme('light',this)">Light</button>
+      <button data-th="dark" onclick="setTheme('dark',this)">Dark</button>
+      <button data-th="amoled" onclick="setTheme('amoled',this)">AMOLED</button>
+    </div>
+    <div class="seg">
+      <span class="lbl">Platform</span>
+      <button data-pf="ios" class="on" onclick="setPlatform('ios',this)">iOS</button>
+      <button data-pf="android" onclick="setPlatform('android',this)">Android</button>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="phone ios" id="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <!-- status bar -->
+      <div class="statusbar">
+        <span id="clock">9:41</span>
+        <span class="r">
+          <svg width="17" height="11" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4" width="3" height="8" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2C5 2 2.6 3.2 1 5l1.2 1.3C3.6 4.9 5.6 4 8 4s4.4.9 5.8 2.3L15 5C13.4 3.2 11 2 8 2z" opacity=".5"/><path d="M8 6c-1.5 0-2.9.6-3.9 1.6L8 11.6l3.9-4C10.9 6.6 9.5 6 8 6z"/></svg>
+          <svg width="24" height="12" viewBox="0 0 26 12" fill="none"><rect x="1" y="1" width="21" height="10" rx="3" stroke="currentColor" opacity=".5"/><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".5"/></svg>
+        </span>
+      </div>
+
+      <div class="view" id="view">
+
+      <!-- ============ HOME ============ -->
+      <section class="v show" id="v-home"><div class="pad">
+        <div class="greet">Namaste, Rishabh ☉</div>
+        <div class="title-xl">Your Library</div>
+
+        <div class="search" onclick="go('search')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <span>Search notes, tags, audio…</span>
+        </div>
+
+        <div class="continue" onclick="go('editor')">
+          <div class="k">Continue writing</div>
+          <h4>On the Origins of Nalanda</h4>
+          <p>The great mahavihara drew scholars from across Asia, its nine-story library said to hold…</p>
+          <div class="bar"><i></i></div>
+          <div class="meta">62% · 4 min left · edited 12m ago</div>
+        </div>
+
+        <div class="qa">
+          <div class="a" onclick="go('editor')"><div class="ic" style="background:rgba(232,148,26,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8941A" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><span>New Note</span></div>
+          <div class="a"><div class="ic" style="background:rgba(47,93,74,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5D4A" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><span>Checklist</span></div>
+          <div class="a"><div class="ic" style="background:rgba(166,92,52,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A65C34" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4"/></svg></div><span>Audio</span></div>
+          <div class="a"><div class="ic" style="background:rgba(51,64,124,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#33407C" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6"/></svg></div><span>Template</span></div>
+        </div>
+
+        <div class="section-h"><h3>Pinned</h3><a onclick="go('notes')">See all</a></div>
+        <div class="hscroll">
+          <div class="ncard" onclick="go('editor')"><div class="fold"></div><h5>Sanskrit Roots</h5><p>Dhātu list with derivations — gam, sthā, kṛ, bhū…</p><div class="tagrow"><span class="tag" style="background:rgba(232,148,26,.18);color:#A65C34">study</span><span class="tag" style="background:rgba(47,93,74,.16);color:#2F5D4A">sanskrit</span></div><div class="ft"><span>📎 3 · 720 words</span><span>2d</span></div></div>
+          <div class="ncard"><h5>Q3 Product Roadmap</h5><p>Themes: offline-first sync, OCR search, handwriting…</p><div class="tagrow"><span class="tag" style="background:rgba(51,64,124,.16);color:#33407C">work</span></div><div class="ft"><span>✓ 8/12 · 5 min</span><span>1d</span></div></div>
+          <div class="ncard"><div class="fold"></div><h5>Ayurveda Notes</h5><p>Doshas, dinacharya routine, seasonal practices…</p><div class="tagrow"><span class="tag" style="background:rgba(201,162,39,.2);color:#8a6f12">health</span></div><div class="ft"><span>🎙 1 · 340 words</span><span>4d</span></div></div>
+        </div>
+
+        <div class="section-h"><h3>Recent</h3><a onclick="go('notes')">See all</a></div>
+        <div class="hscroll">
+          <div class="ncard"><h5>Travel — Hampi</h5><p>Virupaksha temple at dawn, Vittala stone chariot…</p><div class="tagrow"><span class="tag" style="background:rgba(166,92,52,.16);color:#A65C34">travel</span></div><div class="ft"><span>🖼 6 · 410 words</span><span>6h</span></div></div>
+          <div class="ncard"><h5>Recipe — Pongal</h5><p>Rice, moong dal, pepper, cumin, ghee, curry leaves…</p><div class="tagrow"><span class="tag" style="background:rgba(47,93,74,.16);color:#2F5D4A">recipe</span></div><div class="ft"><span>✓ checklist</span><span>1d</span></div></div>
+        </div>
+
+        <div class="section-h"><h3>Folders</h3><a onclick="go('notes')">Manage</a></div>
+        <div class="folders">
+          <div class="folder" onclick="go('notes')"><div class="fi" style="background:rgba(232,148,26,.18)"><svg width="20" height="20" viewBox="0 0 24 24" fill="#E8941A"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="ft"><b>Studies</b><span>48 notes</span></div></div>
+          <div class="folder" onclick="go('notes')"><div class="fi" style="background:rgba(47,93,74,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="#2F5D4A"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="ft"><b>Work</b><span>31 notes</span></div></div>
+          <div class="folder" onclick="go('notes')"><div class="fi" style="background:rgba(51,64,124,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="#33407C"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="ft"><b>Journal</b><span>120 notes</span></div></div>
+          <div class="folder" onclick="go('notes')"><div class="fi" style="background:rgba(201,162,39,.2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="#C9A227"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="ft"><b>Recipes</b><span>17 notes</span></div></div>
+        </div>
+      </div></section>
+
+      <!-- ============ NOTES LIST ============ -->
+      <section class="v" id="v-notes"><div class="pad">
+        <div class="greet" onclick="go('home')" style="cursor:pointer">‹ Library</div>
+        <div class="title-xl">All Notes</div>
+        <div class="viewbar">
+          <span style="font-size:12.5px;color:var(--text-3)">247 notes · sorted by recent</span>
+          <div class="viewseg" id="viewseg">
+            <button class="on" onclick="setListView('list',this)" title="List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+            <button onclick="setListView('grid',this)" title="Grid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button onclick="setListView('compact',this)" title="Compact"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+          </div>
+        </div>
+        <div class="filterchips">
+          <div class="fchip on">All</div><div class="fchip">Favorites ★</div><div class="fchip">Shared</div>
+          <div class="fchip">Recently edited</div><div class="fchip">Archive</div><div class="fchip">Trash</div>
+        </div>
+
+        <div id="noteholder">
+          <div class="listview" id="lv-list">
+            <div class="listrow" onclick="go('editor')">
+              <div class="accent" style="background:#A65C34"></div>
+              <div class="body">
+                <h5><span class="pin">📌</span> On the Origins of Nalanda</h5>
+                <p>The great mahavihara drew scholars from across Asia, its nine-story library said to hold hundreds of thousands of manuscripts copied by hand…</p>
+                <div class="meta"><b>Studies</b> · <span>#history</span> · <span>720 words</span> · <span>4 min read</span> · 📎2 · <span class="dot"></span> Synced</div>
+              </div>
+            </div>
+            <div class="listrow" onclick="go('reader')">
+              <div class="accent" style="background:#2F5D4A"></div>
+              <div class="body">
+                <h5>Ayurveda — Dinacharya</h5>
+                <p>Morning routine: wake before sunrise (brahma muhurta), tongue scraping, oil pulling, abhyanga self-massage…</p>
+                <div class="meta"><b>Health</b> · <span>#wellness</span> · 🎙1 · <span>340 words</span> · 2 min · <span class="dot" style="background:#C9A227"></span> Syncing</div>
+              </div>
+            </div>
+            <div class="listrow" onclick="go('editor')">
+              <div class="accent" style="background:#33407C"></div>
+              <div class="body">
+                <h5><span class="pin">📌</span> Q3 Product Roadmap</h5>
+                <p>Themes for the quarter: offline-first sync engine, OCR over scanned manuscripts, on-device handwriting recognition…</p>
+                <div class="meta"><b>Work</b> · <span>#planning</span> · ✓8/12 · <span>1,240 words</span> · 6 min · 👥 Shared</div>
+              </div>
+            </div>
+            <div class="listrow" onclick="go('editor')">
+              <div class="accent" style="background:#C9A227"></div>
+              <div class="body">
+                <h5>Sanskrit Dhātu List</h5>
+                <p>Root verbs and their derivations — gam (to go), sthā (to stand), kṛ (to do), bhū (to become)…</p>
+                <div class="meta"><b>Studies</b> · <span>#sanskrit</span> · <span>520 words</span> · 3 min · ⭐ · <span class="dot"></span> Synced</div>
+              </div>
+            </div>
+            <div class="listrow" onclick="go('editor')">
+              <div class="accent" style="background:#A65C34"></div>
+              <div class="body">
+                <h5>Travel — Hampi at Dawn</h5>
+                <p>Virupaksha temple bells before sunrise, the stone chariot of Vittala, boulders glowing amber…</p>
+                <div class="meta"><b>Journal</b> · <span>#travel</span> · 🖼6 · <span>410 words</span> · 2 min · <span class="dot"></span> Synced</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ============ EDITOR ============ -->
+      <section class="v" id="v-editor"><div class="pad" style="padding-bottom:90px">
+        <div class="ed-top">
+          <div class="greet" onclick="go('notes')" style="cursor:pointer">‹ Notes</div>
+          <div class="ed-actions">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11V6a3 3 0 0 1 6 0v5M9 11h6M7 11h10v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" opacity=".4"/><path d="M9 14l2 2 4-4"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" onclick="go('reader')" style="cursor:pointer"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </div>
+        </div>
+
+        <div class="ed-title">On the Origins of Nalanda</div>
+        <div class="ed-meta">
+          <span>📁 Studies</span><span>#history #buddhism</span>
+          <span>720 words</span><span>4 min read</span><span style="color:var(--forest,#2F5D4A)">● Autosaved</span>
+        </div>
+
+        <div class="ed-body">
+          <p>Founded in the 5th century CE, the mahavihara at <b>Nālandā</b> became the foremost seat of learning in the ancient world, drawing scholars from China, Korea, Tibet, and beyond.</p>
+          <div class="callout">"The streams of water from the lotus pools wound through the groves; and here and there were monasteries of brickwork." — Xuanzang, 7th c.</div>
+          <h2>Key facts to verify</h2>
+          <div class="chk"><div class="box on"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg></div><span class="done">Confirm founding under Kumaragupta I</span></div>
+          <div class="chk"><div class="box"></div><span>Cross-check library "nine stories" claim</span></div>
+          <div class="chk"><div class="box"></div><span>Add Xuanzang travelogue citation</span></div>
+
+          <h2>Manuscript copy workflow</h2>
+          <div class="codeblk"><span class="kw">def</span> preserve(leaf):<br>&nbsp;&nbsp;text = ocr(leaf)<br>&nbsp;&nbsp;<span class="kw">return</span> index(text, lang=<span class="st">"sa"</span>)</div>
+
+          <div class="embed"><div class="ico" style="background:rgba(166,92,52,.16)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A65C34" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div><div><b>Voice memo — lecture clip</b><br><span>2:14 · transcribed</span></div><div class="wave"><i style="height:30%"></i><i style="height:70%"></i><i style="height:45%"></i><i style="height:90%"></i><i style="height:55%"></i><i style="height:75%"></i><i style="height:35%"></i><i style="height:60%"></i></div></div>
+          <p>The decline came with the upheavals of the late 12th century, yet its intellectual lineage shaped Buddhist scholarship across Asia for centuries.</p>
+        </div>
+      </div>
+      <!-- formatting toolbar -->
+      <div class="fmtbar">
+        <button class="fbtn" style="font-weight:800">B</button>
+        <button class="fbtn" style="font-style:italic;font-family:serif">I</button>
+        <button class="fbtn" style="text-decoration:underline">U</button>
+        <button class="fbtn" style="text-decoration:line-through">S</button>
+        <span class="fbtn sep"></span>
+        <button class="fbtn">H1</button>
+        <button class="fbtn">H2</button>
+        <button class="fbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+        <button class="fbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+        <span class="fbtn sep"></span>
+        <button class="fbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></button>
+        <button class="fbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button>
+        <button class="fbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
+        <button class="fbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></button>
+      </div>
+      </section>
+
+      <!-- ============ READER ============ -->
+      <section class="v reader" id="v-reader">
+        <div class="reader-prog"></div>
+        <div class="pad">
+          <div class="greet" onclick="go('editor')" style="cursor:pointer">‹ Editing</div>
+          <h1>On the Origins of Nalanda</h1>
+          <div class="by">Reading mode · Sepia · 4 min · 34% complete</div>
+          <p class="dropcap">Founded in the 5th century CE, the mahavihara at Nālandā became the foremost seat of learning in the ancient world. <span class="hl">Scholars travelled for months across mountains and seas to study its texts</span>, and at its height it is said to have housed thousands of students and teachers.</p>
+          <p>The library complex — known as the Dharmaganja, the "Treasury of Truth" — reportedly comprised three grand buildings. The traveller Xuanzang recorded groves, lotus pools, and observatories rising into the morning mist.</p>
+          <p>Manuscripts were copied by hand onto palm leaf and birch bark, bound between wooden covers and wrapped in cloth. This <span class="hl">painstaking craft preserved knowledge</span> across generations, a tradition this very app seeks to honour.</p>
+          <div class="reader-tools">
+            <div class="rtool" title="Font size"><b style="font-family:var(--font-display)">A</b></div>
+            <div class="rtool" title="Line spacing"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 6H8M21 12H8M21 18H8M3 4v16M3 4l-2 2M3 4l2 2M3 20l-2-2M3 20l2-2"/></svg></div>
+            <div class="rtool" title="Sepia / Night"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></div>
+            <div class="rtool" title="Bookmark"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h12a1 1 0 0 1 1 1v18l-7-4-7 4V3a1 1 0 0 1 1-1z"/></svg></div>
+            <div class="rtool" title="Highlight"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l-4 4v3h3l4-4M14 6l4 4M3 21h18"/></svg></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="v" id="v-settings"><div class="pad">
+        <div class="title-xl">Settings</div>
+        <div class="profile">
+          <div class="avatar">R</div>
+          <div><b>Rishabh S</b><br><span>rishabhshri2795@gmail.com · 4 devices</span></div>
+          <div class="pro">PRO</div>
+        </div>
+
+        <div class="setgroup">
+          <div class="gl">Appearance</div>
+          <div class="themetiles">
+            <div class="ttile on" onclick="setTheme('light',document.querySelector('[data-th=light]'));syncThemeTiles()" id="tt-light"><div class="sw" style="background:linear-gradient(135deg,#F2E8D2,#E6D7B8)"></div><span>Light</span></div>
+            <div class="ttile" onclick="setTheme('dark',document.querySelector('[data-th=dark]'));syncThemeTiles()" id="tt-dark"><div class="sw" style="background:linear-gradient(135deg,#221B14,#16120D)"></div><span>Dark</span></div>
+            <div class="ttile" onclick="setTheme('amoled',document.querySelector('[data-th=amoled]'));syncThemeTiles()" id="tt-amoled"><div class="sw" style="background:linear-gradient(135deg,#0C0A07,#000)"></div><span>AMOLED</span></div>
+          </div>
+        </div>
+
+        <div class="setgroup">
+          <div class="gl">Editor &amp; Reading</div>
+          <div class="setlist">
+            <div class="setrow"><div class="si" style="background:rgba(232,148,26,.16)">🅰</div><div class="sl"><b>Editor font</b><span>Display serif · 16pt</span></div><div class="val">Iowan ›</div></div>
+            <div class="setrow"><div class="si" style="background:rgba(47,93,74,.16)">⌨</div><div class="sl"><b>Markdown shortcuts</b><span>Auto-format as you type</span></div><div class="toggle"><i></i></div></div>
+            <div class="setrow"><div class="si" style="background:rgba(166,92,52,.16)">⏻</div><div class="sl"><b>Focus mode dimming</b><span>Fade inactive paragraphs</span></div><div class="toggle"><i></i></div></div>
+            <div class="setrow"><div class="si" style="background:rgba(51,64,124,.16)">↺</div><div class="sl"><b>Version history</b><span>Keep 30 days of snapshots</span></div><div class="val">›</div></div>
+          </div>
+        </div>
+
+        <div class="setgroup">
+          <div class="gl">Sync &amp; Backup</div>
+          <div class="setlist">
+            <div class="setrow"><div class="si" style="background:rgba(47,93,74,.16)">☁</div><div class="sl"><b>Cloud sync</b><span>Last synced 2 min ago · 1.2 GB</span></div><div class="toggle"><i></i></div></div>
+            <div class="setrow"><div class="si" style="background:rgba(232,148,26,.16)">⤓</div><div class="sl"><b>Auto backup</b><span>Daily · encrypted</span></div><div class="toggle"><i></i></div></div>
+            <div class="setrow"><div class="si" style="background:rgba(166,92,52,.16)">⇄</div><div class="sl"><b>Offline mode</b><span>Keep all notes on device</span></div><div class="toggle off"><i></i></div></div>
+          </div>
+        </div>
+
+        <div class="setgroup">
+          <div class="gl">More</div>
+          <div class="setlist">
+            <div class="setrow"><div class="si" style="background:rgba(51,64,124,.16)">🌐</div><div class="sl"><b>Language</b></div><div class="val">English ›</div></div>
+            <div class="setrow"><div class="si" style="background:rgba(201,162,39,.2)">♿</div><div class="sl"><b>Accessibility</b></div><div class="val">›</div></div>
+            <div class="setrow"><div class="si" style="background:rgba(166,92,52,.16)">🔒</div><div class="sl"><b>Privacy &amp; Security</b><span>App lock · Face ID</span></div><div class="val">›</div></div>
+            <div class="setrow"><div class="si" style="background:rgba(47,93,74,.16)">⚙</div><div class="sl"><b>Developer options</b></div><div class="val">›</div></div>
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ============ SEARCH ============ -->
+      <section class="v" id="v-search"><div class="pad">
+        <div class="search" style="margin-top:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <span style="color:var(--text)">nalanda</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="margin-left:auto"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        </div>
+        <div class="filterchips" style="margin-top:14px">
+          <div class="fchip on">All</div><div class="fchip">Text</div><div class="fchip">OCR 🔍</div><div class="fchip">Audio transcript</div><div class="fchip">This year</div>
+        </div>
+        <div class="section-h"><h3>Saved searches</h3></div>
+        <div class="chips-demo">
+          <span class="fchip">#sanskrit + favorites</span><span class="fchip">shared this week</span>
+        </div>
+        <div class="section-h"><h3>3 results</h3></div>
+        <div class="listrow" onclick="go('editor')"><div class="accent" style="background:#A65C34"></div><div class="body"><h5>On the Origins of <span class="reader" style="background:rgba(232,148,26,.35)">Nalanda</span></h5><p>…the mahavihara at <b>Nalanda</b> became the foremost seat of learning…</p><div class="meta"><b>Studies</b> · text match · 4 min</div></div></div>
+        <div class="listrow"><div class="accent" style="background:#2F5D4A"></div><div class="body"><h5>Lecture — Buddhist Universities</h5><p>🎙 transcript: "…and <b>Nalanda</b> drew students from across…"</p><div class="meta"><b>Audio</b> · transcript match · 0:42</div></div></div>
+        <div class="listrow"><div class="accent" style="background:#C9A227"></div><div class="body"><h5>Scanned page — manuscript</h5><p>🔍 OCR: "…ruins of <b>Nalanda</b> excavated 1915…"</p><div class="meta"><b>Research</b> · OCR match · 🖼</div></div></div>
+      </div></section>
+
+      <!-- ============ DESIGN SYSTEM ============ -->
+      <section class="v ds" id="v-ds"><div class="pad">
+        <div class="title-xl">Design System</div>
+        <div class="greet">Tokens, type &amp; components</div>
+
+        <h3>Brand colors</h3>
+        <div class="swatches">
+          <div class="swatch"><div class="col" style="background:#FBF7EC"></div><div class="n">Ivory</div><div class="hex">#FBF7EC</div></div>
+          <div class="swatch"><div class="col" style="background:#F2E8D2"></div><div class="n">Parchment</div><div class="hex">#F2E8D2</div></div>
+          <div class="swatch"><div class="col" style="background:#E6D7B8"></div><div class="n">Warm Sand</div><div class="hex">#E6D7B8</div></div>
+          <div class="swatch"><div class="col" style="background:#E8941A"></div><div class="n">Saffron</div><div class="hex">#E8941A</div></div>
+          <div class="swatch"><div class="col" style="background:#A65C34"></div><div class="n">Copper</div><div class="hex">#A65C34</div></div>
+          <div class="swatch"><div class="col" style="background:#C9A227"></div><div class="n">Muted Gold</div><div class="hex">#C9A227</div></div>
+          <div class="swatch"><div class="col" style="background:#2F5D4A"></div><div class="n">Forest</div><div class="hex">#2F5D4A</div></div>
+          <div class="swatch"><div class="col" style="background:#33407C"></div><div class="n">Indigo</div><div class="hex">#33407C</div></div>
+        </div>
+
+        <h3>Typography</h3>
+        <div class="typerow"><div style="font-family:var(--font-display);font-size:26px;font-weight:600">Display / Iowan</div><small>Headings · 28–34 · serif</small></div>
+        <div class="typerow"><div style="font-family:var(--font-display);font-size:18px;font-weight:600">Section title</div><small>17–20 · serif 600</small></div>
+        <div class="typerow"><div style="font-size:15px">Body — the quick brown fox.</div><small>15 · sans · 1.7 line</small></div>
+        <div class="typerow"><div style="font-size:12px;color:var(--text-3)">Caption / metadata</div><small>11–12 · sans</small></div>
+        <div class="typerow"><div style="font-family:var(--font-mono);font-size:13px">mono_code = true</div><small>Code · mono</small></div>
+
+        <h3>Buttons</h3>
+        <div class="btn-demo"><button class="btn pri">Primary</button><button class="btn sec">Secondary</button><button class="btn gho">Ghost</button></div>
+
+        <h3>Inputs</h3>
+        <div class="input-demo">Note title…</div>
+        <div class="search" style="margin-top:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>Search field</span></div>
+
+        <h3>Chips &amp; tags</h3>
+        <div class="chips-demo">
+          <span class="tag" style="background:rgba(232,148,26,.18);color:#A65C34">study</span>
+          <span class="tag" style="background:rgba(47,93,74,.16);color:#2F5D4A">sanskrit</span>
+          <span class="tag" style="background:rgba(51,64,124,.16);color:#33407C">work</span>
+          <span class="fchip on">Filter on</span><span class="fchip">Filter</span>
+        </div>
+
+        <h3>Card</h3>
+        <div class="ncard" style="width:auto"><div class="fold"></div><h5>Component card</h5><p>Title, preview, tags, footer meta with auto-layout padding 15px, radius 14px.</p><div class="tagrow"><span class="tag" style="background:rgba(201,162,39,.2);color:#8a6f12">demo</span></div><div class="ft"><span>📎 2 · 320 words</span><span>now</span></div></div>
+
+        <h3>Elevation &amp; radius</h3>
+        <div class="btn-demo">
+          <div style="width:64px;height:64px;border-radius:8px;background:var(--surface);box-shadow:var(--shadow-1);display:grid;place-items:center;font-size:10px;color:var(--text-3)">8px</div>
+          <div style="width:64px;height:64px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow-1);display:grid;place-items:center;font-size:10px;color:var(--text-3)">14px</div>
+          <div style="width:64px;height:64px;border-radius:22px;background:var(--surface);box-shadow:var(--shadow-2);display:grid;place-items:center;font-size:10px;color:var(--text-3)">22px</div>
+        </div>
+      </div></section>
+
+      </div><!-- /view -->
+
+      <!-- FAB (hidden on editor/reader) -->
+      <button class="fab" id="fab" onclick="go('editor')">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+
+      <!-- Bottom nav -->
+      <div class="tabbar" id="tabbar">
+        <button class="tab on" data-tab="home" onclick="go('home')"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Home</button>
+        <button class="tab" data-tab="notes" onclick="go('notes')"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 9h8M8 13h6"/></svg></span>Notes</button>
+        <button class="tab" data-tab="search" onclick="go('search')"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>Search</button>
+        <button class="tab" data-tab="ds" onclick="go('ds')"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="15" cy="15.5" r="2.5"/><path d="M8 8l3 2M9 13l4 1"/></svg></span>System</button>
+        <button class="tab" data-tab="settings" onclick="go('settings')"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 7 19.3a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 2.7 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 2.7V1a2 2 0 0 1 4 0" opacity=".9"/></svg></span>Settings</button>
+      </div>
+
+    </div><!-- /screen -->
+  </div><!-- /phone -->
+
+  <aside class="sidenote">
+    <h2>Granth</h2>
+    <p>A premium cross-platform notes &amp; knowledge app — Apple Notes simplicity meets Notion organization, infused with the warmth of India's manuscript heritage.</p>
+    <div class="legend"><span class="dot"></span> Synced &nbsp; <span class="dot" style="background:#C9A227"></span> Syncing</div>
+    <ul>
+      <li><b>Theme</b> — toggle Light / Dark / AMOLED above; every screen retints live.</li>
+      <li><b>Platform</b> — switch iOS (HIG) ↔ Android (Material 3): note the FAB shape and active-tab pill.</li>
+      <li><b>Tap to explore</b> — bottom nav, search bar, cards, FAB, and back chevrons all navigate.</li>
+      <li><b>Screens</b> — Home, Notes List (list/grid/compact), Editor, Reader, Search, Settings, Design System.</li>
+    </ul>
+    <p style="margin-top:16px;color:#8a8170;font-size:12px">Companion file: <b style="color:#E8941A">granth-design-spec.md</b> — full tokens &amp; Figma rebuild guide.</p>
+  </aside>
+</div>
+
+<script>
+function setTheme(t,btn){
+  document.body.setAttribute('data-theme',t);
+  document.querySelectorAll('.seg [data-th]').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on'); else document.querySelector('[data-th="'+t+'"]').classList.add('on');
+  syncThemeTiles();
+}
+function syncThemeTiles(){
+  var t=document.body.getAttribute('data-theme');
+  ['light','dark','amoled'].forEach(function(x){
+    var el=document.getElementById('tt-'+x); if(el) el.classList.toggle('on',x===t);
+  });
+}
+function setPlatform(p,btn){
+  var ph=document.getElementById('phone');
+  ph.classList.remove('ios','android'); ph.classList.add(p);
+  document.querySelectorAll('.seg [data-pf]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function go(name){
+  document.querySelectorAll('.v').forEach(v=>v.classList.remove('show'));
+  var el=document.getElementById('v-'+name); if(el) el.classList.add('show');
+  document.getElementById('view').scrollTop=0;
+  // active tab
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
+  // FAB visibility
+  var fab=document.getElementById('fab');
+  fab.style.display=(name==='editor'||name==='reader')?'none':'grid';
+}
+function setListView(mode,btn){
+  document.querySelectorAll('#viewseg button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  var holder=document.getElementById('lv-list');
+  holder.className='listview '+mode;
+  if(mode==='grid'){ holder.classList.add('grid2'); rebuildGrid(true); }
+  else { rebuildGrid(false); }
+}
+// store original list markup to restore between views
+var _origList=null;
+function rebuildGrid(grid){
+  var holder=document.getElementById('lv-list');
+  if(_origList===null) _origList=holder.innerHTML;
+  if(grid){
+    // convert rows to compact cards
+    holder.innerHTML='';
+    holder.className='listview grid2';
+    var data=[
+      ['On the Origins of Nalanda','The great mahavihara drew scholars from across Asia…','#A65C34','study'],
+      ['Ayurveda — Dinacharya','Morning routine: brahma muhurta, tongue scraping…','#2F5D4A','wellness'],
+      ['Q3 Product Roadmap','Offline-first sync, OCR search, handwriting…','#33407C','work'],
+      ['Sanskrit Dhātu List','gam, sthā, kṛ, bhū — roots & derivations…','#C9A227','sanskrit'],
+      ['Travel — Hampi','Virupaksha bells, the stone chariot of Vittala…','#A65C34','travel'],
+      ['Recipe — Pongal','Rice, moong dal, pepper, cumin, ghee…','#2F5D4A','recipe']
+    ];
+    data.forEach(function(d){
+      var c=document.createElement('div');
+      c.className='ncard'; c.onclick=function(){go('editor')};
+      c.innerHTML='<div class="fold" style="border-top-color:'+d[2]+'"></div><h5>'+d[0]+'</h5><p>'+d[1]+'</p><div class="tagrow"><span class="tag" style="background:rgba(166,92,52,.14);color:'+d[2]+'">'+d[3]+'</span></div><div class="ft"><span>📎 · words</span><span>now</span></div>';
+      holder.appendChild(c);
+    });
+  } else {
+    holder.innerHTML=_origList;
+    holder.className='listview';
+    if(document.querySelector('#viewseg button:nth-child(3)').classList.contains('on')) holder.classList.add('compact');
+  }
+}
+// live clock
+function tick(){var d=new Date();var h=d.getHours(),m=d.getMinutes();document.getElementById('clock').textContent=((h%12)||12)+':'+(m<10?'0'+m:m);}
+tick(); setInterval(tick,30000);
+</script>
+</body>
+</html>
