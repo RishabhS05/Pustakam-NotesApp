@@ -1,7 +1,7 @@
-package com.app.pustakam.domain.repositories.noteRepository
+package com.app.pustakam.feature.notes.data.repositoryImpl
 
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

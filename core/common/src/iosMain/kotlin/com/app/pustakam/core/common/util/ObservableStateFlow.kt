@@ -1,4 +1,4 @@
-package com.app.pustakam.util
+package com.app.pustakam.core.common.util
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

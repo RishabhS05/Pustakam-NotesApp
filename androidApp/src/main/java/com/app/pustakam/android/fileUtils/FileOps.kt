@@ -8,8 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException

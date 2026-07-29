@@ -7,11 +7,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.noteEditor.NoteStatus
 import com.app.pustakam.android.screen.notes.list.TagIntent
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.data.models.response.notes.NoteSummary
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import com.app.pustakam.core.common.util.ContentType
 
 open class BaseUIState (open val isLoading : Boolean,
                         open val error : String? = null,

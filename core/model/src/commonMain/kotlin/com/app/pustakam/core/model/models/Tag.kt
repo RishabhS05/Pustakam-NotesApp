@@ -1,6 +1,6 @@
 package com.app.pustakam.core.model.models
 
-import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 import kotlinx.serialization.Serializable
 
 @Serializable

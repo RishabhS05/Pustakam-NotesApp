@@ -1,7 +1,7 @@
 package com.app.pustakam.core.model.models.response.notes
-import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.UniqueIdGenerator
-import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.UniqueIdGenerator
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 
 // 🔧 C6: this factory is the ONLY place ids/timestamps are generated.
 //       id logic UNCHANGED: timestamp+UUID via UniqueIdGenerator — created once, survives sync round-trips.

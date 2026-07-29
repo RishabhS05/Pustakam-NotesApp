@@ -1,27 +1,32 @@
-package com.app.pustakam.domain.repositories.noteRepository
+package com.app.pustakam.feature.notes.data.repositoryImpl
 
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.data.models.response.DeleteDataModel
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteSummary
-import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.data.models.response.notes.toSummary
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.model.models.response.DeleteDataModel
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.core.model.models.response.notes.toSummary
 
-import com.app.pustakam.domain.repositories.base.BaseRepository
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.core.data.base.BaseRepository
+import com.app.pustakam.core.common.extensions.isNotnull
 // 🔧 F3: provideDispatcher no longer needed (stateIn scopes removed)
-import com.app.pustakam.util.Error
-import com.app.pustakam.util.ErrorMessage
-import com.app.pustakam.util.NetworkError
-import com.app.pustakam.util.UniqueIdGenerator
-import com.app.pustakam.util.getCurrentTimestamp
-import com.app.pustakam.util.log_d
-import com.app.pustakam.util.onError
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.ErrorMessage
+import com.app.pustakam.core.common.util.NetworkError
+import com.app.pustakam.core.common.util.UniqueIdGenerator
+import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.log_d
+import com.app.pustakam.core.common.util.onError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
+import com.app.pustakam.feature.notes.domain.repository.IRemoteNoteRepository
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.map
+import com.app.pustakam.core.common.util.onSuccess
 
 class NoteRepository : BaseRepository(),
     IRemoteNoteRepository, ILocalNotesRepository {
@@ -317,8 +322,8 @@ class NoteRepository : BaseRepository(),
     //   (iOS bridge path); limit > 0 loads one page (Android list opts in with NOTES_PAGE_SIZE).
     suspend fun getAllNotes(page: Int = 0, limit: Int = 0): Result<BaseResponse<Notes>, Error> {
         return getNotesFromDb(page, limit).onSuccess { notes->
-            if(notes.data?.notes?.count()!! > 0){
-              insertNotes(notes = notes.data)
+            if(notes.data != null && notes.data!!.notes.count() > 0){
+              insertNotes(notes = notes.data!!)
             }
 //            getNotesForUserApi(page)
         }.onError {

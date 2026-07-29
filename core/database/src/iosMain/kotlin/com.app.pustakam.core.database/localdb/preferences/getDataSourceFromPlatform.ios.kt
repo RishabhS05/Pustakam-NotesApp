@@ -2,8 +2,8 @@ package com.app.pustakam.core.database.localdb.preferences
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import com.app.pustakam.koinDI.Dispatcher
-import com.app.pustakam.koinDI.provideDispatcher
+import com.app.pustakam.core.common.coroutines.Dispatcher
+import com.app.pustakam.core.common.coroutines.provideDispatcher
 
 import org.koin.dsl.module
 

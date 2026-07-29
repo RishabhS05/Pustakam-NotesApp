@@ -34,8 +34,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.theme.typography
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 
 // 🔧 18-Jul-2026: type → glyph for the card leading icon
 fun iconForContentType(type: ContentType): ImageVector = when (type) {

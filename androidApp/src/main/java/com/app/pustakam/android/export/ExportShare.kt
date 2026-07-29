@@ -6,9 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.export.ExportFormat
-import com.app.pustakam.util.FileImportHelper
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.filesys.export.ExportFormat
+import com.app.pustakam.core.filesys.fileimport.FileImportHelper
 import java.io.File
 
 fun shareExportedFile(context: Context, file: File, format: ExportFormat) {

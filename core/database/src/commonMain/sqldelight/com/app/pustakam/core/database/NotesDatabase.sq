@@ -1,4 +1,5 @@
-import com.app.pustakam.core.database.localdb.data.RichTextMetadata;
+-- 🔧 30-Jul-2026 02:10 was ...core.database.localdb.data (no such package); RichTextMetadata now lives in :core:model
+import com.app.pustakam.core.model.models.RichTextMetadata;
 
 -- 🔧 21-Jul-2026 databasev2.md §2.4: offline-first sync fields — ownerId/version are app-generated
 --   uuid strings (never hardcoded), syncStatus drives the sync queue, deleted = soft delete tombstone.

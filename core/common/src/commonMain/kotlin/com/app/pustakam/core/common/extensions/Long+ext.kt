@@ -1,6 +1,6 @@
 package com.app.pustakam.core.common.extensions
 
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.common.util.log_d
 
 fun Long.getTimerFormatedString() : String{
     val hours = this / 3600

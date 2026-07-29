@@ -50,7 +50,7 @@ import com.app.pustakam.android.screen.bookReader.BookPageFactory
 import com.app.pustakam.android.screen.bookReader.BookPager
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.bookwidget.BookLoadingAnimation
-import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

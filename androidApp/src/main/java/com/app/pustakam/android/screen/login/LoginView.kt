@@ -38,7 +38,7 @@ import com.app.pustakam.android.widgets.POutLinedTextFieldColors
 import com.app.pustakam.android.widgets.PrimaryFilledButton
 import com.app.pustakam.android.widgets.SecondaryTextButton
 import com.app.pustakam.android.widgets.SnackBarUi
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.core.common.extensions.isNotnull
 
 
 @Composable

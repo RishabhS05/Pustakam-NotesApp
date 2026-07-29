@@ -21,7 +21,7 @@ import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
 import com.app.pustakam.android.screen.settings.SettingsScreen
-import com.app.pustakam.data.models.CameraData
+import com.app.pustakam.core.model.models.CameraData
 
 
 fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){

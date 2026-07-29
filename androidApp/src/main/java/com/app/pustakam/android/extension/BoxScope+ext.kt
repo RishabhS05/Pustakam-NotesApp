@@ -33,8 +33,8 @@ import com.app.pustakam.android.fileUtils.mimeTypeFor
 import com.app.pustakam.android.fileUtils.saveMediaToGallery
 import com.app.pustakam.android.fileUtils.suggestedFileName
 import com.app.pustakam.android.fileUtils.writeMediaToUri
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

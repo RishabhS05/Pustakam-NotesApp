@@ -6,8 +6,6 @@ import com.app.pustakam.android.theme.GranthGold
 import com.app.pustakam.android.theme.GranthIndigo
 import com.app.pustakam.android.theme.GranthIvory
 import com.app.pustakam.android.theme.GranthSaffron
-import radiusLg
-import radiusMd
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,6 +64,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.theme.ThemeMode
 import com.app.pustakam.android.theme.ThemeTilePicker
+import com.app.pustakam.android.theme.radiusLg
+import com.app.pustakam.android.theme.radiusMd
 
 // 🎨 22-Jul-2026 — Granth spec §6 Settings, matched to iOS SettingsView.swift. Replaces the
 //   placeholder Text("Settings") with the profile header + grouped sections. Appearance is live-wired

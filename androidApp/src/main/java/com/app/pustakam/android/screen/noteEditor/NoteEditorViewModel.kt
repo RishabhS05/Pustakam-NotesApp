@@ -13,26 +13,26 @@ import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.domain.repositories.usecases.CreateORUpdateNoteUseCase
-import com.app.pustakam.domain.repositories.usecases.DeleteNoteContentUseCase
-import com.app.pustakam.domain.repositories.usecases.DeleteNoteUseCase
-import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.data.models.response.notes.NoteContentObjectHelper
-import com.app.pustakam.data.models.response.notes.TextBlockSplitter
-import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
-import com.app.pustakam.extensions.isNotnull
-import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.ContentType.AUDIO
-import com.app.pustakam.util.ContentType.IMAGE
-import com.app.pustakam.util.ContentType.LOCATION
-import com.app.pustakam.util.ContentType.TEXT
-import com.app.pustakam.util.ContentType.VIDEO
-import com.app.pustakam.util.Error
-import com.app.pustakam.util.NetworkError
-import com.app.pustakam.util.log_d
+import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
+import com.app.pustakam.core.model.models.response.notes.TextBlockSplitter
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
+import com.app.pustakam.core.common.extensions.isNotnull
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.ContentType.AUDIO
+import com.app.pustakam.core.common.util.ContentType.IMAGE
+import com.app.pustakam.core.common.util.ContentType.LOCATION
+import com.app.pustakam.core.common.util.ContentType.TEXT
+import com.app.pustakam.core.common.util.ContentType.VIDEO
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.NetworkError
+import com.app.pustakam.core.common.util.log_d
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +42,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.get
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 
 class NoteEditorViewModel : BaseViewModel() {
     private val noteContentRepository = get<NoteContentRepository>()

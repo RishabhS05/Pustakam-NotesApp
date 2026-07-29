@@ -37,7 +37,7 @@ import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.POutLinedTextFieldColors
 import com.app.pustakam.android.widgets.PrimaryFilledButton
 import com.app.pustakam.android.widgets.SnackBarUi
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.core.common.extensions.isNotnull
 
 @Composable
 fun SignUpView(onNavigate: () -> Unit) {

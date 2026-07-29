@@ -1,4 +1,6 @@
-package com.app.pustakam.android.widgets.colorPalete// build.gradle (module)
+package com.app.pustakam.android.widgets.colorPalete
+
+// build.gradle (module)
 // implementation("androidx.compose.material3:material3:<latest>")
 // implementation("androidx.compose.foundation:foundation:<latest>")
 

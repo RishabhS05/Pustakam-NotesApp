@@ -4,16 +4,19 @@ import com.app.pustakam.android.screen.AUTH
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.LoginUIState
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.domain.repositories.usecases.LoginUseCase
-import com.app.pustakam.util.NetworkError
-import com.app.pustakam.util.ValidationError
-import com.app.pustakam.util.checkLoginEmailPasswordValidity
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.request.Login
+import com.app.pustakam.feature.auth.domain.usecase.LoginUseCase
+import com.app.pustakam.core.common.util.NetworkError
+import com.app.pustakam.core.common.util.ValidationError
+import com.app.pustakam.core.model.validation.checkLoginEmailPasswordValidity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 
 
 class LoginViewModel : BaseViewModel() {

@@ -46,8 +46,8 @@ import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
 import com.app.pustakam.android.services.mediaSessionService.PustakmMediaPlayerService
 import com.app.pustakam.android.theme.typography
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 
 
 @OptIn(UnstableApi::class)

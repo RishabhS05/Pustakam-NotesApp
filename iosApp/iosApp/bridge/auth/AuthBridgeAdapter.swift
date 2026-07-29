@@ -1,12 +1,3 @@
-//
-//  AuthBridgeAdapter.swift
-//  iosApp
-//
-//  🔧 AUTH-FIX: login/signup through use cases (AuthBridge) — replaces the
-//  BaseViewModel + apiHandler + `as! NetworkError` path that crashed on
-//  non-NetworkError failures.
-//
-
 import Foundation
 import shared
 

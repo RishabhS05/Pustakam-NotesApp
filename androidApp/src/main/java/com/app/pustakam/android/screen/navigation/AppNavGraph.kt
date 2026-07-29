@@ -6,7 +6,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import com.app.pustakam.android.screen.AppViewModel
-import com.app.pustakam.data.localdb.preferences.UserPreference
+import com.app.pustakam.core.database.localdb.preferences.UserPreference
 
 
 @Composable

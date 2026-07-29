@@ -2,19 +2,20 @@ package com.app.pustakam.core.database.localdb.database
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.db.SqlPreparedStatement
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.database.NotesDatabase
-import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.getCurrentTimestamp
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.core.database.NotesDatabase
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.log_d
 // 🔧 F4: coroutine imports removed — DAO writes are synchronous inside transactions now
 import org.koin.core.component.KoinComponent
+import com.app.pustakam.core.model.models.RichTextMetadata
+import org.koin.core.component.get
 
-class NotesDao() : KoinComponent {
+class NotesDao : KoinComponent {
 
     private val database =  get<NotesDatabase>()
 
@@ -53,10 +54,10 @@ class NotesDao() : KoinComponent {
     }
    // 🔧 15-Jul-2026 Summary query: one page of LIST-SCREEN summaries — header + snippet + counts +
    //   thumbnail, computed in SQL (indexed subqueries). Contents are never loaded for the list.
-   fun selectNoteSummariesPage(limit: Int, page: Int): List<com.app.pustakam.data.models.response.notes.NoteSummary> {
+   fun selectNoteSummariesPage(limit: Int, page: Int): List<com.app.pustakam.core.model.models.response.notes.NoteSummary> {
        val offset = ((page - 1) * limit).coerceAtLeast(0)
        return queries.selectNoteSummariesPage(limit.toLong(), offset.toLong()).executeAsList().map { row ->
-           com.app.pustakam.data.models.response.notes.NoteSummary(
+           com.app.pustakam.core.model.models.response.notes.NoteSummary(
                id = row.id,
                title = row.title,
                categoryId = row.categoryId,
@@ -69,7 +70,7 @@ class NotesDao() : KoinComponent {
                audioCount = (row.audioCount ?: 0L).toInt(),
                docCount = (row.docCount ?: 0L).toInt(),
                // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: rebase onto the current container (UUID changes on iOS updates)
-               thumbnailPath = com.app.pustakam.util.resolveLocalFilePath(row.thumbnailPath),
+               thumbnailPath = com.app.pustakam.core.common.util.resolveLocalFilePath(row.thumbnailPath),
            )
        }
    }
@@ -118,8 +119,8 @@ class NotesDao() : KoinComponent {
    // 🔧 15-Jul-2026 CRASH FIX: the MATCH query runs as a RAW statement (it can't live in the .sq
    //   file anymore — SQLDelight would require the fts table in the managed schema). Only reached
    //   when ensureFtsIndex() returned true.
-   private fun searchContentViaFts(match: String): List<com.app.pustakam.data.models.response.notes.NoteSummary> {
-       val results = mutableListOf<com.app.pustakam.data.models.response.notes.NoteSummary>()
+   private fun searchContentViaFts(match: String): List<com.app.pustakam.core.model.models.response.notes.NoteSummary> {
+       val results = mutableListOf<com.app.pustakam.core.model.models.response.notes.NoteSummary>()
        driver.executeQuery(null,
            "SELECT n.id, n.categoryId, n.title, n.createdAt, n.updatedAt, SUBSTR(c.text, 1, 200) " +
                    "FROM NoteContentFts " +
@@ -130,7 +131,7 @@ class NotesDao() : KoinComponent {
            { cursor ->
                while (cursor.next().value) {
                    results.add(
-                       com.app.pustakam.data.models.response.notes.NoteSummary(
+                       com.app.pustakam.core.model.models.response.notes.NoteSummary(
                            id = cursor.getString(0)!!,
                            categoryId = cursor.getString(1),
                            title = cursor.getString(2),
@@ -141,7 +142,7 @@ class NotesDao() : KoinComponent {
                    )
                }
                QueryResult.Unit
-           }, 1) { SqlPreparedStatement.bindString(0, match) }.value
+           }, 1) { bindString(0, match) }.value
        return results
    }
 
@@ -149,16 +150,16 @@ class NotesDao() : KoinComponent {
    //   it, LIKE fallback everywhere else — never crashes either way) merged with title matches.
    //   Deduped by note id (content match wins: it carries the snippet), newest first. Raw input is
    //   wrapped as a quoted prefix phrase so FTS5 operators in user input can't break MATCH syntax.
-   fun searchNotes(rawQuery: String): List<com.app.pustakam.data.models.response.notes.NoteSummary> {
+   fun searchNotes(rawQuery: String): List<com.app.pustakam.core.model.models.response.notes.NoteSummary> {
        val trimmed = rawQuery.trim()
        if (trimmed.isEmpty()) return emptyList()
-       val merged = LinkedHashMap<String, com.app.pustakam.data.models.response.notes.NoteSummary>()
+       val merged = LinkedHashMap<String, com.app.pustakam.core.model.models.response.notes.NoteSummary>()
        val contentMatches = try {
            if (ensureFtsIndex()) {
                searchContentViaFts("\"" + trimmed.replace("\"", "") + "\"*")
            } else {
                queries.searchContentTextLike(trimmed).executeAsList().map { row ->
-                   com.app.pustakam.data.models.response.notes.NoteSummary(
+                   com.app.pustakam.core.model.models.response.notes.NoteSummary(
                        id = row.id, title = row.title, categoryId = row.categoryId,
                        createdAt = row.createdAt, updatedAt = row.updatedAt, snippet = row.snippet,
                    )
@@ -171,7 +172,7 @@ class NotesDao() : KoinComponent {
        }
        contentMatches.forEach { merged[it.id] = it }
        queries.searchTitles(trimmed).executeAsList().forEach { row ->
-           if (!merged.containsKey(row.id)) merged[row.id] = com.app.pustakam.data.models.response.notes.NoteSummary(
+           if (!merged.containsKey(row.id)) merged[row.id] = com.app.pustakam.core.model.models.response.notes.NoteSummary(
                id = row.id, title = row.title, categoryId = row.categoryId,
                createdAt = row.createdAt, updatedAt = row.updatedAt,
            )

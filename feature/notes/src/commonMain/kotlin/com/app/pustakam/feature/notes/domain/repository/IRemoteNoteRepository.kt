@@ -1,9 +1,11 @@
-package com.app.pustakam.domain.repositories.noteRepository
+package com.app.pustakam.feature.notes.domain.repository
 
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.response.DeleteDataModel
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.Notes
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.response.DeleteDataModel
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
 
 interface IRemoteNoteRepository {
     //notes apis

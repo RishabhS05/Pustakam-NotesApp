@@ -1,10 +1,10 @@
 package com.app.pustakam.koin
 
-import com.app.pustakam.data.localdb.preferences.BasePreferences
-import com.app.pustakam.data.localdb.preferences.IAppPreferences
-import com.app.pustakam.domain.repositories.base.BaseRepository
-import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
-import com.app.pustakam.domain.repositories.noteRepository.NoteRepository
+import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
+import com.app.pustakam.core.data.base.BaseRepository
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 object KoinHelper : KoinComponent{

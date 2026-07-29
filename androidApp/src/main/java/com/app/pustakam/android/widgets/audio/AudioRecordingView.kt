@@ -48,7 +48,7 @@ import com.app.pustakam.android.hardware.audio.recorder.AudioRecordingIntent
 import com.app.pustakam.android.hardware.audio.recorder.AudioState
 import com.app.pustakam.android.hardware.audio.recorder.AudioViewModel
 import com.app.pustakam.android.screen.OnLifecycleEvent
-import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.app.pustakam.android.theme.orange20
 import kotlin.math.sin

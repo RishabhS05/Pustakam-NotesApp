@@ -81,7 +81,7 @@ DAO side (already correct, just underused): `NotesDao.deleteTag(tagId)` **return
 private val _tags = MutableStateFlow<List<Tag>>(emptyList())
 
 /** Read-only view. Same public type (StateFlow<List<Tag>>) as before —
- *  NoteBaseUseCase.tags, iOS observeTags, Android collectors: no caller changes. */
+ *  NoteBaseUseCase.kt.tags, iOS observeTags, Android collectors: no caller changes. */
 val tagState: StateFlow<List<Tag>> = _tags.asStateFlow()        // fixes P4, P5
 
 /* ---------- CRUD — every DB mutation updates _tags immediately ---------- */

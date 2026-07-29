@@ -1,27 +1,33 @@
 // 🔧 F1: package now matches folder (bridge/) — was bridge.notes, IDE/package mismatch
-package com.app.pustakam.bridge
+package com.app.pustakam.feature.notes.domain.bridge
 
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteSummary
-import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.domain.repositories.usecases.CreateORUpdateNoteUseCase
-import com.app.pustakam.domain.repositories.usecases.CreateTagUseCase
-import com.app.pustakam.domain.repositories.usecases.DeleteNoteContentUseCase
-import com.app.pustakam.domain.repositories.usecases.DeleteNoteUseCase
-import com.app.pustakam.domain.repositories.usecases.DeleteTagUseCase
-import com.app.pustakam.domain.repositories.usecases.GetNoteSummariesUseCase
-import com.app.pustakam.domain.repositories.usecases.GetNotesUseCase
-import com.app.pustakam.domain.repositories.usecases.GetTagCase
-import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
-import com.app.pustakam.domain.repositories.usecases.SearchNotesUseCase
-import com.app.pustakam.domain.repositories.usecases.UpdateTagUseCase
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.CreateTagUseCase
+import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.DeleteTagUseCase
+import com.app.pustakam.feature.notes.domain.usecase.GetNoteSummariesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.GetNotesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.GetTagCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SearchNotesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.UpdateTagUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.bridge.BridgeError
+import com.app.pustakam.core.common.bridge.Closeable
+import com.app.pustakam.core.common.util.onError
+import com.app.pustakam.core.common.util.onSuccess
+import com.app.pustakam.core.data.bridge.subscribeTo
+import com.app.pustakam.core.data.bridge.watch
 
 /**
  * The ONLY Notes entry point for iOS. One instance per Swift ViewModel.

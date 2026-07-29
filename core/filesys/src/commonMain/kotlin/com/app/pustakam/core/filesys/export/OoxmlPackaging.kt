@@ -1,4 +1,4 @@
-package com.app.pustakam.export
+package com.app.pustakam.core.filesys.export
 
 // 🔧 20-Jul-2026: NEW (export feature) — pure-Kotlin OOXML packaging primitives so the ENTIRE
 //   .docx is produced in shared code and each platform only writes the returned bytes (max DRY).

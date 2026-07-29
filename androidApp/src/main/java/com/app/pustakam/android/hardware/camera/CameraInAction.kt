@@ -18,8 +18,9 @@ import androidx.core.content.ContextCompat
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.permission.hasPermission
 import com.app.pustakam.android.permission.hasPermissions
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.core.common.extensions.isNotnull
 import java.io.File
+import com.app.pustakam.core.common.util.onError
 
 // 🔧 14-Jul-2026: CHANGED — takes a lazy `outputFileProvider` instead of a ready File. The Stop
 //   press used to eagerly create a second (forever-empty) file before this function returned early.

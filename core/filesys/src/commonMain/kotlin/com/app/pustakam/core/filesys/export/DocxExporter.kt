@@ -1,4 +1,4 @@
-package com.app.pustakam.export
+package com.app.pustakam.core.filesys.export
 
 // 🔧 20-Jul-2026: NEW (export feature) — builds a COMPLETE, valid .docx as a ByteArray in shared
 //   code. Both platforms call this and just write the bytes; images are passed as base64 so no

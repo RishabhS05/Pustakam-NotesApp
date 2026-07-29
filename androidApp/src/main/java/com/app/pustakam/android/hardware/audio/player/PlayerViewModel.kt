@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.extension.toMediaItem
 import com.app.pustakam.android.services.mediaSessionService.MediaPlayingEvent
 import com.app.pustakam.android.services.mediaSessionService.MediaServiceListener
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
-import com.app.pustakam.extensions.getReadableHMS
-import com.app.pustakam.extensions.readableTimer
-import com.app.pustakam.extensions.timerRemaining
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
+import com.app.pustakam.core.common.extensions.getReadableHMS
+import com.app.pustakam.core.common.extensions.readableTimer
+import com.app.pustakam.core.common.extensions.timerRemaining
+import com.app.pustakam.core.common.util.log_d
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import com.app.pustakam.core.common.util.map
 
 sealed interface MediaPlayingUIEvent {
     data class PlayOrPauseUIEvent(val mediaId: String) : MediaPlayingUIEvent

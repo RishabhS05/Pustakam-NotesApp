@@ -27,7 +27,7 @@ import com.app.pustakam.android.theme.bookmarkDefault
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.theme.toColor
 import com.app.pustakam.android.theme.toHexString
-import com.app.pustakam.data.models.Tag
+import com.app.pustakam.core.model.models.Tag
 
 
 @Composable

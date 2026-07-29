@@ -1,8 +1,8 @@
-package com.app.pustakam.domain.repositories.usecases
+package com.app.pustakam.feature.notes.domain.usecase
 
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

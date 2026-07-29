@@ -15,12 +15,12 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.Base64
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.export.DocxExporter
-import com.app.pustakam.export.ExportBlock
-import com.app.pustakam.export.ExportBlockKind
-import com.app.pustakam.export.ExportFormat
-import com.app.pustakam.export.NoteExportBuilder
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.filesys.export.DocxExporter
+import com.app.pustakam.core.filesys.export.ExportBlock
+import com.app.pustakam.core.filesys.export.ExportBlockKind
+import com.app.pustakam.core.filesys.export.ExportFormat
+import com.app.pustakam.core.filesys.export.NoteExportBuilder
 import java.io.File
 import java.io.FileOutputStream
 

@@ -67,8 +67,8 @@ import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
 import com.app.pustakam.android.theme.typography
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 // 🔧 14-Jul-2026: auto-hide timer for the long-press overlay reveal
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

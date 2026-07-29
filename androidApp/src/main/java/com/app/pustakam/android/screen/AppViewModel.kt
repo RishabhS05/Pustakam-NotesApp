@@ -1,9 +1,12 @@
 package com.app.pustakam.android.screen
 
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.domain.repositories.base.BaseRepository
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.data.base.BaseRepository
 import org.koin.core.component.get
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 
 class AppViewModel : BaseViewModel() {
    private val repository  = get<BaseRepository>()

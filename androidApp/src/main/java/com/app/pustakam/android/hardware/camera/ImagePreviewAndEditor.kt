@@ -29,8 +29,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on preview
-import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 
 /**
  * Screen Handle Following features

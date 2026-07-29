@@ -1,8 +1,4 @@
-package com.app.pustakam.data.localdb.preferences
-
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import io.ktor.client.plugins.auth.Auth
+package com.app.pustakam.core.database.localdb.preferences
 
 interface IAppPreferences {
     suspend fun setToken(token : String)

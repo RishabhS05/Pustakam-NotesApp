@@ -10,9 +10,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences.PreferencesKeys.IS_USER_AUTHENTIC
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences.PreferencesKeys.TOKEN
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences.PreferencesKeys.USER_ID
-import com.app.pustakam.data.localdb.preferences.IAppPreferences
-import com.app.pustakam.koinDI.provideDispatcher
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.common.coroutines.provideDispatcher
+import com.app.pustakam.core.common.util.log_d
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted

@@ -73,8 +73,8 @@ import com.app.pustakam.android.widgets.bookwidget.BookWidgetUpdater
 import com.app.pustakam.android.widgets.document.iconForContentType
 import com.app.pustakam.android.widgets.document.readableSize
 import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on pages
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.FileImportHelper
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.filesys.fileimport.FileImportHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

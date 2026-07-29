@@ -23,8 +23,8 @@ import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.screen.navigation.rememberPustakmNavController
 import com.app.pustakam.android.theme.ThemeMode
 import com.app.pustakam.android.widgets.fabWidget.AddNewNoteFAB
-import com.app.pustakam.data.localdb.preferences.BasePreferences
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.common.extensions.isNotnull
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle

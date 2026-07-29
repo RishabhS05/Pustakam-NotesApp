@@ -1,14 +1,15 @@
 package com.app.pustakam.core.model.models.response.notes
 
-import com.app.pustakam.data.localdb.database.RichTextMetadata
-import com.app.pustakam.data.localdb.database.Version
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.RichTextMetadata
+import com.app.pustakam.core.model.models.Version
+import com.app.pustakam.core.common.util.ContentType
 // 🔧 C6: UniqueIdGenerator import moved out — id generation lives ONLY in NoteContentObjectHelper
 // 🔧 getCurrentTimestamp kept: withX() helpers stamp updatedAt on every edit
-import com.app.pustakam.util.getCurrentTimestamp
-import com.app.pustakam.util.resolveLocalFilePath // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX
+import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.resolveLocalFilePath // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import com.app.pustakam.core.common.util.resolveLocalFilePath
 
 @Serializable
 enum class SyncStatus { LOCAL_ONLY, SYNCED, PENDING_UPDATE, PENDING_DELETE }

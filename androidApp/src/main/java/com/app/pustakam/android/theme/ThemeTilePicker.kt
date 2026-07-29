@@ -37,10 +37,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
-// 🎨 Color.kt / Shape.kt live in the root package (no package decl), same as PustakmApplicationTheme.kt
-import radiusMd
-import radiusSm
-
 // 🎨 22-Jul-2026 — Granth spec §6 Appearance tiles, the Compose twin of iOS ThemeTilePicker.swift.
 //   Reusable: any screen can drop this in and hoist the selection. Each tile previews its own ramp
 //   so the choice reads at a glance.

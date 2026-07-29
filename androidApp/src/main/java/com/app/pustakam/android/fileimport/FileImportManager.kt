@@ -3,8 +3,8 @@ package com.app.pustakam.android.fileimport
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.FileImportHelper
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.filesys.fileimport.FileImportHelper
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL

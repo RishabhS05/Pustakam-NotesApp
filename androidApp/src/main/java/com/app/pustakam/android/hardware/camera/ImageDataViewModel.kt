@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.extension.toBitmap
 import com.app.pustakam.android.fileUtils.saveBitmapToFile
-import com.app.pustakam.extensions.isUrl
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.common.extensions.isUrl
+import com.app.pustakam.core.common.util.ContentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

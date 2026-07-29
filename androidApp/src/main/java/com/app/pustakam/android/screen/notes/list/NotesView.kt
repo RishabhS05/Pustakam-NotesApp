@@ -43,8 +43,8 @@ import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.TagView
 import com.app.pustakam.android.widgets.colorPalete.CreateTagBottomSheet
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.extensions.isNotnull
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.common.extensions.isNotnull
 
 sealed interface NotesViewIntent {
 

@@ -2,8 +2,8 @@ package com.app.pustakam.android.screen.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.pustakam.data.models.response.notes.NoteSummary
-import com.app.pustakam.domain.repositories.usecases.SearchNotesUseCase
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import com.app.pustakam.feature.notes.domain.usecase.SearchNotesUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.util.Result
 
 // 🔧 15-Jul-2026 Phase 2.2: state + intents for the search screen (MVI: query intent -> debounced
 //   FTS5 search -> results state). Results are NoteSummary items — content matches carry a snippet.

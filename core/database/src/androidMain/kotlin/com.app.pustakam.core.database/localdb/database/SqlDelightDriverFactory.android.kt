@@ -1,9 +1,9 @@
-package com.app.pustakam.data.localdb.database
+package com.app.pustakam.core.database.localdb.database
 
 import android.content.Context
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
-import com.app.pustakam.database.NotesDatabase
+import com.app.pustakam.core.database.NotesDatabase
 
 actual class SqlDelightDriverFactory(val context : Context){
     actual fun createDriver(): SqlDriver {

@@ -6,17 +6,19 @@ import com.app.pustakam.android.screen.DialogEnum
 import com.app.pustakam.android.screen.TagState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.domain.repositories.usecases.CreateTagUseCase
-import com.app.pustakam.domain.repositories.usecases.GetTagCase
-import com.app.pustakam.domain.repositories.usecases.UpdateTagUseCase
+import com.app.pustakam.feature.notes.domain.usecase.CreateTagUseCase
+import com.app.pustakam.feature.notes.domain.usecase.GetTagCase
+import com.app.pustakam.feature.notes.domain.usecase.UpdateTagUseCase
 import com.app.pustakam.android.screen.notes.list.TagIntent
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.Tag
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.Tag
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 class TagViewModel : BaseViewModel() {
     private val getTagsCase = GetTagCase()
     private val createTagUseCase = CreateTagUseCase()

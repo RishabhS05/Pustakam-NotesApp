@@ -1,19 +1,26 @@
-package com.app.pustakam.bridge
+package com.app.pustakam.feature.auth.domain.bridge
 
-import com.app.pustakam.data.localdb.preferences.UserPreference
-import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.request.RegisterReq
-import com.app.pustakam.data.models.response.User
-import com.app.pustakam.domain.repositories.usecases.LoginUseCase
-import com.app.pustakam.domain.repositories.usecases.SignUseCase
-import com.app.pustakam.koinDI.KoinHelper
+import com.app.pustakam.core.database.localdb.preferences.UserPreference
+import com.app.pustakam.core.model.models.request.Login
+import com.app.pustakam.core.model.models.request.RegisterReq
+import com.app.pustakam.core.model.models.response.User
+import com.app.pustakam.feature.auth.domain.usecase.LoginUseCase
+import com.app.pustakam.feature.auth.domain.usecase.SignUseCase
+import com.app.pustakam.core.database.localdb.preferences.BasePreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.bridge.BridgeError
+import com.app.pustakam.core.common.bridge.Closeable
+import com.app.pustakam.core.common.util.onError
+import com.app.pustakam.core.common.util.onSuccess
+import com.app.pustakam.core.data.bridge.subscribeTo
+import com.app.pustakam.core.data.bridge.watch
 
 // 🔧 AUTH-FIX: auth entry point for iOS — use-cases only, same pattern as NotesBridge.
 //             Replaces LoginHandler/SignUpHandler's direct baseRepositary access and
@@ -58,7 +65,8 @@ class AuthBridge : KoinComponent {
 
     /** Auth state (token/userId/isAuthenticated) — drives auto-login / route guards. */
     fun observeAuthState(onChange: (UserPreference) -> Unit): Closeable =
-        KoinHelper.getPreference().userPreferencesFlow.watch(scope) { onChange(it) }
+        // 🔧 30-Jul-2026 02:10 was KoinHelper.getPreference() — that lives in :shared and made :feature:auth -> :shared a cycle; same Koin single, resolved directly
+        get<BasePreferences>().userPreferencesFlow.watch(scope) { onChange(it) }
 
     fun dispose() = scope.cancel()
 }

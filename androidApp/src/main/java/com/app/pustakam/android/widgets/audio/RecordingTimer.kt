@@ -6,7 +6,7 @@ import androidx.compose.runtime.MutableLongState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import com.app.pustakam.android.theme.typography
-import com.app.pustakam.extensions.getTimerFormatedString
+import com.app.pustakam.core.common.extensions.getTimerFormatedString
 import kotlinx.coroutines.delay
 
 @Composable

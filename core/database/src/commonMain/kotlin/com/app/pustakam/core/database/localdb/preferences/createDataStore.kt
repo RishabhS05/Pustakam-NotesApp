@@ -1,4 +1,4 @@
-package com.app.pustakam.data.localdb.preferences
+package com.app.pustakam.core.database.localdb.preferences
 
 
 import androidx.datastore.core.DataStore

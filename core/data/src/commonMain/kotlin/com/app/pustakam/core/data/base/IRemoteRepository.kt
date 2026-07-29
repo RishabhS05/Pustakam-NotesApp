@@ -1,9 +1,11 @@
 package com.app.pustakam.core.data.base
 
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.request.RegisterReq
-import com.app.pustakam.data.models.response.User
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.request.Login
+import com.app.pustakam.core.model.models.request.RegisterReq
+import com.app.pustakam.core.model.models.response.User
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
 
 interface IRemoteRepository {
     //user Apis

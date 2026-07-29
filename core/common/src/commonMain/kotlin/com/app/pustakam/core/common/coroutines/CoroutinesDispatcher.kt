@@ -6,4 +6,5 @@ interface Dispatcher {
     val io: CoroutineDispatcher
 }
 
-internal expect fun provideDispatcher(): Dispatcher
+// 🔧 30-Jul-2026 02:10 internal->public: :core:database now calls this across a module boundary
+expect fun provideDispatcher(): Dispatcher

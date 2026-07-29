@@ -1,9 +1,9 @@
 package com.app.pustakam.core.network
 
-import com.app.pustakam.data.localdb.preferences.IAppPreferences
-import com.app.pustakam.util.Error
-import com.app.pustakam.util.NetworkError
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.NetworkError
+import com.app.pustakam.core.common.util.log_d
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -17,6 +17,9 @@ import kotlinx.serialization.SerializationException
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.text.get
+import com.app.pustakam.core.common.util.Result
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 abstract class BaseClient  : KoinComponent {
     val userPrefs : IAppPreferences by inject<IAppPreferences>()

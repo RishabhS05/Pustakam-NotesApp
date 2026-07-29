@@ -1,4 +1,4 @@
-package com.app.pustakam.core.database.localdb.database
+package com.app.pustakam.core.model.models
 
 object Version {
     fun nextVersion(

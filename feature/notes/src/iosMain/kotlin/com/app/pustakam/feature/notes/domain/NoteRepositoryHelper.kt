@@ -1,10 +1,13 @@
-package com.app.pustakam.domain
+package com.app.pustakam.feature.notes.domain
 
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.koin.KoinHelper
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteRepository
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import com.app.pustakam.core.common.util.log_d
 
 
 import kotlinx.coroutines.CoroutineScope
@@ -19,11 +22,10 @@ import kotlinx.coroutines.launch
 //   This helper leaked never-cancelled collectors. Zero Swift callers remain.
 //   Kept until you approve deletion.
 @Deprecated("Use NotesBridge / NoteContentBridge observers instead")
-object NoteRepositoryHelper {
-    @Suppress("DEPRECATION")
-    private val noteRepository = KoinHelper.getNoteRepository()
-    @Suppress("DEPRECATION")
-    private val noteContentRepository = KoinHelper.getNoteContentRepository()
+// 🔧 30-Jul-2026 02:10 was KoinHelper.get*Repository() (:shared) — both repos live in :feature:notes, so resolve them here and drop the :shared edge
+object NoteRepositoryHelper : KoinComponent {
+    private val noteRepository = get<NoteRepository>()
+    private val noteContentRepository = get<NoteContentRepository>()
 
     fun <T> Flow<T>.collectObserver (callback :(T)-> Unit) {
         CoroutineScope(Dispatchers.Main).launch{

@@ -1,15 +1,17 @@
-package com.app.pustakam.bridge
+package com.app.pustakam.feature.notes.domain.bridge
 
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.usecases.SetSelectedNoteContentUseCase
-import com.app.pustakam.domain.repositories.usecases.UpdateSelectedMediaContentUseCase
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.feature.notes.domain.usecase.SetSelectedNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.UpdateSelectedMediaContentUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.bridge.Closeable
+import com.app.pustakam.core.data.bridge.watch
 
 // 🔧 F5: use-case-backed — NO repository import anywhere in iosMain anymore.
 //       Public API unchanged (setSelectedNote / updateMediaContent / observeSelectedMedia /

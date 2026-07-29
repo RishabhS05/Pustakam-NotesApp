@@ -8,4 +8,5 @@ class AndroidDispatcherIO : Dispatcher {
     override val io: CoroutineDispatcher
         get() = Dispatchers.IO
 }
-internal actual fun provideDispatcher(): Dispatcher = AndroidDispatcherIO()
+// 🔧 30-Jul-2026 02:10 internal->public: actual visibility must match the expect
+actual fun provideDispatcher(): Dispatcher = AndroidDispatcherIO()

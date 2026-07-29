@@ -13,7 +13,7 @@ import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.theme.amoledTheme
 import com.app.pustakam.android.theme.darkTheme
 import com.app.pustakam.android.theme.lightTheme
-import shapes
+import com.app.pustakam.android.theme.shapes
 
 // 🎨 20-Jul-2026 — Granth spec §2 / §6 Appearance: three theme modes (Light/Dark/AMOLED). Additive —
 //   the existing isDarkTheme boolean path is preserved; AMOLED is opt-in via the new isAmoled flag.

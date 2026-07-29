@@ -1,8 +1,9 @@
+// 🔧 30-Jul-2026 02:10 — :shared is now an UMBRELLA: it owns only the Koin composition root and the
+//   iOS KoinHelper. Its job is to re-export every module into ONE framework still called "shared",
+//   so all 86 Swift files keep `import shared` unchanged.
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -14,7 +15,7 @@ kotlin {
             }
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -25,39 +26,46 @@ kotlin {
             isStatic = true
             linkerOpts.add("-lsqlite3")
             freeCompilerArgs += listOf("-Xmemory-model=experimental")
+
+            // 🔧 30-Jul-2026 02:10 — export() puts each module's public API into shared.h for Swift.
+            //   Omit one and its types silently disappear from Swift — the failure shows up in Xcode
+            //   as "cannot find type 'Note' in scope", never as a Gradle error.
+            //   export() ONLY works on an api() dependency (see commonMain below).
+            export(projects.core.common)
+            export(projects.core.model)
+            export(projects.core.database)
+            export(projects.core.network)
+            export(projects.core.data)
+            export(projects.core.filesys)
+            export(projects.feature.auth)
+            export(projects.feature.notes)
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.kotlinx.coroutines.core)
-            api(libs.bundles.ktor)
-            api(libs.kotlinx.datetime)
-            api(libs.datastore.preferences)
-            api(libs.datastore)
+            // 🔧 30-Jul-2026 02:10 — api(), NOT implementation(): export() above requires an api dependency
+            api(projects.core.common)
+            api(projects.core.model)
+            api(projects.core.database)
+            api(projects.core.network)
+            api(projects.core.data)
+            api(projects.core.filesys)
+            api(projects.feature.auth)
+            api(projects.feature.notes)
+            // 🔧 30-Jul-2026 02:10 — KoinAppDeclaration is in initKoin()'s signature, which Swift calls
             api(libs.koin)
-
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.sqldelight.android)
+            // 🔧 30-Jul-2026 02:10 — kept as api(): :androidApp depends on :shared alone and picks these up transitively
             api(libs.bundles.koinAndroid)
             api(libs.bundles.media3)
         }
-        nativeMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
-//        desktopMain.dependencies{
-//            implementation(compose.desktop.currentOs)
-//            implementation(libs.ktor.client.okhttp)
-//        }
         iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.native)
-            implementation(libs.kotlinx.coroutines.core)
         }
     }
 }
@@ -73,24 +81,3 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
-dependencies {
-    implementation(libs.androidx.compiler)
-}
-sqldelight {
-    databases {
-        create("NotesDatabase") {
-            packageName.set("com.app.pustakam.database")
-            // 🔧 P1/6: migration infrastructure.
-            // Baseline = CURRENT schema (version 1). Every future schema change:
-            //   1. edit NotesDatabase.sq to the NEW shape
-            //   2. add <version>.sqm next to it with the ALTER/rebuild statements
-            //   3. run: ./gradlew generateCommonMainNotesDatabaseSchema  (commits a new snapshot)
-            // Drivers (AndroidSqliteDriver / NativeSqliteDriver) auto-run .sqm on version bump —
-            // NO app reinstall needed anymore.
-            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
-            // Build-time proof that snapshot + migrations == current .sq (catches drift):
-            verifyMigrations.set(true)
-        }
-    }
-}
-

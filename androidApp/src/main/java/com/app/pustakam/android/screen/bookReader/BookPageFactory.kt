@@ -4,9 +4,9 @@ package com.app.pustakam.android.screen.bookReader
 //   full-screen reader AND the inline editor book widget build pages through the SAME functions.
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 import java.io.File
 
 // 🔧 19-Jul-2026: a book page holds fewer chars than an editor block — feels like a real page

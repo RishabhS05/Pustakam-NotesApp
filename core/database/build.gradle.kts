@@ -9,7 +9,8 @@ plugins {
 kotlin {
     androidLibrary {
         namespace = "com.app.pustakam.core.database"
-        compileSdk = 36
+        // 🔧 30-Jul-2026 02:10 — 35 (was 36): a library must not compile against a HIGHER API than :androidApp (35)
+        compileSdk = 35
         minSdk = 24
 
         withHostTestBuilder {
@@ -21,7 +22,7 @@ kotlin {
         }
     }
 
-    // 🔧 29-Jul-2026 01:52 — targets declared WITHOUT binaries.framework: only the :shared umbrella emits an iOS framework, N static frameworks would duplicate the Kotlin runtime at link time
+    // 🔧 30-Jul-2026 02:10 — targets WITHOUT binaries.framework: only the :shared umbrella emits an iOS framework
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -30,14 +31,19 @@ kotlin {
         commonMain {
             dependencies {
                 api(libs.kotlin.stdlib)
-                // 🔧 29-Jul-2026 01:52 — api() not implementation(): these types sit in public signatures of every module above, and export() to Swift only follows api deps
+                // 🔧 30-Jul-2026 02:10 — NotesDao maps rows to Note/Notes/Tag and takes RichTextMetadata: both are public API here
+                api(projects.core.common)
+                api(projects.core.model)
                 api(libs.kotlinx.coroutines.core)
                 api(libs.kotlinx.datetime)
                 api(libs.datastore.preferences)
                 api(libs.datastore)
+                // 🔧 30-Jul-2026 02:10 — NotesDao/BasePreferences are KoinComponents, so Koin is a supertype -> api
+                api(libs.koin)
+                // 🔧 30-Jul-2026 02:10 — the RichTextMetadata ColumnAdapter serialises through Json
+                api(libs.kotlinx.serialization.json)
             }
         }
-
 
         commonTest {
             dependencies {
@@ -46,8 +52,10 @@ kotlin {
         }
 
         androidMain {
-            dependencies{
-            implementation(libs.sqldelight.android)
+            dependencies {
+                implementation(libs.sqldelight.android)
+                // 🔧 30-Jul-2026 02:10 — getDatabaseModule.android.kt calls androidContext()
+                implementation(libs.koin.android)
             }
         }
 
@@ -61,17 +69,24 @@ kotlin {
 
         iosMain {
             dependencies {
-                    api(libs.sqldelight.native)
-                    api(libs.kotlinx.coroutines.core)
-                }
+                api(libs.sqldelight.native)
+                api(libs.kotlinx.coroutines.core)
+            }
         }
     }
-
 }
+
+// 🔧 30-Jul-2026 02:10 — moved here from :shared with schemaOutputDirectory + verifyMigrations RESTORED.
+//   Dropping them silently disables migration-drift detection; the .sq, the 4 .sqm files and the
+//   databases/ snapshots all moved together, so the on-disk DB ("Notes.db") and its schema are unchanged.
 sqldelight {
     databases {
         create("NotesDatabase") {
+            // 🔧 30-Jul-2026 02:10 — package follows the module (was com.app.pustakam.database).
+            //   This only renames GENERATED Kotlin; the SQLite file name/schema are untouched, so existing notes survive an in-place upgrade.
             packageName.set("com.app.pustakam.core.database")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

@@ -40,9 +40,9 @@ import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.audio.RecordingTimer
-import com.app.pustakam.extensions.isNotnull
-import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.core.common.extensions.isNotnull
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.android.theme.orange30
 
 @Composable

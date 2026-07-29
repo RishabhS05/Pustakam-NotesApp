@@ -5,10 +5,10 @@ import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.domain.repositories.usecases.GetNoteSummariesUseCase
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.response.notes.NOTES_PAGE_SIZE
-import com.app.pustakam.util.NetworkError
+import com.app.pustakam.feature.notes.domain.usecase.GetNoteSummariesUseCase
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.response.notes.NOTES_PAGE_SIZE
+import com.app.pustakam.core.common.util.NetworkError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.onStart
@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 
 
 class NotesViewModel : BaseViewModel() {

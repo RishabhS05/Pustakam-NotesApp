@@ -10,7 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.app.pustakam.android.R
 import com.app.pustakam.android.hardware.location.LocationClient
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.common.util.log_d
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

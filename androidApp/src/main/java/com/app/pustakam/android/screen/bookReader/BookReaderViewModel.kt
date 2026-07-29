@@ -9,12 +9,12 @@ import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
-import com.app.pustakam.domain.repositories.usecases.UpdateReadingProgressUseCase
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.UpdateReadingProgressUseCase
+import com.app.pustakam.core.common.util.log_d
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,6 +26,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 
 // 🔧 18-Jul-2026: one leaf of the book — every content type maps to at least one page
 sealed class BookPage {
@@ -58,7 +61,7 @@ class BookReaderViewModel : BaseViewModel() {
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
     // 📖 25-Jul-2026: reading-mode preference — SAME BasePreferences the Settings screen writes, so
     //   the reader's toggle and Settings stay in sync. UI never sees the shared prefs type directly.
-    private val userPrefs by inject<com.app.pustakam.data.localdb.preferences.BasePreferences>()
+    private val userPrefs by inject<com.app.pustakam.core.database.localdb.preferences.BasePreferences>()
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()

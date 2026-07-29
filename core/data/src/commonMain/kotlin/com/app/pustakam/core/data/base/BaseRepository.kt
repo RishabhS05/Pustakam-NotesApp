@@ -1,19 +1,23 @@
 package com.app.pustakam.core.data.base
 
-import com.app.pustakam.data.localdb.database.NotesDao
-import com.app.pustakam.data.localdb.preferences.BasePreferences
-import com.app.pustakam.data.localdb.preferences.UserPreference
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.request.RegisterReq
-import com.app.pustakam.data.models.response.User
-import com.app.pustakam.data.network.ApiCallClient
+import com.app.pustakam.core.database.localdb.database.NotesDao
+import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.database.localdb.preferences.UserPreference
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.request.Login
+import com.app.pustakam.core.model.models.request.RegisterReq
+import com.app.pustakam.core.model.models.response.User
+import com.app.pustakam.core.network.ApiCallClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
+import org.koin.core.component.get
 
 open class BaseRepository : IRemoteRepository, ILocalRepository, KoinComponent {
     protected val apiClient by inject<ApiCallClient>()

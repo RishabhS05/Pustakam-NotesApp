@@ -1,6 +1,6 @@
 package com.app.pustakam.core.model.models.response.notes
 
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.common.util.ContentType
 import kotlinx.serialization.Serializable
 
 // 🔧 15-Jul-2026 Phase 0.1: shared page size for the notes list (Android list paging; a page is
@@ -45,7 +45,7 @@ fun Note.toSummary(): NoteSummary {
     val thumb = sorted.filterIsInstance<NoteContentModel.MediaContent>()
         .firstOrNull { it.type == ContentType.IMAGE || it.type == ContentType.VIDEO || it.type == ContentType.GIF }
         // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: thumbnailPath resolved too (stale container UUID after app update)
-        ?.let { com.app.pustakam.util.resolveLocalFilePath(it.thumbnailPath) ?: it.getMediaUrl().takeIf { p -> p.isNotEmpty() } }
+        ?.let { com.app.pustakam.core.common.util.resolveLocalFilePath(it.thumbnailPath) ?: it.getMediaUrl().takeIf { p -> p.isNotEmpty() } }
     return NoteSummary(
         id = id, title = title, categoryId = categoryId,
         createdAt = createdAt, updatedAt = updatedAt,

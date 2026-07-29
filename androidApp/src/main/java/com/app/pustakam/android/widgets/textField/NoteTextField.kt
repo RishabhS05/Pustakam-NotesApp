@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.app.pustakam.android.screen.noteEditor.rememberFocusRequester
 import com.app.pustakam.android.widgets.dynamicWidgets.TextEditorWidget
-import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

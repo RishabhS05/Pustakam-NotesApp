@@ -1,4 +1,4 @@
-package com.app.pustakam.data.localdb.database
+package com.app.pustakam.core.database.localdb.database
 
 import app.cash.sqldelight.db.SqlDriver
 import org.koin.android.ext.koin.androidContext

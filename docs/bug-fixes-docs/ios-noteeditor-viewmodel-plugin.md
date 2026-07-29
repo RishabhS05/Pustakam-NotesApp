@@ -72,7 +72,7 @@ import org.koin.core.component.inject
 
 abstract class NoteContentBaseUseCase : KoinComponent {
     protected val noteContentRepository: NoteContentRepository by inject()
-    /** Selected-note media stream — mirror of NoteBaseUseCase.notes / .tags */
+    /** Selected-note media stream — mirror of NoteBaseUseCase.kt.notes / .tags */
     val selectedMediaContent get() = noteContentRepository.selectedNoteMediaContent
 }
 

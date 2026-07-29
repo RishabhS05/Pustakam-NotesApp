@@ -1,12 +1,3 @@
-//
-//  NotesBridgeAdapter.swift
-//  iosApp
-//
-//  Created by Rishabh on 10/07/26.
-//  Copyright © 2026 orgName. All rights reserved.
-//
-
-
 import Foundation
 import shared
 
@@ -24,7 +15,7 @@ final class NotesBridgeAdapter {
 
     // MARK: - Reactive state (replaces NoteRepositoryHelper)
 
-    func observeNotes(onChange: @escaping (Notes) -> Void) {
+    func observeNotes(onChange: @escaping (Notes_) -> Void) {
         closeables.append(bridge.observeNotes(onChange: onChange))
     }
 
@@ -40,7 +31,7 @@ final class NotesBridgeAdapter {
 
     // MARK: - One-shot calls (notes-list slice)
 
-    func getNotes(page: Int, onState: @escaping (UiState<Notes>) -> Void) {
+    func getNotes(page: Int, onState: @escaping (UiState<Notes_>) -> Void) {
         closeables.append(bridge.getNotes(
             page: Int32(page),
             onLoading: { onState(.loading) },

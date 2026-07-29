@@ -33,6 +33,8 @@ firebase-bom = "34.16.0"
 firebase-crashlytics-plugin = "3.0.7"
 material3 = "1.4.0"
 kotlinStdlib = "2.1.20"
+# 🔧 30-Jul-2026 02:10 explicit serialization runtime: :core:model/:core:network no longer inherit it via the ktor bundle
+serializationJson = "1.7.3"
 runner = "1.7.0"
 core = "1.7.0"
 [libraries]
@@ -67,6 +69,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-datetime={module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime"}
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serializationJson" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose" , version.ref = "navigationCompose" }
  #DI
 koin-android ={ module ="io.insert-koin:koin-android", version.ref = "koin"}

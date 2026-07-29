@@ -4,7 +4,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.app.pustakam.android.hardware.audio.player.PlayerState
-import com.app.pustakam.util.log_d
+import com.app.pustakam.core.common.util.log_d
 // 🔧 14-Jul-2026: FIX — dedicated scope for the progress ticker (was GlobalScope + a never-assigned Job)
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

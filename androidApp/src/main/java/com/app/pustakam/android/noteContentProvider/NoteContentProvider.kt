@@ -3,12 +3,12 @@ package com.app.pustakam.android.noteContentProvider
 import android.app.Activity
 import android.content.Context
 import com.app.pustakam.android.fileUtils.createFileWithFolders
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.data.models.response.notes.NoteContentObjectHelper
-import com.app.pustakam.util.ContentType
-import com.app.pustakam.util.ContentType.*
-import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.ContentType.*
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 
 //It decides and return a noteContent
 //also provide create filepath and add if required

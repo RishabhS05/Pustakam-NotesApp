@@ -2,7 +2,7 @@ package com.app.pustakam.android.hardware.audio.recorder
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

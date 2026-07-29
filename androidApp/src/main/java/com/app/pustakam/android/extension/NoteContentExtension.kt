@@ -3,7 +3,7 @@ package com.app.pustakam.android.extension
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
-import com.app.pustakam.data.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 @OptIn(UnstableApi::class)
 fun NoteContentModel.MediaContent.toMediaItem() : MediaItem{

@@ -3,13 +3,15 @@ package com.app.pustakam.android.screen.base
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.screen.TaskCode
-import com.app.pustakam.data.models.BaseResponse
+import com.app.pustakam.core.model.models.BaseResponse
 import kotlinx.coroutines.flow.Flow
-import com.app.pustakam.util.Error
-import com.app.pustakam.util.NetworkError
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.NetworkError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 
 
 abstract class BaseViewModel : ViewModel() , KoinComponent {

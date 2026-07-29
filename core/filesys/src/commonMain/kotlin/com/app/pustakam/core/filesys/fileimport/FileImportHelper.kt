@@ -1,7 +1,9 @@
-package com.app.pustakam.core.common.util
+package com.app.pustakam.core.filesys.fileimport
 
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.data.models.response.notes.NoteContentObjectHelper
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 
 // 🔧 18-Jul-2026: NEW FEATURE (file import) — single shared source of truth for BOTH platforms:
 //   extension/mime → ContentType resolution, URL file-name parsing, and the MediaContent factory.

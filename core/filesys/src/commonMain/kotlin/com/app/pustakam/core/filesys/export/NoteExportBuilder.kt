@@ -1,8 +1,8 @@
-package com.app.pustakam.export
+package com.app.pustakam.core.filesys.export
 
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.NoteContentModel
-import com.app.pustakam.util.ContentType
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.ContentType
 
 // 🔧 20-Jul-2026: NEW (export feature) — the SHARED, ordered, render-agnostic representation of a
 //   note. Android (PDF/PNG) and iOS (PDF/PNG) renderers AND the shared DOCX writer all walk this

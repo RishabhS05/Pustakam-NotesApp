@@ -11,5 +11,6 @@ plugins {
     // 🔧 29-Jul-2026 01:45 — AGP-family plugins must be declared at root too, else a subproject requesting them with a version fails "already on the classpath with an unknown version"
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.android.lint) apply false
-    alias(libs.plugins.kotlinMultiplatform) apply false
+    // 🔧 30-Jul-2026 02:10 — removed a DUPLICATE `alias(libs.plugins.kotlinMultiplatform) apply false` (declared 4 lines above); Gradle fails the build on a repeated plugin request
+    alias(libs.plugins.sqldelight) apply false
 }

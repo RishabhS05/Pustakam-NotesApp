@@ -34,8 +34,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.widgets.LoadImage
-import com.app.pustakam.data.models.response.notes.NoteSummary
-import com.app.pustakam.extensions.toLocalFormat
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import com.app.pustakam.core.common.extensions.toLocalFormat
 
 // 🔧 15-Jul-2026 Summary query: the card renders a NoteSummary (was a full Note whose contents it
 //   never used). What it shows, top to bottom:

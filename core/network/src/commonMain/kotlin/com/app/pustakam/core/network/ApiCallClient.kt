@@ -1,19 +1,22 @@
 package com.app.pustakam.core.network
 
-import com.app.pustakam.data.models.BaseResponse
-import com.app.pustakam.data.models.request.Login
+import com.app.pustakam.core.model.models.BaseResponse
+import com.app.pustakam.core.model.models.request.Login
 
-import com.app.pustakam.data.models.request.RegisterReq
-import com.app.pustakam.data.models.response.DeleteDataModel
-import com.app.pustakam.data.models.response.User
-import com.app.pustakam.data.models.response.notes.Note
-import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.util.NetworkError
+import com.app.pustakam.core.model.models.request.RegisterReq
+import com.app.pustakam.core.model.models.response.DeleteDataModel
+import com.app.pustakam.core.model.models.response.User
+import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.core.common.util.NetworkError
 import io.ktor.client.request.delete
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.Result
+import io.ktor.client.request.get
 
 class ApiCallClient : BaseClient() {
 

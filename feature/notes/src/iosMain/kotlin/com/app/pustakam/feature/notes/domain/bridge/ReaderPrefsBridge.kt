@@ -1,7 +1,8 @@
-package com.app.pustakam.bridge
+package com.app.pustakam.feature.notes.domain.bridge
 
-import com.app.pustakam.domain.repositories.usecases.UpdateReadingProgressUseCase
-import com.app.pustakam.koinDI.KoinHelper
+import com.app.pustakam.feature.notes.domain.usecase.UpdateReadingProgressUseCase
+import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import org.koin.core.component.get
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -9,6 +10,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import com.app.pustakam.core.common.bridge.Closeable
+import com.app.pustakam.core.data.bridge.watch
 
 // 📖 23-Jul-2026: NEW — reader preferences for iOS, same pattern as AuthBridge (use-case/callback
 //   style; Swift never sees suspend functions). Both platforms read and write the SAME DataStore
@@ -23,7 +26,8 @@ class ReaderPrefsBridge : KoinComponent {
         private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     }
 
-    private val prefs get() = KoinHelper.getPreference()
+    // 🔧 30-Jul-2026 02:10 was KoinHelper.getPreference() (:shared) — same Koin single, resolved directly; keeps :feature:notes below :shared
+    private val prefs get() = get<BasePreferences>()
 
     /** Live reading mode — "page" (curl) or "scroll" (continuous). */
     fun observeReadingMode(onChange: (String) -> Unit): Closeable =

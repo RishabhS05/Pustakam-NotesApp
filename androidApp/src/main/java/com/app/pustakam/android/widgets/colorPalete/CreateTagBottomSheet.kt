@@ -30,7 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.theme.toHexString
 import com.app.pustakam.android.widgets.PrimaryFilledButton
-import com.app.pustakam.data.models.Tag
+import com.app.pustakam.core.model.models.Tag
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,7 +1,7 @@
-package com.app.pustakam.domain.repositories.usecases
+package com.app.pustakam.feature.notes.domain.usecase
 
-import com.app.pustakam.data.models.Tag
-import com.app.pustakam.data.models.response.notes.Note
+import com.app.pustakam.core.model.models.Tag
+import com.app.pustakam.core.model.models.response.notes.Note
 
 
 class CreateORUpdateNoteUseCase : NoteBaseUseCase() {

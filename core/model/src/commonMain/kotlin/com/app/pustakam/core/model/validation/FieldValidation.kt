@@ -1,11 +1,12 @@
-package com.app.pustakam.core.common.util
+package com.app.pustakam.core.model.validation
 
-import com.app.pustakam.data.models.request.Login
-import com.app.pustakam.data.models.request.RegisterReq
-import com.app.pustakam.extensions.isValidEmail
-import com.app.pustakam.extensions.isValidName
-import com.app.pustakam.extensions.isValidPassword
-import com.app.pustakam.extensions.isValidPhone
+import com.app.pustakam.core.model.models.request.Login
+import com.app.pustakam.core.model.models.request.RegisterReq
+import com.app.pustakam.core.common.extensions.isValidEmail
+import com.app.pustakam.core.common.extensions.isValidName
+import com.app.pustakam.core.common.extensions.isValidPassword
+import com.app.pustakam.core.common.extensions.isValidPhone
+import com.app.pustakam.core.common.util.ValidationError
 
 
 fun isPasswordEqualsToConfirmPassword(password: String?, confirmPassword : String? ) = !confirmPassword.isNullOrEmpty() && !password.isNullOrEmpty() && password == confirmPassword
