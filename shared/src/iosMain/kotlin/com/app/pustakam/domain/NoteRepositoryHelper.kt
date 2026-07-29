@@ -3,7 +3,7 @@ package com.app.pustakam.domain
 import com.app.pustakam.data.models.Tag
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.data.models.response.notes.Notes
-import com.app.pustakam.koinDI.KoinHelper
+import com.app.pustakam.koin.KoinHelper
 import com.app.pustakam.util.log_d
 
 

@@ -1,0 +1,24 @@
+package com.app.pustakam.domain.repositories.usecases
+
+import com.app.pustakam.data.models.BaseResponse
+import com.app.pustakam.data.models.request.RegisterReq
+import com.app.pustakam.data.models.response.User
+import kotlinx.coroutines.flow.Flow
+
+class SignUseCase : BaseUseCase() {
+    suspend operator fun invoke(user: RegisterReq): Flow<Result<BaseResponse<User>, Error>> = getBaseApiCall {
+        repository.registerUser(user = user)
+    }
+}
+
+class DeleteUserUseCase : BaseUseCase() {
+    suspend operator fun invoke() = repository.deleteUser()
+}
+
+class UpdateUserUseCase : BaseUseCase() {
+    suspend operator fun invoke(user: User) = repository.updateUser(user)
+}
+
+class ReadUserUseCase : BaseUseCase() {
+    suspend operator fun invoke(userId: User) = repository.getUser("")
+}

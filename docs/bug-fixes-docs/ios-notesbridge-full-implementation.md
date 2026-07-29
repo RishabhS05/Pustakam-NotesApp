@@ -33,7 +33,7 @@ class NotesBridge : KoinComponent {
 `NoteBaseUseCase` already exposes `notes`; tags observation needs the mirror accessor:
 
 ```kotlin
-// commonMain/.../usecases/BaseUseCase.kt  — NoteBaseUseCase
+// commonMain/.../usecase/BaseUseCase.kt  — NoteBaseUseCase
 abstract class NoteBaseUseCase : BaseUseCase() {
     protected val noteRepository = repository as NoteRepository
     val notes = noteRepository.notesState

@@ -32,6 +32,9 @@ firebase-bom = "34.16.0"
 
 firebase-crashlytics-plugin = "3.0.7"
 material3 = "1.4.0"
+kotlinStdlib = "2.1.20"
+runner = "1.7.0"
+core = "1.7.0"
 [libraries]
 
 #compose
@@ -100,6 +103,9 @@ androidx-animation = { group = "androidx.compose.animation", name = "animation",
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
+androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
+androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
@@ -110,6 +116,8 @@ kotlin-serialization = {id = "org.jetbrains.kotlin.plugin.serialization", versio
 sqldelight = {id = "app.cash.sqldelight", version.ref = "sqldelight"}
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+android-lint = { id = "com.android.lint", version.ref = "agp" }
 [bundles]
 ktor = [
     "ktor-client-core",

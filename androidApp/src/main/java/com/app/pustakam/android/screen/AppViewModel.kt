@@ -3,8 +3,6 @@ package com.app.pustakam.android.screen
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.domain.repositories.base.BaseRepository
-import com.app.pustakam.util.Error
-import com.app.pustakam.util.Result
 import org.koin.core.component.get
 
 class AppViewModel : BaseViewModel() {

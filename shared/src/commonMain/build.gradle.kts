@@ -24,6 +24,15 @@ kotlin {
             baseName = "shared"
             isStatic = true
             linkerOpts.add("-lsqlite3")
+
+            export(projects.core.common)
+            export(projects.core.model)
+            export(projects.core.database)
+            export(projects.core.network)
+            export(projects.core.data)
+            export(projects.feature.notes)
+            export(projects.feature.auth)
+            export(projects.feature.export)
         }
     }
 
@@ -35,6 +44,16 @@ kotlin {
             api(libs.kotlinx.datetime)
             api(libs.datastore.preferences)
             api(libs.datastore)
+            api(libs.koin)
+
+            api(projects.core.common)
+            api(projects.core.model)
+            api(projects.core.database)
+            api(projects.core.network)
+            api(projects.core.data)
+            api(projects.feature.notes)
+            api(projects.feature.auth)
+            api(projects.feature.export)
             api(libs.koin)
 
         }
@@ -63,7 +82,7 @@ kotlin {
 
 android {
     namespace = "com.app.pustakam"
-    compileSdk = 34
+    compileSdk = 36
     defaultConfig {
         minSdk = 24
     }

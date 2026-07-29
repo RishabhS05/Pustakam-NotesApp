@@ -165,13 +165,13 @@ class NotesBridge {
 ## LAYER 2 — Kotlin `commonMain` (existing, shown for the reader — NO changes for getNotes)
 
 ```kotlin
-// usecases/NoteUseCase.kt — EXISTING
+// usecase/NoteUseCase.kt — EXISTING
 class GetNotesUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(page: Int) =
         getBaseApiCall { noteRepository.getAllNotes(page) }
 }
 
-// usecases/BaseUseCase.kt — EXISTING (`notes` StateFlow already exposed)
+// usecase/BaseUseCase.kt — EXISTING (`notes` StateFlow already exposed)
 abstract class NoteBaseUseCase : BaseUseCase() {
     protected val noteRepository = repository as NoteRepository
     val notes = noteRepository.notesState          // ← observeNotes uses this

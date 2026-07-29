@@ -1,0 +1,10 @@
+package com.app.pustakam.core.database.localdb.database
+
+import app.cash.sqldelight.db.SqlDriver
+import org.koin.core.module.Module
+import org.koin.dsl.module
+
+actual fun getDatabaseModule(): Module = module {
+    single <SqlDriver>{ SqlDelightDriverFactory().createDriver() }
+    single<NotesDao> { NotesDao() }
+}

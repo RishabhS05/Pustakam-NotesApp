@@ -1,0 +1,159 @@
+package com.app.pustakam.core.model.models.response.notes
+
+import com.app.pustakam.data.localdb.database.RichTextMetadata
+import com.app.pustakam.data.localdb.database.Version
+import com.app.pustakam.util.ContentType
+// 🔧 C6: UniqueIdGenerator import moved out — id generation lives ONLY in NoteContentObjectHelper
+// 🔧 getCurrentTimestamp kept: withX() helpers stamp updatedAt on every edit
+import com.app.pustakam.util.getCurrentTimestamp
+import com.app.pustakam.util.resolveLocalFilePath // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+enum class SyncStatus { LOCAL_ONLY, SYNCED, PENDING_UPDATE, PENDING_DELETE }
+
+@Serializable
+data class Note(
+    @SerialName("_id")
+    val id: String,
+    val title: String?,
+    val updates: List<String>? = null,
+    val updatedAt: String?,
+    val createdAt: String?,
+    val categoryId: String? ="",
+    val isSynced : Boolean? = false,
+    // 🔧 21-Jul-2026 databasev2.md §2.4: offline-first sync fields. ownerId + version are
+    //   app-generated uuid strings (never hardcoded) — set in NoteRepository.createNewEmptyNote.
+    val ownerId: String? = null,
+    val version: String = "",
+    val syncStatus: String = "PENDING",
+    val deleted: Boolean = false,
+    val contents: List<NoteContentModel> = emptyList(),
+    ) {
+    /** Swift-friendly copy helpers — Kotlin data-class copy() does not export
+     *  usable default arguments to Swift, so immutable edits go through these.
+     *  🔧 every edit stamps updatedAt = getCurrentTimestamp() → "last updated" is always current */
+    fun withNextVersion () : String = Version.nextVersion(ownerId, version)
+    fun withTitle(newTitle: String?): Note =
+        copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
+
+    fun withContents(newContents: List<NoteContentModel>): Note =
+        copy(contents = newContents, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
+
+    fun withTitleAndContents(newTitle: String?, newContents: List<NoteContentModel>): Note =
+        copy(title = newTitle, contents = newContents, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
+}
+
+@Serializable
+sealed class NoteContentModel {
+    // 🔧 C4: position Long → Double — fractional ordering: insert between a and b = (a+b)/2, no row rewrites
+    abstract val position: Double  // Position in the layout
+    // 🔧 timestamps stay String — platform formats may differ (C3 reverted per review)
+    abstract val updatedAt: String?
+    abstract val createdAt: String?
+    // 🔧 C8: property serializes as "contentType" — "type" is reserved for the class discriminator
+    abstract val type: ContentType
+    @SerialName("_id")
+    abstract val id: String
+    abstract val noteId : String
+
+    @Serializable @SerialName("TEXT")
+    data class TextContent(
+        // 🔧 F2 (C2): val — text edits go through withText(), no in-place mutation
+        val text: String = "",
+        // 🔧 C6: id/timestamps are REQUIRED — generated only by NoteContentObjectHelper at creation
+        //       (id logic untouched: timestamp+UUID via UniqueIdGenerator; deserialization can never regenerate)
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        @SerialName("contentType")
+        override val type: ContentType = ContentType.TEXT,
+        override val id: String,
+        override val noteId: String ,
+        override val position: Double,
+        val metadata: RichTextMetadata? = null,
+    ) : NoteContentModel() {
+        // 🔧 F2 (C2): Swift-friendly immutable edit — stamps the CONTENT's updatedAt
+        //            so per-content timestamps are trustworthy for versioning/sync
+        fun withText(newText: String): TextContent =
+            copy(text = newText, updatedAt = "${getCurrentTimestamp()}")
+    }
+
+    @Serializable @SerialName("MEDIA")
+    data class MediaContent(
+        override val position: Double,
+        override val noteId: String,
+        // 🔧 C1: for MEDIA the contentType is real data — IMAGE/VIDEO/AUDIO/PDF/DOCX/GIF…
+        @SerialName("contentType")
+        override val type: ContentType ,
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        override val id: String,
+        val duration: Long = 0,
+        val localPath: String? = null,
+        val url: String = "",
+        // 🔧 C1: title default "" (was "Audio" leaking onto every image/video); persisted via new DB column
+        val title: String = "",
+        // 🔧 C1: proper media metadata for all formats (upload/render/sync need these)
+        val mimeType: String = "",
+        val sizeBytes: Long = 0,
+        val width: Int = 0,
+        val height: Int = 0,
+        val thumbnailPath: String? = null,
+        // 📖 23-Jul-2026: reading progress for paged documents (PDF/DOCX/EPUB/txt). Lives on the
+        //   media row so it travels with the content and survives sync — replaces the old
+        //   DataStore last-page tracking. 0/0 = never opened, which the reader treats as page 1.
+        val totalPages: Int = 0,
+        val progressPage: Int = 0,
+    ) : NoteContentModel() {
+        // 🔧 15-Jul-2026 Phase 2.3 (iOS parity): Swift-friendly immutable edit — Kotlin data-class
+        //   copy() does not export usable defaults to Swift; both platforms attach the generated
+        //   thumbnail through this helper. Stamps updatedAt like the other withX() helpers.
+        fun withThumbnail(path: String?): MediaContent =
+            copy(thumbnailPath = path, updatedAt = "${getCurrentTimestamp()}")
+
+        // 📖 23-Jul-2026: Swift-friendly immutable edit for reading progress (copy() defaults don't
+        //   export usably to Swift). Both platforms save through this on exiting the reader.
+        fun withReadingProgress(page: Int, total: Int): MediaContent =
+            copy(progressPage = page, totalPages = total, updatedAt = "${getCurrentTimestamp()}")
+
+        /** 📖 true once the document has been opened and has a resumable position. */
+        fun hasReadingProgress(): Boolean = totalPages > 0 && progressPage > 0
+    }
+
+    @Serializable @SerialName("LINK")
+    data class Link(
+        val url: String ="",
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        @SerialName("contentType")
+        override val type: ContentType = ContentType.LINK,
+        override val id: String,
+        override val position: Double,
+        override val noteId: String,
+    ) : NoteContentModel()
+
+    // 🔧 C8: was @SerialName("LINK") — duplicate discriminator with Link; kotlinx rejects it at runtime
+    @Serializable @SerialName("LOCATION")
+    data class Location(
+        val latitude: Double =0.0,
+        val longitude: Double= 0.0,
+        val address: String? = null,
+        override val updatedAt: String?,
+        override val createdAt: String?,
+        @SerialName("contentType")
+        override val type: ContentType = ContentType.LOCATION,
+        override val id: String,
+        override val noteId: String,
+        override val position: Double,
+    ) : NoteContentModel()
+
+    fun isMediaFile() : Boolean = this is MediaContent
+    fun isPlayingMedia(): Boolean = this.type == ContentType.AUDIO || this.type == ContentType.VIDEO
+}
+// 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: localPath goes through resolveLocalFilePath — on iOS the app
+//   container UUID changes on every update, so stored absolute paths are re-anchored onto the
+//   current container at read time (Android actual is a pass-through). Fixes playback + image cards.
+fun NoteContentModel.MediaContent.getMediaUrl(): String = resolveLocalFilePath(localPath)
+        ?: url.takeIf { it.isNotEmpty() }
+        ?: ""

@@ -8,7 +8,6 @@ import com.app.pustakam.android.services.mediaSessionService.MediaServiceListene
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.domain.repositories.noteRepository.NoteContentRepository
 import com.app.pustakam.extensions.getReadableHMS
-import com.app.pustakam.extensions.getTimerFormatedString
 import com.app.pustakam.extensions.readableTimer
 import com.app.pustakam.extensions.timerRemaining
 import com.app.pustakam.util.log_d

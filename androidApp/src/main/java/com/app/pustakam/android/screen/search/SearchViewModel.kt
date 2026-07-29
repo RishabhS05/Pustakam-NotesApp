@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.data.models.response.notes.NoteSummary
 import com.app.pustakam.domain.repositories.usecases.SearchNotesUseCase
-import com.app.pustakam.util.Result
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

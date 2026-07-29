@@ -1,8 +1,6 @@
 package com.app.pustakam
 
-import com.app.pustakam.extensions.isValidPhone
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CommonGreetingTest {

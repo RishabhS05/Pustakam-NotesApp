@@ -8,9 +8,7 @@ import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.data.models.BaseResponse
 import com.app.pustakam.data.models.request.RegisterReq
 import com.app.pustakam.domain.repositories.usecases.SignUseCase
-import com.app.pustakam.util.Error
 import com.app.pustakam.util.NetworkError
-import com.app.pustakam.util.Result
 import com.app.pustakam.util.ValidationError
 import com.app.pustakam.util.checkRegisterFieldsValidity
 import kotlinx.coroutines.flow.MutableStateFlow

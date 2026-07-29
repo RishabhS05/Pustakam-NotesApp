@@ -14,8 +14,6 @@ import com.app.pustakam.data.models.response.notes.Note
 import com.app.pustakam.data.models.response.notes.NoteContentModel
 import com.app.pustakam.domain.repositories.usecases.ReadNoteUseCase
 import com.app.pustakam.domain.repositories.usecases.UpdateReadingProgressUseCase
-import com.app.pustakam.util.Error
-import com.app.pustakam.util.Result
 import com.app.pustakam.util.log_d
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

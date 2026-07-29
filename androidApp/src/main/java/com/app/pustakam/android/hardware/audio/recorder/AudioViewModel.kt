@@ -3,7 +3,6 @@ package com.app.pustakam.android.hardware.audio.recorder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.data.models.response.notes.NoteContentModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +12,6 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.File
-import kotlin.math.abs
 
 data class AudioState(
     val file: File? = null,
