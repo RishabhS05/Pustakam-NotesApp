@@ -262,7 +262,7 @@ class NoteEditorViewModel: ObservableObject {
             }
         }
     }
-    func isNotNoteEmpty() -> Bool {
+    func isNoteValid() -> Bool {
         guard let note = state.note else { return false}
         if (state.title.isEmpty) {
             if (state.noteContents.isEmpty){
@@ -274,7 +274,7 @@ class NoteEditorViewModel: ObservableObject {
 
 
     func saveNote() {
-         guard !state.isDeleted, let note = state.note, isNotNoteEmpty() else { return }
+         guard !state.isDeleted, let note = state.note, isNoteValid() else { return }
         
         
         // 🔧 15-Jul-2026 iOS parity (Phase 2.1): split oversized plain-text blocks BEFORE the

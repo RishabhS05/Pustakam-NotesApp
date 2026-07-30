@@ -159,12 +159,17 @@ class NoteEditorViewModel : BaseViewModel() {
     /** CRUD operations on Notes */
 
     // call make a wish api
-    fun createOrUpdateNote() {
+    fun isNoteValid(): Boolean =
         if (_noteContentUiState.value.titleTextState.value.isEmpty()) {
             if (_noteContentUiState.value.note?.contents?.isEmpty() == true) {
+                 false
+            } else  true
+        } else true
+
+    fun createOrUpdateNote() {
+        if(!isNoteValid()) {
                 changeNoteStatus(NoteStatus.exit)
                 return
-            }
         }
         updateNoteObject()
         // 🔧 15-Jul-2026 Phase 0.4: snapshot the dirty ids for THIS save; cleared on INSERT success.

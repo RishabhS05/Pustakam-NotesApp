@@ -274,8 +274,11 @@ fun NoteEditorScreen(
             actions = {
             // 🔧 18-Jul-2026: NEW — open this note as a real page-flip book
             IconButton(onClick = {
-                state.value.note?.id?.let { navigateTo(Route.BookReader + "/${it}") }
-            }) {
+                    state.value.note?.id?.let {
+                        navigateTo(Route.BookReader + "/${it}")
+                    }
+            }, enabled = noteEditorViewModel.isNoteValid()
+            ) {
                 Icon(
                     imageVector = Icons.Filled.MenuBook,
                     contentDescription = "Open as book",

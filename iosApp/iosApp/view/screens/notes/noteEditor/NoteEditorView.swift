@@ -139,7 +139,9 @@ struct NoteEditorView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack{
                     // 🔧 18-Jul-2026: NEW — open this note as a real page-curl book
-                    ActionButtonWithoutBackground(iconName: "book", action: {
+                    ActionButtonWithoutBackground(iconName: "book",
+                                                  enabled : noteEditorViewModel.isNoteValid(),
+                                                  action: {
                         if let noteId = noteEditorViewModel.state.note?.id {
                             router.navigate(to: .BookReader(noteId: noteId))
                         }
