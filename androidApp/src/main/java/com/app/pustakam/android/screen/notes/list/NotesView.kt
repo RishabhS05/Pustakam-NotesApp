@@ -52,12 +52,12 @@ sealed interface NotesViewIntent {
 sealed interface TagIntent{
     data class OnTagClick(val tag: Tag): TagIntent
     data class OnCreateTag(val tag: Tag): TagIntent
+
     data class OnColorPicked(val color: Color): TagIntent
     data class ShowOrHideUIAlerts(val dialog: DialogEnum): TagIntent
 }
 @Composable
 fun NotesView(onNavigateNote: (noteId: String) -> Unit) {
-
     val notesViewModel: NotesViewModel = viewModel()
      val state =  notesViewModel.notesUIState.collectAsStateWithLifecycle().value
          .apply {

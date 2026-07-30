@@ -52,7 +52,7 @@ import com.app.pustakam.core.common.util.ContentType
 
 @OptIn(UnstableApi::class)
 @Composable
-fun AudioPlayerUIState(
+fun  AudioPlayerUIState(
     noteContentModel: NoteContentModel.MediaContent, onDelete: (NoteContentModel) -> Unit = {}, onSave: () -> Unit = {}
 ) {
     val noteContent = remember { noteContentModel }

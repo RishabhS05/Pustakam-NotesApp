@@ -6,8 +6,9 @@ import com.app.pustakam.android.theme.PaperColor
 // 🔧 30-Jul-2026 02:10 shared-player protocol: same ViewModel + events the editor drives
 import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.ui.PlayerView
+  import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
+import com.app.pustakam.android.widgets.video.VideoCard
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -363,47 +364,49 @@ private fun renderPdfPage(path: String, index: Int): Bitmap? = try {
 } catch (e: Exception) { e.printStackTrace(); null }
 
 // 🔧 18-Jul-2026: audio/video page.
-// 🔧 30-Jul-2026 02:10 — UI UNCHANGED (same title + full-bleed PlayerView with the native Media3
-//   controller). Only the PLUMBING moved onto the editor's model:
-//     • the player is the app's SINGLE ExoPlayer from PlayMediaViewModel.getExoPlayer(), not a new
-//       one per page — a second player fought the singleton for audio focus and was invisible to
-//       the media notification
-//     • the queue is whatever the editor already put in NoteContentRepository; the reader only
-//       consumes it, so exiting a note and opening another updates it automatically
-//     • media is selected BY ID (SelectedMediaChange -> getIndexOfMedia), never by list position,
-//       so opening A.mp3 can never start B.mp3
-//     • ONE ExoPlayer renders to ONE surface, so the surface is attached only while this media is
-//       the current selection and detached otherwise — without that, the last composed page steals
-//       it and every other page goes blank
-//   The player is a Koin singleton owned by the app graph: it must NEVER be released here.
+// 🔧 30-Jul-2026 02:10 — now uses the EDITOR'S media widgets on the READER'S background.
+//   Previously this page built its own ExoPlayer and drew a bare PlayerView, so the transport
+//   buttons never appeared and a second player fought the singleton for audio focus.
+//   AudioPlayerUIState and VideoCard are the exact widgets NotesEditorView uses: each resolves the
+//   shared player itself, keys its state by media id (mediaStates[id]) and binds the single video
+//   surface only while that media is the current selection. Reusing them means the reader can never
+//   drift from the editor, and "play A.mp3" can never start B.mp3.
 @Composable
 private fun MediaBookPage(media: NoteContentModel.MediaContent) {
     val viewModel: PlayMediaViewModel = viewModel()
-    val exoPlayer = remember { viewModel.getExoPlayer() }
     val state = viewModel.state.collectAsStateWithLifecycle()
-    val isCurrentMedia = state.value.currentPlayingId == media.id
 
-    // 🔧 30-Jul-2026 02:10 opening this page selects THIS media in the shared queue, which is what
-    //   the old per-page setMediaItem()+prepare() used to do. Keyed on the id so paging between two
-    //   media pages re-selects correctly.
+    // 🔧 30-Jul-2026 02:10 opening the page selects THIS media in the shared queue — the equivalent
+    //   of the old per-page setMediaItem()+prepare(). Guarded so paging back to an already-playing
+    //   item does not restart it.
     LaunchedEffect(media.id) {
         if (state.value.currentPlayingId != media.id) {
             viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id))
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    // 🔧 30-Jul-2026 02:10 reader's paper background + title preserved; only the player UI is the
+    //   editor's, so the controls look and behave identically in both screens.
+    Column(
+        Modifier.fillMaxSize().padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         Text(
             media.title.ifBlank { media.type.name }, style = typography.titleSmall,
             color = PaperInk, maxLines = 1, modifier = Modifier.padding(bottom = 8.dp)
         )
-        AndroidView(
-            factory = { PlayerView(it).apply { useController = true } },
-            // 🔧 30-Jul-2026 02:10 attach/detach in update{} — the surface follows the selection
-            //   instead of being owned by whichever page composed last.
-            update = { view -> view.player = if (isCurrentMedia) exoPlayer else null },
-            modifier = Modifier.weight(1f).fillMaxWidth()
-        )
+        if (media.type == ContentType.AUDIO) {
+            AudioPlayerUIState(media)
+        } else {
+            VideoCard(
+                contentVideo = media,
+                modifier = Modifier,
+                // 🔧 30-Jul-2026 02:10 tapping the card makes this media the current selection,
+                //   which is what hands it the single video surface.
+                onClick = { viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id)) },
+            )
+        }
     }
 }
 

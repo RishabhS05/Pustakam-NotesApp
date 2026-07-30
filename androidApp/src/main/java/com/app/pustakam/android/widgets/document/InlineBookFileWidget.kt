@@ -94,7 +94,7 @@ fun InlineBookFileWidget(
     val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 460.dp)
     Box(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.75f)
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .height(cardHeight)
             .background(NotebookCover,cornerShape )
