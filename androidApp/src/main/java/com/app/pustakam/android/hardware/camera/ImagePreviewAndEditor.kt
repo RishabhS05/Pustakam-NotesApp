@@ -1,6 +1,8 @@
 package com.app.pustakam.android.hardware.camera
 
 import android.app.Activity
+import android.content.pm.ActivityInfo
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Save
@@ -19,6 +22,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -30,6 +38,7 @@ import com.app.pustakam.android.fileUtils.createFileWithFolders
 import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on preview
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.ScreenOrientation
 import com.app.pustakam.core.common.util.getCurrentTimestamp
 
 /**
@@ -56,6 +65,9 @@ fun ImagePreviewAndEditor(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current as Activity
+    var islandScapeMode by rememberSaveable {
+        mutableStateOf(false)
+    }
     val saveImage = {
         val timeStamp = getCurrentTimestamp()
         onEditImageAction(MediaProcessingEvent.OnSaveImage(
@@ -64,12 +76,27 @@ fun ImagePreviewAndEditor(
                 , "${timeStamp}${ContentType.IMAGE.getExt()}")
         ))
     }
-    Box(modifier = modifier) {
+    BackHandler(enabled = true) {
+        onEditImageAction(MediaProcessingEvent.ScreenOrientationEvent(ScreenOrientation.UNSPECIFIED))
+        onDismiss(null)
+    }
+    DisposableEffect(state.orientation) {
+        context.requestedOrientation = when (state.orientation) {
+            ScreenOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        onDispose {
+            context.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+
+    Box(modifier = modifier.fillMaxSize()) {
         state.bitmap?.asImageBitmap()?.let {
             Image(
                 it, contentDescription = "Image Preview",
                 // 🔧 19-Jul-2026: FIX — preview no longer fills/crops; whole image fits + zoomable
-                modifier = Modifier.fillMaxSize().zoomable(),
+                modifier = Modifier.matchParentSize().zoomable(),
                 contentScale = ContentScale.Fit
             )
         }
@@ -96,9 +123,23 @@ fun ImagePreviewAndEditor(
                 Icon(imageVector =  if(state.dataStateEvent == DataStateEvent.Editing) Icons.Default.Crop else Icons.Filled.Edit,
                     contentDescription = "Crop Image")
             }
+            IconButton(
+                onClick = {
+                       onEditImageAction(MediaProcessingEvent.ScreenOrientationEvent(
+                           if(state.orientation == ScreenOrientation.UNSPECIFIED)
+                               ScreenOrientation.LANDSCAPE else ScreenOrientation.UNSPECIFIED))
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Autorenew,
+                    contentDescription = "Rotate screen"
+                )
+            }
         }
         Button(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp), onClick = {
+                //TODO TBD for other android screen orientation
+                onEditImageAction(MediaProcessingEvent.ScreenOrientationEvent(ScreenOrientation.UNSPECIFIED))
                 if(state.dataStateEvent == DataStateEvent.Editing) saveImage()
                 onDismiss(Route.NotesEditor)
             }){ Text("Done") }

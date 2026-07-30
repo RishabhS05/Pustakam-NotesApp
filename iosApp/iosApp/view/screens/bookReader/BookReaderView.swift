@@ -70,8 +70,14 @@ enum BookPalette {
 // MARK: - Pages builder
 
 enum BookPagesBuilder {
-    private static let charsPerPage = 700
-    private static let maxTextFileBytes = 2 * 1024 * 1024
+    // 🔧 30-Jul-2026 Phase 4 — the NUMBERS now come from the shared BookPaginator so they can never
+    //   drift from Android; the ALGORITHM below stays native on purpose.
+    //   Kotlin counts UTF-16 code units, Swift counts Characters (grapheme clusters). Identical for
+    //   ASCII/CJK/precomposed accents, different for emoji and combining marks. Routing iOS through
+    //   the Kotlin paginator would re-paginate those documents and move every saved reading
+    //   position (progressPage/totalPages are persisted per MediaContent). See BookPaginator.kt.
+    private static let charsPerPage = Int(BookPaginator.shared.charsPerPage())
+    private static let maxTextFileBytes = Int(BookPaginator.shared.maxTextFileBytes())
 
     // 🔧 18-Jul-2026: container-safe path (stored absolute paths go stale across app updates)
     private static func resolved(_ path: String?) -> String? {
@@ -153,6 +159,8 @@ enum BookPagesBuilder {
     }
 
     // 🔧 18-Jul-2026: word-boundary pagination (Android parity)
+    // 🔧 30-Jul-2026 Phase 4 — kept native (grapheme-based). Same rule as BookPaginator.paginate:
+    //   prefer the last newline, else the last space, but only past the halfway mark, else hard cut.
     private static func paginate(_ text: String, sourceId: String?) -> [BookPageItem] {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
         var chunks: [String] = []

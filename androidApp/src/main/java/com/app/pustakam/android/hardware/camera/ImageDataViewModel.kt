@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.extension.toBitmap
 import com.app.pustakam.android.fileUtils.saveBitmapToFile
+import com.app.pustakam.core.common.util.ScreenOrientation
 import com.app.pustakam.core.common.extensions.isUrl
 import com.app.pustakam.core.common.util.ContentType
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,9 @@ sealed interface MediaProcessingEvent {
     data object EditImage : MediaProcessingEvent
     data class OnPreviewFilepath(val filepath: String, val contentType: ContentType) : MediaProcessingEvent
     data class OnPreviewWithBitmap(val bitmap: Bitmap) : MediaProcessingEvent
+    data class ScreenOrientationEvent (val orientation: ScreenOrientation) : MediaProcessingEvent
 }
+
 
 data class MediaFileStateHandler(
     val noteId: String = "",
@@ -53,6 +56,7 @@ data class MediaFileStateHandler(
     val bitmap: Bitmap? = null,
     val editedBitmap: Bitmap? = null,
     val mediaFilePath :String = "",
+    val orientation : ScreenOrientation = ScreenOrientation.UNSPECIFIED,
     // 🔧 14-Jul-2026: NEW — id of the note content being previewed; lets VideoPreviewScreen drive
     //   the standalone player by mediaId instead of guessing from the file path.
     val mediaId: String? = null,
@@ -74,6 +78,7 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
    private val _isRecording = MutableStateFlow(false)
     val isRecording = _isRecording.asStateFlow()
     var recording: Recording? = null
+
     fun onHandleMediaOperation(event: MediaProcessingEvent) {
         when (event) {
 
@@ -87,7 +92,6 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
                     it.copy(noteId = event.noteId)
                 }
             }
-
             is MediaProcessingEvent.OnPreviewFilepath ->
                 onSetMediaToPreview(event.filepath, event.contentType)
             is MediaProcessingEvent.OnPreviewWithBitmap ->
@@ -100,6 +104,9 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
             MediaProcessingEvent.RedoAction -> TODO()
             MediaProcessingEvent.UndoAction -> TODO()
             MediaProcessingEvent.EditImage -> {  _mediaFileState.update { it.copy(dataStateEvent = DataStateEvent.Editing) }}
+            is MediaProcessingEvent.ScreenOrientationEvent -> {
+                _mediaFileState.update { it.copy(orientation = event.orientation) }
+            }
         }
     }
 

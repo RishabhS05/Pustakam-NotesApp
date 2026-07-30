@@ -125,6 +125,36 @@ class ImportCoordinatorTest {
         assertEquals("imported/note-42/a_b.pdf", plan.relativePath)
     }
 
+    // ---- Swift-facing overload ----
+
+    @Test
+    fun the_platform_overload_matches_the_lambda_form_exactly() {
+        val taken = listOf("imported/note-42/a.pdf")
+        val viaList = accept(
+            ImportCoordinator.planImportForPlatform(
+                noteId, "a.pdf", "application/pdf", 10, "", ts, taken,
+            ),
+        )
+        val viaLambda = accept(
+            ImportCoordinator.planImport(
+                noteId, "a.pdf", "application/pdf", 10, "", ts, exists = { it in taken },
+            ),
+        )
+        assertEquals(viaLambda.relativePath, viaList.relativePath)
+        assertEquals(viaLambda.contentType, viaList.contentType)
+        assertEquals(viaLambda.mimeType, viaList.mimeType)
+    }
+
+    @Test
+    fun the_platform_overload_rejects_and_skips_like_the_lambda_form() {
+        assertIs<ImportDecision.NotAFile>(
+            ImportCoordinator.planImportForPlatform(noteId, "p.html", "text/html", 10, "", ts, emptyList()),
+        )
+        assertIs<ImportDecision.Rejected>(
+            ImportCoordinator.planImportForPlatform(noteId, "", null, 10, "", ts, emptyList()),
+        )
+    }
+
     // ---- batch planning ----
 
     @Test

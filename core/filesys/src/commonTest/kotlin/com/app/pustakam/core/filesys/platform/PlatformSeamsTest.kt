@@ -136,6 +136,14 @@ class PlatformSeamsTest {
         assertEquals(1_000_000L, ThumbnailPolicy.VIDEO_FRAME_MICROS)
     }
 
+    // 🔧 30-Jul-2026 Phase 4 — iOS reads these through the accessors, not the consts.
+    @Test
+    fun swift_facing_thumbnail_accessors_match_the_constants() {
+        assertEquals(ThumbnailPolicy.MAX_DIMENSION_PX, ThumbnailPolicy.maxDimensionPx())
+        assertEquals(ThumbnailPolicy.JPEG_QUALITY, ThumbnailPolicy.jpegQuality())
+        assertEquals(ThumbnailPolicy.VIDEO_FRAME_MICROS, ThumbnailPolicy.videoFrameMicros())
+    }
+
     @Test
     fun only_image_gif_and_video_get_thumbnails() {
         assertTrue(ThumbnailPolicy.isEligible(ContentType.IMAGE))

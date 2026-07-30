@@ -23,6 +23,15 @@ class BookPaginatorTest {
         assertEquals(2L * 1024 * 1024, BookPaginator.MAX_TEXT_FILE_BYTES)
     }
 
+    // 🔧 30-Jul-2026 Phase 4 — iOS reads the constants through these accessors (a `const val` inside
+    //   an object has no guaranteed ObjC/Swift export shape). If either drifts from its const, the
+    //   two platforms silently paginate to different page sizes.
+    @Test
+    fun swift_facing_accessors_return_the_same_constants() {
+        assertEquals(BookPaginator.CHARS_PER_PAGE, BookPaginator.charsPerPage())
+        assertEquals(BookPaginator.MAX_TEXT_FILE_BYTES, BookPaginator.maxTextFileBytes())
+    }
+
     // ---- empty / short input ----
 
     @Test

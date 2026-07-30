@@ -193,7 +193,11 @@ func copyFile(to folderName: String, fileName: String, from sourceURL: URL) -> U
 //   Usage: generateThumbnail(sourcePath: media.localPath!, type: media.type)
 import AVFoundation
 
-private let thumbnailMaxDimension: CGFloat = 512
+// 🔧 30-Jul-2026 Phase 4 — size and quality come from the SHARED ThumbnailPolicy so iOS and Android
+//   cannot drift. Accessor functions, not the `const val`s: a const inside a Kotlin object has no
+//   guaranteed ObjC/Swift export shape. The DECODING below stays native (UIImage / AVAssetImageGenerator).
+private let thumbnailMaxDimension = CGFloat(ThumbnailPolicy.shared.maxDimensionPx())
+private let thumbnailJpegQuality = CGFloat(ThumbnailPolicy.shared.jpegQuality()) / 100.0
 
 func generateThumbnail(sourcePath: String, type: ContentType) -> String? {
     let sourceURL = URL(fileURLWithPath: sourcePath)
@@ -205,7 +209,9 @@ func generateThumbnail(sourcePath: String, type: ContentType) -> String? {
     } else if type == ContentType.video {
         let generator = AVAssetImageGenerator(asset: AVURLAsset(url: sourceURL))
         generator.appliesPreferredTrackTransform = true
-        if let cg = try? generator.copyCGImage(at: CMTime(seconds: 1, preferredTimescale: 600), actualTime: nil) {
+        // 🔧 30-Jul-2026 Phase 4 — frame offset from the shared ThumbnailPolicy (µs → seconds)
+        let frameSeconds = Double(ThumbnailPolicy.shared.videoFrameMicros()) / 1_000_000.0
+        if let cg = try? generator.copyCGImage(at: CMTime(seconds: frameSeconds, preferredTimescale: 600), actualTime: nil) {
             image = UIImage(cgImage: cg)
         } else if let cg = try? generator.copyCGImage(at: .zero, actualTime: nil) {
             image = UIImage(cgImage: cg)
@@ -221,7 +227,7 @@ func generateThumbnail(sourcePath: String, type: ContentType) -> String? {
     let scaled = UIGraphicsImageRenderer(size: targetSize).image { _ in
         source.draw(in: CGRect(origin: .zero, size: targetSize))
     }
-    guard let data = scaled.jpegData(compressionQuality: 0.7),
+    guard let data = scaled.jpegData(compressionQuality: thumbnailJpegQuality),
           let folderURL = createFolder(named: "thumbnails") else { return nil }
     let thumbURL = folderURL.appendingPathComponent(
         sourceURL.deletingPathExtension().lastPathComponent + "_thumb.jpg")

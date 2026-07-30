@@ -1,10 +1,19 @@
 package com.app.pustakam.core.filesys.pagination
 
-// 🔧 30-Jul-2026 02:10 Phase 2 — book pagination, shared.
-//   Ported VERBATIM from androidApp BookPageFactory.paginate; iOS BookReaderView.paginate is the
-//   same algorithm with the same charsPerPage (700), so both platforms keep their current page
-//   counts. THAT MATTERS: progressPage/totalPages are already persisted per MediaContent, so a
-//   different page count here would silently move every saved reading position.
+// 🔧 30-Jul-2026 02:10 Phase 2 — book pagination. Ported VERBATIM from androidApp
+//   BookPageFactory.paginate, which now delegates here.
+//
+// 🔧 30-Jul-2026 Phase 4 — DELIBERATELY NOT SHARED WITH iOS. The rule below is business logic and
+//   is identical on both platforms, but the UNIT it counts in is platform semantics:
+//     • Kotlin String.length  = UTF-16 code units
+//     • Swift  String.count   = Characters (grapheme clusters)
+//   They agree for ASCII, CJK and precomposed accents, and disagree for emoji and combining marks
+//   (a ZWJ family emoji is 1 Character but 11 UTF-16 units). Running iOS through this object would
+//   therefore re-paginate any TXT/MD containing such text and MOVE the reader's saved position,
+//   since progressPage/totalPages are persisted per MediaContent.
+//   iOS keeps its own grapheme-based implementation in BookReaderView.BookPagesBuilder and reads
+//   the CONSTANTS below, so the numbers can never drift apart even though the algorithms differ.
+//   PDFs are unaffected either way — they paginate by PDF page, not by this.
 //   Pure: no file access, no rendering, no platform type.
 object BookPaginator {
 
@@ -14,6 +23,14 @@ object BookPaginator {
     /** Text files above this are truncated before pagination (memory guard). Platform readers
      *  apply the cap when loading bytes; kept here so the number has one home. */
     const val MAX_TEXT_FILE_BYTES = 2L * 1024 * 1024
+
+    // 🔧 30-Jul-2026 Phase 4 — explicit accessors for Swift. A Kotlin `const val` inside an object
+    //   does not export to ObjC/Swift in an obvious, guaranteed shape, whereas a function on an
+    //   object always does (BookPaginator.shared.charsPerPage()). Kotlin callers keep using the
+    //   const directly — it stays a compile-time constant, so BookPageFactory's aliases still work.
+    fun charsPerPage(): Int = CHARS_PER_PAGE
+
+    fun maxTextFileBytes(): Long = MAX_TEXT_FILE_BYTES
 
     /**
      * Where to cut a full-length window, preferring a word boundary.

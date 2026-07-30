@@ -114,7 +114,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         composable(route = Route.VideoPreview) {backStackEntry->
             val imageViewModel : ImageDataViewModel = backStackEntry
                 .sharedViewModel<ImageDataViewModel>(navController.navController)
-            VideoPreviewScreen(imageViewModel)
+            VideoPreviewScreen(imageViewModel, onDismiss = navController::upPress)
         }
         composable<CameraData> { backStackEntry ->
             val data = backStackEntry.toRoute<CameraData>()

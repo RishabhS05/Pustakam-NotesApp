@@ -105,27 +105,32 @@ class NoteEditorViewModel: ObservableObject {
         guard let noteId = state.note?.id else { return }       // fixes E3 (was note!.id)
         let timeStamp = DateTimeUtilsKt.getCurrentTimestamp()
 
+        // 🔧 30-Jul-2026 Phase 4 — folder + file name now come from the SHARED PathPolicy instead of
+        //   being built inline. Same rule Android uses, so the two platforms can no longer drift.
+        //   ONE deliberate change: the folder is now lowercase ("image/<noteId>") where iOS used to
+        //   write "IMAGE/<noteId>". Existing media is unaffected — resolveLocalFilePath re-anchors
+        //   everything after /Documents/ verbatim, so old rows keep their uppercase path and still
+        //   resolve. No migration needed. See migration-guide.md Phase 4.
         switch media {
         case .image(let image):
             let type = ContentType.image
             guard let data = image.pngData() else { return }
-            let path = saveImageFile(data: data,
-                                     in: "\(type.name)/\(noteId)",
-                                     to: "\(timeStamp)\(type.getExt())")
+            let dest = PathPolicy.shared.capturePath(type: type, noteId: noteId, timestamp: timeStamp)
+            let path = saveImageFile(data: data, in: dest.folder, to: dest.fileName)
             saveMedia(type: type, localPath: path, noteId: noteId, timestamp: "\(timeStamp)")
 
         case .video(let path):
             let type = ContentType.video
-            guard let saved = copyFile(to: "\(type.name)/\(noteId)",
-                                       fileName: "\(timeStamp)\(type.getExt())",
-                                       from: path) else { return }
+            let dest = PathPolicy.shared.capturePath(type: type, noteId: noteId, timestamp: timeStamp)
+            guard let saved = copyFile(to: dest.folder, fileName: dest.fileName, from: path)
+            else { return }
             saveMedia(type: type, localPath: saved.path, noteId: noteId, timestamp: "\(timeStamp)")
 
         case .audio(let path):
             let type = ContentType.audio
-            guard let saved = copyFile(to: "\(type.name)/\(noteId)",
-                                       fileName: "\(timeStamp)\(type.getExt())",
-                                       from: path) else { return }
+            let dest = PathPolicy.shared.capturePath(type: type, noteId: noteId, timestamp: timeStamp)
+            guard let saved = copyFile(to: dest.folder, fileName: dest.fileName, from: path)
+            else { return }
             saveMedia(type: type, localPath: saved.path, noteId: noteId, timestamp: "\(timeStamp)")
 
         case .none:

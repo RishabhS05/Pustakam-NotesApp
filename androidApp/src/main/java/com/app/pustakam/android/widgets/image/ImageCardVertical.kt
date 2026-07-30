@@ -56,7 +56,6 @@ fun ImageCard(modifier: Modifier = Modifier,
                 overlay()
             }
         }
-
     }
 }
 @Preview("default")

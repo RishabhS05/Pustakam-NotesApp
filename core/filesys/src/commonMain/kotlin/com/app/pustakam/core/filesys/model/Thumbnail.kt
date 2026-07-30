@@ -38,6 +38,14 @@ object ThumbnailPolicy {
     /** ~1 s in — far enough past the black lead-in most videos start with. */
     const val VIDEO_FRAME_MICROS = 1_000_000L
 
+    // 🔧 30-Jul-2026 Phase 4 — Swift-facing accessors. A `const val` inside a Kotlin object has no
+    //   guaranteed ObjC/Swift export shape; a function on an object always exports.
+    fun maxDimensionPx(): Int = MAX_DIMENSION_PX
+
+    fun jpegQuality(): Int = JPEG_QUALITY
+
+    fun videoFrameMicros(): Long = VIDEO_FRAME_MICROS
+
     /** Types worth generating a thumbnail for. Everything else renders from an icon. */
     fun isEligible(type: ContentType): Boolean =
         type == ContentType.IMAGE || type == ContentType.GIF || type == ContentType.VIDEO

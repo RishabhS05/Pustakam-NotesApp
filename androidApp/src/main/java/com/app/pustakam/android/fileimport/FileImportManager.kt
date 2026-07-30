@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
-import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.filesys.imports.ImportCoordinator
 import com.app.pustakam.core.filesys.model.ImportDecision
@@ -43,16 +42,15 @@ object FileImportManager {
         { relativePath -> File(context.filesDir, relativePath).exists() }
 
     /** Build the MediaContent for a written plan — one construction path for picks and downloads. */
+    // 🔧 30-Jul-2026 Phase 4 — delegates to the SHARED factory so Android and iOS build MediaContent
+    //   through exactly one code path.
     private fun mediaFor(plan: ImportPlan, position: Double, file: File): NoteContentModel.MediaContent =
-        NoteContentObjectHelper.createMedia(
-            contentType = plan.contentType,
+        ImportCoordinator.mediaFromPlan(
+            plan = plan,
             noteId = plan.destination.folder.substringAfterLast('/'),
             positionedAt = position,
             localPath = file.absolutePath,
-            url = plan.sourceUrl,
-            title = plan.displayName,
-            mimeType = plan.mimeType,
-            sizeBytes = if (plan.sizeBytes > 0) plan.sizeBytes else file.length(),
+            sizeBytes = file.length(),
         )
 
     /** Import multiple SAF-picked uris. Returns one MediaContent per successfully copied file. */

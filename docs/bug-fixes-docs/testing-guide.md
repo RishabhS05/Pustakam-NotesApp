@@ -1,6 +1,6 @@
 # Testing Guide — `:core:filesys`
 
-**Last updated:** 30-Jul-2026 (Phase 3 complete · Phase 4 Android)
+**Last updated:** 30-Jul-2026 (Phases 1–4 complete)
 
 ---
 
@@ -323,6 +323,30 @@ Steps 3 and 7 are the pass/fail. Step 7 is how pre-existing orphaned containers 
 
 ---
 
+## 5e. Manual verification checklist — Phase 4 (iOS)
+
+Phase 4 changed iOS import, capture paths and thumbnail constants. **Android is the control** — it
+should behave exactly as it did after Phase 3.
+
+1. Import 5 mixed files from the Files picker → all appear, correct icons and order
+2. **Import two files with the same name** → both land, second is uniqued, neither overwrites
+3. Import from link: real PDF → appears · web page → **"No file found"** · bad host → failure message
+4. Capture a photo, a video and an audio clip → all three appear and play back
+5. **Check the new capture folder is lowercase** (`image/<noteId>/`) — and that media captured
+   *before* this build, in `IMAGE/<noteId>/`, still loads. That is the whole casing migration.
+6. Thumbnails render at the same size/quality as before on list cards and video placeholders
+7. Book reader: TXT / MD / PDF page counts unchanged; saved position still restores
+8. Export → PDF, PNG, DOCX (untouched this phase, confirm no regression)
+9. **Reinstall the app** and confirm old media still resolves (exercises `resolveLocalFilePath`)
+
+Items 5 and 9 are the pass/fail. Item 5 is the only intended behaviour change in the phase.
+
+> **These Swift edits were not compile-checked** — no Xcode in the analysis environment. The
+> Kotlin↔Swift interop rules were applied deliberately (no default args, no boxed lambdas, accessor
+> functions instead of consts), but expect to fix argument labels in Xcode on the first build.
+
+---
+
 ## 6. Test requirements for future phases
 
 | Phase | Additional required tests |
@@ -336,6 +360,7 @@ Steps 3 and 7 are the pass/fail. Step 7 is how pre-existing orphaned containers 
 | 4 — iOS renderers | `ThumbnailGenerator`, `DocumentRenderer`, `TextMeasurer` bound on iOS |
 | 4 — FileDownloader (`:core:network`) | redirect chains, `Content-Disposition`, HTML rejection, 404, timeout, non-https rejection |
 | 4 — parity | same input → same output on Android and iOS, asserted on both targets |
+| 4 — pagination constants | Swift-facing accessors pinned to the consts *(done)*; page counts stay platform-native by design |
 | 4 — folder casing | migration from `IMAGE/` to `image/` finds pre-existing iOS files |
 
 **Rule for every phase: a component is not "migrated" until it has `commonTest` coverage of its

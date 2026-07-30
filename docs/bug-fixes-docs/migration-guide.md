@@ -1,6 +1,6 @@
 # Migration Guide — `:core:filesys`
 
-**Last updated:** 30-Jul-2026 · **Status: Phases 1–3 complete · Phase 4 in progress (Android done, iOS blocked) · Phase 5 pending**
+**Last updated:** 30-Jul-2026 · **Status: Phases 1–4 complete · Phase 5 (delete duplicates) pending**
 
 Companion documents: `dependency-graph.md`, `testing-guide.md`,
 `30jul2026-FIA-centralize-file-system-in-core-filesys.md` (the original audit).
@@ -350,7 +350,7 @@ the same name, and confirm both land intact.**
 
 ---
 
-## PHASE 4 — Replace duplicated Android + iOS logic 🟡 Android done, iOS blocked
+## PHASE 4 — Replace duplicated Android + iOS logic ✅
 
 ### Done
 
@@ -368,20 +368,73 @@ the same name, and confirm both land intact.**
 > `suggestSaveName`, so the *rule* is still testable — but prefer the pure form in new code, and do
 > not add clock reads to the other functions.
 
-### Blocked — needs a decision
+### iOS — done
 
-| Item | Blocker |
+| File | Change |
 |---|---|
-| iOS onto `ImportCoordinator` (`FileImportService.swift`, 5 call sites) | how far into Swift may be edited |
-| iOS onto `BookPaginator` (`BookReaderView.swift`) | the paginator is embedded in a SwiftUI view file |
-| iOS onto `CaptureDestination` (`NoteEditorViewModel.swift`) | Swift ViewModel |
-| Binding `ThumbnailGenerator` / `DocumentRenderer` / `TextMeasurer` on iOS | follows the Swift move |
-| Wiring `ExportLayoutBuilder` into both `NoteExporter`s | needs `TextMeasurer` bound on both |
-| Downloading → `:core:network` | should move with iOS, not on top of a verified Android fix |
+| `FileImportService.swift` | both `importPicked` and `importFromLink` now plan through `ImportCoordinator.planImportForPlatform` and build content via `ImportCoordinator.mediaFromPlan`. **The download itself is untouched.** No `FileImportHelper` reference remains in Swift. |
+| `NoteEditorViewModel.swift` | capture folder/name from `PathPolicy.capturePath` — this is where the `IMAGE/` → `image/` alignment lands |
+| `FileOps.swift` | thumbnail max dimension, JPEG quality and video frame offset from `ThumbnailPolicy`; decoding stays native |
+| `BookReaderView.swift` | reads `charsPerPage` / `maxTextFileBytes` from `BookPaginator`; algorithm stays native (see the pagination decision below) |
 
-**Decided:** folder casing → **read both, write lowercase**. New captures go to `image/`; the
-resolver checks lowercase first, then falls back to the legacy uppercase folder. No migration step,
-no risk to existing media, self-heals over time.
+**Three Swift-safe Kotlin APIs were added rather than forcing awkward interop:**
+
+| Added | Why |
+|---|---|
+| `ImportCoordinator.planImportForPlatform(...)` | Kotlin default args are not exposed to Swift, and `(String) -> Boolean` bridges as a boxed `(String) -> KotlinBoolean`. This overload takes `takenPaths: List<String>` and has no defaults. Pinned to the lambda form by `the_platform_overload_matches_the_lambda_form_exactly`. |
+| `ImportCoordinator.mediaFromPlan(...)` | `NoteContentObjectHelper.createMedia` has 12 parameters with defaults — a Swift call site would have to pass all 12 in order. Both platforms now build `MediaContent` through this one function. |
+| `ThumbnailPolicy.maxDimensionPx()` / `jpegQuality()` / `videoFrameMicros()`, `BookPaginator.charsPerPage()` / `maxTextFileBytes()` | a `const val` inside a Kotlin `object` has no guaranteed ObjC/Swift export shape; a function always exports. Each pinned to its const by a test. |
+
+### Still deferred
+
+| Item | Why |
+|---|---|
+| `ExportLayoutBuilder` into both `NoteExporter`s | needs a Swift `TextMeasurer` conformance; export output is visual, so it deserves its own step with before/after PDFs |
+| Downloading → `:core:network` | the Android download is verified working; moving it is a separate, testable change |
+| Binding `ThumbnailGenerator` / `DocumentRenderer` / `TextMeasurer` on iOS | **not needed.** Swift already implements all three natively, which is where the spec says they belong. Binding Kotlin versions would *add* duplication, not remove it. The interfaces exist for shared code to consume; no shared code consumes them on iOS. |
+
+### Design decision — book pagination stays NATIVE on each platform
+
+The page-break **rule** is business logic and is shared. The **unit it counts in** is not:
+
+| | Kotlin | Swift |
+|---|---|---|
+| `String.length` / `String.count` | UTF-16 code units | Characters (grapheme clusters) |
+
+Measured on the same text, same 700, same cut rules:
+
+| Text | Kotlin pages | Swift pages | Same? |
+|---|---:|---:|---|
+| Pure ASCII | 5 | 5 | ✅ |
+| CJK | 4 | 4 | ✅ |
+| Precomposed accents (`café`) | 4 | 4 | ✅ |
+| Emoji `😀` | 5 | 4 | ❌ |
+| ZWJ family `👨‍👩‍👧‍👦` | 7 | 5 | ❌ |
+
+Routing iOS through `BookPaginator` would re-paginate any TXT/MD containing emoji or combining
+marks and **move the reader's saved position** — `progressPage`/`totalPages` are persisted per
+`MediaContent`. PDFs are unaffected either way; they paginate by PDF page.
+
+**Resolution:** each platform keeps its own implementation, and both read the **constants** from
+`BookPaginator` so the numbers can never drift:
+
+```swift
+private static let charsPerPage     = Int(BookPaginator.shared.charsPerPage())
+private static let maxTextFileBytes = Int(BookPaginator.shared.maxTextFileBytes())
+```
+
+`charsPerPage()` / `maxTextFileBytes()` are explicit accessor **functions**, not the `const val`s: a
+`const val` inside a Kotlin `object` has no guaranteed ObjC/Swift export shape, while a function on
+an object always exports as `BookPaginator.shared.x()`. `swift_facing_accessors_return_the_same_constants`
+pins them to the consts.
+
+This matches the project rule — maximise shared *business logic*, not shared *code*. Text
+segmentation is platform semantics.
+
+**Decided:** folder casing → **write lowercase**. Investigation showed the fallback half is already
+free: `resolveLocalFilePath` re-anchors everything after `/Documents/` verbatim, so existing rows
+keep `IMAGE/` and still resolve while new captures write `image/`. No migration, no read-both
+branch needed.
 **Still open:** the `https` / "invalid link" rule.
 
 ---

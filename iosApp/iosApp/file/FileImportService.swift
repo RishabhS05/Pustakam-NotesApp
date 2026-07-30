@@ -9,7 +9,8 @@
 
 // 🔧 18-Jul-2026: NEW FEATURE (file import) — iOS side of multi-file + link import.
 //   Mirrors Android fileimport/FileImportManager: files land in Documents/imported/<noteId>/,
-//   MediaContent is built by the SHARED FileImportHelper (single source of type resolution).
+// 🔧 30-Jul-2026 Phase 4 — planning (validate → name → dedupe → destination) and MediaContent
+//   construction now come from the SHARED ImportCoordinator. This file performs IO only.
 
 import Foundation
 import SwiftUI
@@ -30,23 +31,47 @@ enum FileImportService {
     }
 
     /// Copies picked files into app storage and returns one MediaContent per file.
+    // 🔧 30-Jul-2026 Phase 4 — destination, sanitising, duplicate resolution and type detection now
+    //   come from the SHARED ImportCoordinator, the same one Android uses. This function only does
+    //   the copying. `taken` carries the paths already used earlier in THIS batch, so two picked
+    //   files with the same name can no longer resolve to the same destination — nothing is on disk
+    //   yet at plan time, so only in-batch reservation catches that.
     static func importPicked(urls: [URL], noteId: String, startPosition: Double) -> [NoteContentModel.MediaContent] {
-        guard let folderURL = createFolder(named: destinationFolder(noteId: noteId)) else { return [] }
         var position = startPosition
+        var taken: [String] = []
+
         return urls.compactMap { url in
-            let name = uniqueFileName(url.lastPathComponent, inFolder: folderURL)
-            let dest = folderURL.appendingPathComponent(name)
+            let size = ((try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? Int64) ?? 0
+            let decision = ImportCoordinator.shared.planImportForPlatform(
+                noteId: noteId,
+                requestedName: url.lastPathComponent,
+                mime: nil,
+                // 0 means "unknown" to the picker, not "empty" — pass 1 so it is not rejected.
+                sizeBytes: size > 0 ? size : 1,
+                sourceUrl: "",
+                timestamp: DateTimeUtilsKt.getCurrentTimestamp(),
+                takenPaths: taken
+            )
+            guard let accepted = decision as? ImportDecisionAccepted else { return nil }
+            let plan = accepted.plan
+            taken.append(plan.relativePath)
+
+            guard let folderURL = createFolder(named: plan.destination.folder) else { return nil }
+            let dest = folderURL.appendingPathComponent(plan.destination.fileName)
             do {
                 try FileManager.default.copyItem(at: url, to: dest)
             } catch {
                 print("❌ import copy failed: \(error)")
                 return nil
             }
-            let size = (try? FileManager.default.attributesOfItem(atPath: dest.path)[.size] as? Int64) ?? 0
-            // 🔧 18-Jul-2026: SHARED factory — ext → mime → OTHER fallback, same as Android
-            let media = FileImportHelper.shared.createImportedMedia(
-                noteId: noteId, positionedAt: position, localPath: dest.path,
-                fileName: url.lastPathComponent, mime: nil, sizeBytes: size ?? 0, sourceUrl: ""
+            let written = ((try? FileManager.default.attributesOfItem(atPath: dest.path)[.size]) as? Int64) ?? 0
+            // SHARED factory — same construction path Android uses.
+            let media = ImportCoordinator.shared.mediaFromPlan(
+                plan: plan,
+                noteId: noteId,
+                positionedAt: position,
+                localPath: dest.path,
+                sizeBytes: written
             )
             position += 1.0
             return media
@@ -71,28 +96,44 @@ enum FileImportService {
             }
             let mime = http.mimeType
             let fileName = response?.suggestedFilename
-                ?? FileImportHelper.shared.fileNameFromUrl(url: urlText)
-            // 🔧 18-Jul-2026: html pages are NOT files → the requested "no file found" case
-            guard FileImportHelper.shared.isDownloadableFile(mime: mime, fileName: fileName) else {
+                ?? FileNameGenerator.shared.fromUrl(
+                    url: urlText, mime: mime, timestamp: DateTimeUtilsKt.getCurrentTimestamp())
+
+            // 🔧 30-Jul-2026 Phase 4 — validation, naming and destination now come from the SHARED
+            //   ImportCoordinator (same rules as Android). The DOWNLOAD ITSELF IS UNCHANGED.
+            //   A web page still lands on .noFileFound, exactly as before.
+            let decision = ImportCoordinator.shared.planImportForPlatform(
+                noteId: noteId,
+                requestedName: fileName,
+                mime: mime,
+                sizeBytes: 1,   // real size is read back after the move
+                sourceUrl: urlText,
+                timestamp: DateTimeUtilsKt.getCurrentTimestamp(),
+                takenPaths: []
+            )
+            guard let accepted = decision as? ImportDecisionAccepted else {
                 return finish(.noFileFound)
             }
-            guard let folderURL = createFolder(named: destinationFolder(noteId: noteId)) else {
+            let plan = accepted.plan
+
+            guard let folderURL = createFolder(named: plan.destination.folder) else {
                 return finish(.failed("Couldn't prepare storage for the download."))
             }
-            let dest = folderURL.appendingPathComponent(uniqueFileName(fileName, inFolder: folderURL))
+            let dest = folderURL.appendingPathComponent(
+                uniqueFileName(plan.destination.fileName, inFolder: folderURL))
             do {
                 try FileManager.default.moveItem(at: tempURL, to: dest)
             } catch {
                 return finish(.failed("Couldn't save the downloaded file."))
             }
-            let size = (try? FileManager.default.attributesOfItem(atPath: dest.path)[.size] as? Int64) ?? 0
-            guard (size ?? 0) > 0 else {
+            let size = ((try? FileManager.default.attributesOfItem(atPath: dest.path)[.size]) as? Int64) ?? 0
+            guard size > 0 else {
                 try? FileManager.default.removeItem(at: dest)
                 return finish(.noFileFound)
             }
-            let media = FileImportHelper.shared.createImportedMedia(
-                noteId: noteId, positionedAt: startPosition, localPath: dest.path,
-                fileName: fileName, mime: mime, sizeBytes: size ?? 0, sourceUrl: urlText
+            let media = ImportCoordinator.shared.mediaFromPlan(
+                plan: plan, noteId: noteId, positionedAt: startPosition,
+                localPath: dest.path, sizeBytes: size
             )
             finish(.success([media]))
         }
