@@ -3,6 +3,11 @@ package com.app.pustakam.android.screen.bookReader
 // 🔧 18-Jul-2026: NEW FEATURE (book reader) — opens a note as a REAL book: paper pages, spine,
 //   3D page-flip; renders text, images, PDFs (page-per-page), audio/video, docs, links, locations.
 import com.app.pustakam.android.theme.PaperColor
+// 🔧 30-Jul-2026 02:10 shared-player protocol: same ViewModel + events the editor drives
+import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
+import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.ui.PlayerView
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -58,13 +63,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
@@ -361,25 +362,46 @@ private fun renderPdfPage(path: String, index: Int): Bitmap? = try {
     }
 } catch (e: Exception) { e.printStackTrace(); null }
 
-// 🔧 18-Jul-2026: audio/video page — self-contained ExoPlayer, released when the page leaves
+// 🔧 18-Jul-2026: audio/video page.
+// 🔧 30-Jul-2026 02:10 — UI UNCHANGED (same title + full-bleed PlayerView with the native Media3
+//   controller). Only the PLUMBING moved onto the editor's model:
+//     • the player is the app's SINGLE ExoPlayer from PlayMediaViewModel.getExoPlayer(), not a new
+//       one per page — a second player fought the singleton for audio focus and was invisible to
+//       the media notification
+//     • the queue is whatever the editor already put in NoteContentRepository; the reader only
+//       consumes it, so exiting a note and opening another updates it automatically
+//     • media is selected BY ID (SelectedMediaChange -> getIndexOfMedia), never by list position,
+//       so opening A.mp3 can never start B.mp3
+//     • ONE ExoPlayer renders to ONE surface, so the surface is attached only while this media is
+//       the current selection and detached otherwise — without that, the last composed page steals
+//       it and every other page goes blank
+//   The player is a Koin singleton owned by the app graph: it must NEVER be released here.
 @Composable
 private fun MediaBookPage(media: NoteContentModel.MediaContent) {
-    val context = LocalContext.current
-    val source = media.localPath?.takeIf { it.isNotEmpty() } ?: media.url
-    val player = remember(media.id) {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(source))
-            prepare()
+    val viewModel: PlayMediaViewModel = viewModel()
+    val exoPlayer = remember { viewModel.getExoPlayer() }
+    val state = viewModel.state.collectAsStateWithLifecycle()
+    val isCurrentMedia = state.value.currentPlayingId == media.id
+
+    // 🔧 30-Jul-2026 02:10 opening this page selects THIS media in the shared queue, which is what
+    //   the old per-page setMediaItem()+prepare() used to do. Keyed on the id so paging between two
+    //   media pages re-selects correctly.
+    LaunchedEffect(media.id) {
+        if (state.value.currentPlayingId != media.id) {
+            viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id))
         }
     }
-    androidx.compose.runtime.DisposableEffect(media.id) { onDispose { player.release() } }
+
     Column(Modifier.fillMaxSize().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             media.title.ifBlank { media.type.name }, style = typography.titleSmall,
             color = PaperInk, maxLines = 1, modifier = Modifier.padding(bottom = 8.dp)
         )
         AndroidView(
-            factory = { PlayerView(it).apply { this.player = player; useController = true } },
+            factory = { PlayerView(it).apply { useController = true } },
+            // 🔧 30-Jul-2026 02:10 attach/detach in update{} — the surface follows the selection
+            //   instead of being owned by whichever page composed last.
+            update = { view -> view.player = if (isCurrentMedia) exoPlayer else null },
             modifier = Modifier.weight(1f).fillMaxWidth()
         )
     }

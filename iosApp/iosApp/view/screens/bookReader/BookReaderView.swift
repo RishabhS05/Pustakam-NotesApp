@@ -996,10 +996,21 @@ struct PdfSheetView: View {
     }
 }
 
-// 🔧 18-Jul-2026: audio/video page — self-contained AVPlayer; paused when the page disappears
+// 🔧 18-Jul-2026: audio/video page.
+// 🔧 30-Jul-2026 02:10 — UI UNCHANGED (same title, waveform badge for audio, same VideoPlayer frame
+//   and corner radius, same "Media not available" fallback). Only the PLUMBING moved onto the app's
+//   shared player, matching what AudioPlayingView/VideoCardView already do:
+//     • the player is MediaManager's single MediaControlledPlayer (an AVPlayer subclass), not a new
+//       AVPlayer per page — a second player fought the shared one for the audio session and was
+//       invisible to the now-playing info and remote transport controls
+//     • the queue is whatever the editor already put in selectedNoteMediaContent; the reader only
+//       consumes it, so exiting a note and opening another updates it automatically
+//     • prepareMedia(media:) selects BY the media object (id-keyed in playList), never by list
+//       position, so opening A.mp3 can never start B.mp3
+//   The player belongs to MediaManager and must NEVER be torn down here — only paused.
 struct MediaBookPageView: View {
     let media: NoteContentModel.MediaContent
-    @State private var player: AVPlayer? = nil
+    private let mediaManager = MediaManager.mediaManager
 
     private var sourceURL: URL? {
         if let local = LocalFilePathResolver_iosKt.resolveLocalFilePath(path: media.localPath) ?? media.localPath,
@@ -1017,16 +1028,26 @@ struct MediaBookPageView: View {
                 Image(systemName: "waveform.circle.fill")
                     .font(.system(size: 64)).foregroundColor(BookPalette.cover)
             }
-            if let player {
-                VideoPlayer(player: player)
+            // 🔧 30-Jul-2026 02:10 the source check still gates the fallback text, exactly as before;
+            //   only the player instance changed.
+            if sourceURL != nil {
+                VideoPlayer(player: mediaManager.getPlayer())
                     .frame(maxWidth: .infinity, maxHeight: media.type == ContentType.audio ? 80 : .infinity)
                     .cornerRadius(8)
             } else {
                 Text("Media not available").font(.caption).foregroundColor(BookPalette.ink.opacity(0.6))
             }
         }
-        .onAppear { if player == nil, let url = sourceURL { player = AVPlayer(url: url) } }
-        .onDisappear { player?.pause() }
+        // 🔧 30-Jul-2026 02:10 selects THIS media in the shared queue — the equivalent of the old
+        //   per-page AVPlayer(url:). Guarded so paging back to an already-playing item does not
+        //   restart it.
+        .onAppear {
+            if mediaManager.currentPlaying?.id != media.id {
+                mediaManager.prepareMedia(media: media)
+            }
+        }
+        // 🔧 30-Jul-2026 02:10 pause only — the player is shared and outlives this page.
+        .onDisappear { mediaManager.pause() }
     }
 }
 
