@@ -134,7 +134,7 @@ private fun CountBadge(icon: ImageVector, count: Int) {
         Icon(icon, contentDescription = null, tint = colorScheme.onSurfaceVariant, // 🎨 secondary on ivory
             modifier = Modifier.size(14.dp))
         Text(
-            if (count > 1000 ) "{$count/1000}k" else "$count",
+            if (count > 1000 ) "${count/1000}k" else "$count",
             style = MaterialTheme.typography.labelSmall.copy(color = colorScheme.onSurfaceVariant)
         )
     }
