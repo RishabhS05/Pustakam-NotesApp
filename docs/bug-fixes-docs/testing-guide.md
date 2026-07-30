@@ -1,6 +1,6 @@
 # Testing Guide — `:core:filesys`
 
-**Last updated:** 30-Jul-2026 (end of Phase 3)
+**Last updated:** 30-Jul-2026 (Phase 3 complete · Phase 4 Android)
 
 ---
 
@@ -303,6 +303,23 @@ bound but nothing resolves them yet, and iOS is untouched.
 
 Item 2 is the one that exercises the new batch-reservation logic. Item 13 catches a storage-root
 mistake in `AndroidFileSystem`.
+
+---
+
+## 5d. Regression check — deleted content must stay deleted
+
+The bug this fixes was invisible inside a session; it only appeared after a relaunch.
+
+1. Open a note with a **document** block (`.pdf`, `.txt`, `.md`, `.epub`)
+2. Delete the block → it disappears from the editor
+3. **Force-close the app, reopen, open the same note → the container must NOT be back**
+4. Repeat for an image, a video and an audio block
+5. Delete a block, then relaunch **without** saving the note → still gone
+6. Confirm the file is gone from disk too (re-import the same name → no `<ts>_` prefix appears,
+   proving nothing is squatting the old name)
+7. A block whose file was already missing (orphaned by the old bug) → deleting it now clears it
+
+Steps 3 and 7 are the pass/fail. Step 7 is how pre-existing orphaned containers get cleaned up.
 
 ---
 

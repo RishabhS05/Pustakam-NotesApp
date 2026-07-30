@@ -1,6 +1,7 @@
 package com.app.pustakam.koin
 
 import com.app.pustakam.core.database.di.databaseModule
+import com.app.pustakam.core.filesys.di.getFileSystemModule
 import com.app.pustakam.core.database.di.preferencesModule
 import com.app.pustakam.core.database.localdb.database.getDatabaseModule
 import com.app.pustakam.core.database.localdb.preferences.getDataSourceFromPlatForm
@@ -26,5 +27,8 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         networkModule(),
         databaseModule(),
         getDatabaseModule(),
+        // 🔧 30-Jul-2026 02:10 Phase 4 — platform filesys seams (FileReader/Writer/Deleter/...).
+        //   All `single`, all lazy — nothing is constructed until something injects it.
+        getFileSystemModule(),
     )
 }

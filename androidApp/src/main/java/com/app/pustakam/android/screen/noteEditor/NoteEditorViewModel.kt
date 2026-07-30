@@ -362,14 +362,31 @@ class NoteEditorViewModel : BaseViewModel() {
         dirtyContentIds.remove(value)   // 🔧 15-Jul-2026 Phase 0.4: deleted → nothing to save
         val find = _noteContentUiState.value.note?.contents?.find { value == it.id }
 
-        if (find?.isMediaFile() == true) {
-            find as NoteContentModel.MediaContent
-            find.localPath?.let { deleteFile(filePath = it) }
-            // 🔧 15-Jul-2026 (iOS-parity cleanup): the media's thumbnail file goes with it
-            find.thumbnailPath?.let { deleteFile(filePath = it) }
-        }
-        viewModelScope.launch {
-            deleteNoteContentUseCase.invoke(value)
+        // 🔧 30-Jul-2026 02:10 BUG FIX — deleting a content block never removed its DB row.
+        //   getBaseApiCall() returns a COLD Flow; this call site invoked the use case but never
+        //   collected it, so deleteNoteContentFromDb() was never reached. The block disappeared
+        //   from the in-memory list (the editor looked correct) while the row survived — so on the
+        //   next launch the container came back, pointing at a file that HAD been deleted.
+        //   Not routed through makeAWish(NOTES_CODES.DELETE): that maps to NoteStatus.exit and
+        //   would close the entire editor when a single block is removed.
+        viewModelScope.launch(Dispatchers.IO) {
+            var rowDeleted = false
+            deleteNoteContentUseCase.invoke(value).collect { result ->
+                when (result) {
+                    is Result.Success -> rowDeleted = true
+                    is Result.Error -> log_d("NoteEditor", "content delete failed: ${result.error}")
+                    else -> Unit
+                }
+            }
+            // 🔧 30-Jul-2026 02:10 files are removed only AFTER the row is gone, and off the main
+            //   thread. Previously this ran first and unconditionally, so a failed delete left a
+            //   surviving row pointing at a file that no longer existed.
+            if (rowDeleted && find?.isMediaFile() == true) {
+                find as NoteContentModel.MediaContent
+                find.localPath?.let { deleteFile(filePath = it) }
+                // 🔧 15-Jul-2026 (iOS-parity cleanup): the media's thumbnail file goes with it
+                find.thumbnailPath?.let { deleteFile(filePath = it) }
+            }
         }
         _noteContentUiState.update {
             val indexContent = it.contents.indexOf(find)

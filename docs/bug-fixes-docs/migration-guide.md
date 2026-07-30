@@ -1,6 +1,6 @@
 # Migration Guide — `:core:filesys`
 
-**Last updated:** 30-Jul-2026 · **Status: Phases 1–2 complete, Phases 3–5 pending**
+**Last updated:** 30-Jul-2026 · **Status: Phases 1–3 complete · Phase 4 in progress (Android done, iOS blocked) · Phase 5 pending**
 
 Companion documents: `dependency-graph.md`, `testing-guide.md`,
 `30jul2026-FIA-centralize-file-system-in-core-filesys.md` (the original audit).
@@ -350,22 +350,92 @@ the same name, and confirm both land intact.**
 
 ---
 
-## PHASE 4 — Replace duplicated Android + iOS logic ⏳
+## PHASE 4 — Replace duplicated Android + iOS logic 🟡 Android done, iOS blocked
 
-Swift call sites move onto the shared components, and the Phase 2 components that were built but not
-wired get connected on **both** platforms at once:
+### Done
 
-- `ImportCoordinator` → `FileImportManager` (Android) + `FileImportService` (iOS)
-- `BookPaginator` → iOS `BookReaderView.paginate` (Android already delegates)
-- `ExportLayoutBuilder` → both `NoteExporter`s, once `TextMeasurer` exists
-- Downloading → `:core:network`
+| Change | File | Why |
+|---|---|---|
+| Platform seams composed into the composition root | `shared/…/koin/Koin.kt` | `getFileSystemModule()` added to `initKoin()`. All `single`, all lazy — nothing is constructed until something injects it. |
+| Share intent off the deprecated delegate | `androidApp/…/export/ExportShare.kt` | `FileImportHelper.mimeFor` → `MimeCatalog.mimeFor` |
+| Save-to-device naming | `androidApp/…/fileUtils/FileOps.kt` + the two UI call sites | now `FileNameGenerator.suggestedFileNameFromMedia`, a thin wrapper over `suggestSaveName` — no duplicated rule |
 
-**Two decisions must be made before starting:**
+**Every Android call site of the deprecated helpers is now gone.** What remains is Swift only.
 
-1. **Folder casing.** iOS writes `IMAGE/<noteId>/`, Android writes `image/<noteId>/`. Needs a
-   one-time on-device migration or a read-both/write-lowercase policy.
-2. **The "invalid link" rule.** Reject only explicit non-https schemes, or anything not literally
-   starting with `https` (which would stop `example.com/x.pdf` from working)?
+> **Note on `suggestedFileNameFromMedia`:** it reads the clock internally
+> (`getCurrentTimestamp()`), unlike the rest of `FileNameGenerator`, which takes `timestamp` as a
+> parameter so every rule stays unit-testable. It is a convenience wrapper over the pure
+> `suggestSaveName`, so the *rule* is still testable — but prefer the pure form in new code, and do
+> not add clock reads to the other functions.
+
+### Blocked — needs a decision
+
+| Item | Blocker |
+|---|---|
+| iOS onto `ImportCoordinator` (`FileImportService.swift`, 5 call sites) | how far into Swift may be edited |
+| iOS onto `BookPaginator` (`BookReaderView.swift`) | the paginator is embedded in a SwiftUI view file |
+| iOS onto `CaptureDestination` (`NoteEditorViewModel.swift`) | Swift ViewModel |
+| Binding `ThumbnailGenerator` / `DocumentRenderer` / `TextMeasurer` on iOS | follows the Swift move |
+| Wiring `ExportLayoutBuilder` into both `NoteExporter`s | needs `TextMeasurer` bound on both |
+| Downloading → `:core:network` | should move with iOS, not on top of a verified Android fix |
+
+**Decided:** folder casing → **read both, write lowercase**. New captures go to `image/`; the
+resolver checks lowercase first, then falls back to the legacy uppercase folder. No migration step,
+no risk to existing media, self-heals over time.
+**Still open:** the `https` / "invalid link" rule.
+
+---
+
+### BUG FIX (shipped with this phase) — deleted content came back on relaunch
+
+**Symptom.** Deleting a content block removed it from the editor, but after closing and reopening
+the app the container was back — most visible on document files, which render a container even when
+their file is missing.
+
+**Root cause.** `NoteEditorViewModel.removeContent` did:
+
+```kotlin
+viewModelScope.launch { deleteNoteContentUseCase.invoke(value) }   // never collected
+```
+
+`BaseUseCase.getBaseApiCall()` returns a **cold** `Flow`. Invoking it only builds the flow;
+without a terminal operator `deleteNoteContentFromDb()` is never reached. So:
+
+- the in-memory list dropped the block → the editor looked correct
+- the DB row survived → the container returned on next launch
+- the file HAD been deleted (that call was synchronous) → the returning container pointed at nothing
+
+The DAO and the `.sq` `deleteNoteContentById` were correct all along.
+
+**Fix.** Collect the flow, and only delete the files once the row is actually gone:
+
+```kotlin
+viewModelScope.launch(Dispatchers.IO) {
+    var rowDeleted = false
+    deleteNoteContentUseCase.invoke(value).collect { result ->
+        when (result) {
+            is Result.Success -> rowDeleted = true
+            is Result.Error -> log_d("NoteEditor", "content delete failed: ${result.error}")
+            else -> Unit
+        }
+    }
+    if (rowDeleted && find?.isMediaFile() == true) { /* delete file + thumbnail */ }
+}
+```
+
+Deliberately **not** routed through `makeAWish(NOTES_CODES.DELETE)`: that code maps to
+`NoteStatus.exit`, which would close the whole editor when a single block is removed.
+
+Two secondary improvements fall out: file deletion now runs off the main thread, and a failed DB
+delete no longer leaves a surviving row pointing at a deleted file.
+
+**Existing data.** Rows orphaned by this bug before the fix are still in the database. Deleting
+those blocks again will now work correctly and clear them.
+
+**Risk:** low — one call site, no schema change, no path change.
+**Rollback:** revert the `removeContent` hunk.
+
+---
 
 ## PHASE 5 — Delete duplicates ⏳
 
