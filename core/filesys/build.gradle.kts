@@ -32,11 +32,15 @@ kotlin {
                 // 🔧 30-Jul-2026 02:10 — ExportBlock/FileImportHelper expose Note, NoteContentModel and ContentType
                 api(projects.core.common)
                 api(projects.core.model)
+                // 🔧 30-Jul-2026 02:10 Phase 3 — getFileSystemModule() returns a Koin Module, so Koin is in this module's public API
+                api(libs.koin)
             }
         }
 
         androidMain {
             dependencies {
+                // 🔧 30-Jul-2026 02:10 Phase 3 — the Android bindings resolve filesDir via androidContext()
+                implementation(libs.koin.android)
             }
         }
 

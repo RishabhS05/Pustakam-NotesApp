@@ -1,6 +1,6 @@
 # Testing Guide — `:core:filesys`
 
-**Last updated:** 30-Jul-2026 (end of Phase 2)
+**Last updated:** 30-Jul-2026 (end of Phase 3)
 
 ---
 
@@ -146,6 +146,30 @@ A failing test in `PathPolicyTest` means a shipped build would stop finding exis
 
 ---
 
+## 3c. Phase 3 — test inventory (28 tests)
+
+### `PlatformSeamsTest` — 28 tests, all driven through `FakeFileSystem`
+
+| Area | Cases |
+|---|---|
+| `FileReader` | missing file → null (never throws); `readText` truncates at the cap; cap larger than the file is ignored |
+| `FileWriter` / `DirectoryManager` | write creates file + registers folder; unknown folder lists empty; `sizeOf` absent → 0; **`list` returns direct children only** |
+| `FileCopier` | unknown handle fails cleanly; bytes land at the destination |
+| `FileDeleter` | **deleting something already gone still succeeds** (both platforms rely on this) |
+| `MetadataReader` | `describe` resolves name/extension/type/size; missing file and handle → null |
+| **Signature-collision guard** | one class implements all six file-IO seams — compiling the test *is* the assertion |
+| `ThumbnailPolicy` | 512 px / q70 / 1 s frame pinned; only IMAGE/GIF/VIDEO eligible; `requestFor` targets `thumbnails/`; ineligible → null |
+| `ThumbnailGenerator` | ineligible type reported as `NotSupported`, not a failure |
+| **Sample-size maths** | largest power of two covering the target; **degenerate bounds (0, negative, zero max) never divide by zero**; scale factor never upscales |
+| `DocumentRenderer` | unknown document → 0 pages |
+| `TextMeasurer` | style sizes pinned (44/30/24/28, TITLE bold); empty text and zero width → 0; height grows with length |
+
+**`FakeFileSystem`, `FakeThumbnailGenerator`, `FakeDocumentRenderer` and `FakeTextMeasurer` are the
+real deliverable here.** From Phase 4 on, any shared component that touches files can be tested with
+no platform, no disk and no Robolectric.
+
+---
+
 ## 4. Equivalence verification (how "no behaviour change" was proved)
 
 Gradle cannot run in the analysis sandbox (no Android SDK, JDK 11 only), so Phase 1 was verified by
@@ -172,6 +196,16 @@ equivalent diff for every future phase** — it is the cheapest defence availabl
 
 The pagination diff is the single most important verification in this migration. Re-run it any time
 `BookPaginator` is touched, before the change reaches a device.
+
+**Phase 3:**
+
+| Rule | Inputs covered | Result |
+|---|---|---|
+| Import destination + naming (old `FileImportManager` vs `ImportCoordinator`) | 9 scenarios: single, batch, duplicate names ×2 and ×3, on-disk collision, path separators, blank name, 400-char name | **0 mismatches** |
+
+Writing `FakeFileSystem` also caught a design defect before it compiled: `FileReader.read(String)`
+and `MetadataReader.read(String)` had identical signatures, so **no class could have implemented
+both**. `MetadataReader.read` was renamed to `describe`.
 
 ---
 
@@ -239,6 +273,39 @@ Item 3 is the pass/fail for this phase. If a position moved, revert before inves
 
 ---
 
+## 5c. Manual verification checklist — Phase 3
+
+Phase 3 changed one runtime path: **Android file import**. The platform interfaces are built and
+bound but nothing resolves them yet, and iOS is untouched.
+
+**Import — the pass/fail for this phase:**
+
+1. Multi-pick 5 files of mixed type → all 5 appear, correct icons, correct order
+2. **Multi-pick two files with the SAME name in one go** → both land, second is `<ts>_<name>`,
+   neither overwrites the other
+3. Import a file whose name already exists in the note → new one gets the timestamp prefix, the
+   existing file is untouched
+4. Import a file with `/` in its display name → lands with `_` instead
+5. Import from link: real PDF → appears · web page → **"No file found at this link."** · bad host →
+   the failure message
+6. **Link with no extension serving a known type** (e.g. `…/download?id=1` returning a PDF) → now
+   imports with `.pdf` where it previously said "No file found" *(intended delta #1)*
+7. Reopen the note after each import → files still resolve, thumbnails render
+
+**Unaffected, confirm no collateral damage:**
+
+8. Capture photo / video / audio → unchanged
+9. Book reader page counts and saved positions → unchanged from Phase 2
+10. Export → PDF, PNG, DOCX → unchanged
+11. Save to device → unchanged
+12. iOS: import, export, reader → all unchanged (no Swift touched)
+13. **Install over the previous build** → old imported files still resolve
+
+Item 2 is the one that exercises the new batch-reservation logic. Item 13 catches a storage-root
+mistake in `AndroidFileSystem`.
+
+---
+
 ## 6. Test requirements for future phases
 
 | Phase | Additional required tests |
@@ -246,9 +313,10 @@ Item 3 is the pass/fail for this phase. If a position moved, revert before inves
 | ~~2 — ImportCoordinator~~ | ✅ done — 17 tests |
 | ~~2 — ExportBuilder~~ | ✅ done — 18 tests (`ExportLayoutBuilderTest`) |
 | ~~2 — BookPaginator~~ | ✅ done — 19 tests + 415-document equivalence diff |
-| 3 — platform interfaces | fake implementations in `commonTest`; each interface exercised independently |
-| 3 — `TextMeasurer` | a fake measurer proving `ExportLayoutBuilder` paginates identically on both platforms |
-| 3 — `ThumbnailPolicy` | 512 px / q70 / 1 s frame pinned as constants |
+| ~~3 — platform interfaces~~ | ✅ done — 28 tests via `FakeFileSystem` |
+| ~~3 — `TextMeasurer`~~ | ✅ done — `FakeTextMeasurer` exists; wiring it to `ExportLayoutBuilder` is Phase 4 |
+| ~~3 — `ThumbnailPolicy`~~ | ✅ done — constants pinned |
+| 4 — iOS renderers | `ThumbnailGenerator`, `DocumentRenderer`, `TextMeasurer` bound on iOS |
 | 4 — FileDownloader (`:core:network`) | redirect chains, `Content-Disposition`, HTML rejection, 404, timeout, non-https rejection |
 | 4 — parity | same input → same output on Android and iOS, asserted on both targets |
 | 4 — folder casing | migration from `IMAGE/` to `image/` finds pre-existing iOS files |

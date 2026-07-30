@@ -79,9 +79,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.extension.startServiceWrapper
-import com.app.pustakam.android.fileUtils.mimeTypeFor
 import com.app.pustakam.android.fileUtils.saveMediaToGallery
-import com.app.pustakam.android.fileUtils.suggestedFileName
 import com.app.pustakam.android.fileUtils.writeMediaToUri
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.permission.AskPermissions
@@ -111,6 +109,8 @@ import com.app.pustakam.core.filesys.export.ExportFormat
 import com.app.pustakam.core.common.extensions.isNotnull
 import com.app.pustakam.core.common.extensions.toLocalFormat
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.filesys.mime.MimeCatalog
+import com.app.pustakam.core.filesys.naming.FileNameGenerator.suggestedFileNameFromMedia
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
@@ -579,7 +579,7 @@ fun RenderWidget(
             // 🔧 14-Jul-2026: PERF — coroutine scope so the file copy runs off the main thread.
             val scope = rememberCoroutineScope()
             val exportLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument(mimeTypeFor(contentAudio.type))
+                contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(contentAudio.type))
             ) { uri ->
                 if (uri != null) {
                     // 🔧 14-Jul-2026: PERF — copy bytes on IO, confirm on the main thread.
@@ -595,7 +595,7 @@ fun RenderWidget(
             }
             // Audio save lives inside the player card; onSave opens the SAF picker (default Downloads).
             AudioPlayerUIState(contentAudio, onDelete = onDelete, onSave = {
-                    exportLauncher.launch(suggestedFileName(contentAudio))
+                    exportLauncher.launch(suggestedFileNameFromMedia(contentAudio))
                 })
         }
 
@@ -691,7 +691,7 @@ fun BoxScope.MediaSaveOverlay(
     // extension; the returned Uri is the user-selected destination. (Audio is handled inside
     // the audio player card — see AudioPlayerUIState.)
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(mimeTypeFor(media.type))
+        contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(media.type))
     ) { uri ->
         if (uri != null) {
             // 🔧 14-Jul-2026: PERF — copy bytes on IO, confirm on the main thread.
@@ -741,7 +741,7 @@ fun BoxScope.MediaSaveOverlay(
                         showSaveSheet = true
                     } else {
                         // Opens the picker with the suggested file name; default folder = Downloads.
-                        exportLauncher.launch(suggestedFileName(media))
+                        exportLauncher.launch(suggestedFileNameFromMedia(media))
                     }
                 },
                 modifier = Modifier.padding(2.dp)
@@ -803,7 +803,7 @@ fun BoxScope.MediaSaveOverlay(
                 modifier = Modifier.clickable {
                     showSaveSheet = false
                     // Reuses the existing SAF export; mimeTypeFor already handles image/png & video/mp4.
-                    exportLauncher.launch(suggestedFileName(media))
+                    exportLauncher.launch(suggestedFileNameFromMedia(media))
                 }
             )
         }

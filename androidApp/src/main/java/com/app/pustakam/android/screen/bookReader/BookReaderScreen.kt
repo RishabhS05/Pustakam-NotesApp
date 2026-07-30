@@ -74,7 +74,7 @@ import com.app.pustakam.android.widgets.document.iconForContentType
 import com.app.pustakam.android.widgets.document.readableSize
 import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on pages
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
-import com.app.pustakam.core.filesys.fileimport.FileImportHelper
+import com.app.pustakam.core.filesys.mime.MimeCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -422,7 +422,7 @@ fun openWithSystemViewer(context: Context, media: NoteContentModel.MediaContent)
     try {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(path))
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, media.mimeType.ifBlank { FileImportHelper.mimeFor(media.type) })
+            setDataAndType(uri, media.mimeType.ifBlank { MimeCatalog.mimeFor(media.type) })
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(intent)

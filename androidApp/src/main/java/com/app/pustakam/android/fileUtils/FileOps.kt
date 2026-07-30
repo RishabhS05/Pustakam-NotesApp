@@ -13,6 +13,7 @@ import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.filesys.mime.MimeCatalog
 import com.app.pustakam.core.filesys.naming.FileNameGenerator
+import com.app.pustakam.core.filesys.naming.FileNameGenerator.suggestedFileNameFromMedia
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -130,32 +131,7 @@ fun saveBitmapToFile(bitmap: Bitmap,file: File): Boolean{
     }
 }
 
-// 🔧 14-Jul-2026: NEW FEATURE — "Save media to device".
-//   Images/Videos are written silently into the system Gallery (MediaStore);
-//   Audio/PDF/DOCX/GIF are exported through the Storage-Access-Framework picker
-//   (see MediaSaveOverlay in NotesEditorView.kt) into a user-chosen folder
-//   defaulting to Downloads. Everything below is additive — no existing API changed.
 
-// 🔧 14-Jul-2026: MIME type for a media block (used by MediaStore + the SAF picker).
-//   Usage: mimeTypeFor(media.type)  ->  "image/png", "video/mp4", "audio/mpeg", ...
-// 🔧 30-Jul-2026 02:10 Phase 1 — delegates to MimeCatalog. This local copy predated TXT/MD/EPUB and
-//   returned application/octet-stream for them, so saved .txt/.md/.epub files had no usable type
-//   in MediaStore or the SAF picker. Delegating is the fix — the only intentional behaviour delta
-//   in Phase 1. See 30jul2026-FIA doc §2.3a.
-fun mimeTypeFor(type: ContentType): String = MimeCatalog.mimeFor(type)
-
-// 🔧 14-Jul-2026: A human/file-system friendly name for the exported/saved file.
-//   Falls back to the source file name, then to a timestamped default.
-//   Usage: suggestedFileName(media)  ->  "Video-2.mp4"
-fun suggestedFileName(media: NoteContentModel.MediaContent): String {
-// 🔧 30-Jul-2026 02:10 Phase 1 — delegates to FileNameGenerator (same rule, now shared + unit-tested)
-    return FileNameGenerator.suggestSaveName(
-        title = media.title,
-        sourcePath = media.localPath,
-        type = media.type,
-        timestamp = getCurrentTimestamp(),
-    )
-}
 
 // 🔧 14-Jul-2026: Save an IMAGE or VIDEO straight into the device Gallery.
 //   Uses scoped-storage MediaStore on Android 10+ (no runtime permission needed);
@@ -169,8 +145,8 @@ fun saveMediaToGallery(context: Context, media: NoteContentModel.MediaContent): 
     if (!source.exists()) return false
 
     val resolver = context.contentResolver
-    val fileName = suggestedFileName(media)
-    val mime = mimeTypeFor(media.type)
+    val fileName = suggestedFileNameFromMedia(media)
+    val mime = MimeCatalog.mimeFor(media.type)
     val isVideo = media.type == ContentType.VIDEO
 
     // Collection + relative sub-folder differ for images vs videos.

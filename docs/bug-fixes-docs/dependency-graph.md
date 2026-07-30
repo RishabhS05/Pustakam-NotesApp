@@ -1,6 +1,6 @@
 # Dependency Graph — `:core:filesys` Migration
 
-**Last updated:** 30-Jul-2026 (end of Phase 2)
+**Last updated:** 30-Jul-2026 (end of Phase 3)
 
 ---
 
@@ -50,7 +50,7 @@ lives in `:core:network` (see §5).
 
 ---
 
-## 3. Internal graph of `:core:filesys` after Phase 2
+## 3. Internal graph of `:core:filesys` after Phase 3
 
 ```
   ┌────────────────────────────────────────────────────────────────────┐
@@ -75,9 +75,22 @@ lives in `:core:network` (see §5).
   │   pagination/TextPageChunk   export/ExportBlock · ExportFormat     │
   └────────────────────────────────────────────────────────────────────┘
 
-  legacy shim (retired in Phase 5):
+  ┌────────────────────────────────────────────────────────────────────┐
+  │ PLATFORM SEAM (Phase 3) — interfaces in commonMain, bodies native   │
+  │   platform/  FileReader · FileWriter · DirectoryManager             │
+  │              FileCopier · FileDeleter · MetadataReader              │
+  │              ThumbnailGenerator · DocumentRenderer · TextMeasurer   │
+  │   di/        getFileSystemModule()   expect/actual Koin bindings    │
+  └────────────────────────────────────────────────────────────────────┘
+     androidMain → java.io · BitmapFactory · PdfRenderer · StaticLayout
+     iosMain     → NSFileManager  (the three renderers land in Phase 4)
+
+  legacy shim (retired in Phase 5, now @Deprecated):
     fileimport/FileImportHelper → thin delegate over mime/ + naming/ + validation/
 ```
+
+**The seam points DOWN, never up.** `platform/` depends only on `model/` and `mime/`; no shared
+policy object depends on `platform/` yet — Phase 4 orchestrators will be the first consumers.
 
 **Internal edges, all one-directional:**
 
@@ -90,6 +103,8 @@ lives in `:core:network` (see §5).
 | **`pagination/`** | — | **leaf** — depends on nothing at all |
 | **`export/ExportLayoutBuilder`** | `export/ExportBlock` only | consumes measured heights |
 | `fileimport/` | `mime/`, `naming/`, `validation/` | delegation only |
+| **`platform/`** | `model/`, `mime/` | interface signatures reference `FileMetadata` / `ThumbnailRequest` |
+| **`di/`** | `platform/` | binds the implementations |
 | `model/` | — | leaf (only `ContentType` from `:core:common`) |
 
 `BookPaginator` deliberately depends on **nothing** — it is a pure string algorithm, which is why
@@ -110,8 +125,12 @@ path         -> naming, mime, model, export
 imports      -> path, naming, mime, validation, model
 fileimport   -> mime, naming, validation
 
+platform     -> model, mime
+di           -> platform
+
 Topological order:
-  mime, model, pagination, export, naming, validation, path, imports, fileimport   ✅ acyclic
+  mime, model, pagination, export, naming, validation, path, imports, fileimport,
+  platform, di                                                              ✅ acyclic
 ```
 
 ---
@@ -142,13 +161,13 @@ and avoids re-plumbing 30+ files.
 
 Per spec, downloading is **not** in `:core:filesys`. It belongs in `:core:network`, which already
 ships Ktor with an OkHttp engine on Android and a Darwin engine on iOS. `:core:filesys` will receive
-only bytes. Scheduled for Phase 2.
+only bytes. Deferred to Phase 4 — see migration-guide §Phase 2 ¶7 for why.
 
 ### 5.3 Models — created as their consumer arrives
 
 Phase 1: `CaptureDestination`, `FileMetadata`.
 Phase 2: `ImportPlan`, `ImportDecision`, `TextPageChunk`, `MeasuredBlock`, `PlacedBlock`, `ExportLayout`.
-Phase 3 will add `ThumbnailRequest` / `ThumbnailResult` with `ThumbnailGenerator`.
+Phase 3: `ThumbnailRequest`, `ThumbnailResult`, `ThumbnailPolicy`, `TextStyle`.
 Types are created with their consumer so nothing is unused or untested.
 
 `ExportResult` was **not** created: `NoteExporter` on both platforms already returns a file handle
@@ -178,22 +197,42 @@ layout half is `ExportLayoutBuilder`. Together they are the spec's `ExportBuilde
 
 ---
 
-## 6. Platform-abstraction interfaces (Phase 3 — not yet created)
+## 6. Platform-abstraction interfaces (Phase 3 — DONE)
 
-Per spec: small and single-responsibility, **no** god-object `FileStore`.
+Small and single-responsibility, **no** god-object `FileStore`. All paths are RELATIVE to the app's
+private storage root; the implementation resolves it, so no caller ever sees a `Context` or an
+absolute path.
 
 ```
 :core:filesys/platform/
-    FileReader          read(relativePath): ByteArray?
-    FileWriter          write(relativePath, bytes): Boolean
-    DirectoryManager    ensure(folder), list(folder), exists(relativePath)
-    FileCopier          copy(fromHandle, toRelativePath)
-    FileDeleter         delete(relativePath)
-    MetadataReader      read(relativePath): FileMetadata
+    FileReader          read(rel): ByteArray? · readText(rel, maxBytes): String?
+    FileWriter          write(rel, bytes): Boolean
+    DirectoryManager    ensure(folder) · exists(rel) · list(folder) · sizeOf(rel)
+    FileCopier          copyIn(sourceHandle, destRel): Boolean
+    FileDeleter         delete(rel): Boolean
+    MetadataReader      describe(rel) · describeHandle(sourceHandle): FileMetadata?
     ThumbnailGenerator  generate(ThumbnailRequest): ThumbnailResult
-    DocumentRenderer    pageCount(relativePath), renderPage(...)
+    DocumentRenderer    pageCount(rel): Int
+    TextMeasurer        measureHeight(text, TextStyle, width): Float
 ```
 
-Bound per platform via Koin, following the existing `getAndroidSpecifics()` pattern.
-`MediaSaver` / `FileSharer` stay interfaces implemented in `androidApp` / `iosApp` because they need
-`Activity` / top `UIViewController` and present pickers.
+| Binding | Android | iOS |
+|---|---|---|
+| The six file-IO seams | ✅ `java.io` over `filesDir` | ✅ `NSFileManager` over Documents |
+| `ThumbnailGenerator` | ✅ `BitmapFactory` / `MediaMetadataRetriever` | ⏳ Phase 4 |
+| `DocumentRenderer` | ✅ `PdfRenderer` | ⏳ Phase 4 |
+| `TextMeasurer` | ✅ `StaticLayout` | ⏳ Phase 4 |
+
+The three iOS renderers are deferred on purpose: Swift already implements all three, and writing
+speculative Kotlin/Native UIKit + PDFKit interop that nothing calls yet could not be exercised.
+They are bound when the Swift call sites move across in Phase 4.
+
+> **`MetadataReader.describe`, not `read`.** `read(String)` would collide with
+> `FileReader.read(String)` and make it impossible for one class to implement both interfaces.
+> Writing `FakeFileSystem` is what surfaced this.
+
+Bound via `getFileSystemModule()` (expect/actual), following the existing `getDatabaseModule()`
+pattern. **Not yet composed into `initKoin()`** — nothing resolves these until Phase 4.
+
+`MediaSaver` / `FileSharer` remain interfaces to be implemented in `androidApp` / `iosApp` because
+they need an `Activity` / top `UIViewController` and present pickers.

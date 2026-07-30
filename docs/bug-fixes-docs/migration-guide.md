@@ -237,12 +237,118 @@ confirm it reopens on the same page.**
 
 ---
 
-## PHASE 3 — Platform interfaces ⏳
+## PHASE 3 — Platform interfaces ✅
 
-`FileReader`, `FileWriter`, `DirectoryManager`, `FileCopier`, `FileDeleter`, `MetadataReader`,
-`ThumbnailGenerator`, `DocumentRenderer`, plus `TextMeasurer` (needed before `ExportLayoutBuilder`
-can be wired). One responsibility each; bound via Koin. `ThumbnailPolicy` (512 px, JPEG q70, 1 s
-video frame) lands here as pure constants alongside `ThumbnailGenerator`.
+### 1. Architecture
+
+```
+        shared policy (Phases 1–2)          ImportCoordinator · BookPaginator
+                    │                       PathPolicy · MimeCatalog · …
+                    │ depends on
+                    ▼
+        platform/  ── 9 small interfaces ──►  androidMain: java.io, BitmapFactory,
+        (commonMain, no platform types)       PdfRenderer, StaticLayout
+                    │                         iosMain: NSFileManager
+                    │ bound by
+                    ▼
+        di/getFileSystemModule()   expect/actual, Koin
+```
+
+Every path crossing the seam is **relative** to the app's private storage root. The implementation
+resolves the root, so no shared code ever sees a `Context`, an `NSURL`, or an absolute path.
+
+### 2. Dependency graph
+
+See `dependency-graph.md` §3 and §6. `platform/` depends only on `model/` and `mime/`; nothing in
+the shared policy layers depends on `platform/` yet — Phase 4 orchestrators are its first consumers.
+Still acyclic.
+
+### 3. Files created (8)
+
+| File | Purpose |
+|---|---|
+| `…/platform/FileSystem.kt` | `FileReader`, `FileWriter`, `DirectoryManager`, `FileCopier`, `FileDeleter`, `MetadataReader` |
+| `…/platform/Rendering.kt` | `ThumbnailGenerator`, `DocumentRenderer`, `TextMeasurer`, `TextStyle` |
+| `…/model/Thumbnail.kt` | `ThumbnailRequest`, `ThumbnailResult`, `ThumbnailPolicy` (512 px / q70 / 1 s + sample-size maths) |
+| `…/di/FileSystemModule.kt` | `expect fun getFileSystemModule(): Module` |
+| `androidMain/…/platform/AndroidFileSystem.kt` | six `java.io` bindings over `filesDir` |
+| `androidMain/…/platform/AndroidRendering.kt` | `BitmapFactory` / `MediaMetadataRetriever` / `PdfRenderer` / `StaticLayout` |
+| `androidMain/…/di/FileSystemModule.android.kt` | all nine bound |
+| `iosMain/…/platform/IosFileSystem.kt` + `di/FileSystemModule.ios.kt` | six `NSFileManager` bindings |
+| `commonTest/…/platform/FakeFileSystem.kt` | in-memory fakes for every seam |
+| `commonTest/…/platform/PlatformSeamsTest.kt` | 28 tests |
+
+### 4. Files modified (5) — **no UI files**
+
+| File | Change |
+|---|---|
+| `androidApp/…/fileimport/FileImportManager.kt` | **`ImportCoordinator` wired in.** Planning (validate → name → resolve duplicate → destination) moved out; this object now performs IO only. Download mechanics untouched. |
+| `core/filesys/build.gradle.kts` | `api(libs.koin)`, androidMain `implementation(libs.koin.android)` |
+| `core/filesys/…/fileimport/FileImportHelper.kt` | `@Deprecated` |
+| `androidApp/…/fileUtils/FileOps.kt` | `mimeTypeFor`, `suggestedFileName` `@Deprecated` |
+| `androidApp/…/bookReader/BookPageFactory.kt` | both constant aliases `@Deprecated` |
+
+### 5. Files removed
+
+**None.** Nothing is deleted before Phase 5.
+
+### 6. Deprecations added
+
+| Symbol | Replacement | Still called by |
+|---|---|---|
+| `FileImportHelper` (whole object) | `MimeCatalog` / `FileNameGenerator` / `ImportValidator` | 5 Swift call sites, `BookReaderScreen.kt`, `ExportShare.kt` |
+| `FileOps.mimeTypeFor` | `MimeCatalog.mimeFor` | `BoxScope+ext.kt`, `NotesEditorView.kt` |
+| `FileOps.suggestedFileName` | `FileNameGenerator.suggestSaveName` | `BoxScope+ext.kt`, `NotesEditorView.kt` |
+| `CHARS_PER_BOOK_PAGE` | `BookPaginator.CHARS_PER_PAGE` | — |
+| `MAX_TEXT_FILE_BYTES` | `BookPaginator.MAX_TEXT_FILE_BYTES` | `BookPageFactory.kt` itself |
+
+All remaining callers are UI or Swift, i.e. exactly the Phase 4 work list. The project has no
+`allWarningsAsErrors`, so these stay warnings and cannot break the build.
+
+### 7. Why each change was made
+
+- **Nine small interfaces, not one `FileStore`.** Each has one reason to change; a consumer that
+  only reads bytes depends on `FileReader` alone, not on delete or thumbnailing.
+- **Relative paths only.** The single most valuable property of the seam: shared code cannot
+  accidentally build a platform path, and the root policy stays in one place per platform.
+- **`ImportCoordinator` wired now** (you asked): the Android import path no longer contains any
+  naming, validation or duplicate-resolution logic — only IO.
+- **Fakes are a deliverable, not scaffolding.** From Phase 4 on, shared components that touch files
+  are testable with no platform, no disk and no Robolectric.
+
+### 8. Behaviour deltas
+
+| # | Delta | Old | New | Rationale |
+|---|---|---|---|---|
+| 1 | Link import of an extensionless URL serving a known type | `NoFileFound` | downloads with the mime's extension | `FileNameGenerator.fromUrl` is now mime-aware (FIA doc §3.3). Only turns a failure into a success. |
+
+Import destinations and naming were proven unchanged across 9 scenarios (single, batch, duplicate
+names ×2 and ×3, on-disk collision, path separators, blank name, 400-char name) — **0 mismatches**.
+
+### 9. Risks
+
+| Risk | Severity | Mitigation |
+|---|---|---|
+| Rewired import path breaks device picks | Medium | Equivalence diff on destinations; download mechanics untouched; manual multi-pick is checklist item 3 |
+| `AndroidFileSystem` resolves a different root than the inline code | **High** | Both use `context.filesDir`; `PathPolicy` roots unchanged; upgrade-in-place is the check |
+| iOS root mismatch (Documents vs elsewhere) | Medium | `IosFileSystem` uses `NSSearchPathForDirectoriesInDomains(NSDocumentDirectory…)`, exactly what `FileOps.swift getDocumentsDirectory()` uses — **but nothing calls it until Phase 4**, so it cannot regress iOS now |
+| Kotlin/Native interop in `IosFileSystem` is unverified | Medium | Not registered for anything that runs; first exercised in Phase 4 with a device build |
+
+### 10. Rollback
+
+```bash
+git revert <phase-3-sha>
+```
+
+Self-contained, no data migration. To keep the seam but restore the old import path, revert only
+`FileImportManager.kt` — the previous version is in the Phase 3 diff.
+
+### 11. Verification checklist
+
+See `testing-guide.md` §Phase 3. The one that matters: **multi-pick several files including two with
+the same name, and confirm both land intact.**
+
+---
 
 ## PHASE 4 — Replace duplicated Android + iOS logic ⏳
 

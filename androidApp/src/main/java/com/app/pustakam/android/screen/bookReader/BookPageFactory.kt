@@ -8,14 +8,8 @@ import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.filesys.pagination.BookPaginator
+import com.app.pustakam.core.filesys.pagination.BookPaginator.MAX_TEXT_FILE_BYTES
 import java.io.File
-
-// 🔧 30-Jul-2026 02:10 Phase 2 — both constants now come from the shared BookPaginator.
-//   Kept as top-level vals with the SAME names so no call site changes.
-// 🔧 19-Jul-2026: a book page holds fewer chars than an editor block — feels like a real page
-const val CHARS_PER_BOOK_PAGE = BookPaginator.CHARS_PER_PAGE
-// 🔧 19-Jul-2026: text files above this are truncated for pagination (protects memory)
-const val MAX_TEXT_FILE_BYTES = BookPaginator.MAX_TEXT_FILE_BYTES
 
 object BookPageFactory {
 

@@ -1,8 +1,10 @@
 package com.app.pustakam.core.filesys.naming
 
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.filesys.export.ExportFormat
 import com.app.pustakam.core.filesys.mime.MimeCatalog
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 // 🔧 30-Jul-2026 02:10 Phase 1 — every filename the app invents, decided in ONE place.
 //   Pure: takes the clock as a parameter, never reads it, so every rule below is unit-testable.
@@ -78,6 +80,16 @@ object FileNameGenerator {
         return sanitize(if (ext.isNotEmpty()) "$base$ext" else base)
     }
 
+    fun suggestedFileNameFromMedia(media: NoteContentModel.MediaContent): String {
+// 🔧 30-Jul-2026 02:10 Phase 1 — delegates to FileNameGenerator (same rule, now shared + unit-tested)
+        return FileNameGenerator.suggestSaveName(
+            title = media.title,
+            sourcePath = media.localPath,
+            type = media.type,
+            timestamp = getCurrentTimestamp(),
+        )
+    }
+
     /** Thumbnail name: "<sourceBase>_thumb.jpg" — matches both platforms. */
     fun thumbnailName(sourceFileName: String): String =
         sanitize("${sourceFileName.substringAfterLast('/').substringBeforeLast('.')}_thumb.jpg")
@@ -95,4 +107,7 @@ object FileNameGenerator {
         val ext = MimeCatalog.contentTypeForMime(mime)?.let { MimeCatalog.extensionFor(it) }.orEmpty()
         return "download-$timestamp$ext"
     }
+
+
+
 }

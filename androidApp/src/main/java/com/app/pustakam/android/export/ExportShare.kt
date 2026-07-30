@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.filesys.export.ExportFormat
-import com.app.pustakam.core.filesys.fileimport.FileImportHelper
+import com.app.pustakam.core.filesys.mime.MimeCatalog
 import java.io.File
 
 fun shareExportedFile(context: Context, file: File, format: ExportFormat) {
@@ -39,7 +39,7 @@ fun shareMediaFile(context: Context, media: NoteContentModel.MediaContent) {
     try {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = media.mimeType.ifBlank { FileImportHelper.mimeFor(media.type) }
+            type = media.mimeType.ifBlank { MimeCatalog.mimeFor(media.type) }
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }

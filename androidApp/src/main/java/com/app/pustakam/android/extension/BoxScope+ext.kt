@@ -29,12 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.app.pustakam.android.fileUtils.mimeTypeFor
 import com.app.pustakam.android.fileUtils.saveMediaToGallery
-import com.app.pustakam.android.fileUtils.suggestedFileName
 import com.app.pustakam.android.fileUtils.writeMediaToUri
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.filesys.mime.MimeCatalog
+import com.app.pustakam.core.filesys.naming.FileNameGenerator.suggestedFileNameFromMedia
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,7 +65,7 @@ fun BoxScope.MediaSaveOverlay(
     // extension; the returned Uri is the user-selected destination. (Audio is handled inside
     // the audio player card — see AudioPlayerUIState.)
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(mimeTypeFor(media.type))
+        contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(media.type))
     ) { uri ->
         if (uri != null) {
             // 🔧 14-Jul-2026: PERF — copy bytes on IO, confirm on the main thread.
@@ -105,7 +105,7 @@ fun BoxScope.MediaSaveOverlay(
                     showSaveSheet = true
                 } else {
                     // Opens the picker with the suggested file name; default folder = Downloads.
-                    exportLauncher.launch(suggestedFileName(media))
+                    exportLauncher.launch(suggestedFileNameFromMedia(media))
                 }
             },
             modifier = Modifier.padding(12.dp)
@@ -156,7 +156,7 @@ fun BoxScope.MediaSaveOverlay(
                 modifier = Modifier.clickable {
                     showSaveSheet = false
                     // Reuses the existing SAF export; mimeTypeFor already handles image/png & video/mp4.
-                    exportLauncher.launch(suggestedFileName(media))
+                    exportLauncher.launch(suggestedFileNameFromMedia(media))
                 }
             )
         }
