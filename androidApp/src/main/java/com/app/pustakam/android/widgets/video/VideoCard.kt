@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
@@ -105,11 +106,13 @@ fun VideoCard(
     val scope = rememberCoroutineScope()
     // 🔧 14-Jul-2026: pending auto-hide; cancelled and restarted on every long-press
     val hideJob = remember { mutableStateOf<Job?>(null) }
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 460.dp)
+
     Box(modifier = modifier) {
         Card(
-            modifier = Modifier
-                .requiredWidth(200.dp)
-                .requiredHeight(300.dp)
+            modifier = Modifier.fillMaxWidth(.7f)
+                .requiredHeight(cardHeight)
                 .padding(8.dp)
                 .combinedClickable(
                     onClick = { onClick() },
