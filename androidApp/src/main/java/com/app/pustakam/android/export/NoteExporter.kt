@@ -21,6 +21,8 @@ import com.app.pustakam.core.filesys.export.ExportBlock
 import com.app.pustakam.core.filesys.export.ExportBlockKind
 import com.app.pustakam.core.filesys.export.ExportFormat
 import com.app.pustakam.core.filesys.export.NoteExportBuilder
+import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.filesys.path.PathPolicy
 import java.io.File
 import java.io.FileOutputStream
 
@@ -47,9 +49,11 @@ object NoteExporter {
     // 🔧 20-Jul-2026: PUBLIC entry — returns the written file (in filesDir/exports), or null
     fun export(context: Context, note: Note, format: ExportFormat): File? {
         val blocks = NoteExportBuilder.build(note)
-        val dir = File(context.filesDir, "exports").apply { mkdirs() }
-        val safeTitle = (note.title?.takeIf { it.isNotBlank() } ?: "note").replace(Regex("[^A-Za-z0-9-_]"), "_")
-        val file = File(dir, "$safeTitle-${System.currentTimeMillis()}${format.ext}")
+// 🔧 30-Jul-2026 02:10 Phase 1 — folder + name policy moved to PathPolicy.exportPath.
+        //   Same rule as before: "exports/<safeTitle>-<timestamp><ext>".
+        val destination = PathPolicy.exportPath(note.title, format, getCurrentTimestamp())
+        val dir = File(context.filesDir, destination.folder).apply { mkdirs() }
+        val file = File(dir, destination.fileName)
         return try {
             when (format) {
                 ExportFormat.PDF -> exportPdf(blocks, file)

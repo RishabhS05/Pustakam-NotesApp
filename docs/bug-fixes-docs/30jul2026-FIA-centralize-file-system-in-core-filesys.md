@@ -9,18 +9,28 @@
 
 ## 0. Summary
 
-There are **two parallel file subsystems** — one in `androidApp`, one in `iosApp` — implementing the same
-seven responsibilities. Only ~4 of those responsibilities are shared today (`:core:filesys`), and the
-duplication has **already drifted into a live bug** (§2.3).
+There are **two parallel file subsystems** — one in `androidApp`, one in `iosApp` — implementing the
+same **12 responsibilities** across **28 files**. Only 4 of those responsibilities are shared today
+(`:core:filesys`), and the duplication has **already drifted into four live bugs** (§2.3).
 
 | | Android | iOS | Shared today |
 |---|---:|---:|---:|
-| File-logic lines | 582 | 551 | 469 |
+| Files touching the filesystem | 17 | 11 | 4 |
+| Est. shareable logic (lines) | ~900 | ~850 | 469 |
 
-Separately, **link-download is broken on Android** and the cause is not in the shared code — it is
-four defects in `FileImportManager.importFromUrl`, listed with fixes in §3.
+Every content type the app handles is covered below: **image, GIF, video, audio, PDF, DOCX, TXT, MD,
+EPUB, plus TEXT/LINK/LOCATION blocks and the OTHER fallback** — across **create, capture, import,
+download, read, paginate, thumbnail, export, save-out, share and delete**.
+
+Separately, **link-download is broken on Android** — four defects in
+`FileImportManager.importFromUrl` (§3).
 
 This document is analysis + plan only. **No code was changed.**
+
+> **Revision note:** the first pass of this doc covered only the four obvious file modules
+> (`FileOps`, `NoteExporter`, `FileImportManager`, `ExportShare` and their Swift twins). A full sweep
+> for filesystem access found **20 more call sites** — capture, audio recording, book-reader document
+> reading, and image decoding. §1 and §2 below are the complete set.
 
 ---
 
@@ -37,39 +47,71 @@ This document is analysis + plan only. **No code was changed.**
 | `export/NoteExportBuilder.kt` | 97 | `Note` → ordered `List<ExportBlock>`; `ExportFormat` |
 | `fileimport/FileImportHelper.kt` | 94 | ext/mime → `ContentType`, URL filename, `MediaContent` factory |
 
-**Android — `androidApp` (582 lines, should mostly move)**
+**Android — `androidApp` (17 files touch the filesystem)**
 
-| File | Lines | Contents |
+| File | Lines | File responsibilities |
 |---|---:|---|
 | `fileUtils/FileOps.kt` | 228 | `createFileWithFolders`, `deleteFile`, `generateThumbnail`, `decodeDownsampled`, `scaleDown`, `saveBitmapToFile` ×2, `mimeTypeFor`, `suggestedFileName`, `saveMediaToGallery`, `writeMediaToUri` |
 | `export/NoteExporter.kt` | 172 | `export`, `exportDocx`, `buildItems`, `textItem`, `exportPdf`, `exportImage`, `drawItem`, `decodeScaled` |
 | `fileimport/FileImportManager.kt` | 131 | `ImportResult`, `destinationDir`, `destinationFile`, `importUris`, `importFromUrl`, `dispositionFileName` |
 | `export/ExportShare.kt` | 51 | `shareExportedFile`, `shareMediaFile` (FileProvider + `ACTION_SEND`) |
+| **`noteContentProvider/NoteContentProvider.kt`** | 47 | **capture destination policy** — folder `<type>/<noteId>`, name `<timestamp><ext>`, for all 10 media types |
+| **`screen/bookReader/BookPageFactory.kt`** | 109 | **reads PDF (page count), TXT/MD (bytes, capped)**, `paginate()` word-boundary rule |
+| **`screen/bookReader/BookReaderScreen.kt`** | 435 | `PdfRenderer` page→bitmap rendering |
+| **`hardware/audio/recorder/AudioRecorder.kt`** | 52 | writes AUDIO via `MediaRecorder` → `FileOutputStream(outputFile).fd` |
+| **`hardware/audio/recorder/AudioViewModel.kt`** | 98 | recording-file lifecycle |
+| **`hardware/camera/CameraInAction.kt`** | 82 | writes VIDEO + photo capture to a provided `File` |
+| **`hardware/camera/ImageDataViewModel.kt`** | 187 | `saveImage`, `saveRecordedVideo`, `clearRecording`, `clearPaths` |
+| **`screen/noteEditor/NoteEditorViewModel.kt`** | 538 | deletes files on block removal, drives thumbnails + import |
+| **`screen/noteEditor/NotesEditorView.kt`** | 856 | SAF launcher, save-to-device overlay |
+| **`widgets/fabWidget/OverLayEditorButtons.kt`** | 175 | triggers file creation per content type |
+| **`extension/String+ext.kt`** | 25 | `toBitmap()` — **third** copy of `inSampleSize` downsampling |
+| `screen/bookReader/…`, `widgets/document/…` | — | existence checks / `getMediaUrl()` fallbacks (UI) |
 
-**iOS — `iosApp` (551 lines, should mostly move)**
+**iOS — `iosApp` (11 files touch the filesystem)**
 
-| File | Lines | Contents |
+| File | Lines | File responsibilities |
 |---|---:|---|
 | `file/FileOps.swift` | 235 | `createFilepath`, `createFolder`, `getDocumentsDirectory`, `getATempFilePath`, `saveData`, `moveData`, `saveImageFile`, `saveVideoFile`, `deleteFile`, `saveMediaToDevice`, `presentSaveOptions`, `saveMediaToGallery`, `copyFile`, `generateThumbnail` |
 | `export/NoteExporter.swift` | 180 | `export`, `exportDocx`, `buildItems`, `textItem`, `exportPdf`, `exportImage`, `draw`, `loadImage`, `share` |
 | `file/FileImportService.swift` | 136 | `LinkImportResult`, `destinationFolder`, `uniqueFileName`, `importPicked`, `importFromLink`, `MultiFilePicker` |
 | `hardware/stroage/StroagePermission.swift` | 60 | `presentDocumentExporter`, `topMostViewController` |
+| **`view/screens/notes/noteEditor/NoteEditorViewModel.swift`** | 373 | **capture destination policy** — `saveImageFile` / `copyFile` into `<type>/<noteId>/<timestamp><ext>` |
+| **`hardware/microPhone/AudioRecoderHandler.swift`** | 84 | records AUDIO to `temporaryDirectory/audio.m4a` |
+| **`view/screens/bookReader/BookReaderView.swift`** | 1039 | `PDFDocument` reads, page rendering, text pages |
+| **`media/MediaManager.swift`** | 261 | existence checks before playback |
+| **`view/widgets/imageview/ImagePreviewView.swift`** | 34 | `UIImage(contentsOfFile:)` |
+| **`view/screens/notes/noteList/NoteBookView.swift`** | 144 | `UIImage(contentsOfFile:)` |
+| **`view/screens/notes/noteEditor/NoteEditorView.swift`** | 377 | existence checks |
+
+`LocalFilePathResolver` (`expect`/`actual`, currently in `:core:common`) is already shared and should
+move to `:core:filesys` in Phase 3 — it is file-path logic, not general utility.
+
+**Not present anywhere: upload.** No multipart/upload path exists on either platform. Media stays
+local and `getMediaUrl()` falls back to a remote `url` that nothing ever populates. Flagged as a gap,
+out of scope for this refactor.
 
 ---
 
 ## PART B — DUPLICATION MAP
 
-### 2.1 The seven responsibilities
+### 2.1 The twelve responsibilities
 
-| # | Responsibility | Android | iOS | Verdict |
-|---|---|---|---|---|
-| 1 | Path/folder policy (`imported/<noteId>/`, `exports/`, `thumbnails/`) | `FileOps.createFileWithFolders`, `FileImportManager.destinationDir` | `FileOps.createFolder`, `FileImportService.destinationFolder` | **Policy shared, IO platform** |
-| 2 | Unique/safe filename | `destinationFile` | `uniqueFileName` | **Pure logic → share** |
-| 3 | ext/mime → `ContentType` | *(uses shared)* + **duplicate `mimeTypeFor`** | *(uses shared)* | **Already shared — delete the duplicate** |
-| 4 | Copy a picked file in | `importUris` (SAF cursor) | `importPicked` (`copyItem`) | **Orchestration shared, IO platform** |
-| 5 | Download from a link | `importFromUrl` (`HttpURLConnection`) | `importFromLink` (`URLSession`) | **Share via Ktor — see §3** |
-| 6 | Export note → PDF/PNG/DOCX | `NoteExporter` (`PdfDocument`/`Canvas`) | `NoteExporter` (`UIGraphics…`) | **Layout shared, rasterizing platform** |
-| 7 | Save/share out to the OS | `saveMediaToGallery`, `writeMediaToUri`, `ExportShare` | `saveMediaToGallery`, `presentDocumentExporter` | **Stays native** (MediaStore vs Photos) |
+| # | Responsibility | Types | Android | iOS | Verdict |
+|---|---|---|---|---|---|
+| 1 | **Capture destination policy** `<type>/<noteId>/<ts><ext>` | img, gif, vid, aud, pdf, docx, txt, md, epub, other | `NoteContentProvider.addContent` | `NoteEditorViewModel.handleMedia` | **Pure → share** (drifted, §2.3b) |
+| 2 | Import destination policy `imported/<noteId>/` | all | `FileImportManager.destinationDir` | `FileImportService.destinationFolder` | **Pure → share** |
+| 3 | Export/thumbnail folders `exports/`, `thumbnails/` | — | `NoteExporter`, `FileOps` | `NoteExporter`, `FileOps` | **Pure → share** |
+| 4 | Unique/safe filename | all | `destinationFile` | `uniqueFileName` | **Pure → share** |
+| 5 | ext/mime → `ContentType`; `ContentType` → mime | all | *(shared)* + **dup `mimeTypeFor`** | *(shared)* | **Delete the duplicate** (§2.3a) |
+| 6 | Create/delete/copy/exists/size | all | `createFileWithFolders`, `deleteFile` | `createFilepath`, `createFolder`, `copyFile`, `deleteFile` | **`expect` FileStore** |
+| 7 | **Write a capture to disk** | img, vid, aud | `AudioRecorder`, `CameraInAction`, `ImageDataViewModel.saveImage` | `AudioRecoderHandler`, `saveImageFile`, `copyFile` | **Policy shared, encoder native** (§2.3c) |
+| 8 | Copy a picked file in | all | `importUris` (SAF cursor) | `importPicked` (`copyItem`) | **Orchestration shared, IO platform** |
+| 9 | Download from a link | all | `importFromUrl` (`HttpURLConnection`) | `importFromLink` (`URLSession`) | **Share via Ktor — §3** |
+| 10 | **Read a document for the reader** | pdf, txt, md, epub | `BookPageFactory` + `BookReaderScreen` | `BookReaderView` | **`paginate()` pure → share; render native** (§2.3d) |
+| 11 | Thumbnail + image downsample | img, gif, vid | `generateThumbnail`, `decodeDownsampled`, `decodeScaled`, `toBitmap` (**3 copies**) | `generateThumbnail`, `loadImage` | **Constants shared, decode native** |
+| 12 | Export note → PDF/PNG/DOCX | note → file | `NoteExporter` (`PdfDocument`/`Canvas`) | `NoteExporter` (`UIGraphics…`) | **Layout shared, raster native** |
+| 13 | Save/share out to the OS | all | `saveMediaToGallery`, `writeMediaToUri`, `ExportShare` | `saveMediaToGallery`, `presentDocumentExporter`, `share` | **Stays native, common interface** |
 
 ### 2.2 `NoteExporter` — a line-for-line mirror
 
@@ -87,7 +129,7 @@ Every one of those constants and the whole pagination rule ("start a new page wh
 fit") is business logic that must agree on both platforms — and today nothing enforces that. Change
 `BLOCK_GAP` on Android and iOS silently diverges.
 
-### 2.3 Drift this has ALREADY caused — a live bug
+### 2.3 Drift this has ALREADY caused — four live bugs
 
 `ContentType` has 13 entries. There are two MIME maps:
 
@@ -98,12 +140,47 @@ fit") is business logic that must agree on both platforms — and today nothing 
 | **MD** | `text/markdown` | ❌ `application/octet-stream` |
 | **EPUB** | `application/epub+zip` | ❌ `application/octet-stream` |
 
+#### (a) Wrong MIME for TXT / MD / EPUB — Android
+
 `FileOps.mimeTypeFor` was written before TXT/MD/EPUB existed and never updated. It is what feeds
 `MediaStore.MediaColumns.MIME_TYPE` and the SAF picker, so on Android today:
 
 > **Saving an imported `.txt`, `.md` or `.epub` to the device writes it as
 > `application/octet-stream`** — the file lands without a usable type, so the system picker offers no
 > app to open it. iOS is unaffected. This is a pure consequence of the duplicate map.
+
+#### (b) Capture folders differ in case between platforms
+
+Responsibility #1 is implemented twice and the two copies disagree on one character:
+
+| | Folder written |
+|---|---|
+| Android `NoteContentProvider` | `contentType.name.lowercase()` → `image/<noteId>/` |
+| iOS `NoteEditorViewModel` | `type.name` → `IMAGE/<noteId>/` |
+
+Same intent, different result. Harmless while each platform only reads its own files, but it means
+the on-disk layout is **not** portable — any future export/backup/sync that assumes one convention
+breaks on the other platform.
+
+#### (c) iOS records AAC and labels it `.mp3`
+
+`AudioRecoderHandler` records with `kAudioFormatMPEG4AAC` to `temporaryDirectory/audio.m4a`, and
+`NoteEditorViewModel` then copies it to `<type>/<noteId>/<ts>.mp3` because
+`ContentType.AUDIO.getExt()` is `".mp3"`. **The container is M4A/AAC; the extension says MP3.** In-app
+playback tolerates it, but "save to device" hands the user a mislabelled file, and
+`MimeCatalog` will report `audio/mpeg` for it.
+
+Two further problems in the same file: the temp name is the **fixed** `audio.m4a` (two concurrent
+recordings collide), and a recording left in `temporaryDirectory` can be evicted by iOS before it is
+copied.
+
+#### (d) Book pagination is a duplicated rule
+
+`BookPageFactory.paginate()` implements a word-boundary page cut: prefer the last `\n`, else the last
+space, but only if past the halfway mark, else hard-cut at `CHARS_PER_BOOK_PAGE`. This is **pure
+logic** and `BookReaderView.swift` reimplements it. If the two ever disagree, the same book paginates
+differently per platform — and saved reading progress (`progressPage` / `totalPages`, persisted per
+`MediaContent`) **points at a different place on each device**.
 
 ### 2.4 Smaller divergences worth recording
 
@@ -218,12 +295,18 @@ so the field cause is unknowable. Add `log_d("FileImport", "…$urlText → ${e.
 ```
 core/filesys/src/
 ├── commonMain/kotlin/com/app/pustakam/core/filesys/
-│   ├── path/       FilePaths.kt          ← pure    folder policy + safe/unique naming
+│   ├── path/       FilePaths.kt          ← pure    ALL folder policy + safe/unique naming
+│   │               CaptureDestination.kt ← pure    <type>/<noteId>/<ts><ext>  (fixes 2.3b)
 │   ├── mime/       MimeCatalog.kt        ← pure    the ONE mime map (absorbs mimeTypeFor)
 │   ├── naming/     FileNaming.kt         ← pure    suggestedFileName + fileNameFromUrl
 │   ├── store/      FileStore.kt          ← expect  read/write/copy/delete/exists/size
+│   │               LocalFilePathResolver ← expect  (moved from :core:common)
 │   ├── download/   FileDownloader.kt     ← pure    Ktor — no platform code at all
 │   ├── thumbnail/  Thumbnailer.kt        ← expect  generate(path, type) -> String?
+│   │               ImageScaling.kt       ← pure    sample-size math (kills the 3 copies)
+│   ├── document/   BookPaginator.kt      ← pure    paginate() word-boundary rule (fixes 2.3d)
+│   │               DocumentReader.kt     ← expect  pdf page count, txt/md bytes (capped)
+│   ├── capture/    CaptureSink.kt        ← iface   audio/video/photo encoders stay native (2.3c)
 │   ├── export/     (existing)
 │   │               ExportLayout.kt       ← pure    measurement + pagination
 │   │               TextMeasurer.kt       ← iface   platform text metrics
@@ -299,16 +382,31 @@ the app modules where `Context` and UIKit already live. Nothing in `:core:filesy
 **Rule, same as the multi-module plan: every phase ends with a green build on both platforms plus the
 §7 smoke test. If a phase can't get there, revert that phase only.** Each phase is one commit.
 
-### Phase 1 — Pure logic, no behaviour change · ~0.5 day · risk: low
+### Phase 1 — Pure logic, no behaviour change · ~1 day · risk: low
 
 1. `MimeCatalog` in commonMain = the shared `mimeFor` **plus** the 3 missing entries.
 2. Point Android `FileOps.mimeTypeFor` at it (keep the function as a one-line delegate so no call
-   site changes) — **this alone fixes §2.3.**
-3. Move `suggestedFileName` → `FileNaming`, add the iOS binding it never had.
-4. Move `destinationFile`/`uniqueFileName` → `FilePaths.uniqueName()`.
+   site changes) — **fixes §2.3a.**
+3. `CaptureDestination.folderFor(type, noteId)` + `.fileNameFor(type, timestamp)` in commonMain;
+   both `NoteContentProvider` and iOS `NoteEditorViewModel` call it — **fixes §2.3b.**
+   *Pick lowercase and ship a one-time migration that renames existing `IMAGE/` → `image/` on iOS,
+   or accept both on read. Decide before merging — this touches paths already on user devices.*
+4. Move `suggestedFileName` → `FileNaming`, add the iOS binding it never had.
+5. Move `destinationFile`/`uniqueFileName` → `FilePaths.uniqueName()`.
+6. `ImageScaling.sampleSizeFor(w, h, target)` in commonMain; the three Android copies
+   (`decodeDownsampled`, `decodeScaled`, `toBitmap`) and iOS's `loadImage` call it.
 
-**Verify:** save a `.txt` and an `.epub` to device on Android — correct type in the picker. Save an
-image on both platforms — filename now identical.
+**Verify:** save a `.txt` and an `.epub` to device on Android — correct type in the picker. Capture an
+image on both platforms — same folder, same filename shape. Existing notes still resolve their media.
+
+### Phase 1b — Audio format honesty · ~0.5 day · risk: low
+
+Fixes §2.3c, independent of everything else. Either record MP3 on iOS, or add
+`ContentType.M4A`/let `CaptureDestination` take the encoder's real extension. Also give the temp
+recording a unique name and move it out of `temporaryDirectory` before the OS can evict it.
+
+**Verify:** record audio on iOS → play back in-app → save to device → the file opens in a normal
+player. Existing `.mp3`-named recordings still play (do not break old rows).
 
 ### Phase 2 — `FileDownloader` in common (Ktor) · ~1 day · risk: medium
 
@@ -334,6 +432,22 @@ handle"* (SAF cursor vs `copyItem`).
 
 **Verify:** list cards + video placeholders still show thumbnails; import a video → thumbnail appears.
 
+### Phase 4b — `BookPaginator` + `DocumentReader` · ~1 day · risk: **high**
+
+Fixes §2.3d. `paginate()` and `CHARS_PER_BOOK_PAGE` move to commonMain verbatim; `DocumentReader`
+(`expect`) covers "how many pages in this PDF" and "give me the first N bytes of this txt/md".
+`PdfRenderer` / `PDFDocument` page→bitmap rendering **stays native** — it is UI-bound and heavily
+cached on both sides.
+
+> **High risk because reading progress is already persisted.** `progressPage`/`totalPages` live on
+> `MediaContent` rows. If the shared paginator produces a different page count than the platform
+> implementation it replaces, **every saved book position shifts.** Before merging, dump page counts
+> for a few real books on both platforms and diff them against the shared implementation.
+
+**Verify:** open a TXT, an MD, a PDF and an EPUB → page counts unchanged from before the phase →
+scroll → back → reopen → progress lands on the same page. Test a file larger than
+`MAX_TEXT_FILE_BYTES`.
+
 ### Phase 5 — `ExportLayout` shared + `PageRenderer` expect/actual · ~1.5 days · risk: **high**
 
 The valuable one and the one to do last. Constants, `buildItems`, pagination and block ordering move
@@ -353,15 +467,20 @@ Multi-page note; note with a missing image; note with no images.
 Only after Phases 1–5 are green. **Nothing is deleted without your explicit approval** — the phase
 produces a list for you to confirm.
 
-| Phase | Days | Risk | Removes |
-|---|---:|---|---:|
-| 1 Pure logic | 0.5 | Low | ~60 |
-| 2 Downloader | 1.0 | Medium | ~120 |
-| 3 FileStore | 1.0 | Low | ~180 |
-| 4 Thumbnailer | 0.5 | Low | ~90 |
-| 5 Export layout | 1.5 | **High** | ~350 |
-| 6 Cleanup | 0.5 | Low | — |
-| **Total** | **5.0** | | **~800 of 1133** |
+| Phase | Fixes | Days | Risk | Removes |
+|---|---|---:|---|---:|
+| 1 Pure logic (mime, capture path, naming, scaling) | §2.3a, §2.3b | 1.0 | Low | ~150 |
+| 1b Audio format honesty | §2.3c | 0.5 | Low | ~20 |
+| 2 `FileDownloader` (Ktor, common) | §3.1–3.4 | 1.0 | Medium | ~120 |
+| 3 `FileStore` + `FilePaths` + capture sinks | — | 1.0 | Low | ~180 |
+| 4 `Thumbnailer` | — | 0.5 | Low | ~90 |
+| 4b `BookPaginator` + `DocumentReader` | §2.3d | 1.0 | **High** | ~120 |
+| 5 `ExportLayout` + `PageRenderer` | — | 1.5 | **High** | ~350 |
+| 6 Cleanup | — | 0.5 | Low | — |
+| **Total** | | **7.0** | | **~1030** |
+
+Add 1–2 days buffer. Phases 4b and 5 are the ones that historically overrun, and both touch data
+already on user devices (reading positions, exported files).
 
 ---
 
@@ -395,26 +514,56 @@ Android:  ./gradlew clean :androidApp:assembleDebug
 iOS:      Xcode → Product → Clean Build Folder → Build
 ```
 
-1. Cold start → no Koin crash
-2. Import 3 files of mixed type from device → all 3 appear in the editor, correct icons
-3. Import from link: a real PDF URL → file appears
-4. Import from link: a plain web page → **"No file found at this link."**
-5. Import from link: bad host → the failure message, and a log line naming the real cause
-6. Add image / audio / video → thumbnail renders → playback works
-7. Export note → PDF, then PNG, then DOCX → open all three
-8. Save media to device: image → Gallery/Photos; **`.txt` and `.epub` → correct type in the picker**
-9. Share a note export → share sheet lists sensible apps
-10. Open book reader → scroll → back → reopen → progress restored
-11. Delete a note content block → the file is gone from disk
-12. **Install over the previous build (do not uninstall) → old notes and imported files still present**
+**Capture (writes a new file)**
 
-Items 8 and 12 are the ones that catch this refactor going wrong. Do not skip them.
+1. Cold start → no Koin crash
+2. Take a photo → appears in editor → thumbnail renders
+3. Record video → appears → plays back → thumbnail renders
+4. Record audio → appears → plays back → **file extension matches the real container (§2.3c)**
+5. Add TEXT / LINK / LOCATION blocks → no file created, block saves
+
+**Import (copies a file in)**
+
+6. Device multi-pick, one of each: `.png .gif .mp4 .mp3 .pdf .docx .txt .md .epub` + one unknown type
+   → all 10 appear with the right icon and type
+7. Link import: a real PDF URL → file appears
+8. Link import: a plain web page → **"No file found at this link."**
+9. Link import: bad host → failure message **and** a log line naming the real cause
+10. Link import: 2-hop redirect, and an extensionless `application/octet-stream` URL
+
+**Read**
+
+11. Book reader: open a PDF, a TXT, an MD, an EPUB → **page counts unchanged from before the phase**
+12. Scroll → back → reopen → progress lands on the same page (both platforms, same book)
+
+**Export / save out / share**
+
+13. Export note → PDF, PNG, DOCX → open all three, both platforms (6 files)
+14. Export a multi-page note, a note with a missing image, a note with no images
+15. Save to device: image + video → Gallery/Photos
+16. Save to device: audio, PDF, DOCX, GIF, **`.txt`, `.md`, `.epub` → correct type in the picker (§2.3a)**
+17. Share a note export → share sheet lists sensible apps
+
+**Delete / upgrade**
+
+18. Delete a note content block → the file is gone from disk
+19. **Install over the previous build (do not uninstall) → old notes, imported files, captured media
+    and reading positions all still resolve**
+
+Items 11, 16 and 19 are the ones that catch this refactor going wrong. Do not skip them.
+Item 19 matters most after Phase 1 (capture paths change) and Phase 4b (page counts change).
 
 ---
 
 ## Appendix — Order of operations
 
-Phase 1 is worth doing on its own regardless of whether the rest proceeds: it is ~60 lines and it
-fixes a shipped bug. Phase 2 is worth doing next because it fixes the reported Android download
-failure *and* deletes more code than it adds. Phases 3–5 are optimization of a working system —
-schedule them, don't rush them.
+Phases **1, 1b and 2** are worth doing regardless of whether the rest proceeds — together ~2.5 days,
+they fix four shipped bugs plus the reported Android download failure, and they delete more code than
+they add. None of them changes an architecture boundary.
+
+Phases **3, 4 and 5** are optimization of a working system. Schedule them, don't rush them.
+
+Phase **4b** is the one to think hardest about: it is the highest-value deduplication in the app
+(pagination correctness is currently guaranteed only by two people writing the same algorithm twice)
+but it is also the only phase that can silently move every user's saved reading position. Do it alone,
+on its own branch, with page-count diffs captured before and after.

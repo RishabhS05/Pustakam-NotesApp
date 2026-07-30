@@ -1,81 +1,42 @@
 package com.app.pustakam.core.filesys.fileimport
 
-import com.app.pustakam.core.model.models.response.notes.NoteContentModel
-import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.filesys.mime.MimeCatalog
+import com.app.pustakam.core.filesys.naming.FileNameGenerator
+import com.app.pustakam.core.filesys.validation.ImportValidator
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
 
 // 🔧 18-Jul-2026: NEW FEATURE (file import) — single shared source of truth for BOTH platforms:
 //   extension/mime → ContentType resolution, URL file-name parsing, and the MediaContent factory.
+// 🔧 30-Jul-2026 02:10 Phase 1 — the tables and rules MOVED to MimeCatalog / FileNameGenerator /
+//   ImportValidator; every function below is now a thin delegate holding no logic of its own.
+//   The public API is UNCHANGED on purpose: Swift calls FileImportHelper.shared.* and Android calls
+//   FileImportHelper.* today. This object is retired in Phase 5, not before.
 object FileImportHelper {
 
-    // 🔧 18-Jul-2026: extension → ContentType (lowercased, no dot); OTHER = attach-anything fallback
-    private val extensionMap: Map<String, ContentType> = mapOf(
-        "png" to ContentType.IMAGE, "jpg" to ContentType.IMAGE, "jpeg" to ContentType.IMAGE,
-        "webp" to ContentType.IMAGE, "heic" to ContentType.IMAGE, "bmp" to ContentType.IMAGE,
-        "gif" to ContentType.GIF,
-        "mp4" to ContentType.VIDEO, "mov" to ContentType.VIDEO, "mkv" to ContentType.VIDEO,
-        "webm" to ContentType.VIDEO, "3gp" to ContentType.VIDEO, "avi" to ContentType.VIDEO,
-        "mp3" to ContentType.AUDIO, "m4a" to ContentType.AUDIO, "wav" to ContentType.AUDIO,
-        "aac" to ContentType.AUDIO, "ogg" to ContentType.AUDIO, "flac" to ContentType.AUDIO,
-        "pdf" to ContentType.PDF,
-        "doc" to ContentType.DOCX, "docx" to ContentType.DOCX,
-        "txt" to ContentType.TXT, "log" to ContentType.TXT, "json" to ContentType.TXT,
-        "csv" to ContentType.TXT, "xml" to ContentType.TXT,
-        "md" to ContentType.MD, "markdown" to ContentType.MD,
-        "epub" to ContentType.EPUB,
-    )
+    // 🔧 30-Jul-2026 02:10 delegate → MimeCatalog (was a private extensionMap duplicated here)
+    fun resolveContentType(fileName: String, mime: String? = null): ContentType =
+        MimeCatalog.contentTypeFor(fileName, mime)
 
-    // 🔧 18-Jul-2026: mime prefix/exact → ContentType (fallback when the name has no extension)
-    fun contentTypeForMime(mime: String?): ContentType? = when {
-        mime.isNullOrBlank() -> null
-        mime.startsWith("image/gif") -> ContentType.GIF
-        mime.startsWith("image/") -> ContentType.IMAGE
-        mime.startsWith("video/") -> ContentType.VIDEO
-        mime.startsWith("audio/") -> ContentType.AUDIO
-        mime == "application/pdf" -> ContentType.PDF
-        mime == "application/msword" ||
-                mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ContentType.DOCX
-        mime == "application/epub+zip" -> ContentType.EPUB
-        mime == "text/markdown" -> ContentType.MD
-        mime.startsWith("text/") -> ContentType.TXT
-        else -> null
-    }
+    // 🔧 30-Jul-2026 02:10 delegate → MimeCatalog
+    fun contentTypeForMime(mime: String?): ContentType? = MimeCatalog.contentTypeForMime(mime)
 
-    // 🔧 18-Jul-2026: name first, mime second, OTHER last — imports never get rejected by type
-    fun resolveContentType(fileName: String, mime: String? = null): ContentType {
-        val ext = fileName.substringAfterLast('.', "").lowercase()
-        return extensionMap[ext] ?: contentTypeForMime(mime) ?: ContentType.OTHER
-    }
+    // 🔧 30-Jul-2026 02:10 delegate → MimeCatalog
+    fun mimeFor(type: ContentType): String = MimeCatalog.mimeFor(type)
 
-    // 🔧 18-Jul-2026: canonical mime for a ContentType (upload/save/export need one)
-    fun mimeFor(type: ContentType): String = when (type) {
-        ContentType.IMAGE -> "image/png"
-        ContentType.GIF -> "image/gif"
-        ContentType.VIDEO -> "video/mp4"
-        ContentType.AUDIO -> "audio/mpeg"
-        ContentType.PDF -> "application/pdf"
-        ContentType.DOCX -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ContentType.TXT -> "text/plain"
-        ContentType.MD -> "text/markdown"
-        ContentType.EPUB -> "application/epub+zip"
-        else -> "application/octet-stream"
-    }
+    // 🔧 30-Jul-2026 02:10 delegate → FileNameGenerator. Existing signature kept so no call site
+    //   changes; the mime-aware overload is what Phase 2's shared downloader will use.
+    fun fileNameFromUrl(url: String): String =
+        FileNameGenerator.fromUrl(url, mime = null, timestamp = getCurrentTimestamp())
 
-    // 🔧 18-Jul-2026: last path segment of a URL, query/fragment stripped; safe default when absent
-    fun fileNameFromUrl(url: String): String {
-        val cleaned = url.substringBefore('?').substringBefore('#').trimEnd('/')
-        val segment = cleaned.substringAfterLast('/')
-        return if (segment.isNotBlank() && segment.contains('.')) segment
-        else "download-${getCurrentTimestamp()}"
-    }
+    fun fileNameFromUrl(url: String, mime: String?): String =
+        FileNameGenerator.fromUrl(url, mime, timestamp = getCurrentTimestamp())
 
-    // 🔧 18-Jul-2026: html/no-body responses are NOT files — callers show "No file found"
-    fun isDownloadableFile(mime: String?, fileName: String): Boolean {
-        val m = mime?.substringBefore(';')?.trim()?.lowercase()
-        if (m != null && (m == "text/html" || m == "application/xhtml+xml")) return false
-        return fileName.contains('.') || contentTypeForMime(m) != null
-    }
+    // 🔧 30-Jul-2026 02:10 delegate → ImportValidator
+    fun isDownloadableFile(mime: String?, fileName: String): Boolean =
+        ImportValidator.isDownloadable(mime, fileName)
 
     // 🔧 18-Jul-2026: the ONE factory both platforms call after landing a file locally
     fun createImportedMedia(

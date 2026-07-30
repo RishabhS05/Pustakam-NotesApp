@@ -10,6 +10,9 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.filesys.mime.MimeCatalog
+import com.app.pustakam.core.filesys.naming.FileNameGenerator
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -73,8 +76,10 @@ fun generateThumbnail(context: Context, sourcePath: String, contentType: Content
             }
             else -> null
         } ?: return null
-        val thumbDir = File(context.filesDir, "thumbnails").apply { mkdirs() }
-        val thumbFile = File(thumbDir, "${source.nameWithoutExtension}_thumb.jpg")
+// 🔧 30-Jul-2026 02:10 Phase 1 — folder + name now come from PathPolicy, not string literals
+        val dest = com.app.pustakam.core.filesys.path.PathPolicy.thumbnailPath(sourcePath)
+        val thumbDir = File(context.filesDir, dest.folder).apply { mkdirs() }
+        val thumbFile = File(thumbDir, dest.fileName)
         FileOutputStream(thumbFile).use { out ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 70, out)
         }
@@ -133,28 +138,23 @@ fun saveBitmapToFile(bitmap: Bitmap,file: File): Boolean{
 
 // 🔧 14-Jul-2026: MIME type for a media block (used by MediaStore + the SAF picker).
 //   Usage: mimeTypeFor(media.type)  ->  "image/png", "video/mp4", "audio/mpeg", ...
-fun mimeTypeFor(type: ContentType): String = when (type) {
-    ContentType.IMAGE -> "image/png"
-    ContentType.VIDEO -> "video/mp4"
-    ContentType.AUDIO -> "audio/mpeg"
-    ContentType.PDF -> "application/pdf"
-    ContentType.DOCX -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ContentType.GIF -> "image/gif"
-    else -> "application/octet-stream"
-}
+// 🔧 30-Jul-2026 02:10 Phase 1 — delegates to MimeCatalog. This local copy predated TXT/MD/EPUB and
+//   returned application/octet-stream for them, so saved .txt/.md/.epub files had no usable type
+//   in MediaStore or the SAF picker. Delegating is the fix — the only intentional behaviour delta
+//   in Phase 1. See 30jul2026-FIA doc §2.3a.
+fun mimeTypeFor(type: ContentType): String = MimeCatalog.mimeFor(type)
 
 // 🔧 14-Jul-2026: A human/file-system friendly name for the exported/saved file.
 //   Falls back to the source file name, then to a timestamped default.
 //   Usage: suggestedFileName(media)  ->  "Video-2.mp4"
 fun suggestedFileName(media: NoteContentModel.MediaContent): String {
-    val ext = media.type.getExt().ifEmpty { "" }
-    val fromSource = media.localPath?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
-    val base = media.title.takeIf { it.isNotBlank() }
-        ?: fromSource?.substringBeforeLast('.')
-        ?: "Pustakam-${System.currentTimeMillis()}"
-    // If we already have a real file name with an extension, keep it as-is.
-    if (fromSource != null && fromSource.contains('.')) return fromSource
-    return if (ext.isNotEmpty()) "$base$ext" else base
+// 🔧 30-Jul-2026 02:10 Phase 1 — delegates to FileNameGenerator (same rule, now shared + unit-tested)
+    return FileNameGenerator.suggestSaveName(
+        title = media.title,
+        sourcePath = media.localPath,
+        type = media.type,
+        timestamp = getCurrentTimestamp(),
+    )
 }
 
 // 🔧 14-Jul-2026: Save an IMAGE or VIDEO straight into the device Gallery.

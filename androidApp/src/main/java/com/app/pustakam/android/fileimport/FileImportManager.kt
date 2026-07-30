@@ -5,6 +5,9 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.filesys.fileimport.FileImportHelper
+import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.filesys.naming.FileNameGenerator
+import com.app.pustakam.core.filesys.path.PathPolicy
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -25,14 +28,18 @@ object FileImportManager {
     private const val MAX_REDIRECTS = 5
 
     // 🔧 18-Jul-2026: private destination folder per note — SAF grants are transient, a copy is not
+    // 🔧 30-Jul-2026 02:10 Phase 1 — folder comes from PathPolicy ("imported/<noteId>", unchanged)
     private fun destinationDir(context: Context, noteId: String): File =
-        File(context.filesDir, "imported/$noteId").apply { mkdirs() }
+        File(context.filesDir, PathPolicy.importPath(noteId, "x").folder).apply { mkdirs() }
 
     // 🔧 18-Jul-2026: unique dest file — timestamp prefix only when the name already exists
+    // 🔧 30-Jul-2026 02:10 Phase 1 — sanitize + collision strategy moved to FileNameGenerator.
+    //   Same outcome as before; the folder probe is injected so the rule itself stays pure.
     private fun destinationFile(dir: File, fileName: String): File {
-        val safe = fileName.replace('/', '_')
-        val candidate = File(dir, safe)
-        return if (!candidate.exists()) candidate else File(dir, "${System.currentTimeMillis()}_$safe")
+        val unique = FileNameGenerator.generateUnique(fileName, getCurrentTimestamp()) {
+            File(dir, it).exists()
+        }
+        return File(dir, unique)
     }
 
     /** Import multiple SAF-picked uris. Returns one MediaContent per successfully copied file. */
