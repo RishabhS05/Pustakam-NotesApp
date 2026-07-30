@@ -1,23 +1,15 @@
 package com.app.pustakam.android.screen.search
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.pustakam.android.screen.notes.single.NoteCardView
+import com.app.pustakam.android.screen.notes.single.NoteBookCardView
 
 // 🔧 15-Jul-2026 Phase 2.2: IMPLEMENTED — this screen was a magenta placeholder. It is now the
 //   FTS5-backed note search: type to search all note text (and titles); results are summary cards
@@ -50,7 +42,7 @@ fun SearchView(onNavigateNote: (noteId: String) -> Unit) {
             ) {
                 items(state.results.size) { index ->
                     val summary = state.results[index]
-                    NoteCardView(summary = summary) { onNavigateNote(summary.id) }
+                    NoteBookCardView(summary = summary) { onNavigateNote(summary.id) }
                 }
             }
         }

@@ -38,7 +38,7 @@ import com.app.pustakam.android.screen.DialogEnum
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.features.tags.TagViewModel
 import com.app.pustakam.android.screen.notes.list.TagIntent.*
-import com.app.pustakam.android.screen.notes.single.NoteCardView
+import com.app.pustakam.android.screen.notes.single.NoteBookCardView
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.TagView
@@ -127,7 +127,7 @@ fun NotesListView(
                 .height(12.dp))
         }
         items(notes.size) { index ->
-            NoteCardView(summary = notes[index]) { onNavigateNote(notes[index].id) }
+            NoteBookCardView(summary = notes[index]) { onNavigateNote(notes[index].id) }
             // 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger — fires once per list growth
             //   (keyed on size) when the LAST card enters composition.
             if (index == notes.size - 1) {

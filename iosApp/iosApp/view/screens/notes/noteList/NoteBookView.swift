@@ -31,11 +31,16 @@ struct NoteBookView : View {
                         .padding(.top, 24)
                         .padding(.horizontal, 12)
                     if let snippet = summary.snippet, !snippet.isEmpty {
+                        VStack(alignment: .leading,){
                         Text(snippet)
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(Theme.Colors.text2) // 🎨 secondary text (spec §2.2)
                             .lineLimit(4)
                             .padding(.horizontal, 12)
+                        mediaCountBadges
+                            .foregroundColor(Theme.Colors.text2) // 🎨 count badges read as secondary text
+                            .padding(.horizontal, 12)
+                        }
                     } else {
                         mediaCountBadges
                             .foregroundColor(Theme.Colors.text2) // 🎨 count badges read as secondary text

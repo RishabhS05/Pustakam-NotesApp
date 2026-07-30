@@ -46,8 +46,8 @@ import com.app.pustakam.core.common.extensions.toLocalFormat
 //   • a thumbnail strip when the note has a visual media block
 //   Usage: NoteCardView(summary = noteSummary) { onOpen(noteSummary.id) }
 @Composable
-fun NoteCardView(modifier: Modifier = Modifier, summary: NoteSummary,
-                 onClick: () -> Unit = {}) {
+fun NoteBookCardView(modifier: Modifier = Modifier, summary: NoteSummary,
+                     onClick: () -> Unit = {}) {
     // 🎨 20-Jul-2026 — Granth spec §5 note card: IVORY surface (not the accent) + hairline border + md
     //   radius (14dp). Saffron stays an accent (fold corner), never the whole card. Softer elevation.
     Card(shape = RoundedCornerShape(14.dp),
@@ -61,24 +61,27 @@ fun NoteCardView(modifier: Modifier = Modifier, summary: NoteSummary,
         .heightIn(min = 100.dp, max = 300.dp).wrapContentHeight().padding(4.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                // 🎨 20-Jul-2026 — serif card title, ink text on ivory (spec §3 card title / §2.2 text)
-                Text(
-                    if (!summary.title.isNullOrEmpty()) summary.title.toString() else "Title?",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        color = colorScheme.onSurface
-                    ), modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
-                )
+            Column(modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
                 // 🎨 20-Jul-2026 — meta date as tertiary text (spec §2.2 text-3), no heavy gradient chip
                 Text(
                     summary.updatedAt?.toLocalFormat(showTime = false).toString(),
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = colorScheme.onSurfaceVariant
-                    ), modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
+                    ), modifier = Modifier.padding(horizontal = 8.dp).padding(top = 8.dp, bottom = 4.dp)
                 )
+                // 🎨 20-Jul-2026 — serif card title, ink text on ivory (spec §3 card title / §2.2 text)
+                Text(
+                    if (!summary.title.isNullOrEmpty()) summary.title.toString() else "Title?",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = colorScheme.onSurface
+                    ), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+
             }
             // Text snippet — only when the note actually has text.
             if (!summary.snippet.isNullOrBlank()) {
+                Column{
                 Text(
                     summary.snippet!!,
                     style = MaterialTheme.typography.bodySmall.copy(
@@ -88,7 +91,10 @@ fun NoteCardView(modifier: Modifier = Modifier, summary: NoteSummary,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
-            } else {
+                MediaCountBadges(summary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            }
+            }
+            else {
                 // Media/doc-only note: describe it with count badges instead of an empty card.
                 MediaCountBadges(summary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             }
@@ -146,6 +152,6 @@ private fun NotesPreview() {
             createdAt = "", categoryId = "",
             snippet = null, imageCount = 3, audioCount = 1, docCount = 2
         )
-        NoteCardView(summary = summary)
+        NoteBookCardView(summary = summary)
     }
 }
