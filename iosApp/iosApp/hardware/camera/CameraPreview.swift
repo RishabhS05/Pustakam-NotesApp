@@ -16,14 +16,14 @@ struct CameraPreview: View {
     var onCapture: (CapturedMedia?) -> Void
     var cameraPermission = CameraPermission()
     var body: some View {
-        
         ZStack {
             if let media = capturedMedia {
                 switch media {
                     case .image(let image):
                         Image(uiImage: image)
                             .resizable()
-                            .scaledToFill().frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                            .scaledToFill()
+                            .frame( maxWidth: .infinity,maxHeight: .infinity)
                     case .video(let video):
                         VideoPlayer(player: AVPlayer(url: video))
                             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity).ignoresSafeArea()

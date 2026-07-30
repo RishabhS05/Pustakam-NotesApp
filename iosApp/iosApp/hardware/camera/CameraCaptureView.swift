@@ -17,6 +17,13 @@ struct CameraCaptureView: UIViewControllerRepresentable {
         picker.delegate = context.coordinator
         picker.sourceType = .camera
         picker.mediaTypes = ["public.image", "public.movie"]
+        picker.modalPresentationStyle = .fullScreen
+        picker.cameraCaptureMode = .photo
+                picker.videoQuality = .typeHigh
+
+                // Optional
+                picker.allowsEditing = false
+                picker.showsCameraControls = true
             // Support both photos and videos
         return picker
     }

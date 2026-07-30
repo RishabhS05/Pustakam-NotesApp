@@ -28,6 +28,8 @@ struct ImagePreviewView : View {
                         .renderingMode(.original)
                         .resizable()
                         .scaledToFit()
+                        .ignoresSafeArea()
+                    
                 } else {
                     AsyncImage(url: URL(string: path)) { img in img.resizable()
                         .renderingMode(.original).scaledToFit() }
