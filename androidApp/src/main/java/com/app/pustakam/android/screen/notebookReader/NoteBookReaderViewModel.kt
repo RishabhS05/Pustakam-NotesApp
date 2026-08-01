@@ -65,7 +65,8 @@ class NoteBookReaderViewModel : BaseViewModel() {
 
     // 📖 01-Aug-2026: the ONE policy pages are generated against; the UI reads it back so what it
     //   draws (grid columns, gaps, cell counts) always matches the heights the engine reserved.
-    val layoutPolicy: PageLayoutPolicy = PageLayoutPolicy.standard()
+    var layoutPolicy: PageLayoutPolicy = PageLayoutPolicy.standard()
+        private set
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -93,7 +94,14 @@ class NoteBookReaderViewModel : BaseViewModel() {
     private var lastKnownPage: Int = 0
     private var totalPages: Int = 0
 
-    fun load(noteId: String, startContentId: String? = null, singleContent: Boolean = false) {
+    fun load(
+        noteId: String,
+        startContentId: String? = null,
+        singleContent: Boolean = false,
+        pageWidth: Float = PageLayoutPolicy.A4_WIDTH,
+        pageHeight: Float = PageLayoutPolicy.A4_HEIGHT,
+    ) {
+        layoutPolicy = PageLayoutPolicy.forScreen(pageWidth, pageHeight)
         this.startContentId = startContentId
         this.singleContentMode = singleContent && startContentId != null
         makeAWish(NOTES_CODES.READ) { readNoteUseCase.invoke(noteId) }

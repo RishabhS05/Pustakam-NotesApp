@@ -1,31 +1,54 @@
 import SwiftUI
 import shared
 
-// 📖 01-Aug-2026: ONE A4 sheet = a VStack of blocks. The engine already decided which blocks land
-//   here, so this only stacks them in order — the reading sequence is whatever the engine produced.
 struct ReaderPageView: View {
     let page: ReaderPage
     let policy: PageLayoutPolicy
     var fillHeight: Bool = true
+    var zoomEnabled: Bool = true
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
     var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: CGFloat(policy.blockGap)) {
-            ForEach(Array(page.blocks.enumerated()), id: \.offset) { _, block in
-                ReaderBlockView(
-                    block: block,
-                    policy: policy,
-                    onOpenDocument: onOpenDocument,
-                    onOpenImage: onOpenImage
+        let sheet = ZStack(alignment: .topLeading) {
+            BookPalette.paper
+            HStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0.18), .clear],
+                    startPoint: .leading, endPoint: .trailing
                 )
+                .frame(width: 14)
+                Spacer()
             }
-            if fillHeight { Spacer(minLength: 0) }
+            VStack(alignment: .leading, spacing: CGFloat(policy.blockGap)) {
+                ForEach(Array(page.blocks.enumerated()), id: \.offset) { _, block in
+                    ReaderBlockView(
+                        block: block,
+                        policy: policy,
+                        onOpenDocument: onOpenDocument,
+                        onOpenImage: onOpenImage
+                    )
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, CGFloat(policy.marginStart))
+            .padding(.trailing, CGFloat(policy.marginEnd))
+            .padding(.top, CGFloat(policy.marginTop))
+            .padding(.bottom, CGFloat(policy.marginBottom))
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
-        .frame(maxWidth: .infinity, maxHeight: fillHeight ? .infinity : nil, alignment: .top)
-        .background(BookPalette.paper)
+        .frame(maxWidth: .infinity)
+        .frame(maxHeight: fillHeight ? .infinity : nil)
+        .frame(height: fillHeight ? nil : CGFloat(policy.pageHeight))
         .clipShape(RoundedRectangle(cornerRadius: 6))
+
+        Group {
+            if zoomEnabled {
+                ZoomableView { sheet }
+            } else {
+                sheet
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 }

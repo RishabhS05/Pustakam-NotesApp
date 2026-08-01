@@ -20,9 +20,10 @@ struct NoteBookReaderView: View {
 
     // the ONE policy pages are generated against; the views read it back so what they draw always
     // matches the heights the engine reserved
-    private let policy = PageLayoutPolicy.companion.standard()
+    @State private var policy = PageLayoutPolicy.companion.standard()
 
     var body: some View {
+        GeometryReader { screen in
         ZStack {
             BookPalette.desk.ignoresSafeArea()
             if pages.isEmpty && isLoading {
@@ -78,10 +79,16 @@ struct NoteBookReaderView: View {
             }
         }
         .onAppear {
-            loadNote()
+            let resolved = PageLayoutPolicy.companion.forScreen(
+                width: Float(screen.size.width),
+                height: Float(screen.size.height)
+            )
+            policy = resolved
+            loadNote(policy: resolved)
             readerPrefs.observeReadingMode { readingMode = $0 }
         }
         .onDisappear { saveProgress() }
+        }
     }
 
     private func saveProgress() {
@@ -90,7 +97,7 @@ struct NoteBookReaderView: View {
         readerPrefs.saveProgress(contentId: contentId, page: page, totalPages: pages.count)
     }
 
-    private func loadNote() {
+    private func loadNote(policy: PageLayoutPolicy) {
         adapter.readNote(noteId: noteId) { result in
             switch result {
             case .loading: if pages.isEmpty { isLoading = true }

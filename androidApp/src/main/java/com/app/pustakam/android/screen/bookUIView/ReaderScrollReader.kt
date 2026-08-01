@@ -14,9 +14,6 @@ import com.app.pustakam.core.filesys.reader.PageLayoutPolicy
 import com.app.pustakam.core.filesys.reader.ReaderPage
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
-// 📖 01-Aug-2026: scroll mode over the SAME pages the curl mode renders — no second pagination.
-//   Sheets wrap their content here (fillHeight=false), which is what removes the empty space that
-//   the old fixed 560dp box forced onto every page.
 @Composable
 fun ReaderScrollReader(
     pages: List<ReaderPage>,
@@ -36,14 +33,14 @@ fun ReaderScrollReader(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // keyed so a page's widgets survive scroll recycling instead of recomposing from scratch
         items(count = pages.size, key = { pages[it].index }) { index ->
             ReaderPageContent(
                 page = pages[index],
                 policy = policy,
                 fillHeight = false,
+                zoomEnabled = false,
                 onOpenDocument = onOpenDocument,
                 onOpenImage = onOpenImage,
             )

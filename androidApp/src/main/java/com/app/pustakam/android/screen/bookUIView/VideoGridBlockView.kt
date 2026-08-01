@@ -15,6 +15,7 @@ import com.app.pustakam.core.filesys.reader.BlockHeightEstimator
 import com.app.pustakam.core.filesys.reader.PageLayoutPolicy
 import com.app.pustakam.core.filesys.reader.ReaderBlock
 import com.app.pustakam.android.widgets.video.VideoCard
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 // 📖 01-Aug-2026: a grid is a LAYOUT, not a player. Every cell is the existing VideoCard, which
 //   already gates on currentPlayingId, so the app still runs exactly ONE ExoPlayer and A.mp4 can
@@ -24,6 +25,7 @@ fun VideoGridBlockView(
     block: ReaderBlock.VideoGrid,
     policy: PageLayoutPolicy,
     modifier: Modifier = Modifier,
+    onOpenVideo: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
     val playMediaViewModel: PlayMediaViewModel = viewModel()
     val visible = BlockHeightEstimator.visibleCells(block.items.size, policy)
@@ -34,7 +36,10 @@ fun VideoGridBlockView(
         VideoCard(
             contentVideo = media,
             modifier = modifier.fillMaxWidth(),
-            onClick = { playMediaViewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id)) },
+            onClick = {
+                playMediaViewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id))
+                onOpenVideo(media)
+            },
         )
         return
     }
@@ -50,6 +55,7 @@ fun VideoGridBlockView(
                                 playMediaViewModel.onPlayingIntent(
                                     MediaPlayingUIEvent.SelectedMediaChange(media.id)
                                 )
+                                onOpenVideo(media)
                             },
                         )
                     }

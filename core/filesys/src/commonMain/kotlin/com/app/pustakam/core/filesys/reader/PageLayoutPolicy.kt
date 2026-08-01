@@ -57,8 +57,25 @@ data class PageLayoutPolicy(
         /** Swift-facing factory — Kotlin default arguments are not exposed to Swift. */
         fun standard(): PageLayoutPolicy = PageLayoutPolicy()
 
-        /** Swift-facing factory for a screen-sized page (scroll mode on a phone). */
         fun sized(width: Float, height: Float): PageLayoutPolicy =
             PageLayoutPolicy(pageWidth = width, pageHeight = height)
+
+        fun forScreen(width: Float, height: Float): PageLayoutPolicy = PageLayoutPolicy(
+            pageWidth = width,
+            pageHeight = height,
+            marginTop = SCREEN_MARGIN,
+            marginBottom = SCREEN_MARGIN,
+            marginStart = SCREEN_MARGIN,
+            marginEnd = SCREEN_MARGIN,
+            titleHeight = 56f,
+            imageMinHeight = height * 0.15f,
+            imageMaxHeight = height * 0.45f,
+            audioHeight = 84f,
+            documentHeight = 110f,
+            linkHeight = 88f,
+            locationHeight = 88f,
+        )
+
+        const val SCREEN_MARGIN = 16f
     }
 }

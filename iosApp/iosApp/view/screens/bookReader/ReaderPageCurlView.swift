@@ -1,8 +1,6 @@
 import SwiftUI
 import shared
 
-// 📖 01-Aug-2026: page-curl container over ReaderPage. Same UIPageViewController pattern as the
-//   document reader's BookPageCurlView — only the page type differs, so curl behaviour is unchanged.
 struct ReaderPageCurlView: UIViewControllerRepresentable {
     let pages: [ReaderPage]
     let policy: PageLayoutPolicy

@@ -63,8 +63,12 @@ sealed class ReaderBlock {
 data class ReaderPage(
     val index: Int,
     val blocks: List<ReaderBlock>,
-    val usedHeight: Float,
+    /** Space this page actually occupies — width AND height, in A4 units. */
+    val occupied: BlockSize,
 ) {
+    val usedHeight: Float get() = occupied.height
+    val usedWidth: Float get() = occupied.width
+
     val sourceContentIds: List<String> get() = blocks.flatMap { it.sourceContentIds }
 
     /** True when the page carries [contentId] — used to resolve a jump target. */

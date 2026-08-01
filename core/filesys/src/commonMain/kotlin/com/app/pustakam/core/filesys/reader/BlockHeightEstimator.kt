@@ -8,6 +8,27 @@ import kotlin.math.min
 
 object BlockHeightEstimator {
 
+    /** Stage 2 — full measurement. Media never breaks across pages; only text may. */
+    fun measure(block: ReaderBlock, policy: PageLayoutPolicy): MeasuredBlock = MeasuredBlock(
+        block = block,
+        size = size(block, policy),
+        breakable = block is ReaderBlock.Paragraph,
+    )
+
+    /** Width AND height a block occupies. Most blocks span the usable width; a lone image may not. */
+    fun size(block: ReaderBlock, policy: PageLayoutPolicy): BlockSize {
+        val height = estimate(block, policy)
+        val width = when (block) {
+            // a portrait image is height-clamped, so it renders narrower than the column
+            is ReaderBlock.ImageGrid ->
+                if (block.items.size == 1) singleImageWidth(block.items[0], height, policy)
+                else policy.usableWidth
+
+            else -> policy.usableWidth
+        }
+        return BlockSize(width, height)
+    }
+
     fun estimate(block: ReaderBlock, policy: PageLayoutPolicy): Float = when (block) {
         is ReaderBlock.Title ->
             policy.titleHeight + if (block.subtitle != null) policy.captionHeight else 0f
@@ -63,5 +84,19 @@ object BlockHeightEstimator {
         return scaled.coerceIn(policy.imageMinHeight, policy.imageMaxHeight)
     }
 
+    /** Rendered width of a lone image once its height has been clamped. */
+    fun singleImageWidth(
+        media: NoteContentModel.MediaContent,
+        height: Float,
+        policy: PageLayoutPolicy,
+    ): Float {
+        if (media.width <= 0 || media.height <= 0) return policy.usableWidth
+        val ratio = media.width.toFloat() / media.height.toFloat()
+        return (height * ratio).coerceAtMost(policy.usableWidth)
+    }
+
     const val VIDEO_ASPECT = 9f / 16f
+
+    /** Swift-facing accessor — a `const val` inside an object has no guaranteed export shape. */
+    fun videoAspect(): Float = VIDEO_ASPECT
 }

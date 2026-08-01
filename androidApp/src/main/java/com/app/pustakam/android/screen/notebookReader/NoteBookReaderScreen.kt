@@ -90,6 +90,8 @@ import kotlin.math.min
 // 📖 01-Aug-2026: shared with the document reader (screen/bookReading) — one definition, no copy
 @Composable
 fun NoteBookReaderScreen(
+    noteId: String = "",
+    startContentId: String? = null,
     singleContent: Boolean = false,
     bookReaderViewModel: NoteBookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
@@ -98,6 +100,15 @@ fun NoteBookReaderScreen(
 ) {
     val context = LocalContext.current
     val state by bookReaderViewModel.uiState.collectAsStateWithLifecycle()
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.toFloat()
+    val screenHeight = configuration.screenHeightDp.toFloat()
+
+    LaunchedEffect(noteId, screenWidth, screenHeight) {
+        if (noteId.isNotEmpty()) {
+            bookReaderViewModel.load(noteId, startContentId, singleContent, screenWidth, screenHeight)
+        }
+    }
 
     DisposableEffect(state.note?.id) {
         onDispose {

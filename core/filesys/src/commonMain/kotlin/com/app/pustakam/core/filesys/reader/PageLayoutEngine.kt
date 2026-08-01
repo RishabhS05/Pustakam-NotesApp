@@ -21,31 +21,30 @@ object PageLayoutEngine {
      */
     fun paginate(blocks: List<ReaderBlock>, policy: PageLayoutPolicy): List<ReaderPage> {
         if (blocks.isEmpty()) return emptyList()
-        val usable = policy.usableHeight
         val pages = mutableListOf<ReaderPage>()
         var current = mutableListOf<ReaderBlock>()
-        var used = 0f
+        // the container that reports what this page occupies, so the next block can be tested
+        var budget = PageBudget.of(policy)
 
         fun flush() {
             if (current.isEmpty()) return
-            pages.add(ReaderPage(pages.size, current.toList(), used))
+            pages.add(ReaderPage(pages.size, current.toList(), budget.occupied))
             current = mutableListOf()
-            used = 0f
+            budget = PageBudget.of(policy)
         }
 
         for (block in blocks) {
-            val height = BlockHeightEstimator.estimate(block, policy)
-            val gap = if (current.isEmpty()) 0f else policy.blockGap
+            val measured = BlockHeightEstimator.measure(block, policy)
 
             // taller than a whole page — give it its own page rather than splitting it
-            if (height > usable) {
+            if (measured.height > policy.usableHeight) {
                 flush()
-                pages.add(ReaderPage(pages.size, listOf(block), height))
+                pages.add(ReaderPage(pages.size, listOf(block), measured.size))
                 continue
             }
-            if (used + gap + height > usable) flush()
+            if (!budget.fits(measured)) flush()
             current.add(block)
-            used += (if (current.size == 1) 0f else policy.blockGap) + height
+            budget = budget.place(measured)
         }
         flush()
         return pages

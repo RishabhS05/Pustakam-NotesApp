@@ -5,6 +5,7 @@ import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -239,6 +240,75 @@ class PageLayoutEngineTest {
     @Test
     fun the_grid_is_two_columns() {
         assertEquals(2, policy.gridColumns)
+    }
+
+    // ---- Stage 2: measured size, not just height ----
+
+    @Test
+    fun a_measured_block_reports_width_and_height() {
+        val block = ReaderBlock.Audio(media("a1", ContentType.AUDIO), listOf("a1"))
+        val measured = BlockHeightEstimator.measure(block, policy)
+        assertEquals(policy.usableWidth, measured.width)
+        assertEquals(policy.audioHeight, measured.height)
+    }
+
+    @Test
+    fun only_text_is_breakable() {
+        val paragraph = ReaderBlock.Paragraph("body", 1, 1, listOf("t1"))
+        val audio = ReaderBlock.Audio(media("a1", ContentType.AUDIO), listOf("a1"))
+        assertTrue(BlockHeightEstimator.measure(paragraph, policy).breakable)
+        assertFalse(BlockHeightEstimator.measure(audio, policy).breakable)
+    }
+
+    // ---- Stage 3: the budget container ----
+
+    @Test
+    fun an_empty_budget_offers_the_whole_page_and_charges_no_gap() {
+        val budget = PageBudget.of(policy)
+        assertTrue(budget.isEmpty)
+        assertEquals(0f, budget.nextGap)
+        assertEquals(policy.usableHeight, budget.remainingHeight)
+    }
+
+    @Test
+    fun placing_a_block_reduces_the_room_left_for_the_next_one() {
+        val audio = BlockHeightEstimator.measure(
+            ReaderBlock.Audio(media("a1", ContentType.AUDIO), listOf("a1")), policy,
+        )
+        val after = PageBudget.of(policy).place(audio)
+        assertEquals(policy.audioHeight, after.occupied.height)
+        assertEquals(policy.usableWidth, after.occupied.width)
+        // the SECOND block pays a gap; the first did not
+        assertEquals(policy.blockGap, after.nextGap)
+        assertEquals(policy.usableHeight - policy.audioHeight, after.remainingHeight)
+    }
+
+    @Test
+    fun a_block_that_would_overflow_does_not_fit() {
+        var budget = PageBudget.of(policy)
+        val audio = BlockHeightEstimator.measure(
+            ReaderBlock.Audio(media("a1", ContentType.AUDIO), listOf("a1")), policy,
+        )
+        var placed = 0
+        while (budget.fits(audio)) { budget = budget.place(audio); placed++ }
+        assertTrue(placed > 0)
+        // the page is now genuinely full — one more would exceed the usable height
+        assertTrue(budget.occupied.height + budget.nextGap + audio.height > policy.usableHeight)
+    }
+
+    @Test
+    fun a_pages_occupied_size_matches_what_the_budget_accumulated() {
+        val contents = listOf(
+            media("a1", ContentType.AUDIO), media("a2", ContentType.AUDIO), text("t1", "one line"),
+        )
+        val page = PageLayoutEngine
+            .paginate(ReaderBlockBuilder.buildBlocks(contents, policy), policy).first()
+        val expected = page.blocks.foldIndexed(0f) { index, total, block ->
+            total + (if (index == 0) 0f else policy.blockGap) +
+                BlockHeightEstimator.estimate(block, policy)
+        }
+        assertEquals(expected, page.occupied.height)
+        assertEquals(policy.usableWidth, page.occupied.width)
     }
 
     @Test

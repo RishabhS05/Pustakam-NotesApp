@@ -1,10 +1,6 @@
 import SwiftUI
 import shared
 
-// 📖 01-Aug-2026: scroll mode over the SAME pages the curl mode renders — no second pagination.
-//   Sheets wrap their content here (fillHeight false), which removes the empty space the old
-//   fixed-height sheet forced onto every page. Page tracking uses measured offsets, never a fixed
-//   stride: with variable page heights a stride would report the wrong page and corrupt progress.
 struct ReaderScrollView: View {
     let pages: [ReaderPage]
     let policy: PageLayoutPolicy
@@ -24,6 +20,7 @@ struct ReaderScrollView: View {
                             page: page,
                             policy: policy,
                             fillHeight: false,
+                            zoomEnabled: false,
                             onOpenDocument: onOpenDocument,
                             onOpenImage: onOpenImage
                         )

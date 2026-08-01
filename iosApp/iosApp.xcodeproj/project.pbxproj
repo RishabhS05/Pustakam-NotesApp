@@ -32,6 +32,7 @@
 		22B2CA7A30119961002AD701 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA6130119961002AD701 /* LoginView.swift */; };
 		22B2CA7B30119961002AD701 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA6730119961002AD701 /* NotesView.swift */; };
 		22B2CA7C30119961002AD701 /* BookReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA5D30119961002AD701 /* BookReaderView.swift */; };
+		22B2CD3000000000000000A1 /* A4PageBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CD3000000000000000A2 /* A4PageBox.swift */; };
 		0000000022B2CB1000000000 /* ReaderBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000001 /* ReaderBlockView.swift */; };
 		0000000022B2CB1000000002 /* ReaderPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000003 /* ReaderPageView.swift */; };
 		0000000022B2CB1000000004 /* ReaderScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000005 /* ReaderScrollView.swift */; };
@@ -169,6 +170,7 @@
 		22A0C18A300C2B01008D5904 /* ZoomableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomableView.swift; sourceTree = "<group>"; };
 		22A0C18D300C3BC4008D5904 /* BookLoadingAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookLoadingAnimation.swift; sourceTree = "<group>"; };
 		22B2CA5D30119961002AD701 /* BookReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookReaderView.swift; sourceTree = "<group>"; };
+		22B2CD3000000000000000A2 /* A4PageBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = A4PageBox.swift; sourceTree = "<group>"; };
 		0000000022B2CB1000000001 /* ReaderBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderBlockView.swift; sourceTree = "<group>"; };
 		0000000022B2CB1000000003 /* ReaderPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPageView.swift; sourceTree = "<group>"; };
 		0000000022B2CB1000000005 /* ReaderScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderScrollView.swift; sourceTree = "<group>"; };
@@ -389,6 +391,7 @@
 			isa = PBXGroup;
 			children = (
 				22B2CA5D30119961002AD701 /* BookReaderView.swift */,
+				22B2CD3000000000000000A2 /* A4PageBox.swift */,
 				0000000022B2CB1000000001 /* ReaderBlockView.swift */,
 				0000000022B2CB1000000003 /* ReaderPageView.swift */,
 				0000000022B2CB1000000005 /* ReaderScrollView.swift */,
@@ -1066,6 +1069,7 @@
 				22B2CA7A30119961002AD701 /* LoginView.swift in Sources */,
 				22B2CA7B30119961002AD701 /* NotesView.swift in Sources */,
 				22B2CA7C30119961002AD701 /* BookReaderView.swift in Sources */,
+				22B2CD3000000000000000A1 /* A4PageBox.swift in Sources */,
 				0000000022B2CB1000000000 /* ReaderBlockView.swift in Sources */,
 				0000000022B2CB1000000002 /* ReaderPageView.swift in Sources */,
 				0000000022B2CB1000000004 /* ReaderScrollView.swift in Sources */,
