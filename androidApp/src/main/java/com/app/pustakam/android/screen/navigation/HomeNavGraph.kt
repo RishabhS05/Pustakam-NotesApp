@@ -99,10 +99,9 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             val noteId = backStackEntry.arguments?.getString("noteId") ?: ""
             val contentId = backStackEntry.arguments?.getString("contentId")
             val single = backStackEntry.arguments?.getBoolean("single") ?: false
-            val notebookReaderViewModel: NoteBookReaderViewModel = viewModel()
-            notebookReaderViewModel.load( noteId, contentId, single)
             NoteBookReaderScreen(
-                bookReaderViewModel = notebookReaderViewModel,
+                noteId = noteId,
+                startContentId = contentId,
                 singleContent = single,
                 onBack = navController::upPress,
                 // 📖 01-Aug-2026: a document card inside the note opens the dedicated reader

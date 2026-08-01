@@ -24,7 +24,7 @@ fun ReaderScrollReader(
     startPageIndex: Int,
     onPageChanged: (Int) -> Unit,
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
-    onOpenImage: (NoteContentModel.MediaContent) -> Unit = {},
+    onOpenMedia: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = startPageIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
@@ -45,7 +45,7 @@ fun ReaderScrollReader(
                 policy = policy,
                 fillHeight = false,
                 onOpenDocument = onOpenDocument,
-                onOpenImage = onOpenImage,
+                onOpenMedia = onOpenMedia,
             )
         }
     }

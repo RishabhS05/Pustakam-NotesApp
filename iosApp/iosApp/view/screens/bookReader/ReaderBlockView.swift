@@ -7,7 +7,7 @@ struct ReaderBlockView: View {
     let block: ReaderBlock
     let policy: PageLayoutPolicy
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
-    var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
+    var onOpenMedia: (NoteContentModel.MediaContent) -> Void = { _ in }
 
     var body: some View {
         switch block {
@@ -16,13 +16,13 @@ struct ReaderBlockView: View {
         case let paragraph as ReaderBlock.Paragraph:
             ParagraphBlockView(block: paragraph)
         case let images as ReaderBlock.ImageGrid:
-            ImageGridBlockView(block: images, policy: policy, onTap: onOpenImage)
+            ImageGridBlockView(block: images, policy: policy, onTap: onOpenMedia)
         case let videos as ReaderBlock.VideoGrid:
-            VideoGridBlockView(block: videos, policy: policy)
+            VideoGridBlockView(block: videos, policy: policy, onTap: onOpenMedia)
         case let audio as ReaderBlock.Audio:
             AudioBlockView(block: audio)
         case let document as ReaderBlock.Document:
-            DocumentBlockView(block: document, onOpen: onOpenDocument)
+            DocumentBlockView(block: document, policy: policy)
         case let link as ReaderBlock.Link:
             LinkBlockView(block: link)
         case let location as ReaderBlock.Location:

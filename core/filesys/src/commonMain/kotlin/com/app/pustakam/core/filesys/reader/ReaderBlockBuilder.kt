@@ -23,10 +23,34 @@ object ReaderBlockBuilder {
     fun buildForNote(note: Note): List<ReaderBlock> = build(note, PageLayoutPolicy.standard())
 
     fun buildBlocks(contents: List<NoteContentModel>, policy: PageLayoutPolicy): List<ReaderBlock> {
-        val grouped = group(contents)
-        // split any paragraph taller than one page BEFORE pagination, so Step 4 never has to
-        return grouped.flatMap { block ->
-            if (block is ReaderBlock.Paragraph) splitParagraph(block, policy) else listOf(block)
+        // anything taller than a page is split BEFORE pagination, so Step 4 never has to
+        return group(contents).flatMap { block ->
+            when (block) {
+                is ReaderBlock.Paragraph -> splitParagraph(block, policy)
+                is ReaderBlock.ImageGrid -> splitImageGrid(block, policy)
+                is ReaderBlock.VideoGrid -> splitVideoGrid(block, policy)
+                else -> listOf(block)
+            }
+        }
+    }
+
+    // ---- Step 1c: a grid that cannot fit one page becomes consecutive grids, order preserved ----
+
+    fun splitImageGrid(block: ReaderBlock.ImageGrid, policy: PageLayoutPolicy): List<ReaderBlock.ImageGrid> {
+        if (block.items.size <= 1) return listOf(block)
+        val perPage = BlockHeightEstimator.maxItemsPerPage(policy.imageCellHeight, policy)
+        if (block.items.size <= perPage) return listOf(block)
+        return block.items.chunked(perPage).map { chunk ->
+            ReaderBlock.ImageGrid(chunk, chunk.map { it.id })
+        }
+    }
+
+    fun splitVideoGrid(block: ReaderBlock.VideoGrid, policy: PageLayoutPolicy): List<ReaderBlock.VideoGrid> {
+        if (block.items.size <= 1) return listOf(block)
+        val perPage = BlockHeightEstimator.maxItemsPerPage(policy.videoCellHeight, policy)
+        if (block.items.size <= perPage) return listOf(block)
+        return block.items.chunked(perPage).map { chunk ->
+            ReaderBlock.VideoGrid(chunk, chunk.map { it.id })
         }
     }
 

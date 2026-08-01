@@ -1,21 +1,27 @@
 import SwiftUI
 import shared
 
-// 📖 01-Aug-2026: one grid cell — reuses the existing CardImageEditor so image handling stays in
-//   one place; the "+N" veil is drawn on the last visible cell only.
+// 📖 01-Aug-2026: one grid cell — fills its slot and crops, so mixed aspect ratios stay aligned.
 struct ImageGridCell: View {
     let media: NoteContentModel.MediaContent
-    let overflow: Int
-    var onTap: (NoteContentModel.MediaContent) -> Void = { _ in }
+    var onTap: () -> Void = {}
 
     var body: some View {
-        ZStack {
-            CardImageEditor(content: media, actionClick: { onTap(media) })
-            if overflow > 0 {
-                Color.black.opacity(0.45)
-                Text("+\(overflow)").font(.title2).foregroundColor(.white)
+        Group {
+            if let image = UIImage(contentsOfFile: media.getMediaUrl()) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                AsyncImage(url: URL(string: media.getMediaUrl())) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.black.opacity(0.08)
+                }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 6))
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
     }
 }

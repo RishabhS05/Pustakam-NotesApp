@@ -3,9 +3,10 @@ package com.app.pustakam.core.filesys.reader
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlin.math.ceil
 import kotlin.math.max
-import kotlin.math.min
 
-
+// 📖 01-Aug-2026 Step 3 — every block reports its height in policy units, which ARE screen units.
+//   Grids show EVERY item (no "+N"): a grid too tall for one page is split into consecutive blocks
+//   by the builder, so it flows onto the next page instead of overflowing.
 object BlockHeightEstimator {
 
     fun estimate(block: ReaderBlock, policy: PageLayoutPolicy): Float = when (block) {
@@ -17,15 +18,16 @@ object BlockHeightEstimator {
         // a lone image is aspect-aware and full width; two or more use uniform 4:3 grid cells
         is ReaderBlock.ImageGrid ->
             if (block.items.size == 1) singleImageHeight(block.items[0], policy)
-            else gridHeight(block.items.size, policy.gridCellWidth * policy.gridCellAspect, policy)
+            else gridHeight(block.items.size, policy.imageCellHeight, policy)
 
         // a lone video is full width at 16:9; grid cells keep the same ratio
         is ReaderBlock.VideoGrid ->
-            if (block.items.size == 1) policy.usableWidth * VIDEO_ASPECT
-            else gridHeight(block.items.size, policy.gridCellWidth * VIDEO_ASPECT, policy)
+            if (block.items.size == 1) policy.usableWidth * PageLayoutPolicy.VIDEO_ASPECT
+            else gridHeight(block.items.size, policy.videoCellHeight, policy)
 
         is ReaderBlock.Audio -> policy.audioHeight
-        is ReaderBlock.Document -> policy.documentHeight
+        // a document owns its page: title + inline pdf pages + Load more
+        is ReaderBlock.Document -> policy.usableHeight
         is ReaderBlock.Link -> policy.linkHeight
         is ReaderBlock.Location -> policy.locationHeight
     }
@@ -39,18 +41,19 @@ object BlockHeightEstimator {
         return max(1, lines) * policy.bodyLineHeight
     }
 
-    /** Cells actually drawn — 5+ collapses to gridMaxCells with a "+N" on the last one. */
-    fun visibleCells(total: Int, policy: PageLayoutPolicy): Int =
-        min(total, policy.gridMaxCells).coerceAtLeast(1)
-
-    fun overflowCount(total: Int, policy: PageLayoutPolicy): Int =
-        (total - policy.gridMaxCells).coerceAtLeast(0)
-
-    /** Rows needed for [total] items in the 2-column grid, capped at gridMaxCells. */
+    /** Rows needed for [total] items in the 2-column grid — every item is shown. */
     fun rowsFor(total: Int, policy: PageLayoutPolicy): Int =
-        ceil(visibleCells(total, policy).toDouble() / policy.gridColumns).toInt().coerceAtLeast(1)
+        ceil(total.toDouble() / policy.gridColumns).toInt().coerceAtLeast(1)
 
-    private fun gridHeight(total: Int, cellHeight: Float, policy: PageLayoutPolicy): Float {
+    /** Items that still fit on one page for a grid of [cellHeight] cells — used to split a grid. */
+    fun maxItemsPerPage(cellHeight: Float, policy: PageLayoutPolicy): Int {
+        val rowPitch = cellHeight + policy.gridSpacing
+        if (rowPitch <= 0f) return policy.gridColumns
+        val rows = (policy.usableHeight / rowPitch).toInt().coerceAtLeast(1)
+        return rows * policy.gridColumns
+    }
+
+    fun gridHeight(total: Int, cellHeight: Float, policy: PageLayoutPolicy): Float {
         val rows = rowsFor(total, policy)
         return rows * cellHeight + (rows - 1) * policy.gridSpacing
     }
@@ -63,5 +66,6 @@ object BlockHeightEstimator {
         return scaled.coerceIn(policy.imageMinHeight, policy.imageMaxHeight)
     }
 
-    const val VIDEO_ASPECT = 9f / 16f
+    /** Swift-facing accessor — a `const val` inside an object has no guaranteed export shape. */
+    fun videoAspect(): Float = PageLayoutPolicy.VIDEO_ASPECT
 }

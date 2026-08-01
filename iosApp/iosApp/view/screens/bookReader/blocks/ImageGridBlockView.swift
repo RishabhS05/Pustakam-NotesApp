@@ -1,42 +1,35 @@
 import SwiftUI
 import shared
 
-// 📖 01-Aug-2026: 2-column grid. Cell count and the "+N" overflow come from the SHARED estimator,
-//   so what is drawn always matches the height the engine reserved for this block.
+// 📖 01-Aug-2026: 2-column grid showing EVERY image, wrapping downward. Sizes come straight from the
+//   policy — policy units are screen units — so no GeometryReader is needed. That measurement is
+//   exactly what collapsed to zero height inside a ScrollView and blanked the page.
 struct ImageGridBlockView: View {
     let block: ReaderBlock.ImageGrid
     let policy: PageLayoutPolicy
     var onTap: (NoteContentModel.MediaContent) -> Void = { _ in }
 
-    private var visible: Int {
-        Int(BlockHeightEstimator.shared.visibleCells(total: Int32(block.items.count), policy: policy))
-    }
-    private var overflow: Int {
-        Int(BlockHeightEstimator.shared.overflowCount(total: Int32(block.items.count), policy: policy))
-    }
     private var columns: Int { Int(policy.gridColumns) }
+    private var spacing: CGFloat { CGFloat(policy.gridSpacing) }
 
     var body: some View {
-        let shown = Array(block.items.prefix(visible))
-        if visible == 1, let media = shown.first {
-            ImageGridCell(media: media, overflow: 0, onTap: onTap)
-                .frame(maxWidth: .infinity, maxHeight: CGFloat(policy.imageMaxHeight))
+        if block.items.count == 1, let media = block.items.first {
+            ImageGridCell(media: media, onTap: { onTap(media) })
+                .frame(maxWidth: .infinity)
+                .frame(height: CGFloat(BlockHeightEstimator.shared.singleImageHeight(media: media, policy: policy)))
         } else {
-            VStack(spacing: CGFloat(policy.gridSpacing)) {
-                ForEach(Array(stride(from: 0, to: shown.count, by: columns)), id: \.self) { start in
-                    let end = min(start + columns, shown.count)
-                    HStack(spacing: CGFloat(policy.gridSpacing)) {
+            VStack(spacing: spacing) {
+                ForEach(Array(stride(from: 0, to: block.items.count, by: columns)), id: \.self) { start in
+                    let end = min(start + columns, block.items.count)
+                    HStack(spacing: spacing) {
                         ForEach(start..<end, id: \.self) { index in
-                            ImageGridCell(
-                                media: shown[index],
-                                overflow: index == visible - 1 ? overflow : 0,
-                                onTap: onTap
-                            )
-                            .aspectRatio(1 / CGFloat(policy.gridCellAspect), contentMode: .fit)
+                            ImageGridCell(media: block.items[index], onTap: { onTap(block.items[index]) })
+                                .frame(maxWidth: .infinity)
                         }
                         // keeps a lone trailing cell at column width instead of stretching it
                         if end - start < columns { Color.clear.frame(maxWidth: .infinity) }
                     }
+                    .frame(height: CGFloat(policy.imageCellHeight))
                 }
             }
         }

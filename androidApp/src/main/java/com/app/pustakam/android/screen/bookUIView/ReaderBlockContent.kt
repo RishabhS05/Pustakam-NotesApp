@@ -14,15 +14,15 @@ fun ReaderBlockContent(
     policy: PageLayoutPolicy,
     modifier: Modifier = Modifier,
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
-    onOpenImage: (NoteContentModel.MediaContent) -> Unit = {},
+    onOpenMedia: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
     when (block) {
         is ReaderBlock.Title -> TitleBlockView(block, modifier)
         is ReaderBlock.Paragraph -> ParagraphBlockView(block, modifier)
-        is ReaderBlock.ImageGrid -> ImageGridBlockView(block, policy, modifier, onOpenImage)
-        is ReaderBlock.VideoGrid -> VideoGridBlockView(block, policy, modifier)
+        is ReaderBlock.ImageGrid -> ImageGridBlockView(block, policy, modifier, onOpenMedia)
+        is ReaderBlock.VideoGrid -> VideoGridBlockView(block, policy, modifier, onOpenMedia)
         is ReaderBlock.Audio -> AudioBlockView(block, modifier)
-        is ReaderBlock.Document -> DocumentBlockView(block, modifier, onOpenDocument)
+        is ReaderBlock.Document -> DocumentBlockView(block, policy, modifier)
         is ReaderBlock.Link -> LinkBlockView(block, modifier)
         is ReaderBlock.Location -> LocationBlockView(block, modifier)
     }

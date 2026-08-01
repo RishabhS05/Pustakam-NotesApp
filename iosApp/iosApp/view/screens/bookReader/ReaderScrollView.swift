@@ -11,7 +11,7 @@ struct ReaderScrollView: View {
     let startIndex: Int
     var onPageChanged: (Int) -> Void = { _ in }
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
-    var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
+    var onOpenMedia: (NoteContentModel.MediaContent) -> Void = { _ in }
 
     @State private var reportedIndex: Int = -1
 
@@ -25,7 +25,7 @@ struct ReaderScrollView: View {
                             policy: policy,
                             fillHeight: false,
                             onOpenDocument: onOpenDocument,
-                            onOpenImage: onOpenImage
+                            onOpenMedia: onOpenMedia
                         )
                         .id(index)
                         .background(

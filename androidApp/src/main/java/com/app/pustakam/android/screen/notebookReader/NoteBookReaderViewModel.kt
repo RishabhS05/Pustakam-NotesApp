@@ -63,9 +63,11 @@ class NoteBookReaderViewModel : BaseViewModel() {
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
 
-    // 📖 01-Aug-2026: the ONE policy pages are generated against; the UI reads it back so what it
-    //   draws (grid columns, gaps, cell counts) always matches the heights the engine reserved.
-    val layoutPolicy: PageLayoutPolicy = PageLayoutPolicy.standard()
+    // 📖 01-Aug-2026: the ONE policy pages are generated against — A4 PROPORTIONS at the device
+    //   width, so policy units ARE screen units and the UI can size straight from it with no
+    //   measurement. Set from the screen before load(); both platforms use the same rule.
+    var layoutPolicy: PageLayoutPolicy = PageLayoutPolicy.standard()
+        private set
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -93,7 +95,13 @@ class NoteBookReaderViewModel : BaseViewModel() {
     private var lastKnownPage: Int = 0
     private var totalPages: Int = 0
 
-    fun load(noteId: String, startContentId: String? = null, singleContent: Boolean = false) {
+    fun load(
+        noteId: String,
+        startContentId: String? = null,
+        singleContent: Boolean = false,
+        pageWidth: Float = PageLayoutPolicy.A4_WIDTH,
+    ) {
+        layoutPolicy = PageLayoutPolicy.forWidth(pageWidth)
         this.startContentId = startContentId
         this.singleContentMode = singleContent && startContentId != null
         makeAWish(NOTES_CODES.READ) { readNoteUseCase.invoke(noteId) }

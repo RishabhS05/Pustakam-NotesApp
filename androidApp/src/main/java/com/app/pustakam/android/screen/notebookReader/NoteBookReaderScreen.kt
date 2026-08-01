@@ -90,14 +90,23 @@ import kotlin.math.min
 // 📖 01-Aug-2026: shared with the document reader (screen/bookReading) — one definition, no copy
 @Composable
 fun NoteBookReaderScreen(
+    noteId: String = "",
+    startContentId: String? = null,
     singleContent: Boolean = false,
     bookReaderViewModel: NoteBookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
-    // 📖 01-Aug-2026: a document inside a note is a card — tapping it opens the document reader
+    // 📖 01-Aug-2026: a document block opens the full document reader; media opens its preview
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
+    onOpenMedia: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
     val context = LocalContext.current
     val state by bookReaderViewModel.uiState.collectAsStateWithLifecycle()
+    // 📖 01-Aug-2026: pages are laid out against the DEVICE width at A4 proportions
+    val screenWidth = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat()
+
+    LaunchedEffect(noteId, screenWidth) {
+        if (noteId.isNotEmpty()) bookReaderViewModel.load(noteId, startContentId, singleContent, screenWidth)
+    }
 
     DisposableEffect(state.note?.id) {
         onDispose {
@@ -130,6 +139,7 @@ fun NoteBookReaderScreen(
                                 page = state.pages[index],
                                 policy = bookReaderViewModel.layoutPolicy,
                                 onOpenDocument = onOpenDocument,
+                                onOpenMedia = onOpenMedia,
                             )
                         }
 
@@ -143,6 +153,7 @@ fun NoteBookReaderScreen(
                                 bookReaderViewModel.onPageChanged(it)   // 📖 same progress save as page mode
                             },
                             onOpenDocument = onOpenDocument,
+                            onOpenMedia = onOpenMedia,
                         )
                 }
                 // page counter chip

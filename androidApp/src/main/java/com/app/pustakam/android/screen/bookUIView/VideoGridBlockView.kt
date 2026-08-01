@@ -5,52 +5,53 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
-import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
-import com.app.pustakam.core.filesys.reader.BlockHeightEstimator
+import com.app.pustakam.android.widgets.video.VideoCard
 import com.app.pustakam.core.filesys.reader.PageLayoutPolicy
 import com.app.pustakam.core.filesys.reader.ReaderBlock
-import com.app.pustakam.android.widgets.video.VideoCard
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 // 📖 01-Aug-2026: a grid is a LAYOUT, not a player. Every cell is the existing VideoCard, which
-//   already gates on currentPlayingId, so the app still runs exactly ONE ExoPlayer and A.mp4 can
-//   never render into B.mp4's cell.
+//   gates on currentPlayingId, so the app still runs exactly ONE ExoPlayer. Cards get an explicit
+//   height so their requiredHeight can no longer overlap a neighbour.
 @Composable
 fun VideoGridBlockView(
     block: ReaderBlock.VideoGrid,
     policy: PageLayoutPolicy,
     modifier: Modifier = Modifier,
+    onOpenVideo: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
-    val playMediaViewModel: PlayMediaViewModel = viewModel()
-    val visible = BlockHeightEstimator.visibleCells(block.items.size, policy)
-    val shown = block.items.take(visible)
-
-    if (visible == 1) {
-        val media = shown[0]
+    if (block.items.size == 1) {
+        val media = block.items[0]
         VideoCard(
             contentVideo = media,
             modifier = modifier.fillMaxWidth(),
-            onClick = { playMediaViewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id)) },
+            widthFraction = 1f,
+            fixedHeight = (policy.usableWidth * PageLayoutPolicy.VIDEO_ASPECT).dp,
+            onClick = { onOpenVideo(media) },
         )
         return
     }
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(policy.gridSpacing.dp)) {
-        shown.chunked(policy.gridColumns).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(policy.gridSpacing.dp)) {
+    Column(
+        modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(policy.gridSpacing.dp),
+    ) {
+        block.items.chunked(policy.gridColumns).forEach { row ->
+            Row(
+                Modifier.fillMaxWidth().height(policy.videoCellHeight.dp),
+                horizontalArrangement = Arrangement.spacedBy(policy.gridSpacing.dp),
+            ) {
                 row.forEach { media ->
                     Box(Modifier.weight(1f)) {
                         VideoCard(
                             contentVideo = media,
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                playMediaViewModel.onPlayingIntent(
-                                    MediaPlayingUIEvent.SelectedMediaChange(media.id)
-                                )
-                            },
+                            widthFraction = 1f,
+                            fixedHeight = policy.videoCellHeight.dp,
+                            onClick = { onOpenVideo(media) },
                         )
                     }
                 }

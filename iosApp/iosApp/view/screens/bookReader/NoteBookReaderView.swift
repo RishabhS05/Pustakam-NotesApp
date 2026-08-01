@@ -8,6 +8,7 @@ struct NoteBookReaderView: View {
     var startContentId: String? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(Router.self) private var router: Router
     @State private var adapter = NotesBridgeAdapter()
     @State private var pages: [ReaderPage] = []
     @State private var isLoading = true
@@ -18,11 +19,12 @@ struct NoteBookReaderView: View {
     /// the MediaContent whose reading progress this book represents
     @State private var progressContentId: String? = nil
 
-    // the ONE policy pages are generated against; the views read it back so what they draw always
-    // matches the heights the engine reserved
-    private let policy = PageLayoutPolicy.companion.standard()
+    // 📖 01-Aug-2026: pages are laid out against the DEVICE width at A4 proportions, so policy
+    //   units ARE screen points and the block views need no measurement at all
+    @State private var policy = PageLayoutPolicy.companion.forWidth(width: 393)
 
     var body: some View {
+        GeometryReader { screen in
         ZStack {
             BookPalette.desk.ignoresSafeArea()
             if pages.isEmpty && isLoading {
@@ -31,10 +33,17 @@ struct NoteBookReaderView: View {
                 // 📖 both modes render the SAME pages — switching never rebuilds them
                 switch readingMode {
                 case .page:
-                    ReaderPageCurlView(pages: pages, policy: policy, startIndex: startIndex) { index in
-                        currentIndex = index
-                        saveProgress()
-                    }
+                    ReaderPageCurlView(
+                        pages: pages,
+                        policy: policy,
+                        startIndex: startIndex,
+                        onPageChanged: { index in
+                            currentIndex = index
+                            saveProgress()
+                        },
+                        onOpenDocument: openDocument,
+                        onOpenMedia: openMedia
+                    )
                     .ignoresSafeArea(edges: .bottom)
                 case .scroll:
                     ReaderScrollView(
@@ -44,7 +53,9 @@ struct NoteBookReaderView: View {
                         onPageChanged: { index in
                             currentIndex = index
                             saveProgress()
-                        }
+                        },
+                        onOpenDocument: openDocument,
+                        onOpenMedia: openMedia
                     )
                     .ignoresSafeArea(edges: .bottom)
                 }
@@ -78,10 +89,23 @@ struct NoteBookReaderView: View {
             }
         }
         .onAppear {
-            loadNote()
+            let resolved = PageLayoutPolicy.companion.forWidth(width: Float(screen.size.width))
+            policy = resolved
+            loadNote(policy: resolved)
             readerPrefs.observeReadingMode { readingMode = $0 }
         }
         .onDisappear { saveProgress() }
+        }
+    }
+
+    // a document block opens the dedicated document reader
+    private func openDocument(_ media: NoteContentModel.MediaContent) {
+        router.navigate(to: .BookReader(noteId: noteId, bookId: media.id))
+    }
+
+    // any image/video tap opens its preview
+    private func openMedia(_ media: NoteContentModel.MediaContent) {
+        router.navigate(to: .BookReader(noteId: noteId, bookId: media.id))
     }
 
     private func saveProgress() {
@@ -90,7 +114,7 @@ struct NoteBookReaderView: View {
         readerPrefs.saveProgress(contentId: contentId, page: page, totalPages: pages.count)
     }
 
-    private func loadNote() {
+    private func loadNote(policy: PageLayoutPolicy) {
         adapter.readNote(noteId: noteId) { result in
             switch result {
             case .loading: if pages.isEmpty { isLoading = true }

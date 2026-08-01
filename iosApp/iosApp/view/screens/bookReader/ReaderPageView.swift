@@ -8,22 +8,27 @@ struct ReaderPageView: View {
     let policy: PageLayoutPolicy
     var fillHeight: Bool = true
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
-    var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
+    var onOpenMedia: (NoteContentModel.MediaContent) -> Void = { _ in }
 
     var body: some View {
+        // page mode scrolls INSIDE the sheet, so an expanded document can grow without breaking
+        // the page geometry the engine calculated
+        ScrollView(fillHeight ? .vertical : []) {
         VStack(alignment: .leading, spacing: CGFloat(policy.blockGap)) {
             ForEach(Array(page.blocks.enumerated()), id: \.offset) { _, block in
                 ReaderBlockView(
                     block: block,
                     policy: policy,
                     onOpenDocument: onOpenDocument,
-                    onOpenImage: onOpenImage
+                    onOpenMedia: onOpenMedia
                 )
             }
             if fillHeight { Spacer(minLength: 0) }
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .top)
+        }
         .frame(maxWidth: .infinity, maxHeight: fillHeight ? .infinity : nil, alignment: .top)
         .background(BookPalette.paper)
         .clipShape(RoundedRectangle(cornerRadius: 6))

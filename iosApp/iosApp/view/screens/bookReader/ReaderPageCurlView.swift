@@ -9,7 +9,7 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
     let startIndex: Int
     let onPageChanged: (Int) -> Void
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
-    var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
+    var onOpenMedia: (NoteContentModel.MediaContent) -> Void = { _ in }
 
     func makeUIViewController(context: Context) -> UIPageViewController {
         let controller = UIPageViewController(transitionStyle: .pageCurl, navigationOrientation: .horizontal)
@@ -28,7 +28,7 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(pages: pages, policy: policy, onPageChanged: onPageChanged,
-                    onOpenDocument: onOpenDocument, onOpenImage: onOpenImage)
+                    onOpenDocument: onOpenDocument, onOpenMedia: onOpenMedia)
     }
 
     // index travels on the hosting controller — no tag hacks
@@ -47,18 +47,18 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
         let policy: PageLayoutPolicy
         let onPageChanged: (Int) -> Void
         let onOpenDocument: (NoteContentModel.MediaContent) -> Void
-        let onOpenImage: (NoteContentModel.MediaContent) -> Void
+        let onOpenMedia: (NoteContentModel.MediaContent) -> Void
 
         init(pages: [ReaderPage],
              policy: PageLayoutPolicy,
              onPageChanged: @escaping (Int) -> Void,
              onOpenDocument: @escaping (NoteContentModel.MediaContent) -> Void,
-             onOpenImage: @escaping (NoteContentModel.MediaContent) -> Void) {
+             onOpenMedia: @escaping (NoteContentModel.MediaContent) -> Void) {
             self.pages = pages
             self.policy = policy
             self.onPageChanged = onPageChanged
             self.onOpenDocument = onOpenDocument
-            self.onOpenImage = onOpenImage
+            self.onOpenMedia = onOpenMedia
         }
 
         func pageController(at index: Int) -> UIViewController {
@@ -69,7 +69,7 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
                     policy: policy,
                     fillHeight: true,
                     onOpenDocument: onOpenDocument,
-                    onOpenImage: onOpenImage
+                    onOpenMedia: onOpenMedia
                 )
             )
         }

@@ -2,30 +2,35 @@ import SwiftUI
 import shared
 
 // 📖 01-Aug-2026: a grid is a LAYOUT, not a player. Every cell is the existing VideoCardPlayer,
-//   which already gates on MediaManager.currentPlaying, so A.mp4 can never render into B.mp4's cell.
+//   which gates on MediaManager.currentPlaying, so A.mp4 can never render into B.mp4's cell.
+//   Explicit frames stop a card overlapping its neighbour.
 struct VideoGridBlockView: View {
     let block: ReaderBlock.VideoGrid
     let policy: PageLayoutPolicy
+    var onTap: (NoteContentModel.MediaContent) -> Void = { _ in }
 
-    private var visible: Int {
-        Int(BlockHeightEstimator.shared.visibleCells(total: Int32(block.items.count), policy: policy))
-    }
     private var columns: Int { Int(policy.gridColumns) }
+    private var spacing: CGFloat { CGFloat(policy.gridSpacing) }
 
     var body: some View {
-        let shown = Array(block.items.prefix(visible))
-        if visible == 1, let media = shown.first {
-            VideoCardPlayer(content: media).frame(maxWidth: .infinity)
+        if block.items.count == 1, let media = block.items.first {
+            VideoCardPlayer(content: media)
+                .frame(maxWidth: .infinity)
+                .frame(height: CGFloat(policy.usableWidth * PageLayoutPolicy.companion.videoAspect()))
+                .clipped()
         } else {
-            VStack(spacing: CGFloat(policy.gridSpacing)) {
-                ForEach(Array(stride(from: 0, to: shown.count, by: columns)), id: \.self) { start in
-                    let end = min(start + columns, shown.count)
-                    HStack(spacing: CGFloat(policy.gridSpacing)) {
+            VStack(spacing: spacing) {
+                ForEach(Array(stride(from: 0, to: block.items.count, by: columns)), id: \.self) { start in
+                    let end = min(start + columns, block.items.count)
+                    HStack(spacing: spacing) {
                         ForEach(start..<end, id: \.self) { index in
-                            VideoCardPlayer(content: shown[index]).frame(maxWidth: .infinity)
+                            VideoCardPlayer(content: block.items[index])
+                                .frame(maxWidth: .infinity)
+                                .clipped()
                         }
                         if end - start < columns { Color.clear.frame(maxWidth: .infinity) }
                     }
+                    .frame(height: CGFloat(policy.videoCellHeight))
                 }
             }
         }
