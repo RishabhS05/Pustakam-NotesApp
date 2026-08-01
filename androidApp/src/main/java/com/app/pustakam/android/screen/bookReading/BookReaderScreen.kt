@@ -25,9 +25,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.pustakam.android.screen.notebookReader.BookPageContent
+import com.app.pustakam.android.screen.bookUIView.BookPageContent
+import com.app.pustakam.android.screen.bookUIView.BookScrollReader
 import com.app.pustakam.android.screen.notebookReader.BookPager
-import com.app.pustakam.android.screen.notebookReader.BookScrollReader
+
 import com.app.pustakam.android.screen.notebookReader.ReadingMode
 import com.app.pustakam.android.theme.PaperColor
 import com.app.pustakam.android.theme.typography

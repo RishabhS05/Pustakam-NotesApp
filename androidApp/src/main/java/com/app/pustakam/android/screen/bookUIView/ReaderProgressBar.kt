@@ -1,4 +1,4 @@
-package com.app.pustakam.android.screen.book
+package com.app.pustakam.android.screen.bookUIView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
