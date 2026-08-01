@@ -70,6 +70,8 @@ import coil.compose.AsyncImage
 import com.app.pustakam.android.screen.bookUIView.BookPageContent
 import com.app.pustakam.android.screen.bookUIView.BookScrollReader
 import com.app.pustakam.android.screen.bookUIView.PaperPage
+import com.app.pustakam.android.screen.bookUIView.ReaderPageContent
+import com.app.pustakam.android.screen.bookUIView.ReaderScrollReader
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
@@ -91,6 +93,8 @@ fun NoteBookReaderScreen(
     singleContent: Boolean = false,
     bookReaderViewModel: NoteBookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
+    // 📖 01-Aug-2026: a document inside a note is a card — tapping it opens the document reader
+    onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
     val context = LocalContext.current
     val state by bookReaderViewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +114,7 @@ fun NoteBookReaderScreen(
             state.pages.isNotEmpty() -> {
                 var pageIndex by remember { mutableIntStateOf(state.startPageIndex) }
 
+                // 📖 01-Aug-2026: both modes render the SAME state.pages — switching never rebuilds
                 when (state.readingMode) {
                     ReadingMode.PAGE ->
                         BookPager(
@@ -121,17 +126,23 @@ fun NoteBookReaderScreen(
                                 bookReaderViewModel.onPageChanged(it)
                             },
                         ) { index ->
-                            BookPageContent(page = state.pages[index])
+                            ReaderPageContent(
+                                page = state.pages[index],
+                                policy = bookReaderViewModel.layoutPolicy,
+                                onOpenDocument = onOpenDocument,
+                            )
                         }
 
                     ReadingMode.SCROLL ->
-                        BookScrollReader(
+                        ReaderScrollReader(
                             pages = state.pages,
+                            policy = bookReaderViewModel.layoutPolicy,
                             startPageIndex = state.startPageIndex,
                             onPageChanged = {
                                 pageIndex = it
                                 bookReaderViewModel.onPageChanged(it)   // 📖 same progress save as page mode
                             },
+                            onOpenDocument = onOpenDocument,
                         )
                 }
                 // page counter chip

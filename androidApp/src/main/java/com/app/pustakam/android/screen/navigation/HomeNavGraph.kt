@@ -104,7 +104,11 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             NoteBookReaderScreen(
                 bookReaderViewModel = notebookReaderViewModel,
                 singleContent = single,
-                onBack = navController::upPress
+                onBack = navController::upPress,
+                // 📖 01-Aug-2026: a document card inside the note opens the dedicated reader
+                onOpenDocument = { media ->
+                    navController.navigateTo(Route.BookReader + "/$noteId?contentId=${media.id}")
+                },
             )
         }
         // 📖 01-Aug-2026: DOCUMENT reader — one file opened on its own. No `single` flag and no

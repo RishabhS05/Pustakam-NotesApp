@@ -24,6 +24,9 @@ import org.koin.core.component.inject
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.filesys.reader.PageLayoutEngine
+import com.app.pustakam.core.filesys.reader.PageLayoutPolicy
+import com.app.pustakam.core.filesys.reader.ReaderPage
 
 // 🔧 18-Jul-2026: one leaf of the book — every content type maps to at least one page
 sealed class BookPage {
@@ -43,7 +46,8 @@ data class BookUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val note: Note? = null,
-    val pages: List<BookPage> = emptyList(),
+    // 📖 01-Aug-2026: pages now come from the shared PageLayoutEngine, one page = many widgets
+    val pages: List<ReaderPage> = emptyList(),
     val startPageIndex: Int = 0,
     val readingMode: ReadingMode = ReadingMode.PAGE,
 )
@@ -58,6 +62,10 @@ class NoteBookReaderViewModel : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
+
+    // 📖 01-Aug-2026: the ONE policy pages are generated against; the UI reads it back so what it
+    //   draws (grid columns, gaps, cell counts) always matches the heights the engine reserved.
+    val layoutPolicy: PageLayoutPolicy = PageLayoutPolicy.standard()
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -128,26 +136,16 @@ class NoteBookReaderViewModel : BaseViewModel() {
 
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         val note = result.data.data as Note
-        // 🔧 18-Jul-2026: page building does file IO (pdf page counts, txt reads) → IO dispatcher
+        // 📖 01-Aug-2026: pages are generated ONCE, here, by the shared engine. Both reading modes
+        //   consume this same list, so toggling the mode never re-paginates and never moves a page.
         viewModelScope.launch(Dispatchers.IO) {
-            // 🔧 19-Jul-2026: single-file mode builds pages for ONLY the tapped content (DRY factory)
-            val pages = if (singleContentMode) {
-                note.contents.firstOrNull { it.id == startContentId }
-                    ?.let { BookPageFactory.buildForContent(it) } ?: BookPageFactory.buildForNote(note)
-            } else BookPageFactory.buildForNote(note)
-            val start = if (singleContentMode) 0
-            else startContentId?.let { id -> pages.indexOfFirst { it.sourceContentId == id } } ?: -1
+            val pages = PageLayoutEngine.buildPages(note, layoutPolicy)
+            // an explicit startContentId (tapped card) is an intentional jump and wins over resume
+            val jump = PageLayoutEngine.pageIndexOf(pages, startContentId)
 
-            // 📖 23-Jul-2026: track the document this book represents so progress can be saved onto it.
-            //   Single-file mode = the opened file; whole-note book = the first paged document (its
-            //   page indices are what we count). Resume from its saved progressPage when present.
-            val progressContent = if (singleContentMode) {
-                note.contents.filterIsInstance<NoteContentModel.MediaContent>()
-                    .firstOrNull { it.id == startContentId }
-            } else {
-                note.contents.filterIsInstance<NoteContentModel.MediaContent>()
-                    .firstOrNull { it.id == pages.firstNotNullOfOrNull { p -> p.sourceContentId } }
-            }
+            // progress is tracked against the first document on the page list, as before
+            val progressContent = note.contents.filterIsInstance<NoteContentModel.MediaContent>()
+                .firstOrNull { media -> pages.any { it.contains(media.id) } }
             progressContentId = progressContent?.id
             totalPages = pages.size
 
@@ -155,11 +153,7 @@ class NoteBookReaderViewModel : BaseViewModel() {
                 ?.takeIf { it.hasReadingProgress() }
                 ?.progressPage
                 ?.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
-            val resolvedStart = when {
-                singleContentMode -> savedPage ?: 0
-                start >= 0 -> start
-                else -> savedPage ?: 0
-            }
+            val resolvedStart = if (jump >= 0) jump else savedPage ?: 0
             lastKnownPage = resolvedStart
             _uiState.update {
                 it.copy(

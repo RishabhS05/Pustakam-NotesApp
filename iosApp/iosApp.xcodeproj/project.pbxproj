@@ -32,6 +32,20 @@
 		22B2CA7A30119961002AD701 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA6130119961002AD701 /* LoginView.swift */; };
 		22B2CA7B30119961002AD701 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA6730119961002AD701 /* NotesView.swift */; };
 		22B2CA7C30119961002AD701 /* BookReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA5D30119961002AD701 /* BookReaderView.swift */; };
+		0000000022B2CB1000000000 /* ReaderBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000001 /* ReaderBlockView.swift */; };
+		0000000022B2CB1000000002 /* ReaderPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000003 /* ReaderPageView.swift */; };
+		0000000022B2CB1000000004 /* ReaderScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000005 /* ReaderScrollView.swift */; };
+		0000000022B2CB1000000006 /* ReaderPageOffsetKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000007 /* ReaderPageOffsetKey.swift */; };
+		0000000022B2CB1000000008 /* ReaderPageCurlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000009 /* ReaderPageCurlView.swift */; };
+		0000000022B2CB100000000A /* TitleBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000000B /* TitleBlockView.swift */; };
+		0000000022B2CB100000000C /* ParagraphBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000000D /* ParagraphBlockView.swift */; };
+		0000000022B2CB100000000E /* ImageGridBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000000F /* ImageGridBlockView.swift */; };
+		0000000022B2CB1000000010 /* ImageGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000011 /* ImageGridCell.swift */; };
+		0000000022B2CB1000000012 /* VideoGridBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000013 /* VideoGridBlockView.swift */; };
+		0000000022B2CB1000000014 /* AudioBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000015 /* AudioBlockView.swift */; };
+		0000000022B2CB1000000016 /* DocumentBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000017 /* DocumentBlockView.swift */; };
+		0000000022B2CB1000000018 /* LinkBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000019 /* LinkBlockView.swift */; };
+		0000000022B2CB100000001A /* LocationBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000001B /* LocationBlockView.swift */; };
 		22B2CB0130119961002AD701 /* NoteBookReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CB0230119961002AD701 /* NoteBookReaderView.swift */; };
 		22B2CA7D30119961002AD701 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA7530119961002AD701 /* SignupView.swift */; };
 		22B2CA7E30119961002AD701 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B2CA7330119961002AD701 /* SettingsView.swift */; };
@@ -155,6 +169,20 @@
 		22A0C18A300C2B01008D5904 /* ZoomableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomableView.swift; sourceTree = "<group>"; };
 		22A0C18D300C3BC4008D5904 /* BookLoadingAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookLoadingAnimation.swift; sourceTree = "<group>"; };
 		22B2CA5D30119961002AD701 /* BookReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookReaderView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000001 /* ReaderBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000003 /* ReaderPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPageView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000005 /* ReaderScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderScrollView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000007 /* ReaderPageOffsetKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPageOffsetKey.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000009 /* ReaderPageCurlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPageCurlView.swift; sourceTree = "<group>"; };
+		0000000022B2CB100000000B /* TitleBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB100000000D /* ParagraphBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParagraphBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB100000000F /* ImageGridBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGridBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000011 /* ImageGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGridCell.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000013 /* VideoGridBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGridBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000015 /* AudioBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000017 /* DocumentBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000019 /* LinkBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB100000001B /* LocationBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationBlockView.swift; sourceTree = "<group>"; };
 		22B2CB0230119961002AD701 /* NoteBookReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteBookReaderView.swift; sourceTree = "<group>"; };
 		22B2CA5F30119961002AD701 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		22B2CA6130119961002AD701 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -341,10 +369,32 @@
 			path = zoom;
 			sourceTree = "<group>";
 		};
+		0000000022B2CB100000FFF0 /* blocks */ = {
+			isa = PBXGroup;
+			children = (
+				0000000022B2CB100000000B /* TitleBlockView.swift */,
+				0000000022B2CB100000000D /* ParagraphBlockView.swift */,
+				0000000022B2CB100000000F /* ImageGridBlockView.swift */,
+				0000000022B2CB1000000011 /* ImageGridCell.swift */,
+				0000000022B2CB1000000013 /* VideoGridBlockView.swift */,
+				0000000022B2CB1000000015 /* AudioBlockView.swift */,
+				0000000022B2CB1000000017 /* DocumentBlockView.swift */,
+				0000000022B2CB1000000019 /* LinkBlockView.swift */,
+				0000000022B2CB100000001B /* LocationBlockView.swift */,
+			);
+			path = blocks;
+			sourceTree = "<group>";
+		};
 		22B2CA5E30119961002AD701 /* bookReader */ = {
 			isa = PBXGroup;
 			children = (
 				22B2CA5D30119961002AD701 /* BookReaderView.swift */,
+				0000000022B2CB1000000001 /* ReaderBlockView.swift */,
+				0000000022B2CB1000000003 /* ReaderPageView.swift */,
+				0000000022B2CB1000000005 /* ReaderScrollView.swift */,
+				0000000022B2CB1000000007 /* ReaderPageOffsetKey.swift */,
+				0000000022B2CB1000000009 /* ReaderPageCurlView.swift */,
+				0000000022B2CB100000FFF0 /* blocks */,
 				22B2CB0230119961002AD701 /* NoteBookReaderView.swift */,
 			);
 			path = bookReader;
@@ -1016,6 +1066,20 @@
 				22B2CA7A30119961002AD701 /* LoginView.swift in Sources */,
 				22B2CA7B30119961002AD701 /* NotesView.swift in Sources */,
 				22B2CA7C30119961002AD701 /* BookReaderView.swift in Sources */,
+				0000000022B2CB1000000000 /* ReaderBlockView.swift in Sources */,
+				0000000022B2CB1000000002 /* ReaderPageView.swift in Sources */,
+				0000000022B2CB1000000004 /* ReaderScrollView.swift in Sources */,
+				0000000022B2CB1000000006 /* ReaderPageOffsetKey.swift in Sources */,
+				0000000022B2CB1000000008 /* ReaderPageCurlView.swift in Sources */,
+				0000000022B2CB100000000A /* TitleBlockView.swift in Sources */,
+				0000000022B2CB100000000C /* ParagraphBlockView.swift in Sources */,
+				0000000022B2CB100000000E /* ImageGridBlockView.swift in Sources */,
+				0000000022B2CB1000000010 /* ImageGridCell.swift in Sources */,
+				0000000022B2CB1000000012 /* VideoGridBlockView.swift in Sources */,
+				0000000022B2CB1000000014 /* AudioBlockView.swift in Sources */,
+				0000000022B2CB1000000016 /* DocumentBlockView.swift in Sources */,
+				0000000022B2CB1000000018 /* LinkBlockView.swift in Sources */,
+				0000000022B2CB100000001A /* LocationBlockView.swift in Sources */,
 				22B2CB0130119961002AD701 /* NoteBookReaderView.swift in Sources */,
 				22B2CA7D30119961002AD701 /* SignupView.swift in Sources */,
 				22B2CA7E30119961002AD701 /* SettingsView.swift in Sources */,

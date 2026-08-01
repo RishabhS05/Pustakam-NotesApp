@@ -1,0 +1,73 @@
+package com.app.pustakam.core.filesys.reader
+
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+
+// 📖 01-Aug-2026 — ONE renderable widget on a page. A page is a list of these, so a page can hold a
+//   title + paragraph + image grid + three audio players instead of one widget per page.
+//   Platform UI renders a block; it never decides what goes where.
+sealed class ReaderBlock {
+    /** Content ids behind this block — powers jump-to-content and reading progress. */
+    abstract val sourceContentIds: List<String>
+
+    data class Title(
+        val text: String,
+        val subtitle: String?,
+    ) : ReaderBlock() {
+        override val sourceContentIds: List<String> get() = emptyList()
+    }
+
+    data class Paragraph(
+        val text: String,
+        val chunkIndex: Int,
+        val chunkCount: Int,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+
+    /** Consecutive images. [items] keeps every image; only the first gridMaxCells render. */
+    data class ImageGrid(
+        val items: List<NoteContentModel.MediaContent>,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+
+    /** Consecutive videos — cells reuse the existing VideoCard, so one ExoPlayer still serves all. */
+    data class VideoGrid(
+        val items: List<NoteContentModel.MediaContent>,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+
+    data class Audio(
+        val item: NoteContentModel.MediaContent,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+
+    /** pdf / docx / epub / txt / other — rendered by the existing document widgets. */
+    data class Document(
+        val item: NoteContentModel.MediaContent,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+
+    data class Link(
+        val url: String,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+
+    data class Location(
+        val latitude: Double,
+        val longitude: Double,
+        val address: String?,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock()
+}
+
+// 📖 01-Aug-2026 — one A4 sheet. Page mode renders pages[i]; scroll mode stacks the same list.
+data class ReaderPage(
+    val index: Int,
+    val blocks: List<ReaderBlock>,
+    val usedHeight: Float,
+) {
+    val sourceContentIds: List<String> get() = blocks.flatMap { it.sourceContentIds }
+
+    /** True when the page carries [contentId] — used to resolve a jump target. */
+    fun contains(contentId: String?): Boolean =
+        contentId != null && sourceContentIds.any { it == contentId }
+}

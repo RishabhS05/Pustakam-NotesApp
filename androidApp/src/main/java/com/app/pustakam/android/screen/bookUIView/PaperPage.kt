@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,11 +15,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.theme.PaperColor
 
+// 📖 01-Aug-2026: [fillHeight]=false lets a sheet wrap its content. It defaults to true so the
+//   page-curl reader and the document reader keep the full-screen sheet they had; only scroll mode
+//   opts out. Without this the sheet always filled the screen and no packing could ever be seen.
 @Composable
-fun PaperPage(background: Color = PaperColor, content: @Composable () -> Unit) {
+fun PaperPage(
+    background: Color = PaperColor,
+    fillHeight: Boolean = true,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     Box(
-        Modifier
-            .fillMaxSize()
+        modifier
+            .then(if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
             .padding(horizontal = 10.dp, vertical = 8.dp)
             .background(background, RoundedCornerShape(6.dp))
     ) {
