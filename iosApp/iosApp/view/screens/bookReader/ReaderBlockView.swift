@@ -18,7 +18,7 @@ struct ReaderBlockView: View {
         case let images as ReaderBlock.ImageGrid:
             ImageGridBlockView(block: images, policy: policy, onTap: onOpenImage)
         case let videos as ReaderBlock.VideoGrid:
-            VideoGridBlockView(block: videos, policy: policy)
+            VideoGridBlockView(block: videos, policy: policy,)
         case let audio as ReaderBlock.Audio:
             AudioBlockView(block: audio)
         case let document as ReaderBlock.Document:

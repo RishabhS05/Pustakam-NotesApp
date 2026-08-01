@@ -17,13 +17,13 @@ struct NoteBookReaderView: View {
     @State private var readingMode: ReadingMode = .page
     /// the MediaContent whose reading progress this book represents
     @State private var progressContentId: String? = nil
+    @State private var previewImagePath: String? = nil
 
     // the ONE policy pages are generated against; the views read it back so what they draw always
     // matches the heights the engine reserved
     @State private var policy = PageLayoutPolicy.companion.standard()
 
     var body: some View {
-        GeometryReader { screen in
         ZStack {
             BookPalette.desk.ignoresSafeArea()
             if pages.isEmpty && isLoading {
@@ -32,10 +32,17 @@ struct NoteBookReaderView: View {
                 // 📖 both modes render the SAME pages — switching never rebuilds them
                 switch readingMode {
                 case .page:
-                    ReaderPageCurlView(pages: pages, policy: policy, startIndex: startIndex) { index in
-                        currentIndex = index
-                        saveProgress()
-                    }
+                    ReaderPageCurlView(
+                        pages: pages,
+                        policy: policy,
+                        startIndex: startIndex,
+                        onPageChanged: { index in
+                            currentIndex = index
+                            saveProgress()
+                        },
+                        onOpenDocument: openMedia,
+                        onOpenImage: openMedia
+                    )
                     .ignoresSafeArea(edges: .bottom)
                 case .scroll:
                     ReaderScrollView(
@@ -45,7 +52,9 @@ struct NoteBookReaderView: View {
                         onPageChanged: { index in
                             currentIndex = index
                             saveProgress()
-                        }
+                        },
+                        onOpenDocument: openMedia,
+                        onOpenImage: openMedia
                     )
                     .ignoresSafeArea(edges: .bottom)
                 }
@@ -79,16 +88,29 @@ struct NoteBookReaderView: View {
             }
         }
         .onAppear {
+            let bounds = UIScreen.main.bounds
             let resolved = PageLayoutPolicy.companion.forScreen(
-                width: Float(screen.size.width),
-                height: Float(screen.size.height)
+                width: Float(bounds.width),
+                height: Float(bounds.height)
             )
             policy = resolved
             loadNote(policy: resolved)
             readerPrefs.observeReadingMode { readingMode = $0 }
         }
         .onDisappear { saveProgress() }
+        .fullScreenCover(isPresented: Binding(
+            get: { previewImagePath != nil },
+            set: { if !$0 { previewImagePath = nil } }
+        )) {
+            if let path = previewImagePath {
+                ImagePreviewView(path: path) { previewImagePath = nil }
+            }
         }
+    }
+
+    private func openMedia(_ media: NoteContentModel.MediaContent) {
+        guard media.type == ContentType.image || media.type == ContentType.gif else { return }
+        previewImagePath = media.getMediaUrl()
     }
 
     private func saveProgress() {

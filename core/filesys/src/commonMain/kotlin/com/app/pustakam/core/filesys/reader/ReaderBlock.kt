@@ -23,7 +23,7 @@ sealed class ReaderBlock {
         override val sourceContentIds: List<String>,
     ) : ReaderBlock()
 
-    /** Consecutive images. [items] keeps every image; only the first gridMaxCells render. */
+    /** Consecutive images — every item renders; the builder splits a grid too tall for a page. */
     data class ImageGrid(
         val items: List<NoteContentModel.MediaContent>,
         override val sourceContentIds: List<String>,

@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.theme.PaperColor
-import com.app.pustakam.android.widgets.zoom.zoomable
 import com.app.pustakam.core.filesys.reader.PageLayoutPolicy
 import com.app.pustakam.core.filesys.reader.ReaderPage
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
@@ -39,7 +38,6 @@ fun ReaderPageContent(
             .then(if (fillHeight) Modifier.fillMaxHeight() else Modifier.height(policy.pageHeight.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp)
             .background(PaperColor, RoundedCornerShape(6.dp))
-            .then(if (zoomEnabled) Modifier.zoomable() else Modifier)
             .clipToBounds()
     ) {
         Column(

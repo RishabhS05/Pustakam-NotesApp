@@ -26,8 +26,29 @@ object ReaderBlockBuilder {
         val grouped = group(contents)
         // split any paragraph taller than one page BEFORE pagination, so Step 4 never has to
         return grouped.flatMap { block ->
-            if (block is ReaderBlock.Paragraph) splitParagraph(block, policy) else listOf(block)
+            when (block) {
+                is ReaderBlock.Paragraph -> splitParagraph(block, policy)
+                is ReaderBlock.ImageGrid -> splitImageGrid(block, policy)
+                is ReaderBlock.VideoGrid -> splitVideoGrid(block, policy)
+                else -> listOf(block)
+            }
         }
+    }
+
+    fun splitImageGrid(block: ReaderBlock.ImageGrid, policy: PageLayoutPolicy): List<ReaderBlock.ImageGrid> {
+        if (block.items.size <= 1) return listOf(block)
+        val cell = policy.gridCellWidth * policy.gridCellAspect
+        val perPage = BlockHeightEstimator.maxItemsPerPage(cell, policy)
+        if (block.items.size <= perPage) return listOf(block)
+        return block.items.chunked(perPage).map { ReaderBlock.ImageGrid(it, it.map { m -> m.id }) }
+    }
+
+    fun splitVideoGrid(block: ReaderBlock.VideoGrid, policy: PageLayoutPolicy): List<ReaderBlock.VideoGrid> {
+        if (block.items.size <= 1) return listOf(block)
+        val cell = policy.gridCellWidth * BlockHeightEstimator.VIDEO_ASPECT
+        val perPage = BlockHeightEstimator.maxItemsPerPage(cell, policy)
+        if (block.items.size <= perPage) return listOf(block)
+        return block.items.chunked(perPage).map { ReaderBlock.VideoGrid(it, it.map { m -> m.id }) }
     }
 
     // ---- Step 1: consecutive-run grouping ----

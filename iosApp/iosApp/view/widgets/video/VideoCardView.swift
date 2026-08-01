@@ -15,10 +15,24 @@ struct VideoCardPlayer : View {
     var mediaManager = MediaManager.mediaManager
     // 🔧 14-Jul-2026: init now accepts actionDelete + actionSave (defaults keep old call sites compiling)
     //   Usage: VideoCardPlayer(content: media, actionDelete: { ... }, actionSave: { ... })
+    // 📖 01-Aug-2026: the reader packs videos into grid cells, so the card must be able to take the
+    //   size it is given. Defaults reproduce the editor's 200x300 card exactly.
+    var cardWidth: CGFloat = 200
+    var cardHeight: CGFloat = 300
+    var cardPadding: CGFloat = 12
+
     init(content: NoteContentModel.MediaContent,
+         cardWidth: CGFloat = 200,
+         cardHeight: CGFloat = 300,
+         cardPadding: CGFloat = 12,
+         actionClick: @escaping () -> Void = {},
          actionDelete: @escaping () -> Void = {},
          actionSave: @escaping () -> Void = {}){
         self.content = content
+        self.cardWidth = cardWidth
+        self.cardHeight = cardHeight
+        self.cardPadding = cardPadding
+        self.actionClick = actionClick
         self.actionDelete = actionDelete
         self.actionSave = actionSave
     }
@@ -39,7 +53,7 @@ struct VideoCardPlayer : View {
                                         .foregroundColor(Theme.Colors.primary)
                                 }
                             }
-            }.frame(width: 200,height: 300)
+            }.frame(width: cardWidth, height: cardHeight)
                 .cornerRadius(12)
                 .onAppear{
                     // 🔧 14-Jul-2026: prepare only (no autoplay). Scrolling a video into view no
@@ -106,12 +120,12 @@ struct VideoCardPlayer : View {
                     }
                     .padding(.bottom, 20)
                 }
-                .frame(width: 200, height: 70)
+                .frame(width: cardWidth, height: 70)
                 .transition(.opacity)
             }
         }
-        .frame(width: 200, height: 300)
+        .frame(width: cardWidth, height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .padding(12)
+        .padding(cardPadding)
     }
 }

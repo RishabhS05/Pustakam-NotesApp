@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -68,6 +69,7 @@ import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
 import com.app.pustakam.android.theme.typography
+import com.app.pustakam.core.common.extensions.isNotnull
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.common.util.ContentType
 // 🔧 14-Jul-2026: auto-hide timer for the long-press overlay reveal
@@ -89,6 +91,10 @@ fun VideoCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     onShowActions: (Boolean) -> Unit = {},
+    // 📖 01-Aug-2026: the reader packs several widgets per page, so it needs the card to fill its
+    //   slot and OBEY the parent's height. Defaults reproduce the editor's card exactly.
+    widthFraction: Float = .7f,
+    fixedHeight: Dp? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val context = LocalContext.current as Activity
@@ -107,12 +113,14 @@ fun VideoCard(
     // 🔧 14-Jul-2026: pending auto-hide; cancelled and restarted on every long-press
     val hideJob = remember { mutableStateOf<Job?>(null) }
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
-    val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 460.dp)
+    val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 400.dp)
 
     Box(modifier = modifier) {
         Card(
-            modifier = Modifier.fillMaxWidth(.7f)
-                .requiredHeight(cardHeight)
+            // requiredHeight IGNORES the parent — it is what made reader cards overlap. An explicit
+            // fixedHeight uses height() instead, so the card fits the slot it was given.
+            modifier = Modifier.fillMaxWidth(widthFraction)
+                .then(if (fixedHeight != null) Modifier.height(fixedHeight) else Modifier.requiredHeight(cardHeight))
                 .padding(8.dp)
                 .combinedClickable(
                     onClick = { onClick() },

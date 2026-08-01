@@ -14,7 +14,10 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
         controller.dataSource = context.coordinator
         controller.delegate = context.coordinator
         controller.view.backgroundColor = .clear
-        let start = min(max(startIndex, 0), max(pages.count - 1, 0))
+        // pageCurl defaults to double-sided, which makes UIKit demand a second controller
+        controller.isDoubleSided = false
+        guard !pages.isEmpty else { return controller }
+        let start = min(max(startIndex, 0), pages.count - 1)
         controller.setViewControllers([context.coordinator.pageController(at: start)],
                                       direction: .forward, animated: false)
         return controller
@@ -22,6 +25,13 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIPageViewController, context: Context) {
         context.coordinator.pages = pages
+        guard !pages.isEmpty else { return }
+        // the controller is created before pages arrive, so seed it once they do
+        if uiViewController.viewControllers?.isEmpty ?? true {
+            let start = min(max(startIndex, 0), pages.count - 1)
+            uiViewController.setViewControllers([context.coordinator.pageController(at: start)],
+                                                direction: .forward, animated: false)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -60,7 +70,8 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
         }
 
         func pageController(at index: Int) -> UIViewController {
-            ReaderPageHost(
+            guard pages.indices.contains(index) else { return UIViewController() }
+           return ReaderPageHost(
                 index: index,
                 rootView: ReaderPageView(
                     page: pages[index],
@@ -73,12 +84,12 @@ struct ReaderPageCurlView: UIViewControllerRepresentable {
         }
 
         func pageViewController(_ pvc: UIPageViewController, viewControllerBefore vc: UIViewController) -> UIViewController? {
-            guard let host = vc as? ReaderPageHost, host.index > 0 else { return nil }
+            guard let host = vc as? ReaderPageHost, host.index > 0, !pages.isEmpty else { return nil }
             return pageController(at: host.index - 1)
         }
 
         func pageViewController(_ pvc: UIPageViewController, viewControllerAfter vc: UIViewController) -> UIViewController? {
-            guard let host = vc as? ReaderPageHost, host.index < pages.count - 1 else { return nil }
+            guard let host = vc as? ReaderPageHost, host.index < pages.count - 1, !pages.isEmpty else { return nil }
             return pageController(at: host.index + 1)
         }
 

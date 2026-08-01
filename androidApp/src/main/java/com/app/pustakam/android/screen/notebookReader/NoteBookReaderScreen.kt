@@ -97,6 +97,7 @@ fun NoteBookReaderScreen(
     onBack: () -> Unit = {},
     // 📖 01-Aug-2026: a document inside a note is a card — tapping it opens the document reader
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
+    onOpenMedia: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
     val context = LocalContext.current
     val state by bookReaderViewModel.uiState.collectAsStateWithLifecycle()
@@ -141,6 +142,7 @@ fun NoteBookReaderScreen(
                                 page = state.pages[index],
                                 policy = bookReaderViewModel.layoutPolicy,
                                 onOpenDocument = onOpenDocument,
+                                onOpenImage = onOpenMedia,
                             )
                         }
 
@@ -154,6 +156,7 @@ fun NoteBookReaderScreen(
                                 bookReaderViewModel.onPageChanged(it)   // 📖 same progress save as page mode
                             },
                             onOpenDocument = onOpenDocument,
+                            onOpenImage = onOpenMedia,
                         )
                 }
                 // page counter chip

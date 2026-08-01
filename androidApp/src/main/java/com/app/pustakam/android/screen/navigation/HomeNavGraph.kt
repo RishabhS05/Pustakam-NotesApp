@@ -23,7 +23,9 @@ import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
 import com.app.pustakam.android.screen.settings.SettingsScreen
+import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.CameraData
+import com.app.pustakam.core.model.models.response.notes.getMediaUrl
 
 
 fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
@@ -99,6 +101,8 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             val noteId = backStackEntry.arguments?.getString("noteId") ?: ""
             val contentId = backStackEntry.arguments?.getString("contentId")
             val single = backStackEntry.arguments?.getBoolean("single") ?: false
+            val imageViewModel: ImageDataViewModel = backStackEntry
+                .sharedViewModel<ImageDataViewModel>(navController.navController)
             NoteBookReaderScreen(
                 noteId = noteId,
                 startContentId = contentId,
@@ -107,6 +111,14 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
                 // 📖 01-Aug-2026: a document card inside the note opens the dedicated reader
                 onOpenDocument = { media ->
                     navController.navigateTo(Route.BookReader + "/$noteId?contentId=${media.id}")
+                },
+                onOpenMedia = { media ->
+                    imageViewModel.onSetMediaToPreview(media.getMediaUrl(), media.type, mediaId = media.id)
+                    when (media.type) {
+                        ContentType.IMAGE, ContentType.GIF -> navController.navigateTo(Route.ImagePreview)
+                        ContentType.VIDEO -> navController.navigateTo(Route.VideoPreview)
+                        else -> Unit
+                    }
                 },
             )
         }

@@ -231,10 +231,24 @@ class PageLayoutEngineTest {
     // ---- grid rules ----
 
     @Test
-    fun a_grid_shows_at_most_four_cells_and_reports_the_overflow() {
-        assertEquals(4, BlockHeightEstimator.visibleCells(9, policy))
-        assertEquals(5, BlockHeightEstimator.overflowCount(9, policy))
-        assertEquals(0, BlockHeightEstimator.overflowCount(3, policy))
+    fun a_grid_shows_every_item_and_never_reports_overflow() {
+        assertEquals(9, BlockHeightEstimator.visibleCells(9, policy))
+        assertEquals(0, BlockHeightEstimator.overflowCount(9, policy))
+    }
+
+    @Test
+    fun a_grid_too_tall_for_a_page_is_split_and_still_shows_everything() {
+        val perPage = BlockHeightEstimator.maxItemsPerPage(
+            policy.gridCellWidth * policy.gridCellAspect, policy,
+        )
+        val contents = (1..perPage * 2 + 3).map { media("i$it", ContentType.IMAGE) }
+        val blocks = ReaderBlockBuilder.buildBlocks(contents, policy)
+        assertTrue(blocks.size > 1)
+        val shown = blocks.filterIsInstance<ReaderBlock.ImageGrid>().sumOf { it.items.size }
+        assertEquals(contents.size, shown)
+        blocks.forEach {
+            assertTrue(BlockHeightEstimator.estimate(it, policy) <= policy.usableHeight)
+        }
     }
 
     @Test

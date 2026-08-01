@@ -3,7 +3,6 @@ package com.app.pustakam.core.filesys.reader
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlin.math.ceil
 import kotlin.math.max
-import kotlin.math.min
 
 
 object BlockHeightEstimator {
@@ -60,16 +59,21 @@ object BlockHeightEstimator {
         return max(1, lines) * policy.bodyLineHeight
     }
 
-    /** Cells actually drawn — 5+ collapses to gridMaxCells with a "+N" on the last one. */
-    fun visibleCells(total: Int, policy: PageLayoutPolicy): Int =
-        min(total, policy.gridMaxCells).coerceAtLeast(1)
+    /** Every item is drawn — a grid too tall for a page is split by the builder instead. */
+    fun visibleCells(total: Int, policy: PageLayoutPolicy): Int = total.coerceAtLeast(1)
 
-    fun overflowCount(total: Int, policy: PageLayoutPolicy): Int =
-        (total - policy.gridMaxCells).coerceAtLeast(0)
+    fun overflowCount(total: Int, policy: PageLayoutPolicy): Int = 0
 
-    /** Rows needed for [total] items in the 2-column grid, capped at gridMaxCells. */
     fun rowsFor(total: Int, policy: PageLayoutPolicy): Int =
-        ceil(visibleCells(total, policy).toDouble() / policy.gridColumns).toInt().coerceAtLeast(1)
+        ceil(total.toDouble() / policy.gridColumns).toInt().coerceAtLeast(1)
+
+    /** Items that still fit on one page for a grid of [cellHeight] cells — drives the split. */
+    fun maxItemsPerPage(cellHeight: Float, policy: PageLayoutPolicy): Int {
+        val rowPitch = cellHeight + policy.gridSpacing
+        if (rowPitch <= 0f) return policy.gridColumns
+        val rows = (policy.usableHeight / rowPitch).toInt().coerceAtLeast(1)
+        return rows * policy.gridColumns
+    }
 
     private fun gridHeight(total: Int, cellHeight: Float, policy: PageLayoutPolicy): Float {
         val rows = rowsFor(total, policy)

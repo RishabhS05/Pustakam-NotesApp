@@ -41,14 +41,7 @@ struct ReaderPageView: View {
         .frame(height: fillHeight ? nil : CGFloat(policy.pageHeight))
         .clipShape(RoundedRectangle(cornerRadius: 6))
 
-        Group {
-            if zoomEnabled {
-                ZoomableView { sheet }
-            } else {
-                sheet
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        sheet
+            .padding(.vertical, 6)
     }
 }
