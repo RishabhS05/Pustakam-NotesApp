@@ -44,10 +44,10 @@ import androidx.compose.ui.platform.LocalConfiguration   // 🔧 20-Jul-2026: de
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.app.pustakam.android.screen.bookReader.BookPage
-import com.app.pustakam.android.screen.bookReader.BookPageContent
-import com.app.pustakam.android.screen.bookReader.BookPageFactory
-import com.app.pustakam.android.screen.bookReader.BookPager
+import com.app.pustakam.android.screen.notebookReader.BookPage
+import com.app.pustakam.android.screen.notebookReader.BookPageContent
+import com.app.pustakam.android.screen.notebookReader.BookPageFactory
+import com.app.pustakam.android.screen.notebookReader.BookPager
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.bookwidget.BookLoadingAnimation
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel

@@ -15,16 +15,18 @@ import shared
         case Home
         case Settings
         case Camera (onCapture : (CapturedMedia?) -> Void)
-        // 🔧 18-Jul-2026: NEW — page-curl book reader (noteId so the widget deep link works too)
-        // 🔧 19-Jul-2026: single=true → book contains ONLY the tapped file's pages
-        case BookReader (noteId : String, startContentId : String? = nil, single : Bool = false)
+        // 📖 01-Aug-2026: two readers — one document (bookId), or the whole note (widget deep link)
+        case BookReader (noteId : String, bookId : String)
+        case NoteBookReader (noteId : String, startContentId : String? = nil)
 
         func hash(into hasher: inout Hasher) {
             switch self {
                 case .NoteEditor(let note):
                     hasher.combine(note?.id)
-                case .BookReader(let noteId, let contentId, let single):   // 🔧 19-Jul-2026
-                    hasher.combine(noteId); hasher.combine(contentId); hasher.combine(single)
+                case .BookReader(let noteId, let bookId):
+                    hasher.combine(noteId); hasher.combine(bookId)
+                case .NoteBookReader(let noteId, let contentId):
+                    hasher.combine(noteId); hasher.combine(contentId)
                 default:
                     hasher.combine(String(describing: self))
             }
@@ -34,8 +36,10 @@ import shared
             switch (lhs, rhs) {
                 case (.NoteEditor(let lhsNote), .NoteEditor(let rhsNote)):
                     return lhsNote?.id == rhsNote?.id
-                case (.BookReader(let lId, let lC, let lS), .BookReader(let rId, let rC, let rS)):   // 🔧 19-Jul-2026
-                    return lId == rId && lC == rC && lS == rS
+                case (.BookReader(let lId, let lB), .BookReader(let rId, let rB)):
+                    return lId == rId && lB == rB
+                case (.NoteBookReader(let lId, let lC), .NoteBookReader(let rId, let rC)):
+                    return lId == rId && lC == rC
                 default:
                     return String(describing: lhs) == String(describing: rhs)
             }

@@ -143,7 +143,7 @@ struct NoteEditorView: View {
                                                   enabled : noteEditorViewModel.isNoteValid(),
                                                   action: {
                         if let noteId = noteEditorViewModel.state.note?.id {
-                            router.navigate(to: .BookReader(noteId: noteId))
+                            router.navigate(to: .NoteBookReader(noteId: noteId))
                         }
                     }, tint: Theme.Colors.secondary)
                     // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word
@@ -230,9 +230,7 @@ struct NoteEditorView: View {
                         let cid = contentDoc.id
                         noteEditorViewModel.saveThenOpen {
                             if let noteId = noteEditorViewModel.state.note?.id {
-                                router.navigate(to: .BookReader(noteId: noteId,
-                                                                startContentId: cid,
-                                                                single: true))
+                                router.navigate(to: .BookReader(noteId: noteId, bookId: cid))
                             }
                         }
                     },

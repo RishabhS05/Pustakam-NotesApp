@@ -4,57 +4,71 @@ import Firebase
 import FirebaseCrashlytics
 @main
 struct iOSApp: App {
-   @State var themeManager = ThemeManager()
-   @State var router = Router()
-    
     init(){
+        if AppEnvironment.isRunningForPreviews {
+            return
+        }
+
         FirebaseApp.configure()
         KoinKt.doInitKoin(appDeclaration: {_ in})
     }
     var body: some Scene {
-     
         WindowGroup {
-
-            NavigationStack(path: $router.navPath){
-                AppView()
-                    
-                    .navigationDestination(for: Router.Destination.self){
-                        destination in
-                        switch destination {
-                            case .Signup : SignupView()
-                            case.Notes : NotesView()
-                            case.NoteEditor(let note) : NoteEditorView(note: note)
-                            case.Login : LoginView()
-                            case .Notification : NotificationView()
-                            case .Search : SearchView()
-                            case .Home : HomeView()
-                            case .Settings : SettingsView()
-                            case .Camera(let onDone):
-                                CameraPreview(onCapture: onDone)
-                            // 🔧 18-Jul-2026: page-curl book reader destination
-                            case .BookReader(let noteId, let startContentId, let single):
-                                BookReaderView(noteId: noteId, startContentId: startContentId, singleContent: single)
-                            default: LoginView()
-                        }
-                    }
+            if AppEnvironment.isRunningForPreviews {
+                EmptyView()
+            } else {
+                AppRootView()
             }
-            // 🔧 18-Jul-2026: widget deep link pustakam://book/<noteId> → open the book reader
-            .onOpenURL { url in
-                guard url.scheme == "pustakam", url.host == "book" else { return }
-                let noteId = url.lastPathComponent
-                if !noteId.isEmpty && noteId != "book" {
-                    router.navigate(to: .BookReader(noteId: noteId))
-                }
-            }
-            .environment(router)
-                .environment(themeManager)
-                // 🎨 22-Jul-2026 — nil for .system so the app follows the OS appearance.
-                .preferredColorScheme(themeManager.getTheme())
-                // 🎨 22-Jul-2026 — inject \.palette *after* preferredColorScheme so the AMOLED
-                //   override sees the scheme iOS actually resolved.
-                .themedRoot(mode: themeManager.mode)
         }
 	}
+}
+
+private struct AppRootView: View {
+    @State var themeManager = ThemeManager()
+    @State var router = Router()
+
+    var body: some View {
+        NavigationStack(path: $router.navPath){
+            AppView()
+
+                .navigationDestination(for: Router.Destination.self){
+                    destination in
+                    switch destination {
+                        case .Signup : SignupView()
+                        case.Notes : NotesView()
+                        case.NoteEditor(let note) : NoteEditorView(note: note)
+                        case.Login : LoginView()
+                        case .Notification : NotificationView()
+                        case .Search : SearchView()
+                        case .Home : HomeView()
+                        case .Settings : SettingsView()
+                        case .Camera(let onDone):
+                            CameraPreview(onCapture: onDone)
+                        // 📖 01-Aug-2026: document reader vs whole-note reader
+                        case .BookReader(let noteId, let bookId):
+                            BookReaderView(noteId: noteId, bookId: bookId)
+                        case .NoteBookReader(let noteId, let startContentId):
+                            NoteBookReaderView(noteId: noteId, startContentId: startContentId)
+                        default: LoginView()
+                    }
+                }
+        }
+        // 🔧 18-Jul-2026: widget deep link pustakam://book/<noteId> → open the book reader
+        .onOpenURL { url in
+            guard url.scheme == "pustakam", url.host == "book" else { return }
+            let noteId = url.lastPathComponent
+            if !noteId.isEmpty && noteId != "book" {
+                router.navigate(to: .NoteBookReader(noteId: noteId))
+            }
+        }
+        .environment(router)
+        .environment(themeManager)
+        // 🎨 22-Jul-2026 — nil for .system so the app follows the OS appearance.
+        .preferredColorScheme(themeManager.getTheme())
+        // 🎨 22-Jul-2026 — inject \.palette *after* preferredColorScheme so the AMOLED
+        //   override sees the scheme iOS actually resolved.
+        .themedRoot(mode: themeManager.mode)
+    }
 }
 
 

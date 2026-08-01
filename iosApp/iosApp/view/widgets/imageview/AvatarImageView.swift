@@ -8,32 +8,24 @@ struct AvatarImageView: View {
     var body: some View {
         
         ZStack (alignment: .bottom){
-            AsyncImage(url: URL(fileURLWithPath: imageUrl)) { phase in
-                if let image = phase.image {
-                        // Display the loaded image
-                    image.resizable().scaledToFit()
-                        .frame(width: 200,height: 200)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle().stroke(.brown, lineWidth: 4)
-                        }
-                        .shadow(radius:7)
-                    
-                } else if phase.error != nil || imageUrl.isEmpty {
-                        // Display a placeholder when loading failed
-                    
-                    Image("avatar").resizable()
-                        .scaledToFit()
-                        .frame(width: 200,height: 200)
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle().stroke(.brown, lineWidth: 4)
-                        }
-                        .shadow(radius:7)
-                    
-                } else {
-                        // Display a placeholder while loading
-                    ProgressView()
+            if imageUrl.isEmpty {
+                placeholderAvatar
+            } else {
+                AsyncImage(url: URL(fileURLWithPath: imageUrl)) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFit()
+                            .frame(width: 200,height: 200)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle().stroke(.brown, lineWidth: 4)
+                            }
+                            .shadow(radius:7)
+                    } else if phase.error != nil {
+                        placeholderAvatar
+                    } else {
+                        ProgressView()
+                            .frame(width: 200, height: 200)
+                    }
                 }
             }
             Image(systemName: "square.and.arrow.up.circle.fill")
@@ -47,6 +39,19 @@ struct AvatarImageView: View {
                 }
         }
 
+    }
+    
+    private var placeholderAvatar: some View {
+        Image(systemName: "person.crop.circle.fill")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 200,height: 200)
+            .foregroundStyle(.brown)
+            .clipShape(Circle())
+            .overlay {
+                Circle().stroke(.brown, lineWidth: 4)
+            }
+            .shadow(radius:7)
     }
     
     }

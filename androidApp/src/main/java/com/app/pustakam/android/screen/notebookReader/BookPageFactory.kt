@@ -1,4 +1,4 @@
-package com.app.pustakam.android.screen.bookReader
+package com.app.pustakam.android.screen.notebookReader
 
 // 🔧 19-Jul-2026: NEW (DRY refactor) — page building extracted from BookReaderViewModel so the
 //   full-screen reader AND the inline editor book widget build pages through the SAME functions.

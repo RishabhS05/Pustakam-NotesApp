@@ -28,6 +28,7 @@ object Route {
     const val VideoPreview = "VIDEO_PREVIEW"
     const val Settings = "SETTINGS"
     const val BookReader = "BOOK_READER"   // 🔧 18-Jul-2026: page-flip book reader
+    const val NoteBookReader = "NOTEBOOK_READER"   // 🔧 18-Jul-2026: page-flip book reader
 }
 @Stable
 class PustakmNavController(

@@ -1,7 +1,5 @@
 package com.app.pustakam.android.widgets.bookwidget
 
-// 🔧 18-Jul-2026: NEW FEATURE (book widget) — home-screen widget styled as a small leather book;
-//   tapping it deep-links straight into the page-flip reader for the last-read note.
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider

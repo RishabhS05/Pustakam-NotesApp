@@ -1,4 +1,4 @@
-package com.app.pustakam.android.screen.bookReader
+package com.app.pustakam.android.screen.notebookReader
 
 // 📖 23-Jul-2026: NEW — reading mode. PAGE keeps the book feel (curling leaves); SCROLL lays the
 //   same pages out as one continuous document, which suits long PDFs and text. Mirrors iOS

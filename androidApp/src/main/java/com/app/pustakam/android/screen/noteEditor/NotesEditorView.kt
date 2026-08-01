@@ -275,7 +275,7 @@ fun NoteEditorScreen(
             // 🔧 18-Jul-2026: NEW — open this note as a real page-flip book
             IconButton(onClick = {
                     state.value.note?.id?.let {
-                        navigateTo(Route.BookReader + "/${it}")
+                        navigateTo(Route.NoteBookReader + "/${it}")
                     }
             }, enabled = noteEditorViewModel.isNoteValid()
             ) {
@@ -381,7 +381,7 @@ fun NoteEditorScreen(
                                 val cid = contentValue.id
                                 noteEditorViewModel.saveThenOpen {
                                     state.value.note?.id?.let {
-                                        navigateTo(Route.BookReader + "/${it}?contentId=${cid}&single=true")
+                                        navigateTo(Route.BookReader + "/${it}?contentId=${cid}")
                                     }
                                 }
                             },

@@ -8,15 +8,17 @@ import androidx.navigation.navArgument   // 🔧 18-Jul-2026: optional contentId
 import androidx.navigation.navDeepLink   // 🔧 18-Jul-2026: widget → book deep link
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.app.pustakam.android.screen.bookReader.BookReaderScreen   // 🔧 18-Jul-2026: book reader
+import com.app.pustakam.android.screen.notebookReader.NoteBookReaderScreen   // 🔧 18-Jul-2026: book reader
 import com.app.pustakam.android.extension.sharedViewModel
 import com.app.pustakam.android.hardware.camera.CameraStreamingScreen
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.hardware.camera.ImageEditorScreen
 import com.app.pustakam.android.hardware.camera.MediaProcessingEvent
 import com.app.pustakam.android.hardware.video.VideoPreviewScreen
+import com.app.pustakam.android.screen.bookReading.BookReaderScreen
 import com.app.pustakam.android.screen.noteEditor.NoteEditorViewModel
 import com.app.pustakam.android.screen.noteEditor.NoteEditorScreen
+import com.app.pustakam.android.screen.notebookReader.NoteBookReaderViewModel
 import com.app.pustakam.android.screen.notes.list.NotesView
 import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
@@ -83,7 +85,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
         }
         // 🔧 18-Jul-2026: NEW — page-flip book reader; deep-linked from the home-screen widget
         composable(
-            route = Route.BookReader + "/{noteId}?contentId={contentId}&single={single}",
+            route = Route.NoteBookReader + "/{noteId}?contentId={contentId}&single={single}",
             // 🔧 18-Jul-2026: contentId is optional — nullable + default keeps plain routes valid
             arguments = listOf(
                 navArgument("contentId") {
@@ -97,10 +99,30 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             val noteId = backStackEntry.arguments?.getString("noteId") ?: ""
             val contentId = backStackEntry.arguments?.getString("contentId")
             val single = backStackEntry.arguments?.getBoolean("single") ?: false
-            BookReaderScreen(
-                noteId = noteId,
-                startContentId = contentId,
+            val notebookReaderViewModel: NoteBookReaderViewModel = viewModel()
+            notebookReaderViewModel.load( noteId, contentId, single)
+            NoteBookReaderScreen(
+                bookReaderViewModel = notebookReaderViewModel,
                 singleContent = single,
+                onBack = navController::upPress
+            )
+        }
+        // 📖 01-Aug-2026: DOCUMENT reader — one file opened on its own. No `single` flag and no
+        //   widget deep link: that link opens the whole note above.
+        composable(
+            route = Route.BookReader + "/{noteId}?contentId={contentId}",
+            arguments = listOf(
+                navArgument("contentId") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getString("noteId")
+            val contentId = backStackEntry.arguments?.getString("contentId")
+            // 📖 the screen owns the load (LaunchedEffect) so it can't refire on recomposition
+            BookReaderScreen(
+                bookId = contentId,
+                noteId = noteId,
                 onBack = navController::upPress
             )
         }

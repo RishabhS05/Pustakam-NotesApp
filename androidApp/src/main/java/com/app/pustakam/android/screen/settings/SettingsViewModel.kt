@@ -3,7 +3,7 @@ package com.app.pustakam.android.screen.settings
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.android.screen.bookReader.ReadingMode
+import com.app.pustakam.android.screen.notebookReader.ReadingMode
 import com.app.pustakam.android.theme.ThemeMode
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences
 import com.app.pustakam.core.model.models.BaseResponse
@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
 import com.app.pustakam.core.common.util.Result
-import com.app.pustakam.core.common.util.onSuccess
 
 // 🎨 22-Jul-2026 — Granth spec §6 Settings state. Appearance is persisted through the shared
 //   DataStore (same "granth.themeMode" key iOS uses); the remaining rows are real state holders

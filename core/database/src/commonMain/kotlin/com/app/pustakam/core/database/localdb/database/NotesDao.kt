@@ -6,6 +6,7 @@ import com.app.pustakam.core.model.models.Tag
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.core.database.NoteContent
 import com.app.pustakam.core.database.NotesDatabase
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.getCurrentTimestamp
@@ -377,17 +378,51 @@ class NotesDao : KoinComponent {
             id = contentId
         )
     }
-    fun  deleteNoteContentById(id : String)= queries.deleteNoteContentById(id)
+    fun  deleteNoteContentById(id : String) = queries.deleteNoteContentById(id)
 
-    suspend fun deleteByIdFromDb(id: String) : Boolean {
-        queries.deleteById(id)
+    // 📖 01-Aug-2026: returns the DOMAIN model, not the raw row — the document reader consumes this
+    fun getNoteContentById(id: String): NoteContentModel? =
+        queries.selectNoteContentById(id).executeAsOneOrNull()?.toNoteContentModel()
+
+    // 📖 01-Aug-2026: single row -> domain mapper (same field mapping the note query already uses)
+    private fun NoteContent.toNoteContentModel(): NoteContentModel? {
+        if (type.isEmpty()) return null
+        return when (val contentType = ContentType.valueOf(type)) {
+            ContentType.TEXT -> NoteContentModel.TextContent(
+                id = id, noteId = noteId, text = text ?: "", position = position ?: 0.0,
+                createdAt = createdAt, updatedAt = updatedAt, metadata = metaData,
+            )
+
+            ContentType.IMAGE, ContentType.DOCX, ContentType.VIDEO, ContentType.AUDIO,
+            ContentType.PDF, ContentType.GIF, ContentType.TXT, ContentType.MD,
+            ContentType.EPUB, ContentType.OTHER -> NoteContentModel.MediaContent(
+                title = title ?: "$type-$position",
+                id = id, noteId = noteId, url = url ?: "", position = position ?: 0.0,
+                createdAt = createdAt, updatedAt = updatedAt,
+                localPath = localPath, duration = duration ?: 0, type = contentType,
+                mimeType = mimeType ?: "", sizeBytes = sizeBytes ?: 0,
+                width = width?.toInt() ?: 0, height = height?.toInt() ?: 0,
+                thumbnailPath = thumbnailPath,
+                totalPages = totalPages.toInt(), progressPage = progressPage.toInt(),
+            )
+
+            ContentType.LINK -> NoteContentModel.Link(
+                url = url ?: "", id = id, noteId = noteId, position = position ?: 0.0,
+                createdAt = createdAt, updatedAt = updatedAt,
+            )
+
+            ContentType.LOCATION -> NoteContentModel.Location(
+                latitude = lat ?: 0.0, longitude = long ?: 0.0, address = address,
+                position = position ?: 0.0, id = id, noteId = noteId,
+                createdAt = createdAt, updatedAt = updatedAt,
+            )
+        }
+    }
+    suspend fun deleteNoteByIdFromDb(id: String) : Boolean {
+        queries.deleteNoteById(id)
         val note  = selectNoteById(id)
         return note == null
     }
-    // 🔧 15-Jul-2026 Phase 0.4: dirty-row saves — `dirtyContentIds` limits the write to the content
-    //   rows that actually changed (a 5,000-block note no longer rewrites 5,000 rows per save).
-    //   null = legacy full write (iOS bridge and sync paths are unchanged). The note HEADER row is
-    //   always written — it is one cheap row and carries title/updatedAt.
     fun insertOrUpdateNoteFromDb(note: Note, dirtyContentIds: Set<String>? = null) : Note {
         log_d("NoteDao insert", note)
         queries.insertOrUpdateNote(

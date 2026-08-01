@@ -1,7 +1,6 @@
-package com.app.pustakam.android.screen.bookReader
+package com.app.pustakam.android.screen.notebookReader
 
-// 🔧 18-Jul-2026: NEW FEATURE (book reader) — real page-flip pager: the leaf rotates around the
-//   spine (left edge) in 3D like a paper page; drag to curl, release to settle, tap edges to flip.
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -33,7 +32,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
 
-// 🔧 18-Jul-2026: which leaf is turning — FORWARD turns the current page, BACKWARD returns the previous
 private enum class FlipDirection { FORWARD, BACKWARD }
 
 @Composable
@@ -53,7 +51,6 @@ fun BookPager(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    // 🔧 18-Jul-2026: settle helper — completes or cancels the active flip, then updates the page
     fun settle(complete: Boolean) {
         val dir = direction ?: return
         scope.launch {
@@ -63,7 +60,6 @@ fun BookPager(
                     FlipDirection.FORWARD -> (currentPage + 1).coerceAtMost(pageCount - 1)
                     FlipDirection.BACKWARD -> (currentPage - 1).coerceAtLeast(0)
                 }
-                // 🔧 18-Jul-2026: direction + page written in the SAME frame — no wrong-leaf flash
                 direction = null
                 currentPage = newPage
                 flip.snapTo(0f)
@@ -76,7 +72,6 @@ fun BookPager(
         }
     }
 
-    // 🔧 18-Jul-2026: programmatic flip used by the tap zones
     fun flipBy(dir: FlipDirection) {
         if (direction != null) return
         if (dir == FlipDirection.FORWARD && currentPage >= pageCount - 1) return

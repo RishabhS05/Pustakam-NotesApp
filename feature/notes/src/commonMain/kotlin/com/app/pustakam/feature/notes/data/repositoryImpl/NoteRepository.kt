@@ -25,8 +25,8 @@ import kotlinx.coroutines.flow.update
 import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
 import com.app.pustakam.feature.notes.domain.repository.IRemoteNoteRepository
 import com.app.pustakam.core.common.util.Result
-import com.app.pustakam.core.common.util.map
 import com.app.pustakam.core.common.util.onSuccess
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 class NoteRepository : BaseRepository(),
     IRemoteNoteRepository, ILocalNotesRepository {
@@ -145,7 +145,7 @@ class NoteRepository : BaseRepository(),
     override suspend fun deleteNoteByIdFromDb(id: String?): Result<BaseResponse<Boolean>, Error> {
         // 🔧 F3: missing `return` — the null-check was dead code, then id!! could NPE
         if (id.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
-        val success =  notesDao.deleteByIdFromDb(id)
+        val success =  notesDao.deleteNoteByIdFromDb(id)
         return  if(success){
             val response = BaseResponse(data = success, isSuccessful = true, isFromDb = true)
             Result.Success(response)
@@ -196,6 +196,14 @@ class NoteRepository : BaseRepository(),
         notesDao.deleteNoteContentById(id)
         return Result.Success(BaseResponse(data = true, isSuccessful = true))
     }
+
+    override suspend fun getNoteContentByIdFromDb(id: String?): Result<BaseResponse<NoteContentModel>, Error> {
+        if (id.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
+        val content = notesDao.getNoteContentById(id)
+        return  if (content.isNotnull()) Result.Success(BaseResponse(data = content, isSuccessful = true))
+        else Result.Error(error = NetworkError.NOT_FOUND)
+    }
+
     /** CRUD ON Tags/Categories
      *  🔧 F3 (piece 4): every DB mutation updates _tags immediately — single source of truth */
     override suspend fun createTagOnDB(tag: Tag): Result<BaseResponse<Tag>, Error> {

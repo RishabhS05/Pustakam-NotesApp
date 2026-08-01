@@ -97,7 +97,7 @@ SELECT * FROM NoteContent
 WHERE noteId = ?
 ORDER BY position ASC;
 
-
+selectNoteContentById:
 SELECT * FROM NoteContent
 WHERE id = ?;
 
@@ -141,7 +141,7 @@ LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
 WHERE Notes.id = ?
 ORDER BY NoteContent.position;
 
-deleteById :
+deleteNoteById :
 DELETE FROM Notes WHERE  id = ? ;
 
 -- 🔧 15-Jul-2026 Phase 0.1: one PAGE of note ids for the list screen. Paging happens on Notes ids

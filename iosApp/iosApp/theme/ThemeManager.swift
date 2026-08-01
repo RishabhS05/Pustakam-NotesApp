@@ -8,6 +8,17 @@
 
 import SwiftUI
 import Observation
+import Darwin
+
+enum AppEnvironment {
+    static var isRunningForPreviews: Bool {
+        guard let value = getenv("XCODE_RUNNING_FOR_PREVIEWS") else {
+            return false
+        }
+
+        return String(cString: value) == "1"
+    }
+}
 
 // 🎨 22-Jul-2026 — Granth spec §6 Appearance: four tiles (System / Light / Dark / AMOLED).
 //   `system` is the modern-iOS default: it returns a nil ColorScheme so the app inherits the OS
@@ -60,7 +71,9 @@ enum ThemeMode: String, CaseIterable, Identifiable {
     var mode: ThemeMode {
         didSet {
             isDarkMode = (mode != .light)
-            UserDefaults.standard.set(mode.rawValue, forKey: Self.storageKey)
+            if !AppEnvironment.isRunningForPreviews {
+                UserDefaults.standard.set(mode.rawValue, forKey: Self.storageKey)
+            }
         }
     }
 
@@ -69,6 +82,12 @@ enum ThemeMode: String, CaseIterable, Identifiable {
     var isDarkMode: Bool = false
 
     init() {
+        if AppEnvironment.isRunningForPreviews {
+            self.mode = .system
+            self.isDarkMode = false
+            return
+        }
+
         let saved = UserDefaults.standard.string(forKey: Self.storageKey)
         let restored = saved.flatMap(ThemeMode.init(rawValue:)) ?? .system
         self.mode = restored

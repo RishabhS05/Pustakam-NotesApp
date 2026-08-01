@@ -71,8 +71,6 @@ fun  AudioPlayerUIState(
             if (!state.value.isServiceIsRunning) localContext.startServiceWrapper(Intent(localContext, PustakmMediaPlayerService::class.java))
             viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(noteContent.id))
         },
-            // 🔧 14-Jul-2026: FIX — was `onSave = {}` (empty), so the save button did nothing.
-            //   Now forwards the caller's onSave (wired in NotesEditorView → SAF picker).
             onSave = onSave
         )
     }

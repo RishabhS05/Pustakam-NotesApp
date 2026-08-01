@@ -23,12 +23,6 @@ class ReadNoteUseCase : NoteBaseUseCase() {
         getBaseApiCall { noteRepository.getANote(id) }
 }
 
-// 📖 23-Jul-2026: persist the reader's position onto a document's media row. Mirrors
-//   DeleteNoteContentUseCase exactly (same base, same getBaseApiCall wrapper, same repo → DAO flow).
-class UpdateReadingProgressUseCase : NoteBaseUseCase() {
-    suspend operator fun invoke(contentId: String?, progressPage: Int, totalPages: Int) =
-        getBaseApiCall { noteRepository.updateReadingProgressFromDb(contentId ?: "", progressPage, totalPages) }
-}
 
 class GetNotesUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(page: Int) =
@@ -53,10 +47,6 @@ class SearchNotesUseCase : NoteBaseUseCase() {
         getBaseApiCall { noteRepository.searchNotes(query) }
 }
 
-class DeleteNoteContentUseCase : NoteBaseUseCase() {
-    suspend operator fun invoke(id: String?) =
-        getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }
-}
 class GetTagCase : NoteBaseUseCase() {
     suspend operator fun invoke() =
         getBaseApiCall { noteRepository.getTagsFromDB() }

@@ -1,7 +1,4 @@
-package com.app.pustakam.android.screen.bookReader
-
-// 🔧 18-Jul-2026: NEW FEATURE (book reader) — opens a note as a REAL book: paper pages, spine,
-//   3D page-flip; renders text, images, PDFs (page-per-page), audio/video, docs, links, locations.
+package com.app.pustakam.android.screen.notebookReader
 import com.app.pustakam.android.theme.PaperColor
 // 🔧 30-Jul-2026 02:10 shared-player protocol: same ViewModel + events the editor drives
 import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
@@ -46,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -82,26 +81,24 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.min
 
-// 🔧 18-Jul-2026: warm paper palette — a book stays paper-colored in any app theme
 
-private val PaperInk = Color(0xFF3E2F1C)
-private val CoverColor = Color(0xFF5D4033)
+// 📖 01-Aug-2026: shared with the document reader (screen/bookReading) — one definition, no copy
+val PaperInk = Color(0xFF3E2F1C)
+val CoverColor = Color(0xFF5D4033)
 
 @Composable
-fun BookReaderScreen(
-    noteId: String,
-    startContentId: String? = null,
-    singleContent: Boolean = false,   // 🔧 19-Jul-2026: open ONLY the tapped file as a book
-    bookReaderViewModel: BookReaderViewModel = viewModel(),
+fun NoteBookReaderScreen(
+    singleContent: Boolean = false,
+    bookReaderViewModel: NoteBookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val state by bookReaderViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(noteId) { bookReaderViewModel.load(context, noteId, startContentId, singleContent) }
-    // 🔧 18-Jul-2026: remember this book for the home-screen widget once it opens
-    LaunchedEffect(state.note?.id) {
-        state.note?.let { BookWidgetUpdater.saveLastBook(context, it.id, it.title ?: "Untitled note") }
+    DisposableEffect(state.note?.id) {
+        onDispose {
+            state.note?.let { BookWidgetUpdater.saveLastBook(context, it.id, it.title ?: "Untitled note") }
+        }
     }
 
     Box(Modifier.fillMaxSize().background(Color(0xFF241C14))) {   // dark desk behind the book
@@ -112,9 +109,7 @@ fun BookReaderScreen(
             state.error != null -> SnackBarUi(error = state.error!!) { bookReaderViewModel.clearError(); onBack() }
             state.pages.isNotEmpty() -> {
                 var pageIndex by remember { mutableIntStateOf(state.startPageIndex) }
-                // 📖 25-Jul-2026: PAGE keeps the existing curl pager (untouched); SCROLL lays the SAME
-                //   pages out in a LazyColumn reusing the SAME BookPageContent composables. `pages` is
-                //   built once by the VM — switching mode never rebuilds it, so the PDF isn't re-parsed.
+
                 when (state.readingMode) {
                     ReadingMode.PAGE ->
                         BookPager(
@@ -173,12 +168,9 @@ fun BookReaderScreen(
     }
 }
 
-// 📖 25-Jul-2026: NEW — continuous reading mode (iOS BookScrollReader parity). Reuses the SAME
-//   BookPageContent sheets stacked in a LazyColumn, so long PDFs/text read as one document. Each
-//   sheet keeps a book-page height so PDF/image pages have room. Reports the top-most visible page
-//   for progress, exactly like the curl pager's onPageChanged.
+// 📖 01-Aug-2026: shared with the document reader
 @Composable
-private fun BookScrollReader(
+fun BookScrollReader(
     pages: List<BookPage>,
     startPageIndex: Int,
     onPageChanged: (Int) -> Unit,
@@ -198,8 +190,7 @@ private fun BookScrollReader(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         items(pages.size) { index ->
-            // each sheet gets a fixed, generous height so PDF/image pages render at a readable size;
-            // the SAME BookPageContent composable page-curl mode uses (no duplication).
+
             Box(Modifier.fillMaxWidth().height(560.dp)) {
                 BookPageContent(page = pages[index])
             }
@@ -207,9 +198,9 @@ private fun BookScrollReader(
     }
 }
 
-// 🔧 18-Jul-2026: shared paper frame — spine gradient left, soft page edge right
+// 📖 01-Aug-2026: shared with the document reader
 @Composable
-private fun PaperPage(background: Color = PaperColor, content: @Composable () -> Unit) {
+fun PaperPage(background: Color = PaperColor, content: @Composable () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
@@ -326,14 +317,13 @@ fun BookPageContent(page: BookPage) {
     }
 }
 
-// 🔧 18-Jul-2026: renders ONE pdf page lazily off the main thread; result cached per page slot
 @Composable
 private fun PdfBookPage(page: BookPage.PdfSheet) {
     var bitmap by remember(page.path, page.pageIndex) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(page.path, page.pageIndex) {
         bitmap = withContext(Dispatchers.IO) { renderPdfPage(page.path, page.pageIndex) }
     }
-    Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         bitmap?.let {
             Image(
                 bitmap = it.asImageBitmap(), contentDescription = "${page.title} page ${page.pageIndex + 1}",
@@ -342,10 +332,6 @@ private fun PdfBookPage(page: BookPage.PdfSheet) {
                 modifier = Modifier.weight(1f).fillMaxWidth().zoomable()
             )
         } ?: Box(Modifier.weight(1f).fillMaxWidth()) { LoadingUI() }
-//        Text(
-//            "${page.title} — ${page.pageIndex + 1}/${page.pageCount}",
-//            style = typography.labelSmall, color = PaperInk.copy(alpha = .6f), maxLines = 1
-//        )
     }
 }
 
@@ -363,32 +349,18 @@ private fun renderPdfPage(path: String, index: Int): Bitmap? = try {
     }
 } catch (e: Exception) { e.printStackTrace(); null }
 
-// 🔧 18-Jul-2026: audio/video page.
-// 🔧 30-Jul-2026 02:10 — now uses the EDITOR'S media widgets on the READER'S background.
-//   Previously this page built its own ExoPlayer and drew a bare PlayerView, so the transport
-//   buttons never appeared and a second player fought the singleton for audio focus.
-//   AudioPlayerUIState and VideoCard are the exact widgets NotesEditorView uses: each resolves the
-//   shared player itself, keys its state by media id (mediaStates[id]) and binds the single video
-//   surface only while that media is the current selection. Reusing them means the reader can never
-//   drift from the editor, and "play A.mp3" can never start B.mp3.
 @Composable
 private fun MediaBookPage(media: NoteContentModel.MediaContent) {
     val viewModel: PlayMediaViewModel = viewModel()
     val state = viewModel.state.collectAsStateWithLifecycle()
 
-    // 🔧 30-Jul-2026 02:10 opening the page selects THIS media in the shared queue — the equivalent
-    //   of the old per-page setMediaItem()+prepare(). Guarded so paging back to an already-playing
-    //   item does not restart it.
     LaunchedEffect(media.id) {
         if (state.value.currentPlayingId != media.id) {
             viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id))
         }
     }
-
-    // 🔧 30-Jul-2026 02:10 reader's paper background + title preserved; only the player UI is the
-    //   editor's, so the controls look and behave identically in both screens.
     Column(
-        Modifier.fillMaxSize().padding(18.dp),
+        Modifier.padding(18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -401,9 +373,7 @@ private fun MediaBookPage(media: NoteContentModel.MediaContent) {
         } else {
             VideoCard(
                 contentVideo = media,
-                modifier = Modifier,
-                // 🔧 30-Jul-2026 02:10 tapping the card makes this media the current selection,
-                //   which is what hands it the single video surface.
+                modifier = Modifier.fillMaxSize(),
                 onClick = { viewModel.onPlayingIntent(MediaPlayingUIEvent.SelectedMediaChange(media.id)) },
             )
         }
@@ -415,7 +385,7 @@ private fun MediaBookPage(media: NoteContentModel.MediaContent) {
 private fun DocFileBookPage(media: NoteContentModel.MediaContent) {
     val context = LocalContext.current
     Column(
-        Modifier.fillMaxSize().padding(26.dp),
+        Modifier.fillMaxSize().padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
     ) {
         Box(
@@ -457,4 +427,56 @@ fun openWithSystemViewer(context: Context, media: NoteContentModel.MediaContent)
         e.printStackTrace()
         Toast.makeText(context, "Couldn't open the file", Toast.LENGTH_SHORT).show()
     }
+}
+
+private val previewCover = BookPage.Cover(title = "Field Notes", subtitle = "6 entries")
+
+private val previewShortText = BookPage.TextPage(
+    text = "One short line — this is the case that exposes the full-page problem.",
+    chunkIndex = 1, chunkCount = 1, sourceContentId = "t1",
+)
+
+private val previewLongText = BookPage.TextPage(
+    text = ("Paragraph text that runs long enough to fill a sheet and show how the paper frame, " +
+        "margins and typography behave when a page is genuinely full. ").repeat(6),
+    chunkIndex = 1, chunkCount = 3, sourceContentId = "t2",
+)
+
+private val previewLink = BookPage.LinkPage(url = "https://example.com/a-reference", sourceContentId = "l1")
+
+private val previewLocation = BookPage.LocationPage(
+    latitude = 19.076, longitude = 72.8777, address = "Mumbai, Maharashtra", sourceContentId = "loc1",
+)
+
+@Preview(name = "Page · cover", showBackground = true, widthDp = 380, heightDp = 780)
+@Composable
+private fun PreviewCoverPage() { BookPageContent(page = previewCover) }
+
+// 🔧 the one to look at: a single short line should NOT need a whole screen.
+@Preview(name = "Page · short text", showBackground = true, widthDp = 380, heightDp = 780)
+@Composable
+private fun PreviewShortTextPage() { BookPageContent(page = previewShortText) }
+
+@Preview(name = "Page · long text", showBackground = true, widthDp = 380, heightDp = 780)
+@Composable
+private fun PreviewLongTextPage() { BookPageContent(page = previewLongText) }
+
+@Preview(name = "Page · link", showBackground = true, widthDp = 380, heightDp = 780)
+@Composable
+private fun PreviewLinkPage() { BookPageContent(page = previewLink) }
+
+@Preview(name = "Page · location", showBackground = true, widthDp = 380, heightDp = 780)
+@Composable
+private fun PreviewLocationPage() { BookPageContent(page = previewLocation) }
+
+// 🔧 30-Jul-2026 02:10 the important one — scroll mode with mixed content. Shows the inter-page
+//   gutter and how much vertical space each sheet claims, which is where the layout work belongs.
+@Preview(name = "Scroll · mixed content", showBackground = true, widthDp = 380, heightDp = 900)
+@Composable
+private fun PreviewScrollMixed() {
+    BookScrollReader(
+        pages = listOf(previewCover, previewShortText, previewLink, previewLocation, previewLongText),
+        startPageIndex = 0,
+        onPageChanged = {},
+    )
 }

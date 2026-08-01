@@ -6,6 +6,7 @@ import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.Notes
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
 interface ILocalNotesRepository {
     suspend fun insertUpdateFromDb(note: Note) : Result<BaseResponse<Note>, Error>
@@ -15,6 +16,8 @@ interface ILocalNotesRepository {
     suspend fun getNoteByIdFromDb(id :String?) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteContentFromDb(id :String? ) : Result<BaseResponse<Boolean>, Error>
     // 📖 23-Jul-2026: persist reading progress onto a document's media row (mirror of delete flow)
+    // 📖 01-Aug-2026: returns the domain model — the DB row type never leaves the database module
+    suspend fun getNoteContentByIdFromDb(id :String?) : Result<BaseResponse<NoteContentModel>, Error>
     suspend fun updateReadingProgressFromDb(contentId : String, progressPage : Int, totalPages : Int) : Result<BaseResponse<Boolean>, Error>
     suspend fun createTagOnDB(tag : Tag): Result<BaseResponse<Tag>, Error>
     suspend fun updateTagOnDB(tag : Tag): Result<BaseResponse<Tag>, Error>

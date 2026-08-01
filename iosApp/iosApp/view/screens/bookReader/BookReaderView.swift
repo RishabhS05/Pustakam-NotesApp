@@ -1,7 +1,3 @@
-// 🔧 18-Jul-2026: NEW FEATURE (book reader) — opens a note as a REAL book using
-//   UIPageViewController's native .pageCurl (true paper-curl physics on drag).
-//   Every content type becomes pages: text chunks, images, one page per PDF page,
-//   audio/video players, DOCX/EPUB/other via QuickLook, links and locations.
 
 import SwiftUI
 import PDFKit
@@ -44,9 +40,6 @@ enum BookPageItem: Identifiable {
     }
 }
 
-// 📖 23-Jul-2026: NEW — reading mode. `page` keeps the native .pageCurl book feel; `scroll` lays the
-//   same pages out as one continuous document (better for long PDFs/text). Mirrors Android
-//   ReadingMode.kt — both platforms persist the same raw strings in the shared DataStore.
 enum ReadingMode: String {
     case page, scroll
 
@@ -59,7 +52,6 @@ enum ReadingMode: String {
     static func from(_ raw: String?) -> ReadingMode { ReadingMode(rawValue: raw ?? "") ?? .page }
 }
 
-// 🔧 18-Jul-2026: paper palette — a book stays paper-colored in any app theme
 enum BookPalette {
     static let paper = Color(red: 0.98, green: 0.95, blue: 0.89)
     static let ink = Color(red: 0.24, green: 0.18, blue: 0.11)
@@ -70,30 +62,17 @@ enum BookPalette {
 // MARK: - Pages builder
 
 enum BookPagesBuilder {
-    // 🔧 30-Jul-2026 Phase 4 — the NUMBERS now come from the shared BookPaginator so they can never
-    //   drift from Android; the ALGORITHM below stays native on purpose.
-    //   Kotlin counts UTF-16 code units, Swift counts Characters (grapheme clusters). Identical for
-    //   ASCII/CJK/precomposed accents, different for emoji and combining marks. Routing iOS through
-    //   the Kotlin paginator would re-paginate those documents and move every saved reading
-    //   position (progressPage/totalPages are persisted per MediaContent). See BookPaginator.kt.
+
     private static let charsPerPage = Int(BookPaginator.shared.charsPerPage())
     private static let maxTextFileBytes = Int(BookPaginator.shared.maxTextFileBytes())
 
-    // 🔧 18-Jul-2026: container-safe path (stored absolute paths go stale across app updates)
+ 
     private static func resolved(_ path: String?) -> String? {
         guard let path, !path.isEmpty else { return nil }
         return LocalFilePathResolver_iosKt.resolveLocalFilePath(path: path) ?? path
     }
 
-    // 🐛 23-Jul-2026 CRASH FIX (PDF): CoreGraphics aborted the process with
-    //   `assert(lexer->buffer != NULL) failed in lex_grow_buffer` whenever PDFKit was handed a path
-    //   that isn't a readable PDF. resolveLocalFilePath() NEVER returns nil — when the file is
-    //   missing it returns the stale path unchanged — so `resolved()` alone is not proof the bytes
-    //   exist. That happens constantly: a file still downloading/copying, a stale container path
-    //   after an app update, or a just-added PDF whose write hasn't landed yet.
-    //   This gates every PDFKit call on the file actually existing AND being non-empty AND starting
-    //   with the %PDF- magic header, so a bad path degrades to the QuickLook page instead of
-    //   crashing the app. CG's lexer assert is fatal — it cannot be caught, only avoided.
+
     static func readablePdfPath(_ path: String?) -> String? {
         guard let path = resolved(path), !path.isEmpty else { return nil }
         let fm = FileManager.default
@@ -158,9 +137,6 @@ enum BookPagesBuilder {
         }
     }
 
-    // 🔧 18-Jul-2026: word-boundary pagination (Android parity)
-    // 🔧 30-Jul-2026 Phase 4 — kept native (grapheme-based). Same rule as BookPaginator.paginate:
-    //   prefer the last newline, else the last space, but only past the halfway mark, else hard cut.
     private static func paginate(_ text: String, sourceId: String?) -> [BookPageItem] {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
         var chunks: [String] = []
@@ -214,8 +190,8 @@ enum BookPagesBuilder {
 
 struct BookReaderView: View {
     let noteId: String
-    var startContentId: String? = nil
-    var singleContent: Bool = false   // 🔧 19-Jul-2026: open ONLY the tapped file as a book
+    /// the MediaContent id of the document to read
+    let bookId: String
 
     @Environment(\.dismiss) private var dismiss
     @State private var adapter = NotesBridgeAdapter()
@@ -223,8 +199,6 @@ struct BookReaderView: View {
     @State private var isLoading = true
     @State private var currentIndex = 0
     @State private var startIndex = 0
-    // 📖 23-Jul-2026: reading mode is a preference; the resume page lives on the document's own
-    //   MediaContent row (progressPage/totalPages), so it travels with the content.
     @State private var readerPrefs = ReaderPrefsAdapter()
     @State private var readingMode: ReadingMode = .page
     /// the MediaContent whose reading progress this book represents
@@ -233,29 +207,22 @@ struct BookReaderView: View {
     var body: some View {
         ZStack {
             BookPalette.desk.ignoresSafeArea()
-            // 🔧 19-Jul-2026: FIX — loader ONLY while pages aren't built; never over loaded pages
+
             if pages.isEmpty && isLoading {
                 LoadingUI()
             } else if !pages.isEmpty {
-                // 📖 23-Jul-2026: page-curl or continuous scroll, same pages either way
+
                 switch readingMode {
                 case .page:
-                    // 📖 the page is tracked in memory and written on exit — saving on every turn
-                    //   would hammer the DB while reading
+
                     BookPageCurlView(pages: pages, startIndex: startIndex) { index in
                         currentIndex = index
-                        // 📖 23-Jul-2026: save on EVERY page turn, not just on exit. onDisappear is
-                        //   not guaranteed on a navigation pop and never runs if the app is killed,
-                        //   which is why the count kept coming back stale.
+
                         saveProgress()
                     }
                     .ignoresSafeArea(edges: .bottom)
                 case .scroll:
-                    // 📖 25-Jul-2026: when the book IS a single PDF, scroll mode uses Apple's native
-                    //   in-app PDFView (traditional reader): it loads the file ONCE and scrolls/zooms/
-                    //   counts pages lazily itself — no 1,443 hand-built sheets, no burst renders, low
-                    //   memory. Page-curl mode still uses the paper-curl sheets. Mixed-content notes
-                    //   (text+images+pdf) keep the stacked-sheet scroll below.
+
                     if let pdfPath = singlePdfPath {
                         NativePdfScrollView(path: pdfPath, startPageIndex: startIndex) { index in
                             currentIndex = index
@@ -302,19 +269,15 @@ struct BookReaderView: View {
         }
         .onAppear {
             loadNote()
-            // 📖 the mode is global and can change from Settings while the reader is open
+
             readerPrefs.observeReadingMode { readingMode = $0 }
         }
-        // 📖 23-Jul-2026: persist the position when the reader closes (Android saves in onDispose)
+
         .onDisappear { saveProgress() }
     }
 
-    // 📖 25-Jul-2026: the book is a single PDF when every page is a .pdf sheet from ONE file (i.e. a
-    //   tapped PDF opened as its own book). In that case scroll mode hands the file to a native
-    //   PDFView instead of the hand-built sheet stack. Mixed notes return nil and keep the stack.
+
     private var singlePdfPath: String? {
-        // require EVERY page to be a .pdf sheet from the SAME file — no cover, no other content — so
-        // page index i in `pages` maps 1:1 to PDF page i (progress/counter stay correct).
         guard !pages.isEmpty else { return nil }
         var path: String? = nil
         for page in pages {
@@ -324,16 +287,13 @@ struct BookReaderView: View {
         return path
     }
 
-    // 📖 23-Jul-2026: write the reading position onto the document's MediaContent row
     private func saveProgress() {
         guard let contentId = progressContentId, !pages.isEmpty else { return }
         let page = min(max(currentIndex, 0), pages.count - 1)
         readerPrefs.saveProgress(contentId: contentId, page: page, totalPages: pages.count)
     }
 
-    // 📖 23-Jul-2026: resume comes from the media row itself — progressPage/totalPages arrive with
-    //   the note, so there is no async preference read to wait on. Resolved inside loadNote's
-    //   background build (it needs the built page count to clamp against).
+
 
     private func loadNote() {
         adapter.readNote(noteId: noteId) { result in
@@ -342,39 +302,22 @@ struct BookReaderView: View {
             case .loading: if pages.isEmpty { isLoading = true }
             case .success(let note):
                 guard let note else { isLoading = false; return }
-                // 🐛 23-Jul-2026 CRASH FIX (watchdog on opening the reader): page building opens the
-                //   PDF and materialises one item PER PAGE — 1443 items for a big book — and it was
-                //   doing that ON THE MAIN THREAD inside this callback. The UI froze long enough for
-                //   iOS to kill the app (0x8badf00d), which reads as "crashes when I open a PDF".
-                //   Build off-main, then publish the result back on main.
-                let isSingle = singleContent
-                let wantedId = startContentId
+           
+                let wantedId = bookId
                 let allContents = (note.contents as? [NoteContentModel]) ?? []
-                DispatchQueue.global(qos: .userInitiated).async { [self] in
-                    let built: [BookPageItem]
-                    let media: NoteContentModel.MediaContent?
-                    if isSingle, let id = wantedId,
-                       let content = allContents.first(where: { $0.id == id }) {
-                        built = BookPagesBuilder.buildForContent(content)
-                        media = content as? NoteContentModel.MediaContent
-                    } else {
-                        built = BookPagesBuilder.build(note: note)
-                        // the whole-note book tracks the first paged document — that's what the
-                        // page indices line up with (Android parity)
-                        media = built.compactMap(\.sourceContentId).first.flatMap { firstId in
-                            allContents.first { $0.id == firstId } as? NoteContentModel.MediaContent
-                        }
+                DispatchQueue.global(qos: .userInitiated).async {
+                    // 📖 01-Aug-2026: ONE content only — the same shared builder the note reader uses
+                    guard let content = allContents.first(where: { $0.id == wantedId }) else {
+                        DispatchQueue.main.async { self.isLoading = false }
+                        return
                     }
-                    // an explicit startContentId (deep link / tapped card) is an intentional jump
-                    // and always wins over the stored resume page
-                    let jump = (isSingle ? nil : wantedId).flatMap { id in
-                        built.firstIndex { $0.sourceContentId == id }
-                    }
-                    let saved: Int? = {
-                        guard let m = media, m.hasReadingProgress(), !built.isEmpty else { return nil }
+                    let built = BookPagesBuilder.buildForContent(content)
+                    let media = content as? NoteContentModel.MediaContent
+                    // a document always resumes where it was left — there is nothing to jump to
+                    let resolvedStart: Int = {
+                        guard let m = media, m.hasReadingProgress(), !built.isEmpty else { return 0 }
                         return min(max(Int(m.progressPage), 0), built.count - 1)
                     }()
-                    let resolvedStart = jump ?? saved ?? 0
 
                     DispatchQueue.main.async {
                         self.isLoading = false
@@ -387,9 +330,6 @@ struct BookReaderView: View {
                     }
                 }
             case .failure(let error):
-                // 🔧 19-Jul-2026: FIX (first-load "No record found") — the read flow can emit a
-                //   local-miss failure BEFORE data arrives; never flash it. Keep the loader when
-                //   nothing is built yet, ignore once pages exist.
                 print("BookReader read failed (suppressed for UX): \(error.message)")
             case .idle: break
             }
@@ -398,14 +338,6 @@ struct BookReaderView: View {
 }
 
 // MARK: - Continuous scroll reader
-
-// 📖 23-Jul-2026: NEW — continuous reading mode. Reuses the SAME BookPageContentView sheets as the
-//   curl reader (nothing duplicated), stacked vertically so long PDFs read as one document.
-//   Android's BookScrollReader is the mirror of this.
-// 📖 23-Jul-2026: DOCUMENT-LEVEL zoom. Pinching used to zoom ONE sheet in isolation, so you'd
-//   magnify a single page while the rest of the document stayed small. This wraps the stack in a
-//   UIScrollView with native zooming — the standard document-reader behaviour on iOS: pinch to zoom
-//   the whole document, pan while zoomed, double-tap to toggle, keep scrolling at that zoom.
 struct BookScrollReader: UIViewRepresentable {
     let pages: [BookPageItem]
     let startIndex: Int
@@ -417,9 +349,7 @@ struct BookScrollReader: UIViewRepresentable {
     private static let doubleTapZoom: CGFloat = 2.5
 
     func makeUIView(context: Context) -> UIScrollView {
-        // 📖 23-Jul-2026: a plain UIScrollView only gets a resume retry when SwiftUI happens to call
-        //   updateUIView. This subclass retries on every layout pass, so the jump lands as soon as
-        //   the document has real measurements — no polling, no fixed delay.
+
         let scrollView = ResumeAwareScrollView()
         scrollView.onLayout = { [weak coordinator = context.coordinator] view in
             coordinator?.applyPendingStartIfReady(view)
@@ -447,11 +377,7 @@ struct BookScrollReader: UIViewRepresentable {
         scrollView.addGestureRecognizer(doubleTap)
 
         layout(scrollView, coordinator: context.coordinator)
-        // 📖 23-Jul-2026: jump to the resumed page ONLY once the document is actually laid out.
-        //   This used to fire on the next runloop turn, before contentSize was set, so scrolling to
-        //   page 100 of a not-yet-measured document landed nowhere and got clamped back to page 1.
-        //   pendingStartIndex is consumed by the coordinator after layout settles (see
-        //   applyPendingStartIfReady), i.e. "load the full doc first, then go to the page".
+
         context.coordinator.pendingStartIndex = min(max(startIndex, 0), max(pages.count - 1, 0))
         context.coordinator.applyPendingStartIfReady(scrollView)
         return scrollView
@@ -461,26 +387,23 @@ struct BookScrollReader: UIViewRepresentable {
         context.coordinator.onPageChanged = onPageChanged
         context.coordinator.pageStride = Self.pageHeight + Self.spacing
         context.coordinator.pageCount = pages.count
-        // 🐛 23-Jul-2026 CRASH FIX: only rebuild when the document actually changed. This used to
-        //   reassign rootView and re-lay-out on EVERY SwiftUI update — including the one caused by
-        //   our own page callback — so scrolling fed itself an endless update loop.
+
         let signature = pages.count
         if context.coordinator.contentSignature != signature {
             context.coordinator.contentSignature = signature
             context.coordinator.hostingController?.rootView = content
             layout(scrollView, coordinator: context.coordinator)
-            // a rebuild can change the page count — re-target the pending resume against it
+
             context.coordinator.pendingStartIndex = min(max(startIndex, 0), max(pages.count - 1, 0))
         }
-        // 📖 retry the resume jump until the document is measured and the offset actually sticks
+
         context.coordinator.applyPendingStartIfReady(scrollView)
     }
 
     private var content: AnyView {
         AnyView(LazyVStack(spacing: Self.spacing) {
             ForEach(Array(pages.enumerated()), id: \.element.id) { _, page in
-                // a sheet is tall but finite — it scrolls with the document, and never zooms on
-                // its own: the scroll view zooms the whole surface together
+
                 BookPageContentView(page: page, allowPageZoom: false)
                     .frame(height: Self.pageHeight)
             }
@@ -513,10 +436,6 @@ struct BookScrollReader: UIViewRepresentable {
         // 📖 23-Jul-2026: the resume target, held until the document is laid out enough to honour it
         var pendingStartIndex: Int?
         private var lastReported = -1
-
-        /// 📖 Scrolls to the pending resume page once the document is genuinely ready — i.e. the
-        ///   scroll view has a real height and contentSize covers the target offset. Until then the
-        ///   request is kept and retried, so a big PDF finishes loading BEFORE we jump into it.
         func applyPendingStartIfReady(_ scrollView: UIScrollView) {
             guard let target = pendingStartIndex, target > 0, pageStride > 0 else {
                 if pendingStartIndex == 0 { pendingStartIndex = nil }
@@ -585,12 +504,6 @@ final class ResumeAwareScrollView: UIScrollView {
 }
 
 // MARK: - Native PDF reader (single-PDF scroll mode)
-
-// 📖 25-Jul-2026: for a book that is ONE PDF, scroll mode uses Apple's native in-app PDFView instead
-//   of the hand-built sheet stack. PDFView opens the file ONCE and does continuous scroll, pinch-zoom,
-//   page counting and lazy page rendering itself — so a 1,443-page book loads instantly and stays
-//   low-memory (this is the "traditional PDF reader" that used to be fast). It renders INSIDE the app;
-//   no external viewer is launched. Reports the current page for progress and resumes to startPageIndex.
 struct NativePdfScrollView: UIViewRepresentable {
     let path: String
     let startPageIndex: Int
@@ -717,8 +630,6 @@ struct BookPageCurlView: UIViewControllerRepresentable {
 
 // MARK: - Page faces
 
-// 📖 23-Jul-2026: wraps a page in ZoomableView only in page-curl mode. In scroll mode the enclosing
-//   UIScrollView zooms the whole document, so per-page zoom must be off or the two gestures fight.
 struct MaybeZoomable<Content: View>: View {
     let enabled: Bool
     @ViewBuilder var content: Content
@@ -735,8 +646,7 @@ struct MaybeZoomable<Content: View>: View {
 
 struct BookPageContentView: View {
     let page: BookPageItem
-    // 📖 23-Jul-2026: false in scroll mode — the WHOLE document zooms there, so an individual sheet
-    //   must not also pinch-zoom on its own (that was the old one-page-only behaviour).
+
     var allowPageZoom: Bool = true
     @State private var showPreview = false
 
@@ -784,7 +694,7 @@ struct BookPageContentView: View {
 
         case .image(let path, let title, _):
             VStack(spacing: 8) {
-                // 🔧 19-Jul-2026: pinch/double-tap zoom; scaledToFit — image never fills/crops
+
                 MaybeZoomable(enabled: allowPageZoom) {
                     if FileManager.default.fileExists(atPath: path), let ui = UIImage(contentsOfFile: path) {
                         Image(uiImage: ui).resizable().scaledToFit()
@@ -800,8 +710,7 @@ struct BookPageContentView: View {
 
         case .pdf(let path, let pageIndex, _, _, _):
             VStack(spacing: 6) {
-                // 🔧 19-Jul-2026: pinch/double-tap zoom on PDF sheets
-                MaybeZoomable(enabled: allowPageZoom) {
+            MaybeZoomable(enabled: allowPageZoom) {
                     PdfSheetView(path: path, pageIndex: pageIndex)
                 }
             }
@@ -854,11 +763,6 @@ struct BookPageContentView: View {
         }
     }
 }
-
-// 📖 25-Jul-2026: process-wide cache of rendered PDF sheets, keyed by "path#pageIndex". Switching
-//   page-curl ↔ scroll tears down and rebuilds every sheet; without a cache each toggle (and every
-//   re-scroll past a page) re-opened the PDFDocument and re-rendered the SAME bitmap — the "multiple
-//   instances of the document" waste. NSCache auto-evicts under memory pressure, so big books stay safe.
 enum PdfSheetCache {
     private static let cache: NSCache<NSString, UIImage> = {
         let c = NSCache<NSString, UIImage>()
@@ -870,11 +774,6 @@ enum PdfSheetCache {
     static func store(_ image: UIImage, path: String, pageIndex: Int) { cache.setObject(image, forKey: key(path: path, pageIndex: pageIndex)) }
 }
 
-// 🐛 25-Jul-2026 iOS-16 CRASH/LAG FIX ("CGBitmapContextInfoCreate: unable to allocate 8029312 bytes"
-//   repeated across ~10 threads at once): scroll mode mounts many PdfSheetViews together and EACH one
-//   fired its own full-res render concurrently — a dozen simultaneous ~8 MB bitmap allocations exhaust
-//   memory on a real device (esp. iOS 16), which is the burst of allocation failures + the scroll lag.
-//   This gate caps how many PDF pages render AT ONCE, so memory stays bounded and scrolling stays smooth.
 actor PdfRenderGate {
     static let shared = PdfRenderGate(limit: 2)   // at most 2 pages rendering concurrently
     private let limit: Int
@@ -920,16 +819,13 @@ struct PdfSheetView: View {
             }
         }
         .task(id: "\(path)#\(pageIndex)") {
-            // 🐛 23-Jul-2026: .task (not .onAppear) so it re-runs when the sheet is reused for a new
-            //   page, and is tied to the view lifecycle. Renders off the main actor.
+    
             if image != nil { return }
             // 📖 25-Jul-2026: reuse the already-rendered page across mode switches / re-scrolls
             if let cached = PdfSheetCache.image(path: path, pageIndex: pageIndex) {
                 image = cached; didFinish = true; return
             }
-            // 🐛 25-Jul-2026 iOS-16: throttle concurrent renders so a fast scroll never fires a burst
-            //   of huge bitmap allocations at once. A page scrolled past before its turn is skipped so
-            //   the gate is never held for work no longer needed.
+           
             let acquired = await PdfRenderGate.shared.acquire()
             guard acquired, !Task.isCancelled else {
                 if acquired { await PdfRenderGate.shared.release() }
@@ -946,20 +842,8 @@ struct PdfSheetView: View {
             }
         }
     }
-
-    // 🐛 23-Jul-2026: renders one sheet off-main. `path` is already the verified path the builder
-    //   opened, so PDFDocument here mirrors the builder exactly.
-    // 🐛 25-Jul-2026 CRASH FIX (scroll mode: "CGBitmapContextCreateImage: invalid context 0x0"):
-    //   scroll mode eagerly renders EVERY PDF sheet, so it reaches pages page-curl never did. A page
-    //   whose .mediaBox reports a zero/negative/non-finite width or height produced a 0-size (or NaN)
-    //   CGSize, and PDFKit's thumbnail(of:) then asked CoreGraphics for a 0x0 bitmap context → the
-    //   invalid-context abort. This clamps the render size to a finite, positive box (falling back to
-    //   .cropBox, then a sane default) so a malformed page degrades to a blank sheet, never a crash.
     private static let fallbackPageSize = CGSize(width: 612, height: 792) // US-Letter @72dpi
-    // 🐛 25-Jul-2026 iOS-16 MEMORY FIX: was 1600 (@scale 2 → ~8 MB/page, the "unable to allocate
-    //   8029312 bytes" failures). A book sheet is ~560pt tall on screen, so ~1100px longest side is
-    //   crisp on a 2–3× display while roughly HALVING each bitmap (~3–4 MB), which — with the render
-    //   gate above — keeps peak memory bounded during a fast scroll on a real device.
+
     private static let maxRenderDimension: CGFloat = 1100
 
     private static func render(path: String, pageIndex: Int) async -> UIImage? {
@@ -996,17 +880,6 @@ struct PdfSheetView: View {
     }
 }
 
-// 🔧 18-Jul-2026: audio/video page.
-// 🔧 30-Jul-2026 02:10 — now uses the EDITOR'S media views on the READER'S background.
-//   The previous version bound MediaManager's shared player directly into a bare VideoPlayer, which
-//   meant EVERY media page rendered whatever the shared player happened to be on — audio pages
-//   showing another clip's video, and vice versa. That is the mixing bug.
-//   AudioPlayingView and VideoCardView are the exact views NoteEditorView uses. VideoCardView
-//   already gates on `mediaManager.currentPlaying?.id == content.id` internally, so only the
-//   selected media ever binds the player — reusing them fixes the mixing by construction and keeps
-//   the two screens from ever drifting apart.
-//   NO pause on disappear: playback is app-wide and must keep going (and keep auto-advancing)
-//   when the page scrolls away or the reader closes.
 struct MediaBookPageView: View {
     let media: NoteContentModel.MediaContent
     private let mediaManager = MediaManager.mediaManager
@@ -1024,9 +897,7 @@ struct MediaBookPageView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // 🔧 30-Jul-2026 02:10 selects THIS media in the shared queue — the id-keyed equivalent of
-        //   the old per-page AVPlayer(url:). Guarded so returning to an already-playing item does
-        //   not restart it, and so auto-advance is never interrupted.
+     
         .onAppear {
             if mediaManager.currentPlaying?.id != media.id {
                 mediaManager.prepareMedia(media: media)
@@ -1035,9 +906,7 @@ struct MediaBookPageView: View {
     }
 }
 
-// MARK: - Widget bridge
 
-// 🔧 18-Jul-2026: shared store the home-screen widget reads (App Group; falls back to standard)
 enum BookWidgetStore {
     static let appGroupId = "group.com.app.pustakam"
     static let lastIdKey = "book.last.noteId"
@@ -1049,4 +918,68 @@ enum BookWidgetStore {
         defaults.set(title.isEmpty ? "Untitled note" : title, forKey: lastTitleKey)
         WidgetCenter.shared.reloadAllTimelines()   // refresh the book widget cover
     }
+}
+private enum ReaderPreviewData {
+    static let cover = BookPageItem.cover(title: "Field Notes", subtitle: "6 entries")
+
+    /// The one to look at: a single short line should NOT need a whole sheet.
+    static let shortText = BookPageItem.text(
+        body: "One short line — this is the case that exposes the full-page problem.",
+        chunk: 1, chunkCount: 1, sourceId: "t1"
+    )
+
+    static let longText = BookPageItem.text(
+        body: String(
+            repeating: "Paragraph text that runs long enough to fill a sheet and show how the paper "
+                + "frame, margins and typography behave when a page is genuinely full. ",
+            count: 6
+        ),
+        chunk: 1, chunkCount: 3, sourceId: "t2"
+    )
+
+    static let link = BookPageItem.link(url: "https://example.com/a-reference", sourceId: "l1")
+
+    static let location = BookPageItem.location(
+        lat: 19.076, lon: 72.8777, address: "Mumbai, Maharashtra", sourceId: "loc1"
+    )
+}
+
+#Preview("Page · cover") {
+    BookPageContentView(page: ReaderPreviewData.cover)
+        .background(BookPalette.desk)
+}
+
+#Preview("Page · short text") {
+    BookPageContentView(page: ReaderPreviewData.shortText)
+        .background(BookPalette.desk)
+}
+
+#Preview("Page · long text") {
+    BookPageContentView(page: ReaderPreviewData.longText)
+        .background(BookPalette.desk)
+}
+
+#Preview("Page · link") {
+    BookPageContentView(page: ReaderPreviewData.link)
+        .background(BookPalette.desk)
+}
+
+#Preview("Page · location") {
+    BookPageContentView(page: ReaderPreviewData.location)
+        .background(BookPalette.desk)
+}
+
+#Preview("Scroll · mixed content") {
+    BookScrollReader(
+        pages: [
+            ReaderPreviewData.cover,
+            ReaderPreviewData.shortText,
+            ReaderPreviewData.link,
+            ReaderPreviewData.location,
+            ReaderPreviewData.longText,
+        ],
+        startIndex: 0,
+        onPageChanged: { _ in }
+    )
+    .background(BookPalette.desk)
 }

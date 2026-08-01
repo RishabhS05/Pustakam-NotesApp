@@ -15,6 +15,7 @@ import com.app.pustakam.feature.notes.domain.usecase.GetTagCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.SearchNotesUseCase
 import com.app.pustakam.feature.notes.domain.usecase.SetSelectedNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateReadingProgressUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateSelectedMediaContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateTagUseCase
@@ -39,6 +40,8 @@ fun notesModule(): Module = module {
     factory<DeleteNoteContentUseCase> { DeleteNoteContentUseCase() }
     // 📖 23-Jul-2026: reader progress persistence (mirror of DeleteNoteContentUseCase)
     factory<UpdateReadingProgressUseCase> { UpdateReadingProgressUseCase() }
+    // 📖 01-Aug-2026: document reader loads ONE content row by id
+    factory<ReadContentUseCase> { ReadContentUseCase() }
     factory<GetTagCase> { GetTagCase() }
     factory<CreateTagUseCase> { CreateTagUseCase() }
     factory<UpdateTagUseCase> { UpdateTagUseCase() }

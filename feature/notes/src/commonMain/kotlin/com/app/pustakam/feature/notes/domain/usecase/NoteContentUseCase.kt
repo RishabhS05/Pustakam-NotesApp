@@ -6,9 +6,6 @@ import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-// 🔧 F5: NoteContentRepository is not a BaseRepository, so it gets its own small
-//       use-case base — mirror of NoteBaseUseCase's pattern (incl. the state accessor
-//       like `notes`/`tags`). These are synchronous state ops: no Flow<Result> wrapping.
 abstract class NoteContentBaseUseCase : KoinComponent {
     protected val noteContentRepository: NoteContentRepository by inject()
 
@@ -30,4 +27,19 @@ class UpdateSelectedMediaContentUseCase : NoteContentBaseUseCase() {
 /** Index lookup used by media players (Android PlayerViewModel parity). */
 class GetSelectedMediaIndexUseCase : NoteContentBaseUseCase() {
     operator fun invoke(id: String): Int = noteContentRepository.getIndexOfMedia(id)
+}
+
+// 📖 23-Jul-2026: persist the reader's position onto a document's media row. Mirrors
+//   DeleteNoteContentUseCase exactly (same base, same getBaseApiCall wrapper, same repo → DAO flow).
+class UpdateReadingProgressUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(contentId: String?, progressPage: Int, totalPages: Int) =
+        getBaseApiCall { noteRepository.updateReadingProgressFromDb(contentId ?: "", progressPage, totalPages) }
+}
+class ReadContentUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(contentId: String?) =
+        getBaseApiCall { noteRepository.getNoteContentByIdFromDb(contentId) }
+}
+class DeleteNoteContentUseCase : NoteBaseUseCase() {
+    suspend operator fun invoke(id: String?) =
+        getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }
 }

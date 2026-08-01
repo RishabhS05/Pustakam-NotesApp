@@ -58,7 +58,8 @@ sealed class NoteContentModel {
     @SerialName("_id")
     abstract val id: String
     abstract val noteId : String
-
+    val pages : Int = 0
+    val noteProgress : Int = 0
     @Serializable @SerialName("TEXT")
     data class TextContent(
         // 🔧 F2 (C2): val — text edits go through withText(), no in-place mutation
@@ -101,20 +102,11 @@ sealed class NoteContentModel {
         val width: Int = 0,
         val height: Int = 0,
         val thumbnailPath: String? = null,
-        // 📖 23-Jul-2026: reading progress for paged documents (PDF/DOCX/EPUB/txt). Lives on the
-        //   media row so it travels with the content and survives sync — replaces the old
-        //   DataStore last-page tracking. 0/0 = never opened, which the reader treats as page 1.
         val totalPages: Int = 0,
         val progressPage: Int = 0,
     ) : NoteContentModel() {
-        // 🔧 15-Jul-2026 Phase 2.3 (iOS parity): Swift-friendly immutable edit — Kotlin data-class
-        //   copy() does not export usable defaults to Swift; both platforms attach the generated
-        //   thumbnail through this helper. Stamps updatedAt like the other withX() helpers.
         fun withThumbnail(path: String?): MediaContent =
             copy(thumbnailPath = path, updatedAt = "${getCurrentTimestamp()}")
-
-        // 📖 23-Jul-2026: Swift-friendly immutable edit for reading progress (copy() defaults don't
-        //   export usably to Swift). Both platforms save through this on exiting the reader.
         fun withReadingProgress(page: Int, total: Int): MediaContent =
             copy(progressPage = page, totalPages = total, updatedAt = "${getCurrentTimestamp()}")
 

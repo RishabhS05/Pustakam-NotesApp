@@ -1,10 +1,5 @@
-package com.app.pustakam.android.screen.bookReader
+package com.app.pustakam.android.screen.notebookReader
 
-// 🔧 18-Jul-2026: NEW FEATURE (book reader) — loads a note and flattens EVERY content type into
-//   real book pages (text chunks, one page per PDF page, image/media/doc/link/location pages).
-// 🔧 19-Jul-2026: page building moved to BookPageFactory (DRY with the inline editor widget);
-//   single-file mode + first-load error/loader fixes.
-import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.TaskCode
@@ -28,7 +23,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.inject
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
-import com.app.pustakam.core.common.util.onSuccess
+import com.app.pustakam.core.database.localdb.preferences.BasePreferences
 
 // 🔧 18-Jul-2026: one leaf of the book — every content type maps to at least one page
 sealed class BookPage {
@@ -50,25 +45,21 @@ data class BookUiState(
     val note: Note? = null,
     val pages: List<BookPage> = emptyList(),
     val startPageIndex: Int = 0,
-    // 📖 25-Jul-2026: reader layout — page curl vs continuous scroll. Same persisted value the
-    //   Settings screen and the iOS reader use; switching it does NOT rebuild `pages`.
     val readingMode: ReadingMode = ReadingMode.PAGE,
 )
 
-class BookReaderViewModel : BaseViewModel() {
+class NoteBookReaderViewModel : BaseViewModel() {
     private val readNoteUseCase by inject<ReadNoteUseCase>()
     // 📖 23-Jul-2026: progress persistence via its own use case (mirror of the delete-content flow)
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
     // 📖 25-Jul-2026: reading-mode preference — SAME BasePreferences the Settings screen writes, so
     //   the reader's toggle and Settings stay in sync. UI never sees the shared prefs type directly.
-    private val userPrefs by inject<com.app.pustakam.core.database.localdb.preferences.BasePreferences>()
+    private val userPrefs by inject<BasePreferences>()
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
 
     init {
-        // 📖 25-Jul-2026: observe the reading mode so a change from Settings is reflected live while
-        //   the reader is open (mirror of iOS observeReadingMode). `pages` are untouched by this.
         viewModelScope.launch(Dispatchers.IO) {
             userPrefs.readingModeFlow.collect { raw ->
                 _uiState.update { it.copy(readingMode = ReadingMode.from(raw)) }
@@ -76,7 +67,6 @@ class BookReaderViewModel : BaseViewModel() {
         }
     }
 
-    // 📖 25-Jul-2026: flip reading mode from the reader's toolbar (persists to the same prefs)
     fun toggleReadingMode() {
         val next = _uiState.value.readingMode.toggled()
         _uiState.update { it.copy(readingMode = next) }
@@ -84,12 +74,8 @@ class BookReaderViewModel : BaseViewModel() {
     }
 
     private companion object {
-        // 📖 23-Jul-2026: progress writes must survive the ViewModel being cleared (viewModelScope
-        //   is already cancelled inside onCleared), so they run on this app-lifetime scope.
         private val saveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
-
-    private var appContext: Context? = null
     private var startContentId: String? = null
     // 🔧 19-Jul-2026: FIX — open ONE file as its own book (tapped doc card), not the whole note
     private var singleContentMode: Boolean = false
@@ -99,16 +85,12 @@ class BookReaderViewModel : BaseViewModel() {
     private var lastKnownPage: Int = 0
     private var totalPages: Int = 0
 
-    fun load(context: Context, noteId: String, startContentId: String? = null, singleContent: Boolean = false) {
-        appContext = context.applicationContext
+    fun load(noteId: String, startContentId: String? = null, singleContent: Boolean = false) {
         this.startContentId = startContentId
         this.singleContentMode = singleContent && startContentId != null
         makeAWish(NOTES_CODES.READ) { readNoteUseCase.invoke(noteId) }
     }
 
-    // 📖 23-Jul-2026: called from the reader UI on EVERY page change, in EVERY mode (page-curl AND
-    //   scroll). Persists progressPage/totalPages onto the document's media row via the SAME
-    //   ReadNoteUseCase — no DAO/prefs exposed to the UI. Debounced so scrolling doesn't spam the DB.
     fun onPageChanged(index: Int) {
         lastKnownPage = index
         scheduleProgressSave()

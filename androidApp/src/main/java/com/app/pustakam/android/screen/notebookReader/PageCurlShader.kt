@@ -1,4 +1,4 @@
-package com.app.pustakam.android.screen.bookReader
+package com.app.pustakam.android.screen.notebookReader
 
 // 📖 23-Jul-2026: FIX (page-flip realism) — the old flip rotated the leaf as a rigid flat rectangle,
 //   which reads as a spinning card, not paper. This replaces the geometry with a true cylindrical
@@ -6,7 +6,6 @@ package com.app.pustakam.android.screen.bookReader
 //   leading edge curves, the back face shows through, and the curl casts a soft shadow — matching the
 //   feel of iOS UIPageViewController's native .pageCurl (BookReaderView.swift).
 import android.os.Build
-import androidx.annotation.RequiresApi
 
 // 📖 23-Jul-2026 — devices below API 33 have no RuntimeShader; they keep the (retuned) rigid flip.
 val supportsShaderCurl: Boolean

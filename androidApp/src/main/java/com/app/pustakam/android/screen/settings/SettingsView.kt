@@ -26,7 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import com.app.pustakam.android.screen.bookReader.ReadingMode
+import com.app.pustakam.android.screen.notebookReader.ReadingMode
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.History
