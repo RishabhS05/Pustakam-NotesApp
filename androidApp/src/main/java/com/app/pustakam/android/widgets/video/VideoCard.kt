@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 // 🔧 14-Jul-2026: long-press reveal for the save overlay (hover/focus reverted)
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,8 +25,10 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
@@ -63,11 +66,13 @@ import androidx.media3.ui.PlayerView
 
 
 import com.app.pustakam.android.MyApplicationTheme
+import com.app.pustakam.android.extension.actionIconButtonBackground
 import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
 // 🔧 15-Jul-2026 Phase 2.3: thumbnail placeholder for non-current video cards
 import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
 import com.app.pustakam.android.hardware.audio.player.PlayerUiState
+import com.app.pustakam.android.theme.actionIconTintColor
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.core.common.extensions.isNotnull
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
@@ -77,13 +82,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-// 🔧 14-Jul-2026: CHANGED — hover/focus reveal reverted (didn't work on device); the save overlay
-//   is now revealed by LONG-PRESS with a 2.5s auto-hide, matching the iOS cards exactly.
-//   `onShowActions(true)` fires on long-press, `onShowActions(false)` after 2.5s; a new long-press
-//   restarts the timer. Tap still opens the preview via onClick. The `overlay` slot draws on top
-//   of the controller inside the card.
-//   Usage: VideoCard(content, onShowActions = { visible -> ... }, onClick = {...}) { overlay }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VideoCard(
@@ -91,8 +89,6 @@ fun VideoCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     onShowActions: (Boolean) -> Unit = {},
-    // 📖 01-Aug-2026: the reader packs several widgets per page, so it needs the card to fill its
-    //   slot and OBEY the parent's height. Defaults reproduce the editor's card exactly.
     widthFraction: Float = .7f,
     fixedHeight: Dp? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
@@ -103,42 +99,23 @@ fun VideoCard(
     val exoPlayer = remember { viewModel.getExoPlayer() }
     val state = viewModel.state.collectAsStateWithLifecycle()
     val mediaState = state.value.mediaStates[noteContent.id] ?: PlayerUiState(noteContent = noteContent)
-    // 🔧 14-Jul-2026: FIX (recorded video not visible) — ONE ExoPlayer can render to only ONE
-    //   surface; previously every VideoCard grabbed it, so the last composed card won and the
-    //   others (including a fresh recording) stayed blank. The surface now belongs exclusively
-    //   to the card whose media is the current selection; other cards show a dark placeholder
-    //   until tapped (play/slider makes them current via the id-based events).
+
     val isCurrentMedia = state.value.currentPlayingId == noteContent.id
     val scope = rememberCoroutineScope()
-    // 🔧 14-Jul-2026: pending auto-hide; cancelled and restarted on every long-press
     val hideJob = remember { mutableStateOf<Job?>(null) }
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 400.dp)
 
     Box(modifier = modifier) {
         Card(
-            // requiredHeight IGNORES the parent — it is what made reader cards overlap. An explicit
-            // fixedHeight uses height() instead, so the card fits the slot it was given.
             modifier = Modifier.fillMaxWidth(widthFraction)
                 .then(if (fixedHeight != null) Modifier.height(fixedHeight) else Modifier.requiredHeight(cardHeight))
                 .padding(8.dp)
-                .combinedClickable(
-                    onClick = { onClick() },
-                    onLongClick = {
-                        onShowActions(true)
-                        hideJob.value?.cancel()
-                        hideJob.value = scope.launch {
-                            delay(2500)
-                            onShowActions(false)
-                        }
-                    }
-                )) {
+                .clickable{ onClick() },
+                ) {
             //Preview Video
             if (mediaState.noteContent.position == noteContent.position)
                 Box(Modifier.fillMaxSize()) {
-                    // 🔧 15-Jul-2026 Phase 2.3: only the CURRENT selection binds the player surface;
-                    //   other cards show their THUMBNAIL (small JPEG, generated at capture) instead
-                    //   of a blank detached surface — no full video decode just to draw a card.
                     if (isCurrentMedia) {
                         VideoPlayer(
                             exoPlayer,
@@ -157,7 +134,21 @@ fun VideoCard(
                         state = mediaState,
                         onAction = viewModel::onPlayingIntent
                     )
-                    // 🔧 14-Jul-2026: NEW — the save/share/delete overlay slot, drawn topmost.
+                    Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "More options",
+                        tint = actionIconTintColor,
+                        modifier = Modifier
+                            .padding(vertical = 12.dp, horizontal = 8.dp)
+                            .actionIconButtonBackground()
+                            .align(
+                                Alignment.TopEnd)
+                            .clickable{
+                                onShowActions(true)
+                                hideJob.value?.cancel()
+                                hideJob.value = scope.launch {
+                                    delay(2500)
+                                    onShowActions(false)
+                                }
+                            })
                     overlay()
                 }
         }

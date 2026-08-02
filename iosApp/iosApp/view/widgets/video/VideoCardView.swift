@@ -10,8 +10,20 @@ struct VideoCardPlayer : View {
     var actionDelete : () -> Void = {}
     // 🔧 14-Jul-2026: NEW — save-to-device callback (video → Photos gallery)
     var actionSave : () -> Void = {}
-    // 🔧 14-Jul-2026: NEW — long-press actions bar visibility (same pattern as CardImageEditor)
     @State private var showActions : Bool = false
+    // 🔧 02-Aug-2026: cancels a pending auto-hide when the button is tapped again (Android hideJob parity)
+    @State private var hideToken : Int = 0
+
+    // 🔧 02-Aug-2026: reveal + auto-hide after 2.5s, restarting the timer on every tap
+    private func revealActions() {
+        hideToken += 1
+        let token = hideToken
+        withAnimation(.easeInOut(duration: 0.25)) { showActions = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            guard token == hideToken else { return }
+            withAnimation(.easeInOut(duration: 0.5)) { showActions = false }
+        }
+    }
     var mediaManager = MediaManager.mediaManager
     // 🔧 14-Jul-2026: init now accepts actionDelete + actionSave (defaults keep old call sites compiling)
     //   Usage: VideoCardPlayer(content: media, actionDelete: { ... }, actionSave: { ... })
@@ -56,25 +68,17 @@ struct VideoCardPlayer : View {
             }.frame(width: cardWidth, height: cardHeight)
                 .cornerRadius(12)
                 .onAppear{
-                    // 🔧 14-Jul-2026: prepare only (no autoplay). Scrolling a video into view no
-                    //   longer hijacks the shared player / forces a load. Playback starts on tap.
                     mediaManager.prepareMedia(media: content)
                 }
                 .onTapGesture {
                     mediaManager.resumePlaying(media:content)
                     actionClick()
                 }
-                // 🔧 14-Jul-2026: REVERTED — back to long-press reveal with 2.5s auto-hide
-                //   (the hover/focus experiment didn't work on device).
-                .onLongPressGesture {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        showActions = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            showActions = false
-                        }
-                    }
+                // 🔧 02-Aug-2026: top-end "⋮" reveals the actions, same as Android's VideoCard
+                .overlay(alignment: .topTrailing) {
+                    CardActionsButton { revealActions() }
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 8)
                 }
 
             // 🔧 14-Jul-2026: NEW — bottom-fade actions bar with delete/edit (CardImageEditor parity)

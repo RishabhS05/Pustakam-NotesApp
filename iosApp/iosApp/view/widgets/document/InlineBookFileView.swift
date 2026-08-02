@@ -1,9 +1,3 @@
-// 🔧 19-Jul-2026: NEW FEATURE — spiral-notebook widget for files INSIDE the note editor
-//   (inspired by the handbook-page reference). Renders the file's REAL pages inline using the
-//   SAME BookPagesBuilder + BookPageCurlView + BookPageContentView as the full reader (DRY).
-//   Bottom shows "<current>/<total>" (e.g. 2/20) instead of dots. DocumentFileCardView is KEPT
-//   for reuse elsewhere — this widget replaces it only in the editor list.
-
 import SwiftUI
 import shared
 
@@ -20,17 +14,23 @@ struct InlineBookFileView: View {
     var onOpenFull: () -> Void = {}
     var onDelete: () -> Void = {}
     var onSave: () -> Void = {}
-    // 🔧 25-Jul-2026: NEW — share callback (ImageCardView-style actions on the document card)
     var onShare: () -> Void = {}
 
     @State private var pages: [BookPageItem] = []
     @State private var building = true
     @State private var currentIndex = 0
-    // 📖 25-Jul-2026: the page to open the inline preview at — the LAST page the reader left off on
-    //   (media.progressPage), so the card shows e.g. 847/1443 instead of always 1/1443.
     @State private var startIndex = 0
-    // 🔧 25-Jul-2026: long-press actions overlay (delete / share / save), ImageCardView pattern
     @State private var showActions = false
+    @State private var hideToken = 0
+    private func revealActions() {
+        hideToken += 1
+        let token = hideToken
+        withAnimation(.easeInOut(duration: 0.25)) { showActions = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            guard token == hideToken else { return }
+            withAnimation(.easeInOut(duration: 0.5)) { showActions = false }
+        }
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -42,25 +42,15 @@ struct InlineBookFileView: View {
                     if building {
                         ProgressView().tint(NotebookPalette.cover)
                     } else if !pages.isEmpty {
-                        // 🔧 19-Jul-2026: SAME page-curl + renderers as the full reader (DRY)
-                        // 📖 25-Jul-2026: open at the saved reading page, not always page 1
                         BookPageCurlView(pages: pages, startIndex: startIndex) { index in
                             currentIndex = index
                         }
                     }
-                    // 🔧 25-Jul-2026: ImageCardView-style long-press actions (delete / share / save).
-                    //   Overlaid on the preview so it mirrors the image card without touching ImageCard.
+
                     if showActions && !pages.isEmpty { actionsOverlay }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
-                .onLongPressGesture {
-                    withAnimation(.easeInOut(duration: 0.25)) { showActions = true }
-                    // auto-hide after 2.5s — SAME timing as ImageCardView
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                        withAnimation(.easeInOut(duration: 0.5)) { showActions = false }
-                    }
-                }
                 // 🔧 19-Jul-2026: "<selected>/<total>" instead of dots — e.g. 2/20
                 if !pages.isEmpty {
                     Text("\(currentIndex + 1)/\(pages.count)")
@@ -79,8 +69,6 @@ struct InlineBookFileView: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(NotebookPalette.cover))
         .onAppear(perform: buildPages)
     }
-
-    // header — file name; tap/expand opens the full book, long-press menu = actions
     private var header: some View {
         HStack(spacing: 8) {
             Image(systemName: iconNameForContentType(media.type))
@@ -92,6 +80,9 @@ struct InlineBookFileView: View {
             Button(action: onOpenFull) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
                     .font(.system(size: 11)).foregroundColor(NotebookPalette.cover)
+            }
+            CardActionsButton(tint: NotebookPalette.cover, iconSize: 12, diameter: 22, chipColor: nil) {
+                revealActions()
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -117,8 +108,6 @@ struct InlineBookFileView: View {
         .frame(maxHeight: .infinity)
     }
 
-    // 🔧 25-Jul-2026: bottom actions bar — delete / share / save. SAME icons/layout/behavior as
-    //   CardImageEditor's overlay (mirrored, not shared — ImageCardView is left untouched).
     private var actionsOverlay: some View {
         VStack {
             Spacer()

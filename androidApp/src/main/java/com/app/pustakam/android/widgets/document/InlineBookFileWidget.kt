@@ -1,13 +1,8 @@
 package com.app.pustakam.android.widgets.document
-
-// 🔧 19-Jul-2026: NEW FEATURE — spiral-notebook widget for files INSIDE the note editor
-//   (inspired by the handbook-page reference). Renders the file's REAL pages inline with the
-//   SAME BookPager flip + BookPageContent renderers + BookPageFactory as the full reader (DRY).
-//   Bottom shows "<current>/<total>" (e.g. 2/20) instead of dots. DocumentFileCard is KEPT for
-//   reuse elsewhere — this widget replaces it only in the editor list.
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -22,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,15 +41,20 @@ import androidx.compose.ui.platform.LocalConfiguration   // 🔧 20-Jul-2026: de
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.app.pustakam.android.extension.actionIconButtonBackground
 import com.app.pustakam.android.screen.bookUIView.BookPageContent
 import com.app.pustakam.android.screen.notebookReader.BookPage
 
 import com.app.pustakam.android.screen.notebookReader.BookPageFactory
 import com.app.pustakam.android.screen.notebookReader.BookPager
+import com.app.pustakam.android.theme.actionIconTintColor
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.bookwidget.BookLoadingAnimation
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // 🔧 19-Jul-2026: notebook palette — matches the reader's paper/leather look
@@ -70,7 +72,6 @@ fun InlineBookFileWidget(
     onShowActions: (Boolean) -> Unit = {},
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
-    // 🔧 19-Jul-2026: pages built by the SAME factory as the full reader (DRY) — off the UI thread
     var pages by remember(media.id) { mutableStateOf<List<BookPage>>(emptyList()) }
     var building by remember(media.id) { mutableStateOf(true) }
     LaunchedEffect(media.id, media.updatedAt) {
@@ -78,19 +79,16 @@ fun InlineBookFileWidget(
         pages = withContext(Dispatchers.IO) { BookPageFactory.buildForContent(media) }
         building = false
     }
-    // 📖 25-Jul-2026: the inline preview opens at the LAST page the reader left off on
-    //   (media.progressPage), clamped to the built page count — so the card shows e.g. 847/1443,
-    //   not always 1/1443. progressPage is 0-based (same as the reader).
     val resumePage = remember(media.id, pages.size) {
         if (media.hasReadingProgress() && pages.isNotEmpty())
             media.progressPage.coerceIn(0, pages.size - 1) else 0
     }
+    val hideJob = remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
     var currentPage by remember(media.id) { mutableIntStateOf(0) }
-    // 📖 25-Jul-2026: seed the "n/total" label with the resume page so it reads correctly before the
-    //   first flip (the pager itself starts at resumePage via initialPage).
+
     LaunchedEffect(resumePage) { currentPage = resumePage }
     val cornerShape = RoundedCornerShape(8.dp)
-    // 🔧 20-Jul-2026: size to the device — ~42% of screen height, clamped to a sane range
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 460.dp)
     Box(
@@ -115,7 +113,6 @@ fun InlineBookFileWidget(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .combinedClickable(onClick = onOpenFull, onLongClick = { onShowActions(true) })
                             .padding(start = 8.dp, top = 4.dp)
                     ) {
                         Icon(
@@ -128,11 +125,22 @@ fun InlineBookFileWidget(
                             color = NotebookInk, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
                         )
+
                         IconButton(onClick = onOpenFull, modifier = Modifier.size(30.dp)) {
                             Icon(
                                 Icons.Filled.OpenInFull, contentDescription = "Open full book",
-                                tint = NotebookCover, modifier = Modifier.size(14.dp)
+                                tint = NotebookCover, modifier = Modifier.size(16.dp)
                             )
+                        }
+                        IconButton(onClick = { onShowActions(true)
+                            hideJob.value?.cancel()
+                            hideJob.value = scope.launch {
+                                delay(2500)
+                                onShowActions(false)
+                            }}, modifier = Modifier.size(30.dp)) {
+                            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "More options",
+                                tint = NotebookCover,
+                                modifier = Modifier.size(16.dp))
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(1.dp).background(NotebookInk.copy(alpha = .15f)))

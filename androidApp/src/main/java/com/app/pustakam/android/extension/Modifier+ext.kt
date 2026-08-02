@@ -36,3 +36,7 @@ fun Modifier.thickGlass() : Modifier {
         }
         .blur(8.dp) // needs Accompanist or custom modifier
 }
+fun Modifier.actionIconButtonBackground(): Modifier {
+   return this.background(color = Color.Gray.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(30))
+}

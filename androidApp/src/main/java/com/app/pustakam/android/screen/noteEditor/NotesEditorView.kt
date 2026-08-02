@@ -612,7 +612,6 @@ fun RenderWidget(
         ContentType.DOCX, ContentType.PDF, ContentType.TXT,
         ContentType.MD, ContentType.EPUB, ContentType.OTHER -> {
             val contentDoc = content as NoteContentModel.MediaContent
-            // 🔧 19-Jul-2026: notebook widget — file's real pages flip inline, "n/total" at bottom
             InlineBookFileWidget(
                 media = contentDoc,
                 onOpenFull = onOpenDocument,
@@ -624,9 +623,7 @@ fun RenderWidget(
                     }
                 },
             ) {
-                // 🔧 25-Jul-2026: document card share wired (ImageCardView-style actions on the doc card).
-                //   ImageCard/GIF/video shares are intentionally left as-is per request — only the document.
-                val docShareContext = androidx.compose.ui.platform.LocalContext.current
+                val docShareContext =LocalContext.current
                 MediaSaveOverlay(
                     contentDoc,
                     isFocused = focusedMediaId == contentDoc.id,
@@ -686,18 +683,12 @@ fun BoxScope.MediaSaveOverlay(
 ) {
 
     val context = LocalContext.current
-    // 🔧 14-Jul-2026: PERF — coroutine scope so file copies run off the main thread.
     val scope = rememberCoroutineScope()
     val isGalleryType = media.type == ContentType.IMAGE || media.type == ContentType.VIDEO
-
-    // SAF picker for non-gallery media (pdf/docx/gif). The pre-filled name carries the correct
-    // extension; the returned Uri is the user-selected destination. (Audio is handled inside
-    // the audio player card — see AudioPlayerUIState.)
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(media.type))
     ) { uri ->
         if (uri != null) {
-            // 🔧 14-Jul-2026: PERF — copy bytes on IO, confirm on the main thread.
             scope.launch {
                 val ok = withContext(Dispatchers.IO) { writeMediaToUri(context, media, uri) }
                 Toast.makeText(

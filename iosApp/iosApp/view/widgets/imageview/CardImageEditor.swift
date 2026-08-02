@@ -1,18 +1,31 @@
-import shared
 import SwiftUI
-struct CardImageEditor : View{
-    var content : NoteContentModel.MediaContent
-    var actionEdit : () -> Void = {}
-    var actionClick : () -> Void
-    var actionDelete : () -> Void = {}
+import shared
+
+struct CardImageEditor: View {
+    var content: NoteContentModel.MediaContent
+    var actionEdit: () -> Void = {}
+    var actionClick: () -> Void
+    var actionDelete: () -> Void = {}
     // 🔧 14-Jul-2026: NEW — save-to-device callback (image → Photos gallery). Default keeps old call sites compiling.
-    var actionSave : () -> Void = {}
-    @State private var showActions : Bool = false
+    var actionSave: () -> Void = {}
+    @State private var showActions: Bool = false
+    // 🔧 02-Aug-2026: cancels a pending auto-hide when the button is tapped again (Android hideJob parity)
+    @State private var hideToken: Int = 0
+
+    // 🔧 02-Aug-2026: reveal + auto-hide after 2.5s, restarting the timer on every tap
+    private func revealActions() {
+        hideToken += 1
+        let token = hideToken
+        withAnimation(.easeInOut(duration: 0.25)) { showActions = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            guard token == hideToken else { return }
+            withAnimation(.easeInOut(duration: 0.5)) { showActions = false }
+        }
+    }
 
     var body: some View {
 
         ZStack(alignment: .bottom) {
-
             AsyncImage(url: URL(fileURLWithPath: content.getMediaUrl())) { phase in
                 if let image = phase.image {
                     image
@@ -32,18 +45,11 @@ struct CardImageEditor : View{
             .onTapGesture {
                 actionClick()
             }
-            // 🔧 14-Jul-2026: REVERTED — back to long-press reveal with 2.5s auto-hide
-            //   (the hover/focus experiment didn't work on device).
-            .onLongPressGesture {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    showActions = true
-                }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        showActions = false
-                    }
-                }
+            // 🔧 02-Aug-2026: top-end "⋮" reveals the actions, same as Android's ImageCard
+            .overlay(alignment: .topTrailing) {
+                CardActionsButton { revealActions() }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 8)
             }
 
             if showActions {
@@ -56,7 +62,7 @@ struct CardImageEditor : View{
                             .clear,
                             .black.opacity(0.05),
                             .black.opacity(0.35),
-                            .black.opacity(0.55)
+                            .black.opacity(0.55),
                         ],
                         startPoint: .top,
                         endPoint: .bottom

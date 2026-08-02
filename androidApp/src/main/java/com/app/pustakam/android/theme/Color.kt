@@ -13,7 +13,7 @@ val primaryLight = Color(0xff97d2ff)
 val inversePrimaryLight = Color(0xff92cdfa)
 val secondaryLight = Color(0xff246cbc)
 val onSecondaryLight = baseWhite
-
+val actionIconTintColor= Color.White
 val PaperInk = Color(0xFF3E2F1C)
 val CoverColor = Color(0xFF5D4033)
 
