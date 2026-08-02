@@ -64,7 +64,7 @@ fun BookPageContent(page: BookPage) {
         }
 
         is BookPage.TextPage -> PaperPage {
-            Column(Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 30.dp)) {
+            Column(Modifier.fillMaxSize()) {
                 Text(
                     page.text,
                     style = typography.bodyLarge.copy(fontFamily = FontFamily.Serif, lineHeight = 26.sp),

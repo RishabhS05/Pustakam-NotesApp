@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,7 +30,7 @@ fun BookScrollReader(
         androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex }
             .collect { onPageChanged(it) }
     }
-    androidx.compose.foundation.lazy.LazyColumn(
+    LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),

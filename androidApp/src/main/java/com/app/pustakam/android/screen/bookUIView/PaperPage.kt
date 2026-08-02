@@ -28,7 +28,6 @@ fun PaperPage(
     Box(
         modifier
             .then(if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
-            .padding(horizontal = 10.dp, vertical = 8.dp)
             .background(background, RoundedCornerShape(6.dp))
     ) {
         content()
