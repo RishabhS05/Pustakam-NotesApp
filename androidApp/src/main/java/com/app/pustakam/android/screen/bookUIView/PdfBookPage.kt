@@ -34,7 +34,7 @@ import kotlin.use
     LaunchedEffect(page.path, page.pageIndex) {
         bitmap = withContext(Dispatchers.IO) { renderPdfPage(page.path, page.pageIndex) }
     }
-    Column(Modifier.padding(12.dp).zoomable(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         bitmap?.let {
             Image(
                 bitmap = it.asImageBitmap(), contentDescription = "${page.title} page ${page.pageIndex + 1}",

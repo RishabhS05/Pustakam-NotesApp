@@ -16,6 +16,8 @@ import com.app.pustakam.android.screen.notebookReader.BookPage
 
 
 import com.app.pustakam.android.theme.PaperColor
+import com.app.pustakam.android.widgets.zoom.zoomable
+
 @Composable
 fun BookScrollReader(
     pages: List<BookPage>,
@@ -32,7 +34,7 @@ fun BookScrollReader(
     }
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().zoomable(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.theme.PaperColor
+import com.app.pustakam.android.widgets.zoom.zoomable
 
 // 📖 01-Aug-2026: [fillHeight]=false lets a sheet wrap its content. It defaults to true so the
 //   page-curl reader and the document reader keep the full-screen sheet they had; only scroll mode
