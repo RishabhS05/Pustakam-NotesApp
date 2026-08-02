@@ -430,10 +430,8 @@ struct BookScrollReader: UIViewRepresentable {
         var onPageChanged: (Int) -> Void
         var pageStride: CGFloat
         let doubleTapZoom: CGFloat
-        // 🐛 23-Jul-2026: page count + a signature so updateUIView only rebuilds on real changes
         var pageCount = 0
         var contentSignature = -1
-        // 📖 23-Jul-2026: the resume target, held until the document is laid out enough to honour it
         var pendingStartIndex: Int?
         private var lastReported = -1
         func applyPendingStartIfReady(_ scrollView: UIScrollView) {
@@ -443,8 +441,7 @@ struct BookScrollReader: UIViewRepresentable {
             }
             let wanted = CGFloat(target) * pageStride
             let maxOffset = scrollView.contentSize.height - scrollView.bounds.height
-            guard scrollView.bounds.height > 0, maxOffset > 0 else { return }   // not laid out yet
-            // only jump when the document is tall enough that the target is a real position
+            guard scrollView.bounds.height > 0, maxOffset > 0 else { return }
             guard wanted <= maxOffset else { return }
             pendingStartIndex = nil
             lastReported = target
@@ -462,15 +459,10 @@ struct BookScrollReader: UIViewRepresentable {
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             guard pageStride > 0, pageCount > 0 else { return }
-            // report the sheet currently at the top, in unzoomed document coordinates
             let raw = Int((scrollView.contentOffset.y / max(scrollView.zoomScale, 0.01)) / pageStride)
             let index = min(max(raw, 0), pageCount - 1)
             guard index != lastReported else { return }
             lastReported = index
-            // 🐛 23-Jul-2026 CRASH FIX: this runs DURING UIKit's scroll/layout pass, and the callback
-            //   writes a SwiftUI @State. Mutating state inside a view update re-enters
-            //   updateUIView -> layout -> scroll and blows the stack ("Modifying state during view
-            //   update"). Hopping to the next runloop turn takes the write out of that pass.
             let callback = onPageChanged
             DispatchQueue.main.async { callback(index) }
         }
@@ -514,7 +506,7 @@ struct NativePdfScrollView: UIViewRepresentable {
         pdfView.backgroundColor = .clear
         pdfView.displayMode = .singlePageContinuous   // traditional vertical scroll
         pdfView.displayDirection = .vertical
-        pdfView.autoScales = true                      // fit-to-width, pinch to zoom from there
+        pdfView.autoScales = true // fit-to-width, pinch to zoom from there
         pdfView.usePageViewController(false)
         // load the document ONCE, off the main thread, then attach on main
         let target = path
