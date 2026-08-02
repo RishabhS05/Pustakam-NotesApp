@@ -177,9 +177,6 @@ class NoteRepository : BaseRepository(),
         }
     }
 
-    // 📖 23-Jul-2026: persist reading progress onto ONE document's media row (progressPage/totalPages).
-    //   Mirrors deleteNoteContentFromDb below: interface method → targeted DAO write → Result. Never
-    //   rewrites the whole note, so it's safe to call on every page turn.
     override suspend fun updateReadingProgressFromDb(
         contentId: String, progressPage: Int, totalPages: Int
     ): Result<BaseResponse<Boolean>, Error> {

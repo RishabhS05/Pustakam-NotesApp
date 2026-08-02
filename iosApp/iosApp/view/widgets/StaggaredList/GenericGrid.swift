@@ -6,7 +6,6 @@
 //  Copyright © 2026 orgName. All rights reserved.
 //
 
-
 import SwiftUI
 
 struct GenericGrid<Item: Identifiable, Content: View>: View {
@@ -41,5 +40,35 @@ struct GenericGrid<Item: Identifiable, Content: View>: View {
                 content(item).padding(spacing)
             }
         }
+    }
+}
+
+private struct GenericGridPreviewItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let color: Color
+}
+
+struct GenericGrid_Previews: PreviewProvider {
+    private static let items = [
+        GenericGridPreviewItem(title: "Video", color: .blue),
+        GenericGridPreviewItem(title: "Image", color: .green),
+        GenericGridPreviewItem(title: "Doc", color: .orange),
+        GenericGridPreviewItem(title: "Audio", color: .purple)
+    ]
+
+    static var previews: some View {
+        GenericGrid(items: items, columns: 2, spacing: 8) { item in
+            RoundedRectangle(cornerRadius: 12)
+                .fill(item.color.opacity(0.85))
+                .frame(height: 120)
+                .overlay {
+                    Text(item.title)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                }
+        }
+        .padding()
+        .previewLayout(.sizeThatFits)
     }
 }

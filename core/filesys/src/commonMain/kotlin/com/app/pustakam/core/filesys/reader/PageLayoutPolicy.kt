@@ -24,7 +24,7 @@ data class PageLayoutPolicy(
     // grid cells are 4:3 landscape — square cells waste enough height to push a mixed page over
     val gridCellAspect: Float = 0.75f,
     val audioHeight: Float = 88f,
-    val documentHeight: Float = 150f,
+    val documentHeight: Float = 200f,
     val linkHeight: Float = 130f,
     val locationHeight: Float = 150f,
 ) {

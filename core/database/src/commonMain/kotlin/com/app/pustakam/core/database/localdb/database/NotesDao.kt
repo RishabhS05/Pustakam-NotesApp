@@ -368,8 +368,6 @@ class NotesDao : KoinComponent {
         )
     }
 
-    // 📖 23-Jul-2026: save the reader's position for ONE document. Targeted update — a full row
-    //   rewrite here would clobber edits made to the rest of the content row while reading.
     fun updateReadingProgress(contentId: String, progressPage: Int, totalPages: Int) {
         queries.updateReadingProgress(
             progressPage = progressPage.toLong(),

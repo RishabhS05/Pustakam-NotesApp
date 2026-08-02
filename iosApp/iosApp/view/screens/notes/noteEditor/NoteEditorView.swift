@@ -203,7 +203,7 @@ struct NoteEditorView: View {
                 // 🔧 14-Jul-2026: NEW — video had no delete UI; long-press actions bar added
                 //   in VideoCardPlayer (same pattern as CardImageEditor), wired here.
                 //   actionSave saves the video silently to the Photos gallery.
-                VideoCardPlayer(content: contentVideo, actionDelete: {
+                VideoCardPlayer(content: contentVideo, cardPadding: 0, actionDelete: {
                     askDeleteContent(contentId: contentVideo.id, kind: "Video")
                 }, actionSave: {saveMediaToDevice(media: contentVideo)})
             case .audio:
@@ -239,6 +239,7 @@ struct NoteEditorView: View {
                     // 🔧 25-Jul-2026: share the document file via the system share sheet (reuses NoteExporter.share)
                     onShare: { shareMediaFile(media: contentDoc) }
                 )
+                .frame(width: UIScreen.main.bounds.width * 0.7, alignment: .leading)
 
             // 🔧 18-Jul-2026: GIF gets the image card (was falling into the text default)
             case .gif:

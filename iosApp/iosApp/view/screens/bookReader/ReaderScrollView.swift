@@ -19,8 +19,8 @@ struct ReaderScrollView: View {
                         ReaderPageView(
                             page: page,
                             policy: policy,
-                            fillHeight: false,
-                            zoomEnabled: false,
+                            fillHeight: true,
+                            zoomEnabled: true,
                             onOpenDocument: onOpenDocument,
                             onOpenImage: onOpenImage
                         )
