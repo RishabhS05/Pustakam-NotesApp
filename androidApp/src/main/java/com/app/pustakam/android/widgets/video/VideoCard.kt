@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,7 +94,6 @@ fun VideoCard(
     fixedHeight: Dp? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
-    val context = LocalContext.current as Activity
     val viewModel: PlayMediaViewModel = viewModel()
     val noteContent = remember { contentVideo }
     val exoPlayer = remember { viewModel.getExoPlayer() }
@@ -106,12 +106,13 @@ fun VideoCard(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val cardHeight = (screenHeightDp * 0.42f).dp.coerceIn(260.dp, 400.dp)
 
-    Box(modifier = modifier) {
         Card(
             modifier = Modifier.fillMaxWidth(widthFraction)
                 .then(if (fixedHeight != null) Modifier.height(fixedHeight) else Modifier.requiredHeight(cardHeight))
                 .padding(8.dp)
                 .clickable{ onClick() },
+            elevation =CardDefaults.cardElevation(defaultElevation = 6.dp),
+            shape = RoundedCornerShape(14.dp),
                 ) {
             //Preview Video
             if (mediaState.noteContent.position == noteContent.position)
@@ -152,14 +153,8 @@ fun VideoCard(
                     overlay()
                 }
         }
-
-    }
 }
 
-// 🔧 14-Jul-2026: CHANGED — `attachPlayer` decides whether this view owns the player's video
-//   surface right now (see VideoCard). `update` re-binds when the selection changes, so the
-//   surface follows the currently selected media without recreating the view.
-//   Usage: VideoPlayer(exoPlayer, attachPlayer = <this media is the current selection>)
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(

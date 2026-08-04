@@ -36,7 +36,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-// 🔧 14-Jul-2026: NEW — bottom-sheet imports for the "Save to Gallery / Save as file" chooser
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -53,7 +52,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-// 🔧 14-Jul-2026: rememberCoroutineScope — run save file-I/O off the main thread
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
@@ -125,7 +123,6 @@ fun NoteEditorScreen(
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
-    // 🔧 20-Jul-2026: NEW FEATURE (export) — format menu + a spinner while the file is generated
     var showExportMenu by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     val exportScope = rememberCoroutineScope()
@@ -143,8 +140,6 @@ fun NoteEditorScreen(
             }
         }
     }
-
-    // 🔧 18-Jul-2026: NEW FEATURE (file import) — sheet visibility + SAF multi-document picker
     var showImportSheet by remember { mutableStateOf(false) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
@@ -163,8 +158,6 @@ fun NoteEditorScreen(
                 noteEditorViewModel.changeNoteStatus(null)
                 noteEditorViewModel.readFromDataBase(id)
             }
-            // 📖 25-Jul-2026: on return from the reader, refresh so the inline document card shows the
-            //   last-read page. Guarded inside the VM to skip when there are unsaved edits.
             Lifecycle.Event.ON_RESUME -> {
                 noteEditorViewModel.refreshOnResume(id)
             }
@@ -350,12 +343,6 @@ fun NoteEditorScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn {
                 state.value.contents.let {
-                    // 🔧 15-Jul-2026 Phase 0.3: no more sortedBy on EVERY recomposition (O(n·log n)
-                    //   per frame at scale) — contents are kept sorted at load (READ sorts once) and
-                    //   all inserts append with increasing positions. This also fixes a latent bug:
-                    //   `index` fed to updateContent(index, ..) was an index into the SORTED COPY,
-                    //   not into `contents`. Stable `key = content.id` lets Compose reuse item state
-                    //   instead of rebinding every card when the list changes.
                     itemsIndexed(it, key = { _, content -> content.id }) { index, contentValue ->
                         RenderWidget(
                             content = contentValue,
@@ -370,11 +357,6 @@ fun NoteEditorScreen(
                                 )
                             },
                             onShare = {},
-                            // 🔧 19-Jul-2026: FIX — single=true opens ONLY this file as a book
-                            //   (no more flipping through earlier files' pages first)
-                            // 📖 23-Jul-2026 FIX — save first so a JUST-ADDED file exists in the DB
-                            //   before the reader reads it; without this the reader fell back to the
-                            //   whole note and showed the previously-added pdf.
                             onOpenDocument = {
                                 val cid = contentValue.id
                                 noteEditorViewModel.saveThenOpen {
@@ -384,8 +366,7 @@ fun NoteEditorScreen(
                                 }
                             },
                             onMediaPreview = {
-                                // 🔧 14-Jul-2026: CHANGED — pass the content id so VideoPreviewScreen
-                                //   can drive the standalone player by mediaId (no path guessing).
+
                                 imageDataViewModel.onSetMediaToPreview(
                                     (contentValue as NoteContentModel.MediaContent).getMediaUrl(),
                                     contentValue.type,
@@ -400,10 +381,6 @@ fun NoteEditorScreen(
                 }
             }
             if (stateEditor.showAudioRecorder) {
-                // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key, related) — addNewContent used
-                //   to run in the composition body, creating a NEW content object + file on EVERY
-                //   recomposition while recording. remember{} creates exactly one per recorder
-                //   session (the slot resets when the recorder leaves composition).
                 val recordingContent = remember {
                     noteEditorViewModel.addNewContent(
                         context,
@@ -523,12 +500,8 @@ fun RenderWidget(
         ContentType.IMAGE -> {
             val contentImage = content as NoteContentModel.MediaContent
             val path = contentImage.localPath ?: contentImage.url
-            // 🔧 14-Jul-2026: NEW — wrapped with save-to-device overlay (image → Gallery)
             ImageCard(
                 imageUrl = path, modifier = Modifier,
-                // 🔧 14-Jul-2026: CHANGED — reveal reverted to LONG-PRESS (2.5s auto-hide inside the
-                //   card, iOS parity). `visible` is true on long-press, false when the timer fires;
-                //   clear the id only if this card still owns it.
                 onShowActions = { visible ->
                     focusedMediaId = when {
                         visible -> contentImage.id
@@ -550,11 +523,10 @@ fun RenderWidget(
 
         ContentType.VIDEO -> {
             val contentVideo = content as NoteContentModel.MediaContent
-            // 🔧 14-Jul-2026: NEW — wrapped with save-to-device overlay (video → Gallery)
+
             VideoCard(
                 modifier = Modifier,
                 contentVideo,
-                // 🔧 14-Jul-2026: CHANGED — same long-press reveal + timed hide as ImageCard.
                 onShowActions =  { visible ->
                     focusedMediaId = when {
                         visible -> contentVideo.id
@@ -595,7 +567,7 @@ fun RenderWidget(
                     }
                 }
             }
-            // Audio save lives inside the player card; onSave opens the SAF picker (default Downloads).
+
             AudioPlayerUIState(contentAudio, onDelete = onDelete, onSave = {
                     exportLauncher.launch(suggestedFileNameFromMedia(contentAudio))
                 })
@@ -605,9 +577,6 @@ fun RenderWidget(
             val contentLink = content as NoteContentModel.Link
             Text(contentLink.url, modifier = Modifier.clickable {})
         }
-
-        // 🔧 18-Jul-2026: file-import — every document format renders as a tappable file card
-        //   (tap → book reader page, long-press → save/share/delete overlay)
         ContentType.DOCX, ContentType.PDF, ContentType.TXT,
         ContentType.MD, ContentType.EPUB, ContentType.OTHER -> {
             val contentDoc = content as NoteContentModel.MediaContent
@@ -689,11 +658,8 @@ fun BoxScope.MediaSaveOverlay(
         }
     }
 
-    // 🔧 14-Jul-2026: NEW FEATURE — controls the "Save to Gallery / Save as file" bottom sheet.
-    //   Only used for IMAGE/VIDEO; other types still export straight to the SAF picker.
     var showSaveSheet by remember { mutableStateOf(false) }
 
-    // 🔧 14-Jul-2026: helper — silent MediaStore save, run on IO, Toast on the main thread.
     val saveToGallery: () -> Unit = {
         scope.launch {
             val ok = withContext(Dispatchers.IO) { saveMediaToGallery(context, media) }
@@ -759,9 +725,6 @@ fun BoxScope.MediaSaveOverlay(
             }
         }
 
-    // 🔧 14-Jul-2026: NEW FEATURE — the save-options bottom sheet (IMAGE/VIDEO only).
-    //   Row 1 → Save to Gallery (silent MediaStore write).
-    //   Row 2 → Save to location as file (SAF picker, default Downloads).
     if (showSaveSheet) {
         val sheetState = rememberModalBottomSheetState()
         ModalBottomSheet(
@@ -785,7 +748,6 @@ fun BoxScope.MediaSaveOverlay(
                 },
                 modifier = Modifier.clickable {
                     showSaveSheet = false
-                    // Reuses the existing SAF export; mimeTypeFor already handles image/png & video/mp4.
                     exportLauncher.launch(suggestedFileNameFromMedia(media))
                 }
             )

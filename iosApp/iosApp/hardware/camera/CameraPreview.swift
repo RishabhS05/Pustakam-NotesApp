@@ -50,7 +50,9 @@ struct CameraPreview: View {
                
         }.frame(maxWidth: .infinity, maxHeight: .infinity,)
         .onAppear() {
-            isCameraPresented =  cameraPermission.checkCameraPermission()
+            requirePermission(cameraPermission,
+                              onGranted: { isCameraPresented = true },
+                              onDenied: { isCameraPresented = false })
         }.fullScreenCover(isPresented: $isCameraPresented ){
             CameraCaptureView(
                 isPresented: $isCameraPresented,

@@ -1,15 +1,16 @@
- package com.app.pustakam.android.permission
+package com.app.pustakam.android.permission
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
 
 enum class NeededPermission(
     val permission: String,
     val title: String,
     val description: String,
     val permanentlyDeniedDescription: String,
+    val minSdk: Int = Build.VERSION_CODES.BASE,
+    val maxSdk: Int = Int.MAX_VALUE,
 ) {
 
     @SuppressLint("InlinedApi")
@@ -18,6 +19,7 @@ enum class NeededPermission(
         title = "Background Location Permission",
         description = "This permission is needed to get your approximate location in background. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
+        minSdk = Build.VERSION_CODES.Q,
     ),
 
     FINE_LOCATION(
@@ -56,18 +58,40 @@ enum class NeededPermission(
         description = "This permission is needed to access your camera. Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to access your camera. Please grant the permission in app settings.",
     ),
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+
+    @SuppressLint("InlinedApi")
+    READ_MEDIA_IMAGES(
+        permission = Manifest.permission.READ_MEDIA_IMAGES,
+        title = "Photos Permission",
+        description = "This permission is needed to read photos on your device. Please grant the permission.",
+        permanentlyDeniedDescription = "This permission is needed to read photos. Please grant the permission in app settings.",
+        minSdk = Build.VERSION_CODES.TIRAMISU,
+    ),
+
+    @SuppressLint("InlinedApi")
+    READ_EXTERNAL_STORAGE(
+        permission = Manifest.permission.READ_EXTERNAL_STORAGE,
+        title = "Storage Permission",
+        description = "This permission is needed to read files on your device. Please grant the permission.",
+        permanentlyDeniedDescription = "This permission is needed to read files. Please grant the permission in app settings.",
+        maxSdk = Build.VERSION_CODES.S_V2,
+    ),
+
+    @SuppressLint("InlinedApi")
     POST_NOTIFICATIONS(
         permission = Manifest.permission.POST_NOTIFICATIONS,
         title = "Post Notification Permission",
-        description =  "This permission is needed to show you the Notifications. Please grant the permission.",
-        permanentlyDeniedDescription = "This permission is needed for Showing Notifications. Please grant the permission in app settings."
+        description = "This permission is needed to show you the Notifications. Please grant the permission.",
+        permanentlyDeniedDescription = "This permission is needed for Showing Notifications. Please grant the permission in app settings.",
+        minSdk = Build.VERSION_CODES.TIRAMISU,
     );
+
+    val isApplicable: Boolean
+        get() = Build.VERSION.SDK_INT in minSdk..maxSdk
 
     fun permissionTextProvider(isPermanentDenied: Boolean): String {
         return if (isPermanentDenied) this.permanentlyDeniedDescription else this.description
     }
 }
-//fun getNeededPermission(permission: String): NeededPermission {
-//    return NeededPermission.entries.find { it.permission == permission } ?: throw IllegalArgumentException("Permission $permission is not supported")
-//}
+
+fun List<NeededPermission>.applicable(): List<NeededPermission> = filter { it.isApplicable }

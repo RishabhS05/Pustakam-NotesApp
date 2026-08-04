@@ -33,6 +33,10 @@ import com.app.pustakam.android.extension.goToAppSetting
 @Composable
 fun AskSinglePermission(requiredPermission: NeededPermission, onGrantPermission: () -> Unit, onDismiss: () -> Unit) {
     val activity = LocalContext.current as Activity
+    if (!requiredPermission.isApplicable) {
+        onGrantPermission()
+        return
+    }
     var permissionDialog by remember { mutableStateOf<NeededPermission?>(requiredPermission) }
     val permissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission(), onResult = { isGranted ->
         permissionDialog = if (!isGranted) requiredPermission else null
@@ -59,10 +63,13 @@ fun AskPermissions(
     onDismiss: () -> Unit,
 ) {
     val activity = LocalContext.current as Activity
-    /**Add Permission Dialog for added all the permissions */
-    val permissionDialog = remember { mutableStateListOf<NeededPermission>().apply { addAll(permissionsRequired) } }
-    /** convert all the permission into array */
-    val permissionsString = permissionsRequired.map { it.permission }.toTypedArray()
+    val applicablePermissions = permissionsRequired.applicable()
+    if (applicablePermissions.isEmpty()) {
+        onGrantPermission()
+        return
+    }
+    val permissionDialog = remember { mutableStateListOf<NeededPermission>().apply { addAll(applicablePermissions) } }
+    val permissionsString = applicablePermissions.map { it.permission }.toTypedArray()
    /** launch multiple permission */
     val multiplePermissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = {
@@ -76,15 +83,11 @@ fun AskPermissions(
      * -if granted -> call hardware launch
      * -if not -> call show premission dialog
      * */
-    if (hasPermissions(context = activity, permissions = permissionsRequired)) {
+    if (hasPermissions(context = activity, permissions = applicablePermissions)) {
         onGrantPermission()
         return
     } else {
-        permissionDialog.forEach {
-            if (hasPermission(activity, it.permission)) {
-                permissionDialog.remove(it)
-            }
-        }
+        permissionDialog.removeAll { hasPermission(activity, it.permission) }
     }
 
     // if all the dialogs displayed it will reset the trigger
@@ -92,7 +95,7 @@ fun AskPermissions(
         onDismiss()
     }
     // Display dialogs
-    permissionDialog.forEach { permission ->
+    permissionDialog.toList().forEach { permission ->
         PermissionAlertDialog(neededPermission = permission, onDismiss = {
             permissionDialog.remove(permission)
         }, onOkClick = {
@@ -114,10 +117,11 @@ fun hasPermission(context: Context, permission: String): Boolean {
 
 /**
  * Check for the permissions granted */
-fun hasPermissions(context: Context, permissions: List<NeededPermission>): Boolean {
-    val permissionsString = permissions.map { it.permission }
-    return permissionsString.all { hasPermission(context = context, it) }
-}
+fun hasPermissions(context: Context, permissions: List<NeededPermission>): Boolean =
+    permissions.applicable().all { hasPermission(context = context, it.permission) }
+
+fun hasPermission(context: Context, permission: NeededPermission): Boolean =
+    !permission.isApplicable || hasPermission(context, permission.permission)
 
 @Composable
 private  fun PermissionAlertDialog(

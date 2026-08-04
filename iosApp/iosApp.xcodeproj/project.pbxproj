@@ -23,6 +23,8 @@
 		0000000022B2CB100000001A /* LocationBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000001B /* LocationBlockView.swift */; };
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
+		2261696B3021FDCE00B49A04 /* HardwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2261696A3021FDCE00B49A04 /* HardwareManager.swift */; };
+		2261696D3021FDEB00B49A04 /* PermissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2261696C3021FDEB00B49A04 /* PermissionGate.swift */; };
 		2287BB29300D69F800F6D3E2 /* ImagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB28300D69F800F6D3E2 /* ImagePreviewView.swift */; };
 		2287BB32300E5C2A00F6D3E2 /* NoteExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */; };
 		2287BB423010149D00F6D3E2 /* FolderItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2287BB413010149D00F6D3E2 /* FolderItem.swift */; };
@@ -81,7 +83,6 @@
 		6345BFB32CEF35B900CC254C /* MicPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB22CEF35AA00CC254C /* MicPermission.swift */; };
 		6345BFB52CEF35E400CC254C /* StroagePermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB42CEF35D100CC254C /* StroagePermission.swift */; };
 		6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB82CEF363100CC254C /* LocationPermission.swift */; };
-		6345BFBB2CEF6CB500CC254C /* HardwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */; };
 		634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */; };
 		635557452DC0732700C7D533 /* DateTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635557442DC0732100C7D533 /* DateTime.swift */; };
 		636341002F012A1B003835E4 /* NoteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636340FF2F012A1B003835E4 /* NoteTextField.swift */; };
@@ -168,6 +169,8 @@
 		0000000022B2CB100000001B /* LocationBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationBlockView.swift; sourceTree = "<group>"; };
 		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
+		2261696A3021FDCE00B49A04 /* HardwareManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareManager.swift; sourceTree = "<group>"; };
+		2261696C3021FDEB00B49A04 /* PermissionGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionGate.swift; sourceTree = "<group>"; };
 		2287BB28300D69F800F6D3E2 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		2287BB30300E5C2A00F6D3E2 /* NoteExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteExporter.swift; sourceTree = "<group>"; };
 		2287BB413010149D00F6D3E2 /* FolderItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderItem.swift; sourceTree = "<group>"; };
@@ -225,7 +228,6 @@
 		6345BFB22CEF35AA00CC254C /* MicPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicPermission.swift; sourceTree = "<group>"; };
 		6345BFB42CEF35D100CC254C /* StroagePermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StroagePermission.swift; sourceTree = "<group>"; };
 		6345BFB82CEF363100CC254C /* LocationPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermission.swift; sourceTree = "<group>"; };
-		6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareManager.swift; sourceTree = "<group>"; };
 		634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertUseCase.swift; sourceTree = "<group>"; };
 		635557442DC0732100C7D533 /* DateTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTime.swift; sourceTree = "<group>"; };
 		636340FF2F012A1B003835E4 /* NoteTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextField.swift; sourceTree = "<group>"; };
@@ -586,11 +588,12 @@
 		6345BFAF2CEF357800CC254C /* hardware */ = {
 			isa = PBXGroup;
 			children = (
+				2261696C3021FDEB00B49A04 /* PermissionGate.swift */,
+				2261696A3021FDCE00B49A04 /* HardwareManager.swift */,
 				630BA1812CF1961500D148C8 /* stroage */,
 				630BA1802CF195F700D148C8 /* microPhone */,
 				630BA17F2CF195EA00D148C8 /* location */,
 				6345BFBC2CEF704900CC254C /* camera */,
-				6345BFBA2CEF6CAB00CC254C /* HardwareManager.swift */,
 			);
 			path = hardware;
 			sourceTree = "<group>";
@@ -1070,10 +1073,10 @@
 				630BA1992CF50F8C00D148C8 /* AudioVisualizerView.swift in Sources */,
 				630BA1852CF23E0700D148C8 /* AudioRecoderHandler.swift in Sources */,
 				22A0C189300C2A7F008D5904 /* InlineBookFileView.swift in Sources */,
-				6345BFBB2CEF6CB500CC254C /* HardwareManager.swift in Sources */,
 				2287BB46301014FF00F6D3E2 /* ContinueReadingCard.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				2287BB32300E5C2A00F6D3E2 /* NoteExporter.swift in Sources */,
+				2261696B3021FDCE00B49A04 /* HardwareManager.swift in Sources */,
 				22B2CA7830119961002AD701 /* NotificationView.swift in Sources */,
 				22B2CA7930119961002AD701 /* HomeView.swift in Sources */,
 				22B2CA7A30119961002AD701 /* LoginView.swift in Sources */,
@@ -1099,6 +1102,7 @@
 				22B2CB0130119961002AD701 /* NoteBookReaderView.swift in Sources */,
 				22B2CA7D30119961002AD701 /* SignupView.swift in Sources */,
 				22B2CA7E30119961002AD701 /* SettingsView.swift in Sources */,
+				2261696D3021FDEB00B49A04 /* PermissionGate.swift in Sources */,
 				22B2CA7F30119961002AD701 /* SearchView.swift in Sources */,
 				22B2CA8030119961002AD701 /* NoteBookView.swift in Sources */,
 				22B2CA8130119961002AD701 /* NoteEditorViewModel.swift in Sources */,

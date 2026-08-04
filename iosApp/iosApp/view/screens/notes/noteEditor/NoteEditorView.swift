@@ -59,26 +59,19 @@ struct NoteEditorView: View {
             OverlayEditorButtons(
                 showDelete: noteEditorViewModel.state.note != nil,  // 🔧 state.note — updates when async note arrives
                 onMediaCapture: {
-                    guard cameraPermission.checkCameraPermission() else {
-                        setAlert(alertType: .CAMERA)
-                        return
-                    }
-                    guard micPermission.checkMicPermission() else {
-                        setAlert(alertType: .MIC)
-                        return
-                    }
-                    router.navigate(to: .Camera(){ data in
-                        print("capturedData \(String(describing: data))")
-                      noteEditorViewModel.getCapturedData(media: data)
-                    })
+                    requirePermission(cameraPermission, onGranted: {
+                        requirePermission(micPermission, onGranted: {
+                            router.navigate(to: .Camera(){ data in
+                                noteEditorViewModel.getCapturedData(media: data)
+                            })
+                        }, onDenied: { setAlert(alertType: .MIC) })
+                    }, onDenied: { setAlert(alertType: .CAMERA) })
                 },
                 onShare: { print("Share action") },
                 onRecordMic: {
-                    guard micPermission.checkMicPermission() else {
-                        setAlert(alertType: .MIC)
-                        return
-                    }
-                    showRecorder = true
+                    requirePermission(micPermission, onGranted: {
+                        showRecorder = true
+                    }, onDenied: { setAlert(alertType: .MIC) })
                 }, onAddTextField: {
                     noteEditorViewModel.addNewText()
                 },
