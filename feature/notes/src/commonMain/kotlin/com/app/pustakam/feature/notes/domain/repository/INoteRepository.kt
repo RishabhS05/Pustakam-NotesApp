@@ -8,6 +8,7 @@ import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import com.app.pustakam.core.model.models.response.notes.Notes
 
 interface INoteRepository : ILocalNotesRepository, IRemoteNoteRepository {
+
     suspend fun insertOrUpdateNote(
         note: Note,
         dirtyContentIds: Set<String>? = null

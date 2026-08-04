@@ -1,6 +1,6 @@
 package com.app.pustakam.feature.auth.domain.usecase
 
-import com.app.pustakam.core.usecases.BaseUseCase
+import com.app.pustakam.core.data.usecases.BaseUseCase
 import com.app.pustakam.feature.auth.domain.repository.IAuthRepository
 import org.koin.core.component.inject
 

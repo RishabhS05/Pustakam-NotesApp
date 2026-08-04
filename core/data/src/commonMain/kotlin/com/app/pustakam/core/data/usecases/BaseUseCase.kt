@@ -1,4 +1,4 @@
-package com.app.pustakam.core.usecases
+package com.app.pustakam.core.data.usecases
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

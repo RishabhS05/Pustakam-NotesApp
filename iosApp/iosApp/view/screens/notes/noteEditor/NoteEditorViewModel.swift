@@ -19,6 +19,7 @@ class NoteEditorViewModel: ObservableObject {
 
     private let adapter: NotesBridgeAdapter
     private let contentBridge: NoteContentBridge
+    private var contentUpdatesHandle: Closeable?
     private var dirtyContentIds = Set<String>()
 
     /// DI per series convention: defaults keep call sites/tests simple. (fixes E1, E6)
@@ -28,9 +29,24 @@ class NoteEditorViewModel: ObservableObject {
         self.adapter = adapter
         self.contentBridge = contentBridge
         load(noteId: noteId)
+        observeContentUpdates()
     }
 
-    deinit { contentBridge.dispose() }          // adapter cleans itself up
+    deinit {
+        contentUpdatesHandle?.close()
+        contentBridge.dispose()
+    }
+
+    private func observeContentUpdates() {
+        contentUpdatesHandle = contentBridge.observeSelectedMedia { [weak self] media in
+            guard let self else { return }
+            for updated in media {
+                guard let index = self.state.noteContents.firstIndex(where: { $0.id == updated.id }) else { continue }
+                guard self.state.noteContents[index].updatedAt != updated.updatedAt else { continue }
+                self.state.noteContents[index] = updated
+            }
+        }
+    }
 
     // MARK: - Load
     func refresh() {

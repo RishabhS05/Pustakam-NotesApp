@@ -30,12 +30,9 @@ import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 internal class NoteRepository : BaseRepository(), INoteRepository {
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(emptyList())
-    // 🔧 F3 (P5): asStateFlow — same public type (StateFlow), but no extra re-collection
-    //            layer and no never-cancelled CoroutineScope(io) leaking per instance
+
     override val notesState: StateFlow<Notes> = _notes.asStateFlow()
     override val tagState: StateFlow<List<Tag>> = _tags.asStateFlow()
-    // 🔧 15-Jul-2026 Summary query: LIST-SCREEN source of truth — light summaries, never contents.
-    //   Kept in sync by getNoteSummaries (paged fetch) and by insertOrUpdateNote/deleteNote below.
     private val _noteSummaries = MutableStateFlow<List<NoteSummary>>(emptyList())
     override val noteSummariesState: StateFlow<List<NoteSummary>> = _noteSummaries.asStateFlow()
     /** create an blank note
@@ -301,8 +298,6 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
      * - read from local db
      * - call read api from server
      * */
-    // 🔧 15-Jul-2026 Summary query: paged LIST-SCREEN fetch — summaries only, contents never load.
-    //   page 1 replaces the flow, later pages append (deduped by id), mirroring insertNotes.
     override suspend fun getNoteSummaries(page: Int, limit: Int): Result<BaseResponse<List<NoteSummary>>, Error> {
         val summaries = notesDao.selectNoteSummariesPage(limit = limit, page = page)
         _noteSummaries.update { current ->
@@ -314,14 +309,11 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
         return Result.Success(BaseResponse(data = summaries, isSuccessful = true, isFromDb = true))
     }
 
-    // 🔧 15-Jul-2026 Phase 2.2: full-text search (FTS5 content matches + title matches) — see DAO.
     override suspend fun searchNotes(query: String): Result<BaseResponse<List<NoteSummary>>, Error> {
         val results = notesDao.searchNotes(query)
         return Result.Success(BaseResponse(data = results, isSuccessful = true, isFromDb = true))
     }
 
-    // 🔧 15-Jul-2026 Phase 0.1: limit = 0 (default) keeps the legacy load-everything behavior
-    //   (iOS bridge path); limit > 0 loads one page (Android list opts in with NOTES_PAGE_SIZE).
     override suspend fun getAllNotes(page: Int, limit: Int): Result<BaseResponse<Notes>, Error> {
         return getNotesFromDb(page, limit).onSuccess { notes->
             if(notes.data != null && notes.data!!.notes.count() > 0){

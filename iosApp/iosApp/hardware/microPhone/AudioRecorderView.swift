@@ -3,6 +3,7 @@ import SwiftUI
 import AVFoundation
 
 struct AudioRecorderView : View {
+    
     @StateObject private var audioRecorder = AudioRecorder()
     @StateObject private var audioLevelsMonitor = AudioLevelsMonitor()
     @State private var elapsedTime: TimeInterval = 0.0
@@ -34,18 +35,18 @@ struct AudioRecorderView : View {
                 .font(.headline.monospacedDigit())
                 .foregroundColor(Theme.Colors.primary)
                     
-                // Real-time Wave Animation
                 AudioVisualizerView(audioLevelsMonitor: audioLevelsMonitor)
                 .frame(height: 30).padding(4)
-                    // Play Button
-                    Button(action: {
+                
+                Button(action: {
                         if audioRecorder.isRecording {
                             pauseRecording()
                         } else {
                             resumeRecording()
                         }
-                    }) {
-                        Image(systemName:"record.circle")
+                    }
+                ) {
+                       Image(systemName:"record.circle")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 20, height: 20)
@@ -54,8 +55,6 @@ struct AudioRecorderView : View {
                     .disabled(audioRecorder.audioFileURL == nil)
                     .padding(8)
                    
-                    // Disable if there's no recorded file
-                    // Stop Playback Button
                     Button(action: {
                         stopRecording()
                         if ((audioRecorder.audioFileURL) != nil){
@@ -83,7 +82,6 @@ struct AudioRecorderView : View {
             onDismiss()
         }
     }
-        // Start Recording Function
     private func startRecording() {
         audioRecorder.startRecording()
         audioLevelsMonitor.startLevelsMonitoring()
@@ -102,21 +100,18 @@ struct AudioRecorderView : View {
         startTimer()
     }
     
-        // Stop Recording Function
     private func stopRecording() {
         audioRecorder.stopRecording()
         audioLevelsMonitor.loadAudioFile(url:audioRecorder.audioFileURL ?? nil)
         audioLevelsMonitor.stopLevelsMonitoring()
         stopTimer()
     }
-    
-        // Timer start or pause Functions
+
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { _ in
             elapsedTime += 0.01
         }
     }
-    // this will call only when recording is completed
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
@@ -218,13 +213,11 @@ struct PulseShape: Shape {
         var path = Path()
         let midY = rect.midY
         let pulseSpacing: CGFloat = 10
-        // Space between pulses
+        
         for x in stride(from: 0, to: rect.width, by: pulseSpacing) {
             let normalizedX = x / rect.width
             let angle = normalizedX * .pi * 2 + phase
             let pulseHeight = sin(angle) * amplitude * rect.height / 2
-            
-            // Draw a vertical line (pulse)
             let pulseStart = CGPoint(x: x, y: midY - pulseHeight / 2)
             let pulseEnd = CGPoint(x: x, y: midY + pulseHeight / 2)
             path.move(to: pulseStart)

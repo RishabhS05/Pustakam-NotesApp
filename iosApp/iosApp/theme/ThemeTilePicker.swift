@@ -1,15 +1,5 @@
-//
-//  ThemeTilePicker.swift
-//  iosApp
-//
-//  Created by Rishabh on 22/07/26.
-//  Copyright © 2026 orgName. All rights reserved.
-//
-
 import SwiftUI
 
-// 🎨 22-Jul-2026 — Granth spec §6 Appearance tiles. Reusable: any screen can drop this in and bind
-//   it to the ThemeManager. Each tile previews its own ramp so the choice reads at a glance.
 struct ThemeTilePicker: View {
 
     @Binding var selection: ThemeMode

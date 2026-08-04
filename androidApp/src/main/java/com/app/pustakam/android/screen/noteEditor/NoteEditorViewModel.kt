@@ -43,10 +43,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.core.component.get
 import org.koin.core.component.inject
 import com.app.pustakam.core.common.util.Result
-import com.app.pustakam.core.common.util.onSuccess
 
 class NoteEditorViewModel : BaseViewModel() {
     private val setSelectedNoteContentUseCase by inject<SetSelectedNoteContentUseCase>()
@@ -60,11 +58,29 @@ class NoteEditorViewModel : BaseViewModel() {
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
-
-    // 🔧 15-Jul-2026 Phase 0.4: dirty-row saves — ids of content blocks touched since the last
-    //   successful save. Save writes ONLY these rows (plus the cheap note header) instead of
-    //   rewriting every content row of the note. Contents loaded from the DB start clean.
     private val dirtyContentIds = mutableSetOf<String>()
+
+    init {
+        viewModelScope.launch {
+            setSelectedNoteContentUseCase.selectedMediaContent.collect { media ->
+                media.forEach { applyExternalContentUpdate(it) }
+            }
+        }
+    }
+
+    private fun applyExternalContentUpdate(updated: NoteContentModel) {
+        _noteContentUiState.update { state ->
+            val index = state.contents.indexOfFirst { it.id == updated.id }
+            if (index == -1) return@update state
+            if (state.contents[index].updatedAt == updated.updatedAt) return@update state
+            state.contents[index] = updated
+            val updatedNote = state.note?.let { n ->
+                n.withContents(n.contents.map { if (it.id == updated.id) updated else it })
+            }
+            state.copy(note = updatedNote, contents = state.contents)
+        }
+    }
+
     private var lastSavedDirtyIds: Set<String> = emptySet()
 
 
@@ -81,10 +97,6 @@ class NoteEditorViewModel : BaseViewModel() {
                 log_d("Loading", "Getting Update data")
                 val note = result.data.data as Note
                 _noteUiState.update {
-                    // 🔧 14-Jul-2026: FIX (back button) — exit is STICKY: a second racing INSERT
-                    //   success must never downgrade onSaveCompletedExit back to onSaveCompleted
-                    //   (that swallowed the back press). Also reset isLoading — it was left true
-                    //   after every save, so the loading spinner never went away.
                     val noteStatus = when (it.noteStatus) {
                         NoteStatus.onBackPress, NoteStatus.onSaveCompletedExit -> NoteStatus.onSaveCompletedExit
                         else -> NoteStatus.onSaveCompleted
@@ -94,11 +106,9 @@ class NoteEditorViewModel : BaseViewModel() {
 
                 _noteContentUiState.update { it.copy(note = note,
                     isAllSetupDone = true) }
-                // 🔧 15-Jul-2026 Phase 0.4: the saved snapshot is clean now; anything edited DURING
-                //   the save stays dirty for the next one.
+
                 dirtyContentIds.removeAll(lastSavedDirtyIds)
                 lastSavedDirtyIds = emptySet()
-                // 🔧 14-Jul-2026: FIX (I-1) — media captured before the note existed is appended now.
                 consumePendingMediaPaths()
             }
 
@@ -109,17 +119,13 @@ class NoteEditorViewModel : BaseViewModel() {
                     it.copy(
                         titleTextState = it.titleTextState, note = note,
                         isAllSetupDone = true,
-                        // 🔧 15-Jul-2026 Phase 0.3: sort ONCE here (DB already orders by position;
-                        //   this guarantees it) — the LazyColumn no longer re-sorts every frame.
+
                         contents = mutableStateListOf(*note.contents.sortedBy { c -> c.position }.toTypedArray())
                     )
                 }
-                // 🔧 14-Jul-2026: FIX (recorded video not playable) — READ replays every time the editor
-                //   comes back to the foreground (ON_CREATE re-delivery). Syncing the playlist from the
-                //   DB copy wiped any media recorded but not yet saved. Sync from the LIVE note instead;
-                //   it equals the DB note right after first load and additionally carries fresh media.
+
                 setSelectedNoteContentUseCase(_noteContentUiState.value.note ?: note)
-                // 🔧 14-Jul-2026: FIX (I-1) — consume paths captured while the note was still loading.
+
                 consumePendingMediaPaths()
             }
 
@@ -180,13 +186,6 @@ class NoteEditorViewModel : BaseViewModel() {
             createUpdateNoteUseCase.invoke(_noteContentUiState.value.note!!, lastSavedDirtyIds)
         }
     }
-
-    // 📖 23-Jul-2026 FIX (opening a just-added file showed the OLD pdf): added files live only in the
-    //   in-memory note until a save; the full-screen reader reads the DB, so a not-yet-saved file
-    //   isn't found and the reader falls back to the whole-note book (the first/existing pdf).
-    //   This flushes the current note to the DB through the SAME create/update use case, then runs
-    //   onSaved so navigation happens only after the file exists on disk. Isolated on its own scope
-    //   so it never touches the INSERT/back-press status flow.
     fun saveThenOpen(onSaved: () -> Unit) {
         updateNoteObject()
         val note = _noteContentUiState.value.note ?: run { onSaved(); return }
@@ -210,10 +209,6 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
-    // 📖 25-Jul-2026: refresh the note when the editor comes back to the foreground (e.g. returning
-    //   from the reader) so the inline document card shows the last page just read. SAFE-GUARDED: only
-    //   re-reads when there are NO unsaved edits — a dirty editor keeps its in-memory state untouched,
-    //   so this can never clobber work in progress. Reuses the existing, proven read path.
     fun refreshOnResume(id: String?) {
         if (dirtyContentIds.isNotEmpty()) return   // don't overwrite unsaved edits
         readFromDataBase(id)
@@ -226,17 +221,12 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
     private fun updateNoteObject() {
-        // 🔧 15-Jul-2026 Phase 2.1: split oversized plain-text blocks BEFORE the upsert (never
-        //   while typing). The SnapshotStateList is mutated outside the update{} lambda, and every
-        //   changed/new chunk is marked dirty so the dirty-row save picks it up.
         TextBlockSplitter.splitOversized(_noteContentUiState.value.contents.toList())?.let { split ->
             dirtyContentIds.addAll(split.changedIds)
             val live = _noteContentUiState.value.contents
             live.clear()
             live.addAll(split.contents)
         }
-        // old code built the copy and DISCARDED it — title was never saved.
-        // Now: write title + materialize the edited contents back into state before upsert.
         _noteContentUiState.update {
             val updatedNote = it.note?.withTitleAndContents(
                 newTitle = it.titleTextState.value,
@@ -339,12 +329,8 @@ class NoteEditorViewModel : BaseViewModel() {
         return content
     }
     fun addContentData(content: NoteContentModel){
-        dirtyContentIds.add(content.id)   // 🔧 15-Jul-2026 Phase 0.4: new block → must be saved
-        // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key) — UPSERT by id: if the id is already
-        //   in the list, replace it instead of appending a duplicate (a re-delivered event, e.g.
-        //   the audio recorder's stop, used to add the same content twice and crash the keyed
-        //   LazyColumn). The SnapshotStateList is mutated exactly once OUTSIDE the update{} lambda,
-        //   which can re-run on contention (same pattern as the 14-Jul getMediaData fix).
+        dirtyContentIds.add(content.id)
+
         val liveContents = _noteContentUiState.value.contents
         val existingIndex = liveContents.indexOfFirst { it.id == content.id }
         if (existingIndex != -1) liveContents[existingIndex] = content else liveContents.add(content)
@@ -471,20 +457,12 @@ class NoteEditorViewModel : BaseViewModel() {
                 isAllSetupDone = true
             )
         }
-        // 🔧 14-Jul-2026: FIX (recorded video not playable) — register the new media into the
-        //   standalone playlist repository so it can play immediately, before the note is saved.
-        //   This is safe now (it wasn't before) because track selection in MediaServiceListener is
-        //   resolved by mediaId with a -1 guard — index drift can no longer mis-select a track.
         newItems.filter { it.isPlayingMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
-        // 🔧 15-Jul-2026 Phase 0.4: captured media blocks are new rows → mark for saving
+
         dirtyContentIds.addAll(newItems.map { it.id })
-        // 🔧 15-Jul-2026 Phase 2.3: lazy thumbnails — generated off the main thread AFTER the media
-        //   is already visible; when ready, the content is upserted (dirty + playlist repo included)
-        //   so the list card and the VideoCard placeholder render the small JPEG, never the full file.
         generateThumbnailsFor(newItems)
     }
 
-    // 🔧 18-Jul-2026: NEW FEATURE (file import) — device multi-pick: copy on IO, then append once.
     fun importDeviceFiles(context: Context, uris: List<android.net.Uri>) {
         if (uris.isEmpty()) return
         appContext = context.applicationContext
@@ -496,7 +474,7 @@ class NoteEditorViewModel : BaseViewModel() {
             val items = com.app.pustakam.android.fileimport.FileImportManager.importUris(
                 context.applicationContext, note.id, note.contents.count().toDouble(), uris
             )
-            kotlinx.coroutines.withContext(Dispatchers.Main) {
+           withContext(Dispatchers.Main) {
                 _noteUiState.update { it.copy(isLoading = false) }
                 if (items.isEmpty()) _noteUiState.update { it.copy(error = "Couldn't import the selected files.") }
                 else addImportedContents(items)
@@ -504,7 +482,7 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
 
-    // 🔧 18-Jul-2026: NEW FEATURE (file import) — link import: download if it IS a file, else "No file found".
+
     fun importFromLink(context: Context, url: String) {
         if (url.isBlank()) return
         appContext = context.applicationContext
@@ -516,7 +494,7 @@ class NoteEditorViewModel : BaseViewModel() {
             val result = com.app.pustakam.android.fileimport.FileImportManager.importFromUrl(
                 context.applicationContext, note.id, note.contents.count().toDouble(), url
             )
-            kotlinx.coroutines.withContext(Dispatchers.Main) {
+            withContext(Dispatchers.Main) {
                 _noteUiState.update { it.copy(isLoading = false) }
                 when (result) {
                     is com.app.pustakam.android.fileimport.ImportResult.Success -> addImportedContents(result.contents)
@@ -542,9 +520,6 @@ class NoteEditorViewModel : BaseViewModel() {
         dirtyContentIds.addAll(items.map { it.id })   // 🔧 imported blocks are new rows → saved next save
         generateThumbnailsFor(items)
     }
-
-    // 🔧 15-Jul-2026 Phase 2.3: one IO job per visual media without a thumbnail. On completion the
-    //   LATEST version of the content is looked up by id (never clobbers edits made meanwhile).
     private fun generateThumbnailsFor(items: List<NoteContentModel.MediaContent>) {
         val context = appContext ?: return
         items.filter {

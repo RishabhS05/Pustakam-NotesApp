@@ -57,7 +57,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// 🔧 19-Jul-2026: notebook palette — matches the reader's paper/leather look
 private val NotebookPaper = Color(0xFFFAF3E3)
 private val NotebookInk = Color(0xFF3E2F1C)
 private val NotebookCover = Color(0xFF4A3527)
@@ -144,8 +143,6 @@ fun InlineBookFileWidget(
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(1.dp).background(NotebookInk.copy(alpha = .15f)))
-                    // pages — SAME flip animation + renderers as the full-screen reader (DRY)
-                    // 🔧 20-Jul-2026: clipToBounds — zoomed page content can no longer spill out of the card
                     Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
                         when {
                             // Change this with page loader
@@ -172,7 +169,6 @@ fun InlineBookFileWidget(
     }
 }
 
-// 🔧 19-Jul-2026: the spiral rings column — draws binder rings like the reference image
 @Composable
 private fun SpiralBinding() {
     Canvas(Modifier.width(26.dp).fillMaxHeight().padding(vertical = 14.dp)) {

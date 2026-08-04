@@ -3,7 +3,7 @@ package com.app.pustakam.core.data.base
 import com.app.pustakam.core.database.localdb.database.NotesDao
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences
 import com.app.pustakam.core.network.ApiCallClient
-import com.app.pustakam.core.user.UserSession
+import com.app.pustakam.core.data.user.UserSession
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.component.inject

@@ -1,4 +1,4 @@
-package com.app.pustakam.core.user
+package com.app.pustakam.core.data.user
 
 import com.app.pustakam.core.common.coroutines.provideDispatcher
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences

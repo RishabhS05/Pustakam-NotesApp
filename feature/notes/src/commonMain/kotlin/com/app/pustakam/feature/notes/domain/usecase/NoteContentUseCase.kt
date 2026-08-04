@@ -1,9 +1,9 @@
 package com.app.pustakam.feature.notes.domain.usecase
 
-import com.app.pustakam.core.common.events.DomainEvent
-import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -37,8 +37,18 @@ class ClearSelectedNoteContentUseCase : NoteContentBaseUseCase() {
 }
 
 class UpdateReadingProgressUseCase : NoteBaseUseCase() {
+    private val noteContentRepository: INoteContentRepository by inject()
+
     suspend operator fun invoke(contentId: String?, progressPage: Int, totalPages: Int) =
-        getBaseApiCall { noteRepository.updateReadingProgressFromDb(contentId ?: "", progressPage, totalPages) }
+        getBaseApiCall {
+            noteRepository.updateReadingProgressFromDb(contentId ?: "", progressPage, totalPages)
+                .onSuccess {
+                    val updated = noteRepository.getNoteContentByIdFromDb(contentId)
+                    (updated as? Result.Success)?.data?.data
+                        ?.let { it as? NoteContentModel.MediaContent }
+                        ?.let { noteContentRepository.updateNoteContent(it) }
+                }
+        }
 }
 class ReadContentUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(contentId: String?) =
@@ -46,8 +56,5 @@ class ReadContentUseCase : NoteBaseUseCase() {
 }
 class DeleteNoteContentUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(id: String?) =
-        getBaseApiCall {
-            noteRepository.deleteNoteContentFromDb(id ?: "")
-                .onSuccess { events.publish(DomainEvent.NoteContentDeleted(id ?: "")) }
-        }
+        getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }
 }

@@ -1,6 +1,7 @@
 package com.app.pustakam.android.screen.notes.single
 
 import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,24 +38,14 @@ import com.app.pustakam.android.widgets.LoadImage
 import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import com.app.pustakam.core.common.extensions.toLocalFormat
 
-// 🔧 15-Jul-2026 Summary query: the card renders a NoteSummary (was a full Note whose contents it
-//   never used). What it shows, top to bottom:
-//   • title + updated date (unchanged look)
-//   • the text snippet when the note HAS text…
-//   • …otherwise media/doc COUNT BADGES ("3 photos · 1 audio") — notes with only media or docs
-//     are first-class, not blank cards
-//   • a thumbnail strip when the note has a visual media block
-//   Usage: NoteCardView(summary = noteSummary) { onOpen(noteSummary.id) }
 @Composable
 fun NoteBookCardView(modifier: Modifier = Modifier, summary: NoteSummary,
                      onClick: () -> Unit = {}) {
-    // 🎨 20-Jul-2026 — Granth spec §5 note card: IVORY surface (not the accent) + hairline border + md
-    //   radius (14dp). Saffron stays an accent (fold corner), never the whole card. Softer elevation.
     Card(shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surface,
         ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp,
             hoveredElevation = 4.dp, focusedElevation = 4.dp,  pressedElevation = 2.dp),
         modifier = modifier.fillMaxWidth(0.5f).clickable { onClick() }
@@ -150,7 +141,7 @@ private fun NotesPreview() {
         val summary = NoteSummary(
             id = "1", title = "Hare Rama Hare Rama", updatedAt = "18/03/2025",
             createdAt = "", categoryId = "",
-            snippet = null, imageCount = 3, audioCount = 1, docCount = 2
+            snippet = "", imageCount = 3, audioCount = 1, docCount = 2
         )
         NoteBookCardView(summary = summary)
     }

@@ -1,13 +1,3 @@
-//
-//  StroagePermission.swift
-//  iosApp
-//
-//  Created by Rishabh Shrivastava on 21/11/24.
-//  Copyright © 2024 orgName. All rights reserved.
-//
-
-
-
 import SwiftUI
 import UIKit
 
@@ -31,11 +21,6 @@ struct DocumentPicker: UIViewControllerRepresentable {
     }
 }
 
-// 🔧 14-Jul-2026: NEW FEATURE — "Save media to device" (non-gallery types).
-//   Exports a file to a user-chosen location via the Files document picker. Used for
-//   AUDIO/PDF/DOCX/GIF which can't be stored in the Photos gallery. The picker opens
-//   at Documents by default; iOS copies the file into the folder the user selects.
-//   Usage:  presentDocumentExporter(fileURL: url)
 func presentDocumentExporter(fileURL: URL) {
     let picker = UIDocumentPickerViewController(forExporting: [fileURL], asCopy: true)
     picker.directoryURL = getDocumentsDirectory()   // default suggested location (Documents)
@@ -47,7 +32,6 @@ func presentDocumentExporter(fileURL: URL) {
     top.present(picker, animated: true)
 }
 
-// 🔧 14-Jul-2026: Helper — the currently visible view controller to present from.
 func topMostViewController() -> UIViewController? {
     let windowScene = UIApplication.shared.connectedScenes
         .first { $0.activationState == .foregroundActive } as? UIWindowScene
