@@ -25,12 +25,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.inject
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class BookReaderViewModel : BaseViewModel() {
     private val readDocUseCase by inject<ReadContentUseCase>()
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
-    // 📖 same persisted pref Settings and the note reader use, so the mode stays in sync
     private val userPrefs by inject<IAppPreferences>()
 
     private val _bookUiState = MutableStateFlow(BookUIState(isLoading = false))
@@ -51,7 +51,6 @@ class BookReaderViewModel : BaseViewModel() {
     }
 
     override fun onLoading(taskCode: TaskCode) {
-        // 📖 never bring the loader back over pages that are already built
         _bookUiState.update { if (it.pages.isEmpty()) it.copy(isLoading = true) else it }
     }
 
@@ -62,7 +61,7 @@ class BookReaderViewModel : BaseViewModel() {
                 viewModelScope.launch(Dispatchers.IO) { userPrefs.setReadingMode(intent.readingMode.key) }
             }
 
-            is BookReaderIntent.LoadBook -> load(intent.bookId, intent.noteId)
+            is BookReaderIntent.LoadBook -> load(intent.bookId)
 
             is BookReaderIntent.PageChanged -> {
                 lastKnownPage = intent.page
@@ -73,7 +72,7 @@ class BookReaderViewModel : BaseViewModel() {
         }
     }
 
-    private fun load(bookId: String?, noteId: String?) {
+    private fun load(bookId: String?) {
         if (bookId.isNullOrEmpty()) {
             _bookUiState.update { it.copy(isLoading = false, error = "Document not found") }
             return
@@ -86,20 +85,22 @@ class BookReaderViewModel : BaseViewModel() {
             _bookUiState.update { it.copy(isLoading = false, error = "Not a readable document") }
             return
         }
-        // 📖 page building does file IO (pdf page counts, txt reads) → off the main thread
-        viewModelScope.launch(Dispatchers.IO) {
-            // 📖 DRY: the SAME factory the note reader uses; a document is just one content's pages
-            val pages = BookPageFactory.buildForContent(doc)
-            val startPage = doc.takeIf { it.hasReadingProgress() }
-                ?.progressPage
-                ?.coerceIn(0, (pages.size - 1).coerceAtLeast(0)) ?: 0
-            lastKnownPage = startPage
-            _bookUiState.update {
-                it.copy(
-                    isLoading = false, error = null, doc = doc, pages = pages,
-                    startPageIndex = startPage, pageProgress = startPage,
-                )
-            }
+        when (taskCode){
+             BOOK.GET_BOOK -> {
+                 viewModelScope.launch(Dispatchers.IO) {
+                     val pages = BookPageFactory.buildForContent(doc)
+                     val startPage = doc.takeIf { it.hasReadingProgress() }
+                         ?.progressPage
+                         ?.coerceIn(0, (pages.size - 1).coerceAtLeast(0)) ?: 0
+                     lastKnownPage = startPage
+                     _bookUiState.update {
+                         it.copy(
+                             isLoading = false, error = null, doc = doc, pages = pages,
+                             pageProgress = startPage,
+                         )
+                     }
+                 }
+             }
         }
     }
 
@@ -118,13 +119,12 @@ class BookReaderViewModel : BaseViewModel() {
         saveJob?.cancel()
         // 📖 debounced so scrolling doesn't spam the DB; saveScope outlives this ViewModel
         saveJob = saveScope.launch {
-            delay(350)
+            delay(350.milliseconds)
             updateReadingProgressUseCase(doc.id, page, total).collect { }
         }
     }
 
     override fun onCleared() {
-        // 📖 final flush on back-out / process death
         saveJob?.cancel()
         val state = _bookUiState.value
         val doc = state.doc

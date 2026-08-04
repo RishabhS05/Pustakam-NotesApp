@@ -43,8 +43,8 @@ fun BookPager(
     pageContent: @Composable (Int) -> Unit,
 ) {
     if (pageCount <= 0) return
-    var currentPage by remember { mutableIntStateOf(initialPage.coerceIn(0, pageCount - 1)) }
-    // 🔧 18-Jul-2026: 0f = leaf flat (unturned), 1f = leaf fully turned onto the left side
+    var currentPage by remember { mutableIntStateOf(initialPage.coerceIn(0, pageCount - 1).coerceAtLeast(0)) }
+
     val flip = remember { Animatable(0f) }
     var direction by remember { mutableStateOf<FlipDirection?>(null) }
     var containerWidth by remember { mutableFloatStateOf(1f) }
@@ -55,7 +55,7 @@ fun BookPager(
         val dir = direction ?: return
         scope.launch {
             if (complete) {
-                flip.animateTo(if (dir == FlipDirection.FORWARD) 1f else 0f, tween(320))
+                flip.animateTo(if (dir == FlipDirection.FORWARD) 1f else 0f, tween(360))
                 val newPage = when (dir) {
                     FlipDirection.FORWARD -> (currentPage + 1).coerceAtMost(pageCount - 1)
                     FlipDirection.BACKWARD -> (currentPage - 1).coerceAtLeast(0)
@@ -65,7 +65,7 @@ fun BookPager(
                 flip.snapTo(0f)
                 onPageChanged(newPage)
             } else {
-                flip.animateTo(if (dir == FlipDirection.FORWARD) 0f else 1f, tween(260))
+                flip.animateTo(if (dir == FlipDirection.FORWARD) 0f else 1f, tween(360))
                 direction = null
                 flip.snapTo(0f)
             }
@@ -132,7 +132,6 @@ fun BookPager(
     ) {
         val dir = direction
         val progress = flip.value
-        // 🔧 18-Jul-2026: leaf geometry — FORWARD turns leaf(current→next); BACKWARD turns leaf(prev→current)
         val leafFrontPage = if (dir == FlipDirection.BACKWARD) currentPage - 1 else currentPage
         val leafBackPage = if (dir == FlipDirection.BACKWARD) currentPage else currentPage + 1
         val basePage = if (dir == FlipDirection.BACKWARD) currentPage else (currentPage + 1).coerceAtMost(pageCount - 1)

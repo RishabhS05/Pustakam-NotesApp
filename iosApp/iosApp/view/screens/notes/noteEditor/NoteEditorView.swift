@@ -14,6 +14,7 @@ struct NoteEditorView: View {
     @State private var showFilePicker = false
     @State private var showLinkPrompt = false
     @State private var importLink = ""
+    @State private var readerPrefs = ReaderPrefsAdapter()
     // 🔧 20-Jul-2026: NEW — path of the image shown in the full-screen preview (nil = hidden)
     @State private var previewImagePath: String? = nil
     // 🔧 20-Jul-2026: NEW FEATURE (export) — format chooser + spinner while generating
@@ -81,7 +82,7 @@ struct NoteEditorView: View {
             .frame(alignment: .bottomTrailing)
             .padding()
         }
-        // 🔧 18-Jul-2026: NEW FEATURE (file import) — choose device picker or link download
+
         .confirmationDialog("Import files", isPresented: $showImportOptions, titleVisibility: .visible) {
             Button("Import files from device") { showFilePicker = true }
             Button("Import from link") { importLink = ""; showLinkPrompt = true }
@@ -90,7 +91,7 @@ struct NoteEditorView: View {
         .sheet(isPresented: $showFilePicker) {
             MultiFilePicker { urls in noteEditorViewModel.importFiles(urls: urls) }
         }
-        // 🔧 20-Jul-2026: NEW — full-screen zoomable image preview (opened from an image card tap)
+
         .fullScreenCover(isPresented: Binding(
             get: { previewImagePath != nil },
             set: { if !$0 { previewImagePath = nil } }
@@ -99,7 +100,6 @@ struct NoteEditorView: View {
                 ImagePreviewView(path: path) { previewImagePath = nil }
             }
         }
-        // 🔧 20-Jul-2026: NEW FEATURE (export) — pick a format, generate off-main, then share
         .confirmationDialog("Export note", isPresented: $showExportOptions, titleVisibility: .visible) {
             Button("Export as PDF") { runExport(.pdf) }
             Button("Export as Image") { runExport(.image) }
@@ -128,7 +128,6 @@ struct NoteEditorView: View {
             
             ToolbarItem(placement: .topBarTrailing) {
                 HStack{
-                    // 🔧 18-Jul-2026: NEW — open this note as a real page-curl book
                     ActionButtonWithoutBackground(iconName: "book",
                                                   enabled : noteEditorViewModel.isNoteValid(),
                                                   action: {
@@ -136,7 +135,6 @@ struct NoteEditorView: View {
                             router.navigate(to: .NoteBookReader(noteId: noteId))
                         }
                     }, tint: Theme.Colors.secondary)
-                    // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word
                     ActionButtonWithoutBackground(iconName: "square.and.arrow.up.on.square", action: {
                         showExportOptions = true
                     }, tint: Theme.Colors.secondary)
@@ -152,8 +150,6 @@ struct NoteEditorView: View {
             }
         }
         .onDisappear {saveNote() }
-        // 📖 23-Jul-2026: re-read on return (e.g. back from the book reader) so document cards show
-        //   the reading position the reader just saved. Without this the count stayed stale.
         .onAppear { noteEditorViewModel.refresh() }
     }
     
@@ -168,18 +164,12 @@ struct NoteEditorView: View {
                     text: textContent.text,
                     onTextChange: {
                         newValue in
-                        // 🔧 F2 (C2): immutable copy via withText — also stamps content updatedAt
                         onUpdate(textContent.withText(newText: newValue.string))
                     }
                 )
             case .image :
                 let contentImage = content as! NoteContentModel.MediaContent
-            // 🔧 14-Jul-2026: BUGFIX — was alertType .DELETE, whose Confirm ran callDelete()
-            //   → the WHOLE note was deleted. Now: remember the pressed item's id and raise
-            //   the DELETE_CONTENT alert, which deletes only that item. (CardImageEditor UI untouched.)
-            // 🔧 14-Jul-2026: NEW — actionSave saves the image silently to the Photos gallery.
             CardImageEditor(content: contentImage, actionClick: {
-                // 🔧 20-Jul-2026: NEW — tap opens the full-screen zoomable image preview (was a no-op)
                 previewImagePath = contentImage.getMediaUrl()
             },actionDelete: {
                 askDeleteContent(contentId: contentImage.id, kind: "Image")
@@ -190,48 +180,33 @@ struct NoteEditorView: View {
 
             case .video:
                 let contentVideo = content as! NoteContentModel.MediaContent
-                // 🔧 14-Jul-2026: NEW — video had no delete UI; long-press actions bar added
-                //   in VideoCardPlayer (same pattern as CardImageEditor), wired here.
-                //   actionSave saves the video silently to the Photos gallery.
                 VideoCardPlayer(content: contentVideo, cardPadding: 0, actionDelete: {
                     askDeleteContent(contentId: contentVideo.id, kind: "Video")
                 }, actionSave: {saveMediaToDevice(media: contentVideo)})
             case .audio:
                 let contentAudio = content as! NoteContentModel.MediaContent
-
-                 // 🔧 14-Jul-2026: NEW — trash button existed inside AudioPlayView but onDelete
-                 //   was never passable through its init; now wired to the same confirm flow.
-                 //   onSave exports the audio via the Files picker (default Documents).
                  AudioPlayView(mediaContent: contentAudio, onDelete: {
                     askDeleteContent(contentId: contentAudio.id, kind: "Audio")
                  }, onSave: {
                     saveMediaToDevice(media: contentAudio)
                  })
 
-            // 🔧 19-Jul-2026: notebook widget — file's real pages flip inline, "n/total" at bottom
-            //   (DocumentFileCardView kept for reuse elsewhere). Full open = ONLY this file (single).
             case .pdf, .docx, .epub, .txt, .md, .other:
-                let contentDoc = content as! NoteContentModel.MediaContent
+                let contentDoc = content as! NoteContentModel.MediaContent 
                 InlineBookFileView(
                     media: contentDoc,
                     onOpenFull: {
-                        // 📖 23-Jul-2026 FIX — save first so a JUST-ADDED file exists in the DB
-                        //   before the reader reads it; without this the reader spun on the loader.
                         let cid = contentDoc.id
                         noteEditorViewModel.saveThenOpen {
-                            if let noteId = noteEditorViewModel.state.note?.id {
-                                router.navigate(to: .BookReader(noteId: noteId, bookId: cid))
-                            }
+                            router.navigate(to: .BookReader(bookId: cid))
                         }
                     },
                     onDelete: { askDeleteContent(contentId: contentDoc.id, kind: "File") },
                     onSave: { saveMediaToDevice(media: contentDoc) },
-                    // 🔧 25-Jul-2026: share the document file via the system share sheet (reuses NoteExporter.share)
-                    onShare: { shareMediaFile(media: contentDoc) }
+                    onShare: { shareMediaFile(media: contentDoc) },
+                    onPageChange: { page in }
                 )
                 .frame(width: UIScreen.main.bounds.width * 0.7, alignment: .leading)
-
-            // 🔧 18-Jul-2026: GIF gets the image card (was falling into the text default)
             case .gif:
                 let contentGif = content as! NoteContentModel.MediaContent
                 CardImageEditor(content: contentGif, actionClick: {}, actionDelete: {
@@ -251,12 +226,9 @@ struct NoteEditorView: View {
     }
     
     private func saveNote(){
-        noteEditorViewModel.saveNote()   // 🔧 new VM API (guards deleted-note + materializes title/contents)
+        noteEditorViewModel.saveNote()
     }
 
-    // 🔧 25-Jul-2026: NEW — share a document/media file via the system share sheet (ImageCardView-style
-    //   actions on the inline document card). Reuses NoteExporter.share; resolves the container-safe path
-    //   (stored absolute paths go stale across app updates).
     private func shareMediaFile(media: NoteContentModel.MediaContent) {
         guard let path = LocalFilePathResolver_iosKt.resolveLocalFilePath(path: media.localPath) ?? media.localPath,
               !path.isEmpty, FileManager.default.fileExists(atPath: path) else {
@@ -265,8 +237,6 @@ struct NoteEditorView: View {
         }
         NoteExporter.share(url: URL(fileURLWithPath: path))
     }
-
-    // 🔧 20-Jul-2026: NEW FEATURE (export) — generate the file off-main, then open the share sheet
     private func runExport(_ format: ExportFormat) {
         guard let note = noteEditorViewModel.state.note else { return }
         isExporting = true
@@ -281,8 +251,6 @@ struct NoteEditorView: View {
 
         // handler call wrappers
     private func callDelete() {
-        // 🔧 new VM API: callback-based, no Task, no `as! NetworkError` crash cast.
-        //   Loading spinner comes from state.isLoading; errors surface via state.errorMessage.
         noteEditorViewModel.deleteNote {
             dismiss()
         }
@@ -300,8 +268,6 @@ struct NoteEditorView: View {
             secondaryButton: Alert.Button.default(
                 Text("Confirm"),
                 action: {
-                    // 🔧 14-Jul-2026: BUGFIX — Confirm did nothing (and image was routed to
-                    //   .DELETE = whole note). Now deletes exactly the long-pressed item.
                     if let contentId = deleteContentId {
                         noteEditorViewModel.deleteContent(contentId: contentId)
                     }
@@ -342,10 +308,7 @@ struct NoteEditorView: View {
         errorField.showErrorAlert = true
         errorField.errorMessageTitle = title
     }
-    
-    // 🔧 14-Jul-2026: NEW — one entry point for every content-delete request (image/video/audio).
-    //   Remembers WHICH item was long-pressed, then raises the DELETE_CONTENT confirm alert.
-    //   Usage: askDeleteContent(contentId: content.id, kind: "Image")
+
     private func askDeleteContent(contentId: String, kind: String) {
         deleteContentId = contentId
         setAlert(message: "Are you sure you want to delete this \(kind)?",

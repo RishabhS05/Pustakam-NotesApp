@@ -108,13 +108,6 @@ class NoteEditorViewModel: ObservableObject {
     func getCapturedData(media: CapturedMedia?) {
         guard let noteId = state.note?.id else { return }       // fixes E3 (was note!.id)
         let timeStamp = DateTimeUtilsKt.getCurrentTimestamp()
-
-        // 🔧 30-Jul-2026 Phase 4 — folder + file name now come from the SHARED PathPolicy instead of
-        //   being built inline. Same rule Android uses, so the two platforms can no longer drift.
-        //   ONE deliberate change: the folder is now lowercase ("image/<noteId>") where iOS used to
-        //   write "IMAGE/<noteId>". Existing media is unaffected — resolveLocalFilePath re-anchors
-        //   everything after /Documents/ verbatim, so old rows keep their uppercase path and still
-        //   resolve. No migration needed. See migration-guide.md Phase 4.
         switch media {
         case .image(let image):
             let type = ContentType.image
@@ -221,8 +214,6 @@ class NoteEditorViewModel: ObservableObject {
         }
     }
 
-    // 🔧 15-Jul-2026 iOS parity (Phase 2.3): background thumbnail job (Android
-    //   generateThumbnailsFor parity). Images and videos only; audio has no thumbnail.
     private func generateThumbnailAsync(for media: NoteContentModel.MediaContent) {
         guard media.type == ContentType.image || media.type == ContentType.video,
               let path = media.localPath, !path.isEmpty else { return }
@@ -238,14 +229,6 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     // MARK: - Save / Delete
-
-    /// Replaces createorUpdateNoteCall(). Guarded, materializes state → Note, surfaces errors.
-    // 📖 23-Jul-2026 FIX (full-screen reader stuck on the loader for a JUST-ADDED file): imported
-    //   files live only in the in-memory note until a save; the reader reads the DB, so a not-yet-
-    //   saved note/content isn't found and the read fails → the reader spins on the loader forever.
-    //   This flushes the current note through the SAME create/update bridge (→ use case), then runs
-    //   onSaved so navigation happens only after the file exists in the DB. No title requirement:
-    //   a file-only note must still open.
     func saveThenOpen(onSaved: @escaping () -> Void) {
         guard !state.isDeleted, let note = state.note, !state.noteContents.isEmpty else {
             onSaved(); return
@@ -280,28 +263,18 @@ class NoteEditorViewModel: ObservableObject {
     func saveNote() {
          guard !state.isDeleted, let note = state.note, isNoteValid() else { return }
         
-        
-        // 🔧 15-Jul-2026 iOS parity (Phase 2.1): split oversized plain-text blocks BEFORE the
-        //   upsert — never while typing. Shared TextBlockSplitter (same as Android): paragraph
-        //   boundaries, fractional positions, rich-text blocks skipped. New chunks join the
-        //   dirty set so the dirty-row save writes them.
         if let split = TextBlockSplitter.shared.splitOversized(contents: state.noteContents) {
             state.noteContents = split.contents as? [NoteContentModel] ?? state.noteContents
             split.changedIds.forEach { id in
+                
                 if let id = id as? String { dirtyContentIds.insert(id) }
             }
         }
-
-        // Note is immutable (val) — build the edited copy via the Kotlin helper.
-        // fixes V2 (title saved) + E4 (contents materialized once, at save)
         let toSave = note.withTitleAndContents(
             newTitle: state.title,
             newContents: state.noteContents
         )
 
-        // 🔧 15-Jul-2026 iOS parity (Phase 0.4): dirty-row save — only touched content rows are
-        //   written (plus the header). The snapshot is cleared on success; anything edited DURING
-        //   the save stays dirty for the next one (Android parity).
         let dirtySnapshot = dirtyContentIds
         adapter.createOrUpdateNote(note: toSave, dirtyContentIds: dirtySnapshot) { [weak self] result in
             switch result {
@@ -340,15 +313,6 @@ class NoteEditorViewModel: ObservableObject {
    private func onDelete(noteId : String) {
         adapter.deleteNote(noteId: noteId , onState: { _ in })
     }
-
-    // 🔧 14-Jul-2026: NEW — delete ONE content block (the long-pressed item), note stays.
-    //   Fixes: image delete alert was wired to whole-note delete → entire note vanished.
-    //   Mirrors Android NoteEditorViewModel.removeContent():
-    //     1. media → remove its local file from disk
-    //     2. remove the row from DB via bridge deleteNoteContentUseCase
-    //     3. drop the item from state.noteContents (UI updates instantly)
-    //   Usage (from View, after user confirms the alert):
-    //     noteEditorViewModel.deleteContent(contentId: id)
     func deleteContent(contentId: String) {
         dirtyContentIds.remove(contentId)   // 🔧 15-Jul-2026 iOS parity: deleted → nothing to save
         guard let content = state.noteContents.first(where: { $0.id == contentId }) else { return }
@@ -356,8 +320,6 @@ class NoteEditorViewModel: ObservableObject {
         // 1. remove local media file (image/video/audio) — safe no-op for text
         if content.isMediaFile(), let media = content as? NoteContentModel.MediaContent,
            let localPath = media.localPath {
-            // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: resolve first — stored paths keep the OLD container
-            //   UUID after an app update, so deleting at the raw path would orphan the real file.
             deleteFile(filePath: LocalFilePathResolver_iosKt.resolveLocalFilePath(path: localPath) ?? localPath)
             // thumbnail lives in Documents/thumbnails — remove it with its media
             if let thumb = LocalFilePathResolver_iosKt.resolveLocalFilePath(path: media.thumbnailPath) {

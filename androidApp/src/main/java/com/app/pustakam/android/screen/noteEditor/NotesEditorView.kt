@@ -89,7 +89,6 @@ import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.audio.AudioRecording
-// 🔧 19-Jul-2026: DocumentFileCard kept for reuse elsewhere; editor now shows the notebook widget
 import com.app.pustakam.android.widgets.document.InlineBookFileWidget
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
@@ -227,12 +226,7 @@ fun NoteEditorScreen(
             }
         }
     }
-    // 🔧 14-Jul-2026: FIX (back button dead while media plays) — this used to be an `.also{}` in the
-    //   composition body, so EVERY recomposition with noteStatus == onBackPress fired another
-    //   createOrUpdateNote(). Two INSERTs raced and the second success downgraded
-    //   onSaveCompletedExit → onSaveCompleted, so onBack() never ran (playback recompositions made
-    //   the losing race likely). LaunchedEffect keyed on the status runs exactly ONCE per status
-    //   change, no matter how often the screen recomposes.
+
     LaunchedEffect(stateEditor.noteStatus) {
         when (stateEditor.noteStatus) {
             NoteStatus.onBackPress -> noteEditorViewModel.createOrUpdateNote()
@@ -240,11 +234,6 @@ fun NoteEditorScreen(
             else -> {}
         }
     }
-    // 🔧 14-Jul-2026: CRASH FIX — previously getMediaData()/clearPaths() ran directly in the
-    //   composition body, mutating the SnapshotStateList that the LazyColumn was reading in the
-    //   same frame. With multiple captured images this caused a crash / recomposition loop.
-    //   Now the captured paths are consumed once inside a LaunchedEffect (keyed on the list),
-    //   off the composition pass.
     val capturedPaths = imageDataViewModel.paths.collectAsStateWithLifecycle().value
     LaunchedEffect(capturedPaths) {
         if (capturedPaths.isNotEmpty()) {
@@ -264,7 +253,7 @@ fun NoteEditorScreen(
             colorScheme.background,
         ) ,
             actions = {
-            // 🔧 18-Jul-2026: NEW — open this note as a real page-flip book
+
             IconButton(onClick = {
                     state.value.note?.id?.let {
                         navigateTo(Route.NoteBookReader + "/${it}")
@@ -276,7 +265,7 @@ fun NoteEditorScreen(
                     contentDescription = "Open as book",
                 )
             }
-            // 🔧 20-Jul-2026: NEW — export this note as PDF / Image / Word (share sheet)
+
             Box {
                 IconButton(onClick = { showExportMenu = true }, enabled = !isExporting) {
                     Icon(imageVector = Icons.Filled.IosShare, contentDescription = "Export note")
@@ -582,6 +571,9 @@ fun RenderWidget(
             InlineBookFileWidget(
                 media = contentDoc,
                 onOpenFull = onOpenDocument,
+                onPageChanged = {page ->
+                    onUpdate(contentDoc.copy(progressPage = page ))
+                },
                 onShowActions = { visible ->
                     focusedMediaId = when {
                         visible -> contentDoc.id

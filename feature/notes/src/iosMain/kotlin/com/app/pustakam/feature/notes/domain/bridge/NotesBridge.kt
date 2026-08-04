@@ -3,6 +3,7 @@ package com.app.pustakam.feature.notes.domain.bridge
 
 import com.app.pustakam.core.model.models.Tag
 import com.app.pustakam.core.model.models.response.notes.Note
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import com.app.pustakam.core.model.models.response.notes.Notes
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
@@ -13,6 +14,7 @@ import com.app.pustakam.feature.notes.domain.usecase.DeleteTagUseCase
 import com.app.pustakam.feature.notes.domain.usecase.GetNoteSummariesUseCase
 import com.app.pustakam.feature.notes.domain.usecase.GetNotesUseCase
 import com.app.pustakam.feature.notes.domain.usecase.GetTagCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.SearchNotesUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateTagUseCase
@@ -55,6 +57,7 @@ class NotesBridge : KoinComponent {
     private val getNoteSummariesUseCase: GetNoteSummariesUseCase by inject()
     private val searchNotesUseCase: SearchNotesUseCase by inject()
     private val readNoteUseCase: ReadNoteUseCase by inject()
+    private val readContentUseCase: ReadContentUseCase by inject()
     private val upsertNoteUseCase: CreateORUpdateNoteUseCase by inject()
     private val deleteNoteUseCase: DeleteNoteUseCase by inject()
     private val deleteNoteContentUseCase: DeleteNoteContentUseCase by inject()
@@ -83,6 +86,14 @@ class NotesBridge : KoinComponent {
         onSuccess: (Note?) -> Unit,
         onError: (BridgeError) -> Unit
     ): Closeable = subscribeTo(scope, { readNoteUseCase(noteId) }, onLoading, onSuccess, onError)
+
+    /** ONE content row by id — the document reader needs the row, not the whole note. */
+    fun readContent(
+        contentId: String?,
+        onLoading: () -> Unit,
+        onSuccess: (NoteContentModel?) -> Unit,
+        onError: (BridgeError) -> Unit
+    ): Closeable = subscribeTo(scope, { readContentUseCase(contentId) }, onLoading, onSuccess, onError)
 
     // 🔧 15-Jul-2026 iOS parity: one page of LIST-SCREEN summaries (title/snippet/counts/thumbnail)
     //   — contents never load for the list. Content arrives via observeNoteSummaries.

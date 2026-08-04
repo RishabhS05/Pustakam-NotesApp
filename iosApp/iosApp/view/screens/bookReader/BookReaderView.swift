@@ -79,11 +79,9 @@ enum BookPagesBuilder {
         var isDirectory: ObjCBool = false
         guard fm.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue,
               fm.isReadableFile(atPath: path) else { return nil }
-        // a zero-byte or partially-written file is exactly what trips the lexer assert
         let attributes = try? fm.attributesOfItem(atPath: path)
         let size = (attributes?[.size] as? NSNumber)?.int64Value ?? 0
         guard size > 0 else { return nil }
-        // cheap magic-header check — reads only the first bytes, never the whole document
         guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
         defer { try? handle.close() }
         let header = handle.readData(ofLength: 5)
@@ -102,8 +100,6 @@ enum BookPagesBuilder {
         return pages
     }
 
-    // 🔧 19-Jul-2026: single-file book — ONLY the tapped document's pages (fix: opening the 2nd
-    //   file no longer flips through the 1st file first). Reused by the inline editor widget too.
     static func buildForContent(_ content: NoteContentModel) -> [BookPageItem] { pages(for: content) }
 
     // 🔧 19-Jul-2026: ONE content → its pages; the shared core every builder calls (DRY)
@@ -155,10 +151,7 @@ enum BookPagesBuilder {
         return chunks.enumerated().map { .text(body: $1, chunk: $0 + 1, chunkCount: chunks.count, sourceId: sourceId) }
     }
 
-    // 🔧 18-Jul-2026: one book sheet per PDF page (PDFKit); unreadable → QuickLook fallback page
     private static func pdfSheets(_ media: NoteContentModel.MediaContent) -> [BookPageItem] {
-        // 🐛 23-Jul-2026: readablePdfPath (not resolved) — a missing/partial file used to reach
-        //   PDFKit here and abort the process in CoreGraphics' lexer.
         guard let path = readablePdfPath(media.localPath) else {
             // 🐛 23-Jul-2026: leaves a breadcrumb naming the file we refused to open
             CrashBreadcrumb.rejectedUnreadablePdf(path: media.localPath)
@@ -189,7 +182,6 @@ enum BookPagesBuilder {
 // MARK: - Screen
 
 struct BookReaderView: View {
-    let noteId: String
     /// the MediaContent id of the document to read
     let bookId: String
 
@@ -198,7 +190,6 @@ struct BookReaderView: View {
     @State private var pages: [BookPageItem] = []
     @State private var isLoading = true
     @State private var currentIndex = 0
-    @State private var startIndex = 0
     @State private var readerPrefs = ReaderPrefsAdapter()
     @State private var readingMode: ReadingMode = .page
     /// the MediaContent whose reading progress this book represents
@@ -215,7 +206,7 @@ struct BookReaderView: View {
                 switch readingMode {
                 case .page:
 
-                    BookPageCurlView(pages: pages, startIndex: startIndex) { index in
+                    BookPageCurlView(pages: pages, startIndex: currentIndex) { index in
                         currentIndex = index
 
                         saveProgress()
@@ -224,13 +215,13 @@ struct BookReaderView: View {
                 case .scroll:
 
                     if let pdfPath = singlePdfPath {
-                        NativePdfScrollView(path: pdfPath, startPageIndex: startIndex) { index in
+                        NativePdfScrollView(path: pdfPath, startPageIndex: currentIndex) { index in
                             currentIndex = index
                             saveProgress()
                         }
                         .ignoresSafeArea(edges: .bottom)
                     } else {
-                        BookScrollReader(pages: pages, startIndex: startIndex) { index in
+                        BookScrollReader(pages: pages, startIndex: currentIndex) { index in
                             currentIndex = index
                             saveProgress()   // 📖 same for scrolling
                         }
@@ -296,37 +287,31 @@ struct BookReaderView: View {
 
 
     private func loadNote() {
-        adapter.readNote(noteId: noteId) { result in
+        adapter.readContent(contentId: bookId) { result in
             switch result {
             // 🔧 19-Jul-2026: FIX — a late Loading emission must not bring the loader back
             case .loading: if pages.isEmpty { isLoading = true }
-            case .success(let note):
-                guard let note else { isLoading = false; return }
-           
-                let wantedId = bookId
-                let allContents = (note.contents as? [NoteContentModel]) ?? []
+            case .success(let content):
+                guard let media = content as? NoteContentModel.MediaContent else {
+                    isLoading = false
+                    return
+                }
                 DispatchQueue.global(qos: .userInitiated).async {
-                    // 📖 01-Aug-2026: ONE content only — the same shared builder the note reader uses
-                    guard let content = allContents.first(where: { $0.id == wantedId }) else {
-                        DispatchQueue.main.async { self.isLoading = false }
-                        return
-                    }
-                    let built = BookPagesBuilder.buildForContent(content)
-                    let media = content as? NoteContentModel.MediaContent
+                    let built = BookPagesBuilder.buildForContent(media)
                     // a document always resumes where it was left — there is nothing to jump to
                     let resolvedStart: Int = {
-                        guard let m = media, m.hasReadingProgress(), !built.isEmpty else { return 0 }
-                        return min(max(Int(m.progressPage), 0), built.count - 1)
+                        guard media.hasReadingProgress(), !built.isEmpty else { return 0 }
+                        return min(max(Int(media.progressPage), 0), built.count - 1)
                     }()
 
                     DispatchQueue.main.async {
                         self.isLoading = false
                         self.pages = built
-                        self.progressContentId = media?.id
-                        self.startIndex = resolvedStart
+                        self.progressContentId = media.id
                         self.currentIndex = resolvedStart
                         // 🔧 18-Jul-2026: remember this book for the home-screen widget
-                        BookWidgetStore.saveLastBook(noteId: note.id, title: note.title ?? "Untitled note")
+                        BookWidgetStore.saveLastBook(noteId: media.noteId,
+                                                     title: media.title.isEmpty ? "Untitled note" : media.title)
                     }
                 }
             case .failure(let error):
@@ -349,7 +334,6 @@ struct BookScrollReader: UIViewRepresentable {
     private static let doubleTapZoom: CGFloat = 2.5
 
     func makeUIView(context: Context) -> UIScrollView {
-
         let scrollView = ResumeAwareScrollView()
         scrollView.onLayout = { [weak coordinator = context.coordinator] view in
             coordinator?.applyPendingStartIfReady(view)
@@ -403,7 +387,6 @@ struct BookScrollReader: UIViewRepresentable {
     private var content: AnyView {
         AnyView(LazyVStack(spacing: Self.spacing) {
             ForEach(Array(pages.enumerated()), id: \.element.id) { _, page in
-
                 BookPageContentView(page: page, allowPageZoom: false)
                     .frame(height: Self.pageHeight)
             }

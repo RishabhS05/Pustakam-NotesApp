@@ -36,19 +36,16 @@ import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 
-// 📖 01-Aug-2026: DOCUMENT reader — one file (pdf/txt/md/doc) opened as its own book. The whole-note
-//   reader is NoteBookReaderScreen; every page face here is the SHARED BookPageContent (DRY).
 @Composable
 fun BookReaderScreen(
     modifier: Modifier = Modifier,
     bookId: String? = null,
-    noteId: String? = null,
     viewModel: BookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
 ) {
     val state by viewModel.bookUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(bookId) { viewModel.onHandleIntent(BookReaderIntent.LoadBook(bookId, noteId)) }
+    LaunchedEffect(bookId) { viewModel.onHandleIntent(BookReaderIntent.LoadBook(bookId)) }
 
     Box(modifier.fillMaxSize().background(Color(0xFF241C14))) {   // dark desk behind the book
         when {
@@ -59,14 +56,13 @@ fun BookReaderScreen(
             }
 
             state.pages.isNotEmpty() -> {
-                var pageIndex by remember { mutableIntStateOf(state.startPageIndex) }
+                var pageIndex by remember { mutableIntStateOf(state.pageProgress) }
                 val doc = state.doc
-
                 when (state.readingMode) {
                     ReadingMode.PAGE ->
                         BookPager(
                             pageCount = state.pages.size,
-                            initialPage = state.startPageIndex,
+                            initialPage = pageIndex,
                             onPageChanged = { index ->
                                 pageIndex = index
                                 doc?.let { viewModel.onHandleIntent(BookReaderIntent.PageChanged(it, index)) }
@@ -76,7 +72,7 @@ fun BookReaderScreen(
                     ReadingMode.SCROLL ->
                         BookScrollReader(
                             pages = state.pages,
-                            startPageIndex = state.startPageIndex,
+                            startPageIndex = pageIndex,
                             onPageChanged = { index ->
                                 pageIndex = index
                                 doc?.let { viewModel.onHandleIntent(BookReaderIntent.PageChanged(it, index)) }

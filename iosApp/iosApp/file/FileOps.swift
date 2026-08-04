@@ -93,13 +93,6 @@ func deleteFile(filePath: String) {
     }
 }
 
-// 🔧 14-Jul-2026: NEW FEATURE — "Save media to device".
-//   IMAGE/VIDEO are saved silently into the Photos gallery; AUDIO/PDF/DOCX/GIF are
-//   exported through the Files document picker (default = Documents) so the user
-//   picks the destination. Everything below is additive.
-
-// 🔧 14-Jul-2026: Entry point called by the media cards' save button.
-//   Usage:  saveMediaToDevice(media: contentImage)
 func saveMediaToDevice(media: NoteContentModel.MediaContent) {
     let path = media.getMediaUrl()
     guard !path.isEmpty, FileManager.default.fileExists(atPath: path) else {
@@ -109,20 +102,13 @@ func saveMediaToDevice(media: NoteContentModel.MediaContent) {
     let fileURL = URL(fileURLWithPath: path)
     switch media.type {
     case .image, .video:
-        // 🔧 14-Jul-2026: CHANGED — was a silent gallery save; now shows a bottom action sheet
-        //   with two options so the user picks Gallery vs. a file location.
+
         presentSaveOptions(fileURL: fileURL, isVideo: media.type == .video)
     default:
-        // audio / pdf / docx / gif can't live in Photos → let the user pick a folder.
         presentDocumentExporter(fileURL: fileURL)
     }
 }
 
-// 🔧 14-Jul-2026: NEW FEATURE — bottom sheet with the two save choices for IMAGE/VIDEO.
-//   Option 1 "Save to Gallery"          → saveMediaToGallery (silent Photos write).
-//   Option 2 "Save to location as file" → presentDocumentExporter (Files picker, default Documents).
-//   Uses a UIAlertController action sheet so it works from a free function (no View change needed).
-//   Usage:  presentSaveOptions(fileURL: url, isVideo: true)
 func presentSaveOptions(fileURL: URL, isVideo: Bool) {
     guard let top = topMostViewController() else {
         print("❌ No view controller available to present the save options")

@@ -14,16 +14,15 @@ import SwiftUI
         case Home
         case Settings
         case Camera (onCapture : (CapturedMedia?) -> Void)
-        // 📖 01-Aug-2026: two readers — one document (bookId), or the whole note (widget deep link)
-        case BookReader (noteId : String, bookId : String)
+        case BookReader (bookId : String)
         case NoteBookReader (noteId : String, startContentId : String? = nil)
 
         func hash(into hasher: inout Hasher) {
             switch self {
                 case .NoteEditor(let noteId):
                     hasher.combine(noteId)
-                case .BookReader(let noteId, let bookId):
-                    hasher.combine(noteId); hasher.combine(bookId)
+                case .BookReader(let bookId):
+                    hasher.combine(bookId)
                 case .NoteBookReader(let noteId, let contentId):
                     hasher.combine(noteId); hasher.combine(contentId)
                 default:
@@ -35,8 +34,8 @@ import SwiftUI
             switch (lhs, rhs) {
                 case (.NoteEditor(let lhsId), .NoteEditor(let rhsId)):
                     return lhsId == rhsId
-                case (.BookReader(let lId, let lB), .BookReader(let rId, let rB)):
-                    return lId == rId && lB == rB
+                case (.BookReader(let lB), .BookReader(let rB)):
+                    return lB == rB
                 case (.NoteBookReader(let lId, let lC), .NoteBookReader(let rId, let rC)):
                     return lId == rId && lC == rC
                 default:

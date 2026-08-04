@@ -137,7 +137,6 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             // 📖 the screen owns the load (LaunchedEffect) so it can't refire on recomposition
             BookReaderScreen(
                 bookId = contentId,
-                noteId = noteId,
                 onBack = navController::upPress
             )
         }

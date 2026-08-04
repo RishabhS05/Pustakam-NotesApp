@@ -15,6 +15,7 @@ struct InlineBookFileView: View {
     var onDelete: () -> Void = {}
     var onSave: () -> Void = {}
     var onShare: () -> Void = {}
+    var onPageChange: (Int32)-> Void = {_ in}
 
     @State private var pages: [BookPageItem] = []
     @State private var building = true
@@ -44,6 +45,7 @@ struct InlineBookFileView: View {
                     } else if !pages.isEmpty {
                         BookPageCurlView(pages: pages, startIndex: startIndex) { index in
                             currentIndex = index
+                            onPageChange(Int32(index))
                         }
                     }
 

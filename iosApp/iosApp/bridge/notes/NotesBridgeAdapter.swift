@@ -73,6 +73,15 @@ final class NotesBridgeAdapter {
         ))
     }
 
+    func readContent(contentId: String?, onState: @escaping (UiState<NoteContentModel>) -> Void) {
+        closeables.append(bridge.readContent(
+            contentId: contentId,
+            onLoading: { onState(.loading) },
+            onSuccess: { onState(.success($0)) },
+            onError:   { onState(.failure($0)) }
+        ))
+    }
+
     // 🔧 REALTIME-FIX: write Closeables are NOT retained — deinit closed them,
     //   cancelling in-flight saves/deletes when the screen died (onDisappear-save).
     func createOrUpdateNote(note: Note, onState: @escaping (UiState<Note>) -> Void) {

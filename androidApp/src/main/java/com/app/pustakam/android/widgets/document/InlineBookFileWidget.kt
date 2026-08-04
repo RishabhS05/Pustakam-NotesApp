@@ -69,6 +69,7 @@ fun InlineBookFileWidget(
     modifier: Modifier = Modifier,
     onOpenFull: () -> Unit = {},
     onShowActions: (Boolean) -> Unit = {},
+    onPageChanged: (Int) -> Unit = {},
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     var pages by remember(media.id) { mutableStateOf<List<BookPage>>(emptyList()) }
@@ -152,7 +153,8 @@ fun InlineBookFileWidget(
                             pages.isNotEmpty() -> BookPager(
                                 pageCount = pages.size,
                                 initialPage = resumePage,   // 📖 25-Jul-2026: open at the last-read page
-                                onPageChanged = { currentPage = it },
+                                onPageChanged = { currentPage = it
+                                    onPageChanged(it) },
                             ) { index -> BookPageContent(page = pages[index]) }
                         }
                     }

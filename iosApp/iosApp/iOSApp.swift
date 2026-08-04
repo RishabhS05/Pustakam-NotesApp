@@ -45,8 +45,8 @@ private struct AppRootView: View {
                         case .Camera(let onDone):
                             CameraPreview(onCapture: onDone)
                         // 📖 01-Aug-2026: document reader vs whole-note reader
-                        case .BookReader(let noteId, let bookId):
-                            BookReaderView(noteId: noteId, bookId: bookId)
+                        case .BookReader(let bookId):
+                            BookReaderView(bookId: bookId)
                         case .NoteBookReader(let noteId, let startContentId):
                             NoteBookReaderView(noteId: noteId, startContentId: startContentId)
                         default: LoginView()
