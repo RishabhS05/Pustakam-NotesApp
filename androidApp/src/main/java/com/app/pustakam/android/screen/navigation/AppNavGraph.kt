@@ -10,8 +10,10 @@ import com.app.pustakam.core.database.localdb.preferences.UserPreference
 
 
 @Composable
-fun AppNavGraph(navHostController: PustakmNavController = rememberPustakmNavController(),
-                modifier: Modifier = Modifier) {
+fun AppNavGraph(
+    modifier: Modifier = Modifier,
+    navHostController: PustakmNavController = rememberPustakmNavController(),
+                ) {
     val appViewModel: AppViewModel = viewModel()
    val user = appViewModel.authState
        .collectAsStateWithLifecycle(initialValue = UserPreference()).value

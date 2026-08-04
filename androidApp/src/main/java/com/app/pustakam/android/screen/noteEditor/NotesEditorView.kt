@@ -1,7 +1,5 @@
 package com.app.pustakam.android.screen.noteEditor
 
-// 🔧 14-Jul-2026: Save-media-to-device — SAF picker launcher for audio/pdf/docx
-// 🔧 14-Jul-2026: Save-media-to-device helpers
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -26,9 +24,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.IosShare   // 🔧 20-Jul-2026: export action
-import androidx.compose.material.icons.filled.MenuBook   // 🔧 18-Jul-2026: open-as-book action
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.SaveAs
@@ -280,7 +278,7 @@ fun NoteEditorScreen(
             }, enabled = noteEditorViewModel.isNoteValid()
             ) {
                 Icon(
-                    imageVector = Icons.Filled.MenuBook,
+                    imageVector = Icons.AutoMirrored.Filled.MenuBook,
                     contentDescription = "Open as book",
                 )
             }
@@ -508,6 +506,7 @@ fun RenderWidget(
                     noteContentModel = (content as NoteContentModel.TextContent),
                     focusRequester = focusRequester,
                     onUpdate = { onUpdate(content.withText(it)) }) { // 🔧 F2: stamps content updatedAt (was plain copy)
+
 //                        if (it.selection.length > 0) {
 //                            selectionString.value = if (it.selection.start <= it.selection.end)
 //                                it.text.substring(
@@ -553,8 +552,8 @@ fun RenderWidget(
             val contentVideo = content as NoteContentModel.MediaContent
             // 🔧 14-Jul-2026: NEW — wrapped with save-to-device overlay (video → Gallery)
             VideoCard(
-                contentVideo,
                 modifier = Modifier,
+                contentVideo,
                 // 🔧 14-Jul-2026: CHANGED — same long-press reveal + timed hide as ImageCard.
                 onShowActions =  { visible ->
                     focusedMediaId = when {
@@ -663,16 +662,6 @@ fun RenderWidget(
     }
 }
 
-// 🔧 14-Jul-2026: NEW FEATURE — "Save media to device" overlay.
-//   Renders the given media card with a small save icon pinned top-end.
-//   • IMAGE / VIDEO  -> saveMediaToGallery() writes silently into the system Gallery.
-//   • AUDIO / PDF / DOCX / GIF -> opens the ACTION_CREATE_DOCUMENT picker (default
-//     location Downloads on most devices) so the user picks the path, then the file
-//     bytes are copied to the chosen Uri via writeMediaToUri().
-//   A Toast confirms success/failure. Purely additive — the wrapped card is unchanged.
-//   Usage:  MediaSaveOverlay(media = contentImage) { ImageCard(...) }
-
-// 🔧 14-Jul-2026: @OptIn required — ModalBottomSheet / rememberModalBottomSheetState are experimental.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoxScope.MediaSaveOverlay(

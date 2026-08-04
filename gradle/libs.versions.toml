@@ -37,6 +37,7 @@ kotlinStdlib = "2.1.20"
 serializationJson = "1.7.3"
 runner = "1.7.0"
 core = "1.7.0"
+leakcanary = "1.0.0"
 [libraries]
 
 #compose
@@ -109,6 +110,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3",
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
+leakcanary = { group = "com.android.tools.studio.leakcanary", name = "leakcanary", version.ref = "leakcanary" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

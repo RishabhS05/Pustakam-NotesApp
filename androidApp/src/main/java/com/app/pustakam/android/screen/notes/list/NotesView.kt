@@ -68,7 +68,6 @@ fun NotesView(onNavigateNote: (noteId: String) -> Unit) {
                      onNavigateNote = onNavigateNote,
                      // 🔧 15-Jul-2026 Phase 0.1: next page loads when the grid reaches its end
                      onLoadMore = notesViewModel::callGetNotes,
-                     modifier = Modifier.fillMaxSize(),
                      paddingValues = PaddingValues(0.dp)
                  )
              }
@@ -83,10 +82,8 @@ fun NotesView(onNavigateNote: (noteId: String) -> Unit) {
 fun NotesListView(
     state : NotesUIState,
     onNavigateNote: (noteId: String) -> Unit,
-    // 🔧 15-Jul-2026 Phase 0.1: called when the last card composes (scroll reached the end);
-    //   the ViewModel guards against duplicate/past-the-end fetches.
     onLoadMore: () -> Unit = {},
-    modifier: Modifier = Modifier,
+
     paddingValues: PaddingValues = PaddingValues(0.dp)
 ) {
     val tagViewModel: TagViewModel = viewModel()
@@ -109,9 +106,7 @@ fun NotesListView(
     val notes = state.summaries   // 🔧 15-Jul-2026 Summary query: cards render summaries
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
-        modifier = Modifier
-            .fillMaxSize()
-            // 🎨 20-Jul-2026 — warm parchment page (spec §2.2 `bg`), replacing the leftover blue gradient.
+        modifier = Modifier.fillMaxSize()
             .background(colorScheme.background),
         contentPadding = PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),

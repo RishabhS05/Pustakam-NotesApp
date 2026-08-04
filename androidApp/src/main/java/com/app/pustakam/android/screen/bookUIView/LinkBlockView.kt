@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.theme.CoverColor
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.core.filesys.reader.ReaderBlock
+import androidx.core.net.toUri
 
 @Composable
 fun LinkBlockView(block: ReaderBlock.Link, modifier: Modifier = Modifier) {
@@ -32,7 +33,7 @@ fun LinkBlockView(block: ReaderBlock.Link, modifier: Modifier = Modifier) {
             .background(CoverColor.copy(alpha = .07f), RoundedCornerShape(8.dp))
             .clickable {
                 try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(block.url)))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, block.url.toUri()))
                 } catch (_: ActivityNotFoundException) {
                     Toast.makeText(context, "No browser found", Toast.LENGTH_SHORT).show()
                 }

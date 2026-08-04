@@ -8,19 +8,18 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import androidx.core.graphics.scale
 import com.app.pustakam.core.common.util.ContentType
-import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.filesys.mime.MimeCatalog
-import com.app.pustakam.core.filesys.naming.FileNameGenerator
 import com.app.pustakam.core.filesys.naming.FileNameGenerator.suggestedFileNameFromMedia
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
 
 fun createFileWithFolders(context: Activity, folderPath : String, fileName : String) : File {
-    var file : File = File("")
+    var file = File("")
     try{
         val baseDir = File(context.filesDir,folderPath)
         if (!baseDir.exists()) {
@@ -48,14 +47,6 @@ fun deleteFile(filePath : String){
         file.delete()
     }
 }
-
-// 🔧 15-Jul-2026 Phase 2.3: lazy thumbnails — a small JPEG (max ~512px, q70) written next to the
-//   app's files under thumbnails/, so lists and placeholders never decode the full image or a
-//   video stream. Returns the thumbnail's absolute path, or null when generation fails (callers
-//   simply keep the current fallback behavior).
-//   • IMAGE/GIF: bounds-decode + inSampleSize (no full-size bitmap in memory)
-//   • VIDEO:     first frame at ~1s via MediaMetadataRetriever, scaled down
-//   Usage: generateThumbnail(context, media.localPath!!, media.type)
 private const val THUMBNAIL_MAX_DIMENSION = 512
 
 fun generateThumbnail(context: Context, sourcePath: String, contentType: ContentType): String? {
@@ -109,15 +100,15 @@ private fun scaleDown(bitmap: Bitmap): Bitmap {
     val longest = maxOf(bitmap.width, bitmap.height)
     if (longest <= THUMBNAIL_MAX_DIMENSION) return bitmap
     val scale = THUMBNAIL_MAX_DIMENSION.toFloat() / longest
-    return Bitmap.createScaledBitmap(
-        bitmap, (bitmap.width * scale).toInt().coerceAtLeast(1),
-        (bitmap.height * scale).toInt().coerceAtLeast(1), true
+    return bitmap.scale(
+        (bitmap.width * scale).toInt().coerceAtLeast(1),
+        (bitmap.height * scale).toInt().coerceAtLeast(1)
     )
 }
-fun saveBitmapToFile(bitmap: Bitmap, filePath: String): Boolean {
-    val file = File(filePath)
-   return saveBitmapToFile(bitmap,file)
-}
+//fun saveBitmapToFile(bitmap: Bitmap, filePath: String): Boolean {
+//    val file = File(filePath)
+//   return saveBitmapToFile(bitmap,file)
+//}
 fun saveBitmapToFile(bitmap: Bitmap,file: File): Boolean{
     return try {
         file.parentFile?.mkdirs() // Ensure the directory exists
@@ -130,14 +121,6 @@ fun saveBitmapToFile(bitmap: Bitmap,file: File): Boolean{
         false // Failure
     }
 }
-
-
-
-// 🔧 14-Jul-2026: Save an IMAGE or VIDEO straight into the device Gallery.
-//   Uses scoped-storage MediaStore on Android 10+ (no runtime permission needed);
-//   on older devices it relies on WRITE_EXTERNAL_STORAGE (declared in the manifest,
-//   maxSdkVersion=28). Returns true on success.
-//   Usage: val ok = saveMediaToGallery(context, media)
 fun saveMediaToGallery(context: Context, media: NoteContentModel.MediaContent): Boolean {
     val sourcePath = media.localPath?.takeIf { it.isNotEmpty() } ?: media.url.takeIf { it.isNotEmpty() }
     if (sourcePath.isNullOrEmpty()) return false

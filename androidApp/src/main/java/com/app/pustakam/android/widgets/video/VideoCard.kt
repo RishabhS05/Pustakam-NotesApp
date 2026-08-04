@@ -85,8 +85,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VideoCard(
-    contentVideo: NoteContentModel.MediaContent,
     modifier: Modifier = Modifier,
+    contentVideo: NoteContentModel.MediaContent,
     onClick: () -> Unit,
     onShowActions: (Boolean) -> Unit = {},
     widthFraction: Float = .7f,

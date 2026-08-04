@@ -95,7 +95,8 @@ fun AppUi(navController: PustakmNavController = rememberPustakmNavController()) 
     }
         ) { paddingValues ->
         AppNavGraph(
-            navController, modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            navController,
         )
     }
 

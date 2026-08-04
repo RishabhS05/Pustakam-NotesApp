@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.GifBox
@@ -41,9 +43,9 @@ import com.app.pustakam.core.common.util.ContentType
 fun iconForContentType(type: ContentType): ImageVector = when (type) {
     ContentType.PDF -> Icons.Filled.PictureAsPdf
     ContentType.DOCX -> Icons.Filled.Description
-    ContentType.EPUB -> Icons.Filled.MenuBook
-    ContentType.TXT -> Icons.Filled.TextSnippet
-    ContentType.MD -> Icons.Filled.TextSnippet
+    ContentType.EPUB -> Icons.AutoMirrored.Filled.MenuBook
+    ContentType.TXT ->Icons.AutoMirrored.Filled.TextSnippet
+    ContentType.MD -> Icons.AutoMirrored.Filled.TextSnippet
     ContentType.IMAGE -> Icons.Filled.Image
     ContentType.GIF -> Icons.Filled.GifBox
     ContentType.VIDEO -> Icons.Filled.VideoFile

@@ -69,4 +69,5 @@ dependencies {
     implementation(libs.androidx.material3)
 
     debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.leakcanary)
 }

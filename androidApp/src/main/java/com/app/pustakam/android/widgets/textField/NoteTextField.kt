@@ -41,11 +41,12 @@ import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteTextField(
+    modifier: Modifier = Modifier,
     noteContentModel: NoteContentModel.TextContent,
     focusRequester: FocusRequester = rememberFocusRequester(),
-    modifier: Modifier = Modifier,
     onUpdate : (text : String)-> Unit,
-    onSelectionChange : (TextFieldValue)-> Unit = {}
+    onSelectionChange : (TextFieldValue)-> Unit = {},
+
 ) {
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current

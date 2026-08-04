@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FormatIndentIncrease
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.FormatAlignCenter
 import androidx.compose.material.icons.filled.FormatAlignJustify
 import androidx.compose.material.icons.filled.FormatBold
@@ -120,7 +123,7 @@ val contentPaddingValues = PaddingValues(4.dp)
                 },
                     contentPadding = contentPaddingValues,
                 ) {
-                    Icon(Icons.Default.FormatListBulleted, contentDescription = "Format Text Bold")
+                    Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "Format Text Bold")
                 }
                 TextButton(onClick = {
                     action(TextStyleType.SPACING_RIGHT)
@@ -128,7 +131,7 @@ val contentPaddingValues = PaddingValues(4.dp)
                     contentPadding = contentPaddingValues,
                 ) {
                     Icon(
-                        Icons.Default.FormatIndentIncrease,
+                        Icons.AutoMirrored.Filled.FormatIndentIncrease,
                         contentDescription = "Format Text Bold"
                     )
                 }
@@ -138,7 +141,7 @@ val contentPaddingValues = PaddingValues(4.dp)
                     contentPadding = contentPaddingValues,
                 ) {
                     Icon(
-                        Icons.Default.FormatIndentDecrease,
+                        Icons.AutoMirrored.Filled.TextSnippet,
                         contentDescription = "Format Text Bold"
                     )
                 }

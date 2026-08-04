@@ -25,6 +25,10 @@ import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.filesys.path.PathPolicy
 import java.io.File
 import java.io.FileOutputStream
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.scale
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withSave
 
 object NoteExporter {
 
@@ -44,7 +48,8 @@ object NoteExporter {
     private fun bodyPaint() = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 30f }
     private fun titlePaint() = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 44f; isFakeBoldText = true }
     private fun captionPaint() = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; textSize = 24f }
-    private fun accentPaint() = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1A5276"); textSize = 28f }
+    private fun accentPaint() = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color =
+        "#1A5276".toColorInt(); textSize = 28f }
 
     // 🔧 20-Jul-2026: PUBLIC entry — returns the written file (in filesDir/exports), or null
     fun export(context: Context, note: Note, format: ExportFormat): File? {
@@ -137,7 +142,7 @@ object NoteExporter {
         val contentWidth = (IMAGE_WIDTH - 2 * MARGIN).toInt()
         val items = buildItems(blocks, contentWidth)
         val totalHeight = (2 * MARGIN + items.sumOf { (it.height + BLOCK_GAP).toDouble() }).toInt().coerceAtLeast(IMAGE_WIDTH)
-        val bitmap = Bitmap.createBitmap(IMAGE_WIDTH, totalHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(IMAGE_WIDTH, totalHeight)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
         var y = MARGIN
@@ -152,7 +157,7 @@ object NoteExporter {
     private fun drawItem(canvas: Canvas, item: Item, x: Float, y: Float) {
         when (item) {
             is Item.TextItem -> {
-                canvas.save(); canvas.translate(x, y); item.layout.draw(canvas); canvas.restore()
+                canvas.withSave { ; translate(x, y); item.layout.draw(this); }
             }
             is Item.ImageItem -> canvas.drawBitmap(item.bitmap, x, y, null)
         }
@@ -171,6 +176,6 @@ object NoteExporter {
         val decoded = BitmapFactory.decodeFile(path, opts) ?: return null
         if (decoded.width <= targetWidth) return decoded
         val scale = targetWidth.toFloat() / decoded.width
-        return Bitmap.createScaledBitmap(decoded, targetWidth, (decoded.height * scale).toInt().coerceAtLeast(1), true)
+        return decoded.scale(targetWidth, (decoded.height * scale).toInt().coerceAtLeast(1))
     }
 }

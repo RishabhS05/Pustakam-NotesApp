@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.app.pustakam.android.screen.notebookReader.BookPage
 
@@ -134,7 +135,7 @@ fun BookPageContent(page: BookPage) {
                 )
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = {
-                    val geo = Uri.parse("geo:${page.latitude},${page.longitude}?q=${page.latitude},${page.longitude}")
+                    val geo = "geo:${page.latitude},${page.longitude}?q=${page.latitude},${page.longitude}".toUri()
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, geo)) }
                     catch (_: ActivityNotFoundException) { Toast.makeText(context, "No maps app found", Toast.LENGTH_SHORT).show() }
                 }) { Text("Open in Maps") }

@@ -36,9 +36,9 @@ private enum class FlipDirection { FORWARD, BACKWARD }
 
 @Composable
 fun BookPager(
+    modifier: Modifier = Modifier,
     pageCount: Int,
     initialPage: Int = 0,
-    modifier: Modifier = Modifier.fillMaxSize(),
     onPageChanged: (Int) -> Unit = {},
     pageContent: @Composable (Int) -> Unit,
 ) {

@@ -8,18 +8,19 @@ import androidx.compose.ui.text.TextStyle
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.core.common.extensions.getTimerFormatedString
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun RecordingTimer(
     isTimerRunning: Boolean,
-    style: TextStyle = typography.bodyMedium,
     modifier: Modifier = Modifier,
+    style: TextStyle = typography.bodyMedium,
     elapsedTime: MutableLongState,
 ) {
     LaunchedEffect(isTimerRunning) {
         if (isTimerRunning) {
             while (isTimerRunning) {
-                delay(1000)
+                delay(1000.milliseconds)
                 elapsedTime.value += 1
             }
         }

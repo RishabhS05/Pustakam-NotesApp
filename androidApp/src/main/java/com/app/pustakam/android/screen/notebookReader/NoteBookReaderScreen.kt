@@ -34,6 +34,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List // 📖 25-Jul-2026 scroll-mode toggle
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MenuBook // 📖 25-Jul-2026 page-curl toggle
@@ -183,7 +184,7 @@ fun NoteBookReaderScreen(
             ) {
                 Icon(
                     if (state.readingMode == ReadingMode.PAGE) Icons.AutoMirrored.Filled.List
-                    else Icons.Filled.MenuBook,
+                    else Icons.AutoMirrored.Filled.MenuBook,
                     contentDescription = if (state.readingMode == ReadingMode.PAGE) "Switch to scrolling"
                     else "Switch to page curl",
                     tint = colorScheme.secondary

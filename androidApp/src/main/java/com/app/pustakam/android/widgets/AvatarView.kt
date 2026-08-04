@@ -26,8 +26,8 @@ import com.app.pustakam.android.R
 
 @Composable
 fun CircleIconLoad(url: String? = null,
-                   placeHolderDrawable: Int = R.drawable.avatar,
                    modifier: Modifier = Modifier,
+                   placeHolderDrawable: Int = R.drawable.avatar,
                    onClick :  ()-> Unit ) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)

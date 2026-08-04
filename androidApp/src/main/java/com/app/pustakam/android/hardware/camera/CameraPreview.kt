@@ -1,7 +1,6 @@
 package com.app.pustakam.android.hardware.camera
 
 import com.app.pustakam.android.theme.Gray4
-import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.camera.core.CameraSelector
@@ -58,14 +57,12 @@ fun CameraStreamingScreen(
     CameraStreamingPreview(controller, imageViewModel, onBackPress, navigateTo)
 }
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun CameraStreamingPreview(
     controller: LifecycleCameraController,
     imageViewModel: ImageDataViewModel,
     onBackPress: () -> Unit,
     navigateTo: (Any) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     BackHandler {
         onBackPress()
@@ -79,7 +76,7 @@ val  (timerColor: Color, backgroundColor : Color ) =
     if(isRecording.value){
     (orange30 to baseWhite.copy(alpha = .3f))
 }else{
-    elapsedTime.value = 0
+    elapsedTime.longValue = 0L
     (baseWhite to Gray4.copy(alpha = .5f))
 }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -103,14 +100,12 @@ val  (timerColor: Color, backgroundColor : Color ) =
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             IconButton(onClick = {
-                // 🔧 14-Jul-2026: CHANGED — file is created lazily only when recording starts (the
-                //   Stop press used to create a stray empty file), and the isRecording flag is now
-                //   owned by the ViewModel (recordingVideo/clearRecording set it) instead of being
-                //   toggled blindly here — it stays truthful when permission is denied.
                 recordingVideo(controller, context, imageViewModel) {
                     val timeStamp = getCurrentTimestamp()
                     createFileWithFolders(
-                        context as Activity, "${ContentType.VIDEO.name.lowercase()}/${timeStamp}", "${timeStamp}${ContentType.VIDEO.getExt()}"
+                        context as Activity,
+                        "${ContentType.VIDEO.name.lowercase()}/${timeStamp}"
+                        , "${timeStamp}${ContentType.VIDEO.getExt()}"
                     )
                 }
             }, modifier = Modifier) {

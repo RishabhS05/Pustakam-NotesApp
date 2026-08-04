@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,9 +40,9 @@ import com.app.pustakam.android.widgets.SnackBarUi
 //   reader is NoteBookReaderScreen; every page face here is the SHARED BookPageContent (DRY).
 @Composable
 fun BookReaderScreen(
+    modifier: Modifier = Modifier,
     bookId: String? = null,
     noteId: String? = null,
-    modifier: Modifier = Modifier,
     viewModel: BookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
 ) {
@@ -106,7 +107,7 @@ fun BookReaderScreen(
             ) {
                 Icon(
                     if (state.readingMode == ReadingMode.PAGE)
-                        Icons.AutoMirrored.Filled.List else Icons.Filled.MenuBook,
+                        Icons.AutoMirrored.Filled.List else Icons.AutoMirrored.Filled.MenuBook,
                     contentDescription = if (state.readingMode == ReadingMode.PAGE)
                         "Switch to scrolling" else "Switch to page curl",
                     tint = colorScheme.secondary

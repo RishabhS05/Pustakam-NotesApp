@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.min
 import kotlin.use
+import androidx.core.graphics.createBitmap
 
 @Composable
  fun PdfBookPage(page: BookPage.PdfSheet) {
@@ -51,7 +52,7 @@ private fun renderPdfPage(path: String, index: Int): Bitmap? = try {
     PdfRenderer(descriptor).use { renderer ->
         renderer.openPage(index).use { p ->
             val scale = min(2f, 2048f / maxOf(p.width, 1))
-            val bmp = Bitmap.createBitmap((p.width * scale).toInt(), (p.height * scale).toInt(), Bitmap.Config.ARGB_8888)
+            val bmp = createBitmap((p.width * scale).toInt(), (p.height * scale).toInt())
             bmp.eraseColor(android.graphics.Color.WHITE)
             p.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
             bmp

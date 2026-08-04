@@ -1,5 +1,6 @@
 package com.app.pustakam.android.widgets.bookwidget
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -8,7 +9,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.RemoteViews
+import androidx.core.net.toUri
 import com.app.pustakam.android.R
+import androidx.core.content.edit
 
 class BookWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -23,16 +26,17 @@ object BookWidgetUpdater {
 
     // 🔧 18-Jul-2026: called by BookReaderScreen — remembers the book + refreshes every widget
     fun saveLastBook(context: Context, noteId: String, title: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(KEY_NOTE_ID, noteId)
-            .putString(KEY_NOTE_TITLE, title.ifBlank { "Untitled note" })
-            .apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
+            putString(KEY_NOTE_ID, noteId)
+                .putString(KEY_NOTE_TITLE, title.ifBlank { "Untitled note" })
+        }
         val manager = AppWidgetManager.getInstance(context)
         manager.getAppWidgetIds(ComponentName(context, BookWidgetProvider::class.java))
             .forEach { render(context, manager, it) }
     }
 
     // 🔧 18-Jul-2026: builds the RemoteViews — deep link when a book exists, app launch otherwise
+
     fun render(context: Context, manager: AppWidgetManager, widgetId: Int) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val noteId = prefs.getString(KEY_NOTE_ID, null)
@@ -45,7 +49,8 @@ object BookWidgetUpdater {
         val intent = if (noteId.isNullOrEmpty()) {
             context.packageManager.getLaunchIntentForPackage(context.packageName)
         } else {
-            Intent(Intent.ACTION_VIEW, Uri.parse("pustakam://book/$noteId")).setPackage(context.packageName)
+            val uri = "pustakam://book/$noteId".toUri()
+            Intent(Intent.ACTION_VIEW, uri).setPackage(context.packageName)
         }
         intent?.let {
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

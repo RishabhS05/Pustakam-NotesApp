@@ -27,6 +27,7 @@ import com.app.pustakam.android.theme.CoverColor
 import com.app.pustakam.android.theme.PaperInk
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.core.filesys.reader.ReaderBlock
+import androidx.core.net.toUri
 
 @Composable
 fun LocationBlockView(block: ReaderBlock.Location, modifier: Modifier = Modifier) {
@@ -36,9 +37,8 @@ fun LocationBlockView(block: ReaderBlock.Location, modifier: Modifier = Modifier
             .fillMaxWidth()
             .background(CoverColor.copy(alpha = .07f), RoundedCornerShape(8.dp))
             .clickable {
-                val geo = Uri.parse(
-                    "geo:${block.latitude},${block.longitude}?q=${block.latitude},${block.longitude}"
-                )
+                val geo =
+                    "geo:${block.latitude},${block.longitude}?q=${block.latitude},${block.longitude}".toUri()
                 try {
                     context.startActivity(Intent(Intent.ACTION_VIEW, geo))
                 } catch (_: ActivityNotFoundException) {
