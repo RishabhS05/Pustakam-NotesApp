@@ -3,6 +3,7 @@ package com.app.pustakam.android.permission
 import android.app.Activity
 import android.content.Context
 import androidx.core.app.ActivityCompat
+import androidx.core.content.edit
 
 enum class PermissionState {
     GRANTED,
@@ -19,13 +20,13 @@ private fun prefs(context: Context) =
     context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
 
 fun markPermissionAsked(context: Context, permission: NeededPermission) {
-    prefs(context).edit().putBoolean(ASKED_PREFIX + permission.name, true).apply()
+    prefs(context).edit { putBoolean(ASKED_PREFIX + permission.name, true) }
 }
 
 fun markPermissionsAsked(context: Context, permissions: List<NeededPermission>) {
-    val editor = prefs(context).edit()
-    permissions.forEach { editor.putBoolean(ASKED_PREFIX + it.name, true) }
-    editor.apply()
+    prefs(context).edit {
+        permissions.forEach { putBoolean(ASKED_PREFIX + it.name, true) }
+    }
 }
 
 fun wasPermissionAsked(context: Context, permission: NeededPermission): Boolean =

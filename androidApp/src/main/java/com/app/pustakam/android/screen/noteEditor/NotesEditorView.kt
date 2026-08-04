@@ -98,6 +98,7 @@ import com.app.pustakam.android.widgets.textField.NoteTextField
 import com.app.pustakam.android.widgets.video.VideoCard
 import com.app.pustakam.android.export.NoteExporter
 import com.app.pustakam.android.export.shareExportedFile
+import com.app.pustakam.android.export.shareMediaFile
 import com.app.pustakam.core.model.models.CameraData
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.getMediaUrl
@@ -550,13 +551,11 @@ fun RenderWidget(
         ContentType.AUDIO -> {
             val contentAudio = content as NoteContentModel.MediaContent
             val context = LocalContext.current
-            // 🔧 14-Jul-2026: PERF — coroutine scope so the file copy runs off the main thread.
             val scope = rememberCoroutineScope()
             val exportLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(contentAudio.type))
             ) { uri ->
                 if (uri != null) {
-                    // 🔧 14-Jul-2026: PERF — copy bytes on IO, confirm on the main thread.
                     scope.launch {
                         val ok = withContext(Dispatchers.IO) { writeMediaToUri(context, contentAudio, uri) }
                         Toast.makeText(
@@ -596,7 +595,7 @@ fun RenderWidget(
                     contentDoc,
                     isFocused = focusedMediaId == contentDoc.id,
                     onDelete = { onDelete(contentDoc) },
-                    onShare = { com.app.pustakam.android.export.shareMediaFile(docShareContext, contentDoc) }
+                    onShare = { shareMediaFile(docShareContext, contentDoc) }
                 )
             }
         }

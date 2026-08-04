@@ -3,6 +3,7 @@ package com.app.pustakam.android.permission
 import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 
 enum class NeededPermission(
     val permission: String,
@@ -27,7 +28,8 @@ enum class NeededPermission(
         title = "Accurate Location Permission",
         description = "This permission is needed to get your accurate location . Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
-    ),
+
+        ),
     COARSE_LOCATION(
         permission = Manifest.permission.ACCESS_COARSE_LOCATION,
         title = "Approximate Location Permission",
@@ -87,7 +89,7 @@ enum class NeededPermission(
     );
 
     val isApplicable: Boolean
-        get() = Build.VERSION.SDK_INT in minSdk..maxSdk
+        get() = SDK_INT in minSdk..maxSdk
 
     fun permissionTextProvider(isPermanentDenied: Boolean): String {
         return if (isPermanentDenied) this.permanentlyDeniedDescription else this.description
