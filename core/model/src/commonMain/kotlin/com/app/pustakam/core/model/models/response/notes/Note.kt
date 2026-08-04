@@ -109,6 +109,7 @@ sealed class NoteContentModel {
             copy(thumbnailPath = path, updatedAt = "${getCurrentTimestamp()}")
         fun withReadingProgress(page: Int, total: Int): MediaContent =
             copy(progressPage = page, totalPages = total, updatedAt = "${getCurrentTimestamp()}")
+        fun withProgressPage(page: Int): MediaContent = copy(progressPage = page)
 
         /** 📖 true once the document has been opened and has a resumable position. */
         fun hasReadingProgress(): Boolean = totalPages > 0 && progressPage > 0

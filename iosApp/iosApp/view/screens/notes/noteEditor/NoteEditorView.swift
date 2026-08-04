@@ -204,7 +204,9 @@ struct NoteEditorView: View {
                     onDelete: { askDeleteContent(contentId: contentDoc.id, kind: "File") },
                     onSave: { saveMediaToDevice(media: contentDoc) },
                     onShare: { shareMediaFile(media: contentDoc) },
-                    onPageChange: { page in }
+                    onPageChange: { page in
+                        onUpdate(contentDoc.withProgressPage(page: page))
+                    }
                 )
                 .frame(width: UIScreen.main.bounds.width * 0.7, alignment: .leading)
             case .gif:

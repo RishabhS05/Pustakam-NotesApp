@@ -50,6 +50,7 @@ class NoteEditorViewModel: ObservableObject {
 
     // MARK: - Load
     func refresh() {
+        guard dirtyContentIds.isEmpty else { return }   // don't overwrite unsaved edits
         guard let id = state.note?.id, !id.isEmpty else { return }
         load(noteId: id)
     }

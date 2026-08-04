@@ -70,6 +70,9 @@ struct InlineBookFileView: View {
         .padding(6)
         .background(RoundedRectangle(cornerRadius: 16).fill(NotebookPalette.cover))
         .onAppear(perform: buildPages)
+        // rebuild when the row changes in the DB — mirrors Android's LaunchedEffect(media.id, media.updatedAt)
+        .onChange(of: media.id) { _, _ in buildPages() }
+        .onChange(of: media.updatedAt) { _, _ in buildPages() }
     }
     private var header: some View {
         HStack(spacing: 8) {
@@ -139,7 +142,6 @@ struct InlineBookFileView: View {
 
     // 🔧 19-Jul-2026: pages built by the SHARED builder, off the main thread
     private func buildPages() {
-        guard pages.isEmpty else { return }
         building = true
         DispatchQueue.global(qos: .userInitiated).async {
             let built = BookPagesBuilder.buildForContent(media)
