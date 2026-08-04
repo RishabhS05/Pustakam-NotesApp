@@ -23,7 +23,7 @@ import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.screen.navigation.rememberPustakmNavController
 import com.app.pustakam.android.theme.ThemeMode
 import com.app.pustakam.android.widgets.fabWidget.AddNewNoteFAB
-import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
 import com.app.pustakam.core.common.extensions.isNotnull
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
 }
 @Composable
 private fun rememberGranthThemeMode(): ThemeMode {
-    val prefs = koinInject<BasePreferences>()
+    val prefs = koinInject<IAppPreferences>()
     val modeFlow = remember(prefs) { prefs.userPreferencesFlow.map { ThemeMode.from(it.themeMode) } }
     val mode by modeFlow.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     return mode

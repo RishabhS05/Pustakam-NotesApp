@@ -1,6 +1,11 @@
 package com.app.pustakam.core.database.localdb.preferences
 
+import kotlinx.coroutines.flow.Flow
+
 interface IAppPreferences {
+    val userPreferencesFlow: Flow<UserPreference>
+    val readingModeFlow: Flow<String>
+
     suspend fun setToken(token : String)
     suspend fun getAuthToken() : String?
     suspend  fun setUserId(userId : String)

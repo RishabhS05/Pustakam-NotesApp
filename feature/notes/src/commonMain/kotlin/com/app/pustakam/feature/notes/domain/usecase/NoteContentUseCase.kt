@@ -29,6 +29,11 @@ class GetSelectedMediaIndexUseCase : NoteContentBaseUseCase() {
     operator fun invoke(id: String): Int = noteContentRepository.getIndexOfMedia(id)
 }
 
+/** Drop the selected-note media state (editor closed). */
+class ClearSelectedNoteContentUseCase : NoteContentBaseUseCase() {
+    operator fun invoke() = noteContentRepository.clear()
+}
+
 class UpdateReadingProgressUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(contentId: String?, progressPage: Int, totalPages: Int) =
         getBaseApiCall { noteRepository.updateReadingProgressFromDb(contentId ?: "", progressPage, totalPages) }

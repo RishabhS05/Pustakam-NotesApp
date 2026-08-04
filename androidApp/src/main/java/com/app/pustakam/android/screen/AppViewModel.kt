@@ -10,13 +10,13 @@ import com.app.pustakam.core.common.util.Result
 class AppViewModel : BaseViewModel() {
     private val appUserCase by inject<AppUserCase>()
     val authState = appUserCase.authState
+    val isAuthenticated = appUserCase.isAuthenticated
 
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {}
 
     override fun onFailure(taskCode: TaskCode, error: Error) {
         super.onFailure(taskCode, error)
     }
-
 
     override fun clearError() {}
 }

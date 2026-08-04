@@ -38,7 +38,7 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         val READING_MODE = stringPreferencesKey("granth.readingMode")
     }
 
-    val userPreferencesFlow: Flow<UserPreference> = dataStore.data
+    override val userPreferencesFlow: Flow<UserPreference> = dataStore.data
         .catch { exception ->
             // dataStore.data throws an IOException when an error is encountered when reading data
             if (exception is IOException) {
@@ -84,7 +84,7 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         }
     }
 
-    val readingModeFlow: Flow<String> = dataStore.data
+    override val readingModeFlow: Flow<String> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[PreferencesKeys.READING_MODE] ?: "page" }
 

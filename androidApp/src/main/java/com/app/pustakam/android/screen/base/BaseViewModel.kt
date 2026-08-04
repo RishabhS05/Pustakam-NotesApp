@@ -24,11 +24,11 @@ abstract class BaseViewModel : ViewModel() , KoinComponent {
     abstract fun onSuccess (taskCode: TaskCode, result: Result.Success<BaseResponse<*>> )
     open fun onFailure (taskCode : TaskCode, error : Error){
         if (error is NetworkError && error == NetworkError.UNAUTHORIZED && !AuthConfig.BYPASS_AUTH) {
-            viewModelScope.launch { logoutUserForcefully() }
+            viewModelScope.launch { logout() }
         }
     }
 
-    open suspend fun logoutUserForcefully() = logoutUseCase()
+    suspend fun logoutUserForcefully() = logoutUseCase()
 
     fun logout(onDone: () -> Unit = {}) {
         viewModelScope.launch {

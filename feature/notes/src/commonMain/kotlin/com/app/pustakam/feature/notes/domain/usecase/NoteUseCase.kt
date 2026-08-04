@@ -7,8 +7,6 @@ import com.app.pustakam.core.model.models.response.notes.Note
 class CreateORUpdateNoteUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(note: Note) =
         getBaseApiCall { noteRepository.insertOrUpdateNote(note) }
-    // 🔧 15-Jul-2026 Phase 0.4: dirty-save overload — writes only the given content rows.
-    //   Separate overload (not a default param) so the iOS bridge call sites stay untouched.
     suspend operator fun invoke(note: Note, dirtyContentIds: Set<String>) =
         getBaseApiCall { noteRepository.insertOrUpdateNote(note, dirtyContentIds) }
 }
@@ -22,26 +20,19 @@ class ReadNoteUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(id: String?) =
         getBaseApiCall { noteRepository.getANote(id) }
 }
-
-
 class GetNotesUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(page: Int) =
         getBaseApiCall { noteRepository.getAllNotes(page) }
-    // 🔧 15-Jul-2026 Phase 0.1: paged overload — Android list opts in with NOTES_PAGE_SIZE;
-    //   the single-arg form keeps the legacy load-everything behavior (iOS bridge).
+
     suspend operator fun invoke(page: Int, limit: Int) =
         getBaseApiCall { noteRepository.getAllNotes(page, limit) }
 }
 
-// 🔧 15-Jul-2026 Summary query: list-screen fetch — light summaries (snippet/counts/thumbnail),
-//   never the full contents. Observe results via `noteSummaries` (exposed on NoteBaseUseCase).
 class GetNoteSummariesUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(page: Int, limit: Int) =
         getBaseApiCall { noteRepository.getNoteSummaries(page, limit) }
 }
 
-// 🔧 15-Jul-2026 Phase 2.2: FTS5 search across note text + titles; returns NoteSummary results
-//   (content matches carry a snippet). Empty query returns an empty list.
 class SearchNotesUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(query: String) =
         getBaseApiCall { noteRepository.searchNotes(query) }

@@ -5,7 +5,7 @@ import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.notebookReader.ReadingMode
 import com.app.pustakam.android.theme.ThemeMode
-import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
 import com.app.pustakam.core.model.models.BaseResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,12 +16,8 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.get
 import com.app.pustakam.core.common.util.Result
 
-// 🎨 22-Jul-2026 — Granth spec §6 Settings state. Appearance is persisted through the shared
-//   DataStore (same "granth.themeMode" key iOS uses); the remaining rows are real state holders
-//   ready for their features to land behind them.
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    // 📖 23-Jul-2026: reader layout — page curl vs continuous scroll (also toggled in the reader)
     val readingMode: ReadingMode = ReadingMode.PAGE,
     // Editor & Reading
     val editorFont: String = "Iowan",
@@ -45,7 +41,7 @@ data class SettingsUiState(
 
 class SettingsViewModel : BaseViewModel() {
 
-    private val userPrefs = get<BasePreferences>()
+    private val userPrefs = get<IAppPreferences>()
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()

@@ -6,6 +6,7 @@ import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
 import com.app.pustakam.feature.notes.domain.repository.IRemoteNoteRepository
+import com.app.pustakam.feature.notes.domain.usecase.ClearSelectedNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.CreateTagUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
@@ -52,8 +53,8 @@ fun notesModule(): Module = module {
     factory<CreateTagUseCase> { CreateTagUseCase() }
     factory<UpdateTagUseCase> { UpdateTagUseCase() }
     factory<DeleteTagUseCase> { DeleteTagUseCase() }
-    // 🔧 F5: note-content state use cases (NoteContentBridge + future Android migration)
     factory<SetSelectedNoteContentUseCase> { SetSelectedNoteContentUseCase() }
     factory<UpdateSelectedMediaContentUseCase> { UpdateSelectedMediaContentUseCase() }
     factory<GetSelectedMediaIndexUseCase> { GetSelectedMediaIndexUseCase() }
+    factory<ClearSelectedNoteContentUseCase> { ClearSelectedNoteContentUseCase() }
 }

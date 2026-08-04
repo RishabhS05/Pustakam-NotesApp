@@ -9,7 +9,7 @@ import com.app.pustakam.android.screen.notebookReader.ReadingMode
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.common.util.log_d
-import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
 import com.app.pustakam.core.model.models.BaseResponse
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.feature.notes.domain.usecase.ReadContentUseCase
@@ -31,7 +31,7 @@ class BookReaderViewModel : BaseViewModel() {
     private val readDocUseCase by inject<ReadContentUseCase>()
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
     // 📖 same persisted pref Settings and the note reader use, so the mode stays in sync
-    private val userPrefs by inject<BasePreferences>()
+    private val userPrefs by inject<IAppPreferences>()
 
     private val _bookUiState = MutableStateFlow(BookUIState(isLoading = false))
     val bookUiState: StateFlow<BookUIState> = _bookUiState.asStateFlow()

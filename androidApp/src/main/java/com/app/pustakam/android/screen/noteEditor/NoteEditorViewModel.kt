@@ -23,7 +23,9 @@ import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.core.model.models.response.notes.TextBlockSplitter
-import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
+import com.app.pustakam.feature.notes.domain.usecase.ClearSelectedNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SetSelectedNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.UpdateSelectedMediaContentUseCase
 import com.app.pustakam.core.common.extensions.isNotnull
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.ContentType.AUDIO
@@ -47,7 +49,9 @@ import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.common.util.onSuccess
 
 class NoteEditorViewModel : BaseViewModel() {
-    private val noteContentRepository = get<NoteContentRepository>()
+    private val setSelectedNoteContentUseCase by inject<SetSelectedNoteContentUseCase>()
+    private val updateSelectedMediaContentUseCase by inject<UpdateSelectedMediaContentUseCase>()
+    private val clearSelectedNoteContentUseCase by inject<ClearSelectedNoteContentUseCase>()
     private val readNoteUseCase by inject<ReadNoteUseCase>()
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
     private val deleteNoteContentUseCase by inject<DeleteNoteContentUseCase>()
@@ -114,7 +118,7 @@ class NoteEditorViewModel : BaseViewModel() {
                 //   comes back to the foreground (ON_CREATE re-delivery). Syncing the playlist from the
                 //   DB copy wiped any media recorded but not yet saved. Sync from the LIVE note instead;
                 //   it equals the DB note right after first load and additionally carries fresh media.
-                noteContentRepository.addAllNoteContent(_noteContentUiState.value.note ?: note)
+                setSelectedNoteContentUseCase(_noteContentUiState.value.note ?: note)
                 // 🔧 14-Jul-2026: FIX (I-1) — consume paths captured while the note was still loading.
                 consumePendingMediaPaths()
             }
@@ -323,7 +327,7 @@ class NoteEditorViewModel : BaseViewModel() {
             }
         }
         if (content.isPlayingMedia())
-            noteContentRepository.updateNoteContent(content as NoteContentModel.MediaContent)
+            updateSelectedMediaContentUseCase(content as NoteContentModel.MediaContent)
     }
     /**content logic
      * Add new content to the note content list
@@ -413,7 +417,7 @@ class NoteEditorViewModel : BaseViewModel() {
 
     override fun onCleared() {
         super.onCleared()
-        noteContentRepository.clear()
+        clearSelectedNoteContentUseCase()
     }
 
     // 🔧 14-Jul-2026: CRASH FIX + PERF — this used to run inside composition and mutate
@@ -471,7 +475,7 @@ class NoteEditorViewModel : BaseViewModel() {
         //   standalone playlist repository so it can play immediately, before the note is saved.
         //   This is safe now (it wasn't before) because track selection in MediaServiceListener is
         //   resolved by mediaId with a -1 guard — index drift can no longer mis-select a track.
-        newItems.filter { it.isPlayingMedia() }.forEach { noteContentRepository.updateNoteContent(it) }
+        newItems.filter { it.isPlayingMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
         // 🔧 15-Jul-2026 Phase 0.4: captured media blocks are new rows → mark for saving
         dirtyContentIds.addAll(newItems.map { it.id })
         // 🔧 15-Jul-2026 Phase 2.3: lazy thumbnails — generated off the main thread AFTER the media
@@ -534,7 +538,7 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteContentUiState.update {
             it.copy(note = note.withContents(note.contents + items), contents = it.contents, isAllSetupDone = true)
         }
-        items.filter { it.isPlayingMedia() }.forEach { noteContentRepository.updateNoteContent(it) }
+        items.filter { it.isPlayingMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
         dirtyContentIds.addAll(items.map { it.id })   // 🔧 imported blocks are new rows → saved next save
         generateThumbnailsFor(items)
     }

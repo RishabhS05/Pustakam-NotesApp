@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.inject
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
-import com.app.pustakam.core.database.localdb.preferences.BasePreferences
+import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
 import com.app.pustakam.core.filesys.reader.PageLayoutEngine
 import com.app.pustakam.core.filesys.reader.PageLayoutPolicy
 import com.app.pustakam.core.filesys.reader.ReaderPage
@@ -56,9 +56,9 @@ class NoteBookReaderViewModel : BaseViewModel() {
     private val readNoteUseCase by inject<ReadNoteUseCase>()
     // 📖 23-Jul-2026: progress persistence via its own use case (mirror of the delete-content flow)
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
-    // 📖 25-Jul-2026: reading-mode preference — SAME BasePreferences the Settings screen writes, so
+    // 📖 25-Jul-2026: reading-mode preference — SAME IAppPreferences the Settings screen writes, so
     //   the reader's toggle and Settings stay in sync. UI never sees the shared prefs type directly.
-    private val userPrefs by inject<BasePreferences>()
+    private val userPrefs by inject<IAppPreferences>()
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
