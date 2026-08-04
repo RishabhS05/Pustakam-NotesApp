@@ -1,6 +1,5 @@
 
 import SwiftUI
-import shared
 @Observable final class Router{
     
     var navPath = NavigationPath()
@@ -8,7 +7,7 @@ import shared
         case Login
         case Signup
         case Notes
-        case NoteEditor (note : Note? = nil )
+        case NoteEditor (noteId : String? = nil )
         case Profile
         case Notification
         case Search
@@ -21,8 +20,8 @@ import shared
 
         func hash(into hasher: inout Hasher) {
             switch self {
-                case .NoteEditor(let note):
-                    hasher.combine(note?.id)
+                case .NoteEditor(let noteId):
+                    hasher.combine(noteId)
                 case .BookReader(let noteId, let bookId):
                     hasher.combine(noteId); hasher.combine(bookId)
                 case .NoteBookReader(let noteId, let contentId):
@@ -34,8 +33,8 @@ import shared
 
         static func == (lhs: Router.Destination, rhs: Router.Destination) -> Bool {
             switch (lhs, rhs) {
-                case (.NoteEditor(let lhsNote), .NoteEditor(let rhsNote)):
-                    return lhsNote?.id == rhsNote?.id
+                case (.NoteEditor(let lhsId), .NoteEditor(let rhsId)):
+                    return lhsId == rhsId
                 case (.BookReader(let lId, let lB), .BookReader(let rId, let rB)):
                     return lId == rId && lB == rB
                 case (.NoteBookReader(let lId, let lC), .NoteBookReader(let rId, let rC)):

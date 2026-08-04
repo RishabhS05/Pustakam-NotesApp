@@ -1,5 +1,7 @@
 package com.app.pustakam.feature.notes.domain.usecase
 
+import com.app.pustakam.core.common.events.DomainEvent
+import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
@@ -44,5 +46,8 @@ class ReadContentUseCase : NoteBaseUseCase() {
 }
 class DeleteNoteContentUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(id: String?) =
-        getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }
+        getBaseApiCall {
+            noteRepository.deleteNoteContentFromDb(id ?: "")
+                .onSuccess { events.publish(DomainEvent.NoteContentDeleted(id ?: "")) }
+        }
 }

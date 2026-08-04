@@ -33,19 +33,14 @@ fun notesModule(): Module = module {
     single<IRemoteNoteRepository> { get<INoteRepository>() }
 
     single<INoteContentRepository> { NoteContentRepository() }
-
     factory<CreateORUpdateNoteUseCase> { CreateORUpdateNoteUseCase() }
     factory<DeleteNoteUseCase> { DeleteNoteUseCase() }
     factory<ReadNoteUseCase> { ReadNoteUseCase() }
     factory<GetNotesUseCase> { GetNotesUseCase() }
-    // 🔧 15-Jul-2026 Summary query: list-screen summaries
     factory<GetNoteSummariesUseCase> { GetNoteSummariesUseCase() }
-    // 🔧 15-Jul-2026 Phase 2.2: full-text search
     factory<SearchNotesUseCase> { SearchNotesUseCase() }
     factory<DeleteNoteContentUseCase> { DeleteNoteContentUseCase() }
-    // 📖 23-Jul-2026: reader progress persistence (mirror of DeleteNoteContentUseCase)
     factory<UpdateReadingProgressUseCase> { UpdateReadingProgressUseCase() }
-    // 📖 01-Aug-2026: document reader loads ONE content row by id
     factory<ReadContentUseCase> { ReadContentUseCase() }
     factory<GetTagCase> { GetTagCase() }
     factory<CreateTagUseCase> { CreateTagUseCase() }

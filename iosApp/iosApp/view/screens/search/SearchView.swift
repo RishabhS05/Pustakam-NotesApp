@@ -29,7 +29,7 @@ struct SearchView: View {
                 ScrollView {
                     StaggeredGrid(columns: 2, items: viewModel.state.results, spacing: 12) { summary in
                         NoteBookView(summary: summary) {
-                            router.navigate(to: .NoteEditor(note: summary.toNoteStub()))
+                            router.navigate(to: .NoteEditor(noteId: summary.id))
                         }
                     }
                 }

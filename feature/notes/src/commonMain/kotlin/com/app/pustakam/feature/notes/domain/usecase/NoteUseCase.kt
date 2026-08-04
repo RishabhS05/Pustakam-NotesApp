@@ -1,19 +1,30 @@
 package com.app.pustakam.feature.notes.domain.usecase
 
+import com.app.pustakam.core.common.events.DomainEvent
+import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.Tag
 import com.app.pustakam.core.model.models.response.notes.Note
 
 
 class CreateORUpdateNoteUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(note: Note) =
-        getBaseApiCall { noteRepository.insertOrUpdateNote(note) }
+        getBaseApiCall {
+            noteRepository.insertOrUpdateNote(note)
+                .onSuccess { events.publish(DomainEvent.NoteSaved(note.id)) }
+        }
     suspend operator fun invoke(note: Note, dirtyContentIds: Set<String>) =
-        getBaseApiCall { noteRepository.insertOrUpdateNote(note, dirtyContentIds) }
+        getBaseApiCall {
+            noteRepository.insertOrUpdateNote(note, dirtyContentIds)
+                .onSuccess { events.publish(DomainEvent.NoteSaved(note.id)) }
+        }
 }
 
 class DeleteNoteUseCase : NoteBaseUseCase() {
     suspend operator fun invoke(noteId: String?) =
-        getBaseApiCall { noteRepository.deleteNote(noteId ?: "") }
+        getBaseApiCall {
+            noteRepository.deleteNote(noteId ?: "")
+                .onSuccess { events.publish(DomainEvent.NoteDeleted(noteId ?: "")) }
+        }
 }
 
 class ReadNoteUseCase : NoteBaseUseCase() {

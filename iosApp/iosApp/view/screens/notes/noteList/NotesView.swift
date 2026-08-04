@@ -18,7 +18,7 @@ struct NotesView: View {
         HStack{
             Spacer()
             Button(action: {
-                router.navigate(to: .NoteEditor(note: nil))
+                router.navigate(to: .NoteEditor(noteId: nil))
             }) {
                 HStack {
                     Image(systemName: "pencil")
@@ -48,7 +48,7 @@ struct NotesView: View {
     var staggeredGrid : some View {
         StaggeredGrid(columns: 2, items: notesViewModel.state.summaries, spacing: 12 ) {
             summary in NoteBookView(summary: summary){
-                router.navigate(to: .NoteEditor(note: summary.toNoteStub()))
+                router.navigate(to: .NoteEditor(noteId: summary.id))
             }
             .onAppear {
                 if summary.id == notesViewModel.state.summaries.last?.id {

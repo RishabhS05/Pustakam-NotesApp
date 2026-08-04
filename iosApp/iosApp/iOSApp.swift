@@ -36,7 +36,7 @@ private struct AppRootView: View {
                     switch destination {
                         case .Signup : SignupView()
                         case.Notes : NotesView()
-                        case.NoteEditor(let note) : NoteEditorView(note: note)
+                        case .NoteEditor(let noteId) : NoteEditorView(noteId: noteId)
                         case.Login : LoginView()
                         case .Notification : NotificationView()
                         case .Search : SearchView()

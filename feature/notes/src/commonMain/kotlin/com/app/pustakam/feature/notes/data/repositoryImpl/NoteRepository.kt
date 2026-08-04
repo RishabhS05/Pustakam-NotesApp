@@ -124,13 +124,13 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
     override suspend fun insertUpdateFromDb(note: Note): Result<BaseResponse<Note>, Error> =
         insertUpdateFromDb(note, dirtyContentIds = null)
 
-    suspend fun insertUpdateFromDb(note: Note, dirtyContentIds: Set<String>?): Result<BaseResponse<Note>, Error> {
+    fun insertUpdateFromDb(note: Note, dirtyContentIds: Set<String>?): Result<BaseResponse<Note>, Error> {
        return try {
             val newNote = notesDao.insertOrUpdateNoteFromDb(note.apply {withNextVersion()}, dirtyContentIds)
             return if(newNote.isNotnull()) {
                 val response = BaseResponse(data = newNote , isSuccessful = true,
                     isFromDb = true)
-                return Result.Success(response)
+                Result.Success(response)
             } else {
                 Result.Error(error = NetworkError.NOT_FOUND)
             }
@@ -217,12 +217,11 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
         return Result.Success(BaseResponse(data = updated, isSuccessful = true, isFromDb = true))
     }
 
-    override suspend fun deleteTagOnDB(tagId: String?): Result<BaseResponse<Boolean>, Error> {
-        // 🔧 P3: missing `return` fixed + DAO result used (was always reporting success)
-        if (tagId.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
-        val deleted = notesDao.deleteTag(tagId)
+    override suspend fun deleteTagOnDB(tag: String?): Result<BaseResponse<Boolean>, Error> {
+        if (tag.isNullOrEmpty()) return Result.Error(error = NetworkError.NOT_FOUND)
+        val deleted = notesDao.deleteTag(tag)
         if (!deleted) return Result.Error(error = NetworkError.SERVER_ERROR)
-        _tags.update { list -> list.filterNot { it.id == tagId } } // 🔧 P2: observers see deletion
+        _tags.update { list -> list.filterNot { it.id == tag } } // 🔧 P2: observers see deletion
         return Result.Success(BaseResponse(data = true, isSuccessful = true, isFromDb = true))
     }
 

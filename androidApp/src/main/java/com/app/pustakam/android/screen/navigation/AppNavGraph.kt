@@ -6,6 +6,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import com.app.pustakam.android.screen.AppViewModel
+import com.app.pustakam.android.screen.navigation.NavRouteRegistry.buildAll
 
 
 @Composable
@@ -22,7 +23,6 @@ fun AppNavGraph(
         startDestination = route,
         modifier = modifier
     ) {
-        AuthNavGraph(navHostController)
-        HomeNavGraph(navHostController)
+        buildAll(navHostController)
     }
 }

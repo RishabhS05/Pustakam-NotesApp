@@ -4,6 +4,7 @@ package com.app.pustakam.core.filesys.platform
 
 import com.app.pustakam.core.filesys.mime.MimeCatalog
 import com.app.pustakam.core.filesys.model.FileMetadata
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.allocArrayOf
 import kotlinx.cinterop.memScoped
@@ -19,10 +20,6 @@ import platform.Foundation.create
 import platform.Foundation.dataWithContentsOfFile
 import platform.Foundation.writeToFile
 import platform.posix.memcpy
-
-// 🔧 30-Jul-2026 02:10 Phase 3 — iOS bindings for the file-IO seams. NSFileManager only.
-//   Root is the Documents directory, which is exactly where iOS FileOps.swift already writes
-//   (createFolder → getDocumentsDirectory), so these touch the SAME locations as the Swift code.
 
 /** Documents directory — matches iOS FileOps.swift getDocumentsDirectory(). */
 internal fun documentsRoot(): String =
@@ -40,7 +37,9 @@ private fun NSData.toByteArray(): ByteArray {
     }
 }
 
+
 private fun ByteArray.toNSData(): NSData = memScoped {
+    @OptIn(BetaInteropApi::class)
     NSData.create(bytes = allocArrayOf(this@toNSData), length = size.toULong())
 }
 
@@ -88,7 +87,7 @@ class IosDirectoryManager : DirectoryManager {
         manager.fileExistsAtPath(resolveInStorage(relativePath))
 
     override fun list(folder: String): List<String> =
-        (manager.contentsOfDirectoryAtPath(resolveInStorage(folder), null) as? List<*>)
+        (manager.contentsOfDirectoryAtPath(resolveInStorage(folder), null))
             ?.filterIsInstance<String>()
             .orEmpty()
 

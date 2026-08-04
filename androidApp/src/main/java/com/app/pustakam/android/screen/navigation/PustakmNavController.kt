@@ -12,8 +12,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.app.pustakam.core.common.extensions.isNotnull
-import com.app.pustakam.core.model.models.request.Login
-import com.app.pustakam.core.model.models.response.notes.Notes
 
 object Route {
     const val Home = "HOME"
@@ -40,29 +38,12 @@ class PustakmNavController(
         Screen.HomeScreen.NotificationScreen,
         Screen.HomeScreen.SettingsScreen
     )
-    val shouldShowBottomBar
-        get() = when (navController.currentBackStackEntry?.destination?.route) {
-            Route.Notes,
-            Route.Search,
-            Route.Notification,
-            Route.Settings
-                -> true
+    private val currentChrome
+        get() = NavRouteRegistry.chromeFor(navController.currentBackStackEntry?.destination?.route)
 
-            else -> false
-        }
-    val shouldShowTopBar
-        get() = when (navController.currentBackStackEntry?.destination?.route) {
-            Route.Notes,
-            Route.Search,
-            Route.Notification,
-                -> true
-            else -> false
-        }
-    val shouldShowFloatingButton
-        get() = when (navController.currentBackStackEntry?.destination?.route) {
-            Route.Notes -> true
-            else -> false
-        }
+    val shouldShowBottomBar get() = currentChrome.showsBottomBar
+    val shouldShowTopBar get() = currentChrome.showsTopBar
+    val shouldShowFloatingButton get() = currentChrome.showsFab
 
     fun upPress() {
         navController.navigateUp()

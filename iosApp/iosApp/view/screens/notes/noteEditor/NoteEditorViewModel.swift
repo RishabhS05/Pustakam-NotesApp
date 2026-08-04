@@ -10,7 +10,6 @@ struct NoteEditorUIState {
     var isLoading = false
     var isDeleted = false                       // fixes V3: save() refuses after delete
     var errorMessage: String? = nil
-    /// E3 guard: content actions allowed only once the note exists.
     var isNoteReady: Bool { note != nil }
 }
 
@@ -20,38 +19,27 @@ class NoteEditorViewModel: ObservableObject {
 
     private let adapter: NotesBridgeAdapter
     private let contentBridge: NoteContentBridge
-
-    // 🔧 15-Jul-2026 iOS parity (dirty-row saves): ids of content blocks touched since the last
-    //   successful save — save writes ONLY these rows plus the note header (Android parity).
-    //   Contents loaded from the DB start clean.
     private var dirtyContentIds = Set<String>()
 
     /// DI per series convention: defaults keep call sites/tests simple. (fixes E1, E6)
-    init(note: Note? = nil,
+    init(noteId: String? = nil,
          adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
          contentBridge: NoteContentBridge = NoteContentBridge()) {
         self.adapter = adapter
         self.contentBridge = contentBridge
-        load(note: note)
+        load(noteId: noteId)
     }
 
     deinit { contentBridge.dispose() }          // adapter cleans itself up
 
     // MARK: - Load
-
-    // 🔧 15-Jul-2026 iOS parity (summary query): ALWAYS re-read by id. The list navigates with a
-    //   contents-less stub (NoteSummary.toNoteStub) now, and the DB is the source of truth anyway —
-    //   using the passed object as-is could show stale contents. nil id still means "create new".
-    // 📖 23-Jul-2026: re-read the current note when the editor returns to the foreground (e.g. back
-    //   from the book reader) so document cards show the reading position the reader just saved.
-    //   Goes through the SAME read path (adapter.readNote → ReadNoteUseCase); no direct DB access.
     func refresh() {
         guard let id = state.note?.id, !id.isEmpty else { return }
-        load(note: state.note)
+        load(noteId: id)
     }
 
-    private func load(note: Note?) {
-        adapter.readNote(noteId: note?.id) { [weak self] result in
+    private func load(noteId: String?) {
+        adapter.readNote(noteId: noteId) { [weak self] result in
             guard let self else { return }
             switch result {
             case .loading:            self.state.isLoading = true

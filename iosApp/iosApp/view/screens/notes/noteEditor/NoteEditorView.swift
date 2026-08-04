@@ -9,10 +9,7 @@ struct NoteEditorView: View {
     @State private var noteContent: String = ""
     @State private var isRulledEnabled: Bool = false
     @State private var  showDelete : Bool = false
-    // 🔧 14-Jul-2026: NEW — id of the long-pressed content item awaiting delete confirmation.
-    //   The DELETE_CONTENT alert deletes exactly this item (before: image delete removed the whole note).
     @State private var deleteContentId : String? = nil
-    // 🔧 18-Jul-2026: NEW FEATURE (file import) — import options / picker / link prompt state
     @State private var showImportOptions = false
     @State private var showFilePicker = false
     @State private var showLinkPrompt = false
@@ -27,10 +24,10 @@ struct NoteEditorView: View {
     @StateObject private var noteEditorViewModel: NoteEditorViewModel
     private var cameraPermission = CameraPermission()
     private var micPermission = MicPermission()
-    init(note: Note? = nil) {
-        _noteEditorViewModel = StateObject(wrappedValue: NoteEditorViewModel(note: note))
+    init(noteId: String? = nil) {
+        _noteEditorViewModel = StateObject(wrappedValue: NoteEditorViewModel(noteId: noteId))
         // title now lives in the VM state (fixes lost-title bug); only showDelete stays local
-        _showDelete = State(initialValue: note != nil)
+        _showDelete = State(initialValue: noteId != nil)
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
