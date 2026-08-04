@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.app.pustakam.core.common.util.Result
-import com.app.pustakam.core.common.util.onSuccess
 class TagViewModel : BaseViewModel() {
     private val getTagsCase = GetTagCase()
     private val createTagUseCase = CreateTagUseCase()
@@ -60,6 +59,7 @@ init {
     ) {
 when (taskCode){
     BOOKS.GET_BOOKS -> {
+        @Suppress("UNCHECKED_CAST")
         val tags  = result.data.data as? ArrayList<Tag> ?: arrayListOf()
         _tagsUiState.update {
             it.copy(tags = tags)
@@ -68,7 +68,7 @@ when (taskCode){
     BOOKS.ADD_BOOK -> {
         val tag= result.data.data as? Tag ?: return
         _tagsUiState.update {
-            it.copy(tags = ArrayList<Tag>(it.tags+tag), dialog = DialogEnum.NONE)
+            it.copy(tags = ArrayList(it.tags+tag), dialog = DialogEnum.NONE)
         }
     }
 } }
@@ -88,7 +88,7 @@ when (taskCode){
         }
         _tagsUiState.update {
             it.copy(tags = it.tags.apply {
-                val index = indexOfFirst { it.id == tag.id }
+                val index = indexOfFirst { it1 -> it1.id == tag.id }
                 if (index != -1) set(index, tag)
             })
         }
