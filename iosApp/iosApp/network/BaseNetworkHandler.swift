@@ -19,11 +19,7 @@ struct BaseResult<T> {
 }
 
 @available(*, deprecated, message: "Use the bridge adapters — repositories are not exposed to iOS anymore")
-protocol IBaseHandler {
-    var baseRepositary: BaseRepository { get set }
-    var noteRepositary: NoteRepository { get set }
-    var noteContentRepository: NoteContentRepository { get set }
-}
+protocol IBaseHandler {}
 extension IBaseHandler {
     
     func apiHandler<T: KotlinBase>(apiCall: () async throws -> Result) async

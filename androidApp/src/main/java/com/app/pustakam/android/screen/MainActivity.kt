@@ -37,8 +37,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            // 🎨 22-Jul-2026 — Granth spec §6: the persisted Appearance pick drives the whole app.
-            //   SYSTEM defers to isSystemInDarkTheme() so scheduled Dark Mode keeps working.
             val themeMode = rememberGranthThemeMode()
             val isDark = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
@@ -60,11 +58,6 @@ class MainActivity : ComponentActivity() {
         super.onPause()
     }
 }
-
-
-// 🎨 22-Jul-2026 — reads the persisted Appearance pick from the shared DataStore (same
-//   "granth.themeMode" key iOS uses). Emits on every change, so picking a tile in Settings
-//   retints the app immediately and the choice survives restart.
 @Composable
 private fun rememberGranthThemeMode(): ThemeMode {
     val prefs = koinInject<BasePreferences>()

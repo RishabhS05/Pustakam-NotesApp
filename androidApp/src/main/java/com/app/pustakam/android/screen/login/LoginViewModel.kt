@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.login
 
+import com.app.pustakam.core.common.util.displayMessage
 import com.app.pustakam.android.screen.AUTH
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.LoginUIState
@@ -60,11 +61,8 @@ class LoginViewModel : BaseViewModel() {
     override fun onFailure(taskCode: TaskCode, error: Error) {
         super.onFailure(taskCode, error)
         _loginUiState.update{
-            it.copy(error = (error as NetworkError).getError(), isLoading = false)
+            it.copy(error = error.displayMessage(), isLoading = false)
         }
     }
 
-    override suspend fun logoutUserForcefully() {
-        loginUseCase.logoutUser()
-    }
 }

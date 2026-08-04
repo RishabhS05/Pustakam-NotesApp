@@ -179,7 +179,6 @@ class NoteBookReaderViewModel : BaseViewModel() {
         log_d("BookReader", "read failed (suppressed for UX): $error")
     }
 
-    override suspend fun logoutUserForcefully() { readNoteUseCase.logoutUser() }
 
     override fun clearError() { _uiState.update { it.copy(error = null) } }
 }

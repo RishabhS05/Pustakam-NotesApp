@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.navigation
 
+import com.app.pustakam.core.common.config.AuthConfig
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,8 +18,7 @@ fun AppNavGraph(
     val appViewModel: AppViewModel = viewModel()
    val user = appViewModel.authState
        .collectAsStateWithLifecycle(initialValue = UserPreference()).value
-    val route = Route.Home
-//        if (user.isAuthenticated) Route.Home else Route.Authentication
+    val route = if (AuthConfig.BYPASS_AUTH || user.isAuthenticated) Route.Home else Route.Authentication
     NavHost(
         navController = navHostController.navController,
         startDestination = route,

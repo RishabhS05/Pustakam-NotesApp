@@ -45,12 +45,13 @@ abstract class BaseClient  : KoinComponent {
             emit( Result.Error(NetworkError.CONNECTION_FAILED))
             return@flow
         }
-//        log_d("auth"," ${response.headers["authorization"]}")
+        catch (e: Throwable){
+            log_d("Error", "$e")
+            emit( Result.Error(NetworkError.CONNECTION_FAILED))
+            return@flow
+        }
         if(userPrefs.getAuthToken().isNullOrEmpty()) {
-           val token = response.headers["authorization"].toString()
-//            log_d("auth","${response.headers["authorization"]}")
-            userPrefs.setToken(token)
-//            log_d("Token" ," $token")
+            response.headers["authorization"]?.let { userPrefs.setToken(it) }
         }
            when (response.status.value){
                in 200..299 -> emit(Result.Success(response.body<T>()))

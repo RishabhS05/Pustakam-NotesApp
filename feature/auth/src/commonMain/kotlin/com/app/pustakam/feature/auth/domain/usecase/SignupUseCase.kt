@@ -4,24 +4,23 @@ import com.app.pustakam.core.model.models.BaseResponse
 import com.app.pustakam.core.model.models.request.RegisterReq
 import com.app.pustakam.core.model.models.response.User
 import kotlinx.coroutines.flow.Flow
-import com.app.pustakam.core.usecases.BaseUseCase
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
 
-class SignUseCase : BaseUseCase() {
+class SignUseCase : AuthBaseUseCase() {
     suspend operator fun invoke(user: RegisterReq): Flow<Result<BaseResponse<User>, Error>> = getBaseApiCall {
-        repository.registerUser(user = user)
+        authRepository.registerUser(user = user)
     }
 }
 
-class DeleteUserUseCase : BaseUseCase() {
-    suspend operator fun invoke() = repository.deleteUser()
+class DeleteUserUseCase : AuthBaseUseCase() {
+    suspend operator fun invoke() = authRepository.deleteUser()
 }
 
-class UpdateUserUseCase : BaseUseCase() {
-    suspend operator fun invoke(user: User) = repository.updateUser(user)
+class UpdateUserUseCase : AuthBaseUseCase() {
+    suspend operator fun invoke(user: User) = authRepository.updateUser(user)
 }
 
-class ReadUserUseCase : BaseUseCase() {
-    suspend operator fun invoke(userId: User) = repository.getUser("")
+class ReadUserUseCase : AuthBaseUseCase() {
+    suspend operator fun invoke(userId: User) = authRepository.getUser("")
 }

@@ -1,5 +1,6 @@
 package com.app.pustakam.core.database.localdb.preferences
 
+import com.app.pustakam.core.common.config.AuthConfig
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
@@ -25,8 +26,6 @@ import kotlinx.coroutines.flow.stateIn
 data class UserPreference(val token: String = "",
                           val userId: String = "",
                           val isAuthenticated : Boolean = false,
-                          // 🎨 22-Jul-2026 — Granth spec §6 Appearance. Mirrors iOS ThemeManager's
-                          //   persisted "granth.themeMode"; "system" follows the OS appearance.
                           val themeMode : String = "system")
 
 open class BasePreferences(private val dataStore: DataStore<Preferences>) : IAppPreferences {
@@ -35,13 +34,8 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         val USER_ID = stringPreferencesKey("userId")
         val TOKEN = stringPreferencesKey("token")
         val IS_USER_AUTHENTIC = booleanPreferencesKey("isAuthenticated")
-        // 🎨 22-Jul-2026 — persisted Appearance pick (spec §6)
         val THEME_MODE = stringPreferencesKey("granth.themeMode")
-        // 📖 23-Jul-2026 — reader: "page" (curl) or "scroll" (continuous). Shared by both platforms.
         val READING_MODE = stringPreferencesKey("granth.readingMode")
-        // 📖 23-Jul-2026 — per-document resume USED to live here as one preference key per book.
-        //   It now lives on the NoteContent row itself (MediaContent.progressPage/totalPages) so it
-        //   travels with the document and survives sync. Nothing to keep here.
     }
 
     val userPreferencesFlow: Flow<UserPreference> = dataStore.data
@@ -109,13 +103,14 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         }
     }
     private fun mapAppPreferences(preferences: Preferences): UserPreference {
-        val userId = preferences[USER_ID] ?: "UserID!2333q3w3"
+        val storedUserId = preferences[USER_ID] ?: ""
         val token = preferences[TOKEN] ?: ""
-        val isAuthenticated = preferences[IS_USER_AUTHENTIC] ?: false
-        // 🎨 22-Jul-2026 — restore Appearance pick; defaults to "system" like iOS
+        val storedAuth = preferences[IS_USER_AUTHENTIC] ?: false
         val themeMode = preferences[PreferencesKeys.THEME_MODE] ?: "system"
-        return UserPreference(userId = userId, token = token, isAuthenticated = true,
-//        isAuthenticated
+        return UserPreference(
+            userId = if (AuthConfig.BYPASS_AUTH) storedUserId.ifBlank { AuthConfig.LOCAL_USER_ID } else storedUserId,
+            token = token,
+            isAuthenticated = if (AuthConfig.BYPASS_AUTH) true else storedAuth,
             themeMode = themeMode
         )
     }

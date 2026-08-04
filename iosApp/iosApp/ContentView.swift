@@ -18,14 +18,25 @@ struct AppView : View {
     @Environment(Router.self) var router : Router
     @Environment(\.dismiss) var dismiss
     @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
-    var body: some View { 
-     LoginView()
-            .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ ,  isAuthenticated in
-                        if isAuthenticated == true {
-                            dismiss()
-                            router.navigate(to: .Home)
-                        }
-                    }
+
+    private var isSignedIn: Bool {
+        AuthConfig.shared.bypassAuth() || userPreferenceWrapper.userPreference?.isAuthenticated == true
+    }
+
+    var body: some View {
+        Group {
+            if isSignedIn {
+                HomeView()
+            } else {
+                LoginView()
+            }
+        }
+        .onChange(of: userPreferenceWrapper.userPreference?.isAuthenticated){ _ , isAuthenticated in
+            if isAuthenticated == true && !AuthConfig.shared.bypassAuth() {
+                dismiss()
+                router.navigate(to: .Home)
+            }
+        }
     }
 }
 

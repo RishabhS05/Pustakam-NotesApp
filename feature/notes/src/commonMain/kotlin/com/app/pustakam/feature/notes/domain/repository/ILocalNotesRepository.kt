@@ -7,16 +7,19 @@ import com.app.pustakam.core.model.models.response.notes.Notes
 import com.app.pustakam.core.common.util.Error
 import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import kotlinx.coroutines.flow.StateFlow
 
 interface ILocalNotesRepository {
+    val notesState: StateFlow<Notes>
+    val tagState: StateFlow<List<Tag>>
+    val noteSummariesState: StateFlow<List<NoteSummary>>
+
     suspend fun insertUpdateFromDb(note: Note) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteByIdFromDb(id : String?) : Result<BaseResponse<Boolean>, Error>
-    // 🔧 15-Jul-2026 Phase 0.1: limit added — 0 = load everything (legacy), > 0 = one page
     suspend fun getNotesFromDb(page: Int, limit: Int = 0) : Result<BaseResponse<Notes>, Error>
     suspend fun getNoteByIdFromDb(id :String?) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteContentFromDb(id :String? ) : Result<BaseResponse<Boolean>, Error>
-    // 📖 23-Jul-2026: persist reading progress onto a document's media row (mirror of delete flow)
-    // 📖 01-Aug-2026: returns the domain model — the DB row type never leaves the database module
     suspend fun getNoteContentByIdFromDb(id :String?) : Result<BaseResponse<NoteContentModel>, Error>
     suspend fun updateReadingProgressFromDb(contentId : String, progressPage : Int, totalPages : Int) : Result<BaseResponse<Boolean>, Error>
     suspend fun createTagOnDB(tag : Tag): Result<BaseResponse<Tag>, Error>

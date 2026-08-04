@@ -1,8 +1,11 @@
 package com.app.pustakam.feature.notes.di
 
-import com.app.pustakam.core.data.base.BaseRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteRepository
+import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteRepository
+import com.app.pustakam.feature.notes.domain.repository.IRemoteNoteRepository
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.CreateTagUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
@@ -25,9 +28,12 @@ import org.koin.dsl.module
 // 🔧 30-Jul-2026 02:10 — lifted VERBATIM out of :shared/koin/Koin.kt (was `repositoriesModules` + the notes half of `useCases`)
 fun notesModule(): Module = module {
     single { NoteRepository() }
-    // 🔧 30-Jul-2026 02:10 — this binding is what makes BaseUseCase.setRepository()'s get<BaseRepository>() return the SAME NoteRepository singleton as before
-    single<BaseRepository> { get<NoteRepository>() }
-    single<NoteContentRepository> { NoteContentRepository() }
+    single<INoteRepository> { get<NoteRepository>() }
+    single<ILocalNotesRepository> { get<NoteRepository>() }
+    single<IRemoteNoteRepository> { get<NoteRepository>() }
+
+    single { NoteContentRepository() }
+    single<INoteContentRepository> { get<NoteContentRepository>() }
 
     factory<CreateORUpdateNoteUseCase> { CreateORUpdateNoteUseCase() }
     factory<DeleteNoteUseCase> { DeleteNoteUseCase() }

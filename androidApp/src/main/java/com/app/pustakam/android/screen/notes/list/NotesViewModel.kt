@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.notes.list
 
+import com.app.pustakam.core.common.util.displayMessage
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.NOTES_CODES
@@ -72,13 +73,10 @@ class NotesViewModel : BaseViewModel() {
     override fun onFailure(taskCode: TaskCode, error: Error) {
         super.onFailure(taskCode, error)
         _notesUiState.update {
-            it.copy(error = (error as NetworkError).getError())
+            it.copy(error = error.displayMessage())
         }
     }
 
-    override suspend fun logoutUserForcefully() {
-        getNoteSummariesUseCase.logoutUser()
-    }
 
 
     fun callGetNotes() {

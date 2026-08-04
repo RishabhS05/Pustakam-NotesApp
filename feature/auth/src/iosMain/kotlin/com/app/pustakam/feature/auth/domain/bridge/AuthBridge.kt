@@ -5,6 +5,7 @@ import com.app.pustakam.core.model.models.request.Login
 import com.app.pustakam.core.model.models.request.RegisterReq
 import com.app.pustakam.core.model.models.response.User
 import com.app.pustakam.feature.auth.domain.usecase.LoginUseCase
+import com.app.pustakam.feature.auth.domain.usecase.LogoutUseCase
 import com.app.pustakam.feature.auth.domain.usecase.SignUseCase
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +39,7 @@ class AuthBridge : KoinComponent {
 
     private val loginUseCase: LoginUseCase by inject()
     private val signUseCase: SignUseCase by inject()
+    private val logoutUseCase: LogoutUseCase by inject()
 
     /** Login with email/phone + password. Repo stores userId + auth flag on success. */
     fun login(
@@ -58,7 +60,7 @@ class AuthBridge : KoinComponent {
     /** Clears stored credentials (fixed userLogout underneath). */
     fun logout(onDone: () -> Unit) {
         writeScope.launch {
-            loginUseCase.logoutUser()
+            logoutUseCase()
             onDone()
         }
     }

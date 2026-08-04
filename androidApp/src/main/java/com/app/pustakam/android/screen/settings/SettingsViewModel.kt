@@ -96,7 +96,6 @@ class SettingsViewModel : BaseViewModel() {
 
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {}
 
-    override suspend fun logoutUserForcefully() {}
 
     override fun clearError() {}
 }

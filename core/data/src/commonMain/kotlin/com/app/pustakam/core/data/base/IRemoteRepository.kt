@@ -16,5 +16,4 @@ interface IRemoteRepository {
     suspend fun deleteUser() : Result<BaseResponse<User>, Error>
     suspend fun userLogout()
     suspend fun profileImage() : Result<BaseResponse<User>,Error>
-
 }

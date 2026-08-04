@@ -22,24 +22,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
-import com.app.pustakam.feature.notes.domain.repository.IRemoteNoteRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteRepository
 import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
-class NoteRepository : BaseRepository(),
-    IRemoteNoteRepository, ILocalNotesRepository {
+class NoteRepository : BaseRepository(), INoteRepository {
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(emptyList())
     // 🔧 F3 (P5): asStateFlow — same public type (StateFlow), but no extra re-collection
     //            layer and no never-cancelled CoroutineScope(io) leaking per instance
-    val notesState: StateFlow<Notes> = _notes.asStateFlow()
-    val tagState: StateFlow<List<Tag>> = _tags.asStateFlow()
+    override val notesState: StateFlow<Notes> = _notes.asStateFlow()
+    override val tagState: StateFlow<List<Tag>> = _tags.asStateFlow()
     // 🔧 15-Jul-2026 Summary query: LIST-SCREEN source of truth — light summaries, never contents.
     //   Kept in sync by getNoteSummaries (paged fetch) and by insertOrUpdateNote/deleteNote below.
     private val _noteSummaries = MutableStateFlow<List<NoteSummary>>(emptyList())
-    val noteSummariesState: StateFlow<List<NoteSummary>> = _noteSummaries.asStateFlow()
+    override val noteSummariesState: StateFlow<List<NoteSummary>> = _noteSummaries.asStateFlow()
     /** create an blank note
      */
     private fun createNewEmptyNote(tagId  : String = ""): Note {
@@ -50,7 +48,7 @@ class NoteRepository : BaseRepository(),
         //   (never hardcoded); syncStatus starts PENDING so the sync queue picks it up.
         return Note(
             id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId,
-            ownerId = prefs.userId,
+            ownerId = session.userId,
             syncStatus = "PENDING",
         ).apply { withNextVersion() }
     }
@@ -84,14 +82,14 @@ class NoteRepository : BaseRepository(),
     /** get all notes from server api call */
     override suspend fun getNotesForUserApi(page: Int): Result<BaseResponse<Notes>, Error> {
 
-        return apiClient.getNotes(prefs.userId).onSuccess {
+        return apiClient.getNotes(session.userId).onSuccess {
             it.data?.let { it1 -> notesDao.insertNotes(it1)
             }
         }
     }
     /** update or insert note to server apis call */
     override suspend fun upsertNewNoteApi(note: Note): Result<BaseResponse<Note>, Error> {
-        return  apiClient.addNewNote(prefs.userId, note).onSuccess {
+        return  apiClient.addNewNote(session.userId, note).onSuccess {
             it.data?.let { it1 ->
                 log_d("NoteRepository", "addNewNote: $it1")
                 insertUpdateFromDb(it1)
@@ -100,7 +98,7 @@ class NoteRepository : BaseRepository(),
     }
     /** update note apis call to server*/
     override suspend fun updateNoteApi(note: Note): Result<BaseResponse<Note>, Error> =
-        apiClient.updateNote(prefs.userId, note).onSuccess {
+        apiClient.updateNote(session.userId, note).onSuccess {
             it.data?.let {
                     it1 ->
                 log_d("NoteRepository", "addNewNote: $it1")
@@ -110,12 +108,12 @@ class NoteRepository : BaseRepository(),
 
     /** delete note apis call to server */
     override suspend fun deleteNoteApi(noteId: String): Result<BaseResponse<DeleteDataModel>, Error> =
-        apiClient.deleteNote(prefs.userId, noteId).onSuccess {
+        apiClient.deleteNote(session.userId, noteId).onSuccess {
             deleteNoteByIdFromDb(noteId)
         }
     /**  get a note apis call from server */
     override suspend fun getNoteApi(noteId: String): Result<BaseResponse<Note>, Error>
-            = apiClient.getNote(prefs.userId, noteId)
+            = apiClient.getNote(session.userId, noteId)
 
 
     /**-----------------------LOCAL DATABASE -------------*/
@@ -248,7 +246,7 @@ class NoteRepository : BaseRepository(),
     // step 4 again update the local db with sync data.
      */
     // 🔧 15-Jul-2026 Phase 0.4: dirtyContentIds flows through to the DAO (null = full write)
-    suspend fun insertOrUpdateNote(note : Note, dirtyContentIds: Set<String>? = null) : Result<BaseResponse<Note>, Error> {
+    override suspend fun insertOrUpdateNote(note : Note, dirtyContentIds: Set<String>?) : Result<BaseResponse<Note>, Error> {
         return insertUpdateFromDb(note, dirtyContentIds).onSuccess {
             log_d("Insert Update","added ")
             _notes.update { current->
@@ -273,7 +271,7 @@ class NoteRepository : BaseRepository(),
      * - delete from local db
      * - call delete api from server
      * */
-    suspend fun deleteNote(id : String): Result<BaseResponse<Boolean>, Error> {
+    override suspend fun deleteNote(id : String): Result<BaseResponse<Boolean>, Error> {
         return deleteNoteByIdFromDb(id).onSuccess {
             //deleteNoteApi(id)
             _notes.update { current ->
@@ -288,7 +286,7 @@ class NoteRepository : BaseRepository(),
      * - read from local db
      * - call read api from server
      * */
-    suspend fun getANote(id : String?): Result<BaseResponse<Note>, Error> {
+    override suspend fun getANote(id : String?): Result<BaseResponse<Note>, Error> {
 
         if (id.isNullOrEmpty()){
             return Result.Success(
@@ -306,7 +304,7 @@ class NoteRepository : BaseRepository(),
      * */
     // 🔧 15-Jul-2026 Summary query: paged LIST-SCREEN fetch — summaries only, contents never load.
     //   page 1 replaces the flow, later pages append (deduped by id), mirroring insertNotes.
-    suspend fun getNoteSummaries(page: Int, limit: Int): Result<BaseResponse<List<NoteSummary>>, Error> {
+    override suspend fun getNoteSummaries(page: Int, limit: Int): Result<BaseResponse<List<NoteSummary>>, Error> {
         val summaries = notesDao.selectNoteSummariesPage(limit = limit, page = page)
         _noteSummaries.update { current ->
             if (page > 1) {
@@ -318,14 +316,14 @@ class NoteRepository : BaseRepository(),
     }
 
     // 🔧 15-Jul-2026 Phase 2.2: full-text search (FTS5 content matches + title matches) — see DAO.
-    suspend fun searchNotes(query: String): Result<BaseResponse<List<NoteSummary>>, Error> {
+    override suspend fun searchNotes(query: String): Result<BaseResponse<List<NoteSummary>>, Error> {
         val results = notesDao.searchNotes(query)
         return Result.Success(BaseResponse(data = results, isSuccessful = true, isFromDb = true))
     }
 
     // 🔧 15-Jul-2026 Phase 0.1: limit = 0 (default) keeps the legacy load-everything behavior
     //   (iOS bridge path); limit > 0 loads one page (Android list opts in with NOTES_PAGE_SIZE).
-    suspend fun getAllNotes(page: Int = 0, limit: Int = 0): Result<BaseResponse<Notes>, Error> {
+    override suspend fun getAllNotes(page: Int, limit: Int): Result<BaseResponse<Notes>, Error> {
         return getNotesFromDb(page, limit).onSuccess { notes->
             if(notes.data != null && notes.data!!.notes.count() > 0){
               insertNotes(notes = notes.data!!)

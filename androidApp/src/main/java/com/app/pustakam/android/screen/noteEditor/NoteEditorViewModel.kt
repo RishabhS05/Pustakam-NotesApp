@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.noteEditor
 
+import com.app.pustakam.core.common.util.displayMessage
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
@@ -133,20 +134,17 @@ class NoteEditorViewModel : BaseViewModel() {
             NOTES_CODES.READ -> {
                 _noteUiState.update {
                     it.copy(
-                        isLoading = false, error = (error as NetworkError).getError(), noteStatus = NoteStatus.onSaveCompletedExit
+                        isLoading = false, error = error.displayMessage(), noteStatus = NoteStatus.onSaveCompletedExit
                     )
                 }
             }
 
             else -> _noteUiState.update {
-                it.copy(isLoading = false, error = (error as NetworkError).getError(), noteStatus = null)
+                it.copy(isLoading = false, error = error.displayMessage(), noteStatus = null)
             }
         }
     }
 
-    override suspend fun logoutUserForcefully() {
-        createUpdateNoteUseCase.logoutUser()
-    }
 
     override fun clearError() {
         _noteUiState.update {

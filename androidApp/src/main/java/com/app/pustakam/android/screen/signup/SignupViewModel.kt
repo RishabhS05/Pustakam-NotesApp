@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.signup
 
+import com.app.pustakam.core.common.util.displayMessage
 import com.app.pustakam.android.screen.AUTH
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.android.screen.PROFILE
@@ -72,12 +73,11 @@ class RegisterViewModel : BaseViewModel() {
         super.onFailure(taskCode, error)
         _signupUiState.update {
             it.copy(
-                error = (error as NetworkError).getError(), isLoading = false
+                error = error.displayMessage(), isLoading = false
             )
         }
     }
 
-    override suspend fun logoutUserForcefully() {}
 
     override fun clearError() {
         _signupUiState.update {

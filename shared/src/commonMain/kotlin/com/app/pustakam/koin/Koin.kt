@@ -1,5 +1,6 @@
 package com.app.pustakam.koin
 
+import com.app.pustakam.core.data.di.coreDataModule
 import com.app.pustakam.core.database.di.databaseModule
 import com.app.pustakam.core.filesys.di.getFileSystemModule
 import com.app.pustakam.core.database.di.preferencesModule
@@ -22,6 +23,7 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
     modules(
         preferencesModule(),          // was sharedPrefModule
         getDataSourceFromPlatForm(),
+        coreDataModule(),
         notesModule(),                // was repositoriesModules + the notes half of useCases
         authModule(),                 // was the auth half of useCases
         networkModule(),

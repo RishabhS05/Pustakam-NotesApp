@@ -93,7 +93,6 @@ when (taskCode){
             })
         }
     }
-    override suspend fun logoutUserForcefully() {}
 
     override fun clearError() {
     }

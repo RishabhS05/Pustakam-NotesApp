@@ -135,7 +135,6 @@ class BookReaderViewModel : BaseViewModel() {
         super.onCleared()
     }
 
-    override suspend fun logoutUserForcefully() = readDocUseCase.logoutUser()
 
     override fun clearError() {
         _bookUiState.update { it.copy(error = null) }
