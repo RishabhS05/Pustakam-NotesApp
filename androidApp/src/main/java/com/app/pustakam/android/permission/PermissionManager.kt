@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,27 +32,36 @@ import com.app.pustakam.android.extension.goToAppSetting
 @Composable
 fun AskSinglePermission(requiredPermission: NeededPermission, onGrantPermission: () -> Unit, onDismiss: () -> Unit) {
     val activity = LocalContext.current as Activity
-    if (!requiredPermission.isApplicable) {
-        onGrantPermission()
-        return
-    }
-    var permissionDialog by remember { mutableStateOf<NeededPermission?>(requiredPermission) }
-    val permissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission(), onResult = { isGranted ->
-        permissionDialog = if (!isGranted) requiredPermission else null
-    })
-    PermissionAlertDialog(neededPermission = requiredPermission, onDismiss = {
-        permissionDialog = null
-        onDismiss()
-    }, onOkClick = {
-        permissionDialog = null
-        permissionLauncher.launch(requiredPermission.permission)
-        onDismiss()
-    }, onGoToAppSettingsClick = {
-        permissionDialog = null
-        onGrantPermission()
-        activity.goToAppSetting()
-    }, isPermissionDeclined = !activity.shouldShowRequestPermissionRationale(requiredPermission.permission)
+    var state by remember { mutableStateOf(activity.permissionState(requiredPermission)) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = {
+            markPermissionAsked(activity, requiredPermission)
+            state = activity.permissionState(requiredPermission)
+        }
     )
+
+    LaunchedEffect(state) {
+        when (state) {
+            PermissionState.NOT_APPLICABLE, PermissionState.GRANTED -> onGrantPermission()
+            PermissionState.NOT_ASKED -> permissionLauncher.launch(requiredPermission.permission)
+            else -> Unit
+        }
+    }
+
+    if (state == PermissionState.DENIED || state == PermissionState.PERMANENTLY_DENIED) {
+        PermissionAlertDialog(
+            neededPermission = requiredPermission,
+            isPermissionDeclined = state == PermissionState.PERMANENTLY_DENIED,
+            onDismiss = onDismiss,
+            onOkClick = { permissionLauncher.launch(requiredPermission.permission) },
+            onGoToAppSettingsClick = {
+                activity.goToAppSetting()
+                onDismiss()
+            },
+        )
+    }
 }
 
 @Composable
@@ -63,50 +71,38 @@ fun AskPermissions(
     onDismiss: () -> Unit,
 ) {
     val activity = LocalContext.current as Activity
-    val applicablePermissions = permissionsRequired.applicable()
-    if (applicablePermissions.isEmpty()) {
-        onGrantPermission()
-        return
-    }
-    val permissionDialog = remember { mutableStateListOf<NeededPermission>().apply { addAll(applicablePermissions) } }
-    val permissionsString = applicablePermissions.map { it.permission }.toTypedArray()
-   /** launch multiple permission */
-    val multiplePermissionLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestMultiplePermissions(),
+    val applicable = permissionsRequired.applicable()
+    var pending by remember { mutableStateOf(applicable.filterNot { hasPermission(activity, it.permission) }) }
+
+    val multiplePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = {
-        // some time it does not called we need to trigger manually
-    })
-    // launch the permissions dialog
-    LaunchedEffect(key1 = Unit) {
-        multiplePermissionLauncher.launch(permissionsString)
-    }
-    /** check all the permissions granted or not
-     * -if granted -> call hardware launch
-     * -if not -> call show premission dialog
-     * */
-    if (hasPermissions(context = activity, permissions = applicablePermissions)) {
-        onGrantPermission()
-        return
-    } else {
-        permissionDialog.removeAll { hasPermission(activity, it.permission) }
+            markPermissionsAsked(activity, applicable)
+            pending = applicable.filterNot { hasPermission(activity, it.permission) }
+            if (pending.isEmpty()) onGrantPermission()
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        val neverAsked = pending.filterNot { wasPermissionAsked(activity, it) }
+        if (pending.isEmpty()) onGrantPermission()
+        else if (neverAsked.isNotEmpty()) {
+            multiplePermissionLauncher.launch(neverAsked.map { it.permission }.toTypedArray())
+        }
     }
 
-    // if all the dialogs displayed it will reset the trigger
-    if (permissionDialog.isEmpty()) {
-        onDismiss()
-    }
-    // Display dialogs
-    permissionDialog.toList().forEach { permission ->
-        PermissionAlertDialog(neededPermission = permission, onDismiss = {
-            permissionDialog.remove(permission)
-        }, onOkClick = {
-            permissionDialog.remove(permission)
-            multiplePermissionLauncher.launch(arrayOf(permission.permission))
-        }, onGoToAppSettingsClick = {
-            permissionDialog.remove(permission)
+    val blocking = pending.firstOrNull { wasPermissionAsked(activity, it) } ?: return
+
+    PermissionAlertDialog(
+        neededPermission = blocking,
+        isPermissionDeclined = activity.isPermanentlyDenied(blocking),
+        onDismiss = onDismiss,
+        onOkClick = { multiplePermissionLauncher.launch(arrayOf(blocking.permission)) },
+        onGoToAppSettingsClick = {
             activity.goToAppSetting()
-        }, isPermissionDeclined = !activity.shouldShowRequestPermissionRationale(permission.permission)
-        )
-    }
+            onDismiss()
+        },
+    )
 }
 
 /**
