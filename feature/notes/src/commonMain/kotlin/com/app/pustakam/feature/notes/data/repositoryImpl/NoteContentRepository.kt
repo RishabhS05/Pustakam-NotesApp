@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.update
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import org.koin.core.component.KoinComponent
 
-class NoteContentRepository : KoinComponent, INoteContentRepository {
+internal class NoteContentRepository : KoinComponent, INoteContentRepository {
     private val _selectedNoteMediaContent =
         MutableStateFlow<List<NoteContentModel.MediaContent>>(
         value = mutableListOf()

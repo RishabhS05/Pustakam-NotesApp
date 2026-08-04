@@ -11,7 +11,7 @@ import com.app.pustakam.core.model.models.request.RegisterReq
 import com.app.pustakam.core.model.models.response.User
 import kotlinx.coroutines.flow.StateFlow
 
-class AuthRepository : BaseRepository(), IAuthRepository {
+internal class AuthRepository : BaseRepository(), IAuthRepository {
 
     override val authState: StateFlow<UserPreference> = session.state
 

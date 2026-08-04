@@ -28,13 +28,11 @@ import org.koin.dsl.module
 
 // 🔧 30-Jul-2026 02:10 — lifted VERBATIM out of :shared/koin/Koin.kt (was `repositoriesModules` + the notes half of `useCases`)
 fun notesModule(): Module = module {
-    single { NoteRepository() }
-    single<INoteRepository> { get<NoteRepository>() }
-    single<ILocalNotesRepository> { get<NoteRepository>() }
-    single<IRemoteNoteRepository> { get<NoteRepository>() }
+    single<INoteRepository> { NoteRepository() }
+    single<ILocalNotesRepository> { get<INoteRepository>() }
+    single<IRemoteNoteRepository> { get<INoteRepository>() }
 
-    single { NoteContentRepository() }
-    single<INoteContentRepository> { get<NoteContentRepository>() }
+    single<INoteContentRepository> { NoteContentRepository() }
 
     factory<CreateORUpdateNoteUseCase> { CreateORUpdateNoteUseCase() }
     factory<DeleteNoteUseCase> { DeleteNoteUseCase() }

@@ -14,8 +14,7 @@ import org.koin.dsl.module
 
 // 🔧 30-Jul-2026 02:10 — lifted VERBATIM out of :shared/koin/Koin.kt (the auth half of `useCases`)
 fun authModule(): Module = module {
-    single { AuthRepository() }
-    single<IAuthRepository> { get<AuthRepository>() }
+    single<IAuthRepository> { AuthRepository() }
 
     factory<LogoutUseCase> { LogoutUseCase() }
     factory<SignUseCase> { SignUseCase() }

@@ -27,7 +27,7 @@ import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
-class NoteRepository : BaseRepository(), INoteRepository {
+internal class NoteRepository : BaseRepository(), INoteRepository {
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(emptyList())
     // 🔧 F3 (P5): asStateFlow — same public type (StateFlow), but no extra re-collection
