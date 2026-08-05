@@ -11,28 +11,23 @@ import com.app.pustakam.core.database.NotesDatabase
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.common.util.log_d
-// 🔧 F4: coroutine imports removed — DAO writes are synchronous inside transactions now
 import org.koin.core.component.KoinComponent
 import com.app.pustakam.core.model.models.RichTextMetadata
+import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import org.koin.core.component.get
 
 class NotesDao : KoinComponent {
 
     private val database =  get<NotesDatabase>()
-
-    // 🔧 15-Jul-2026 CRASH FIX: raw driver access for the OPTIONAL runtime FTS5 index (see
-    //   ensureFtsIndex below) — fts statements can't live in the managed schema anymore.
     private val driver = get<SqlDriver>()
 
     private val queries = database.notesDatabaseQueries
 
     fun createTagOnDB(tag : Tag) : Tag?   {
        println("Create Tab On DB called with tag: $tag") // Debug log
-        // The transaction block is synchronous: it completes before proceeding.
         database.transaction {
             queries.createTag(id= tag.id, label = tag.label, color= tag.color)
         }
-        // This will only execute after the transaction above is finished.
         return getTag(tag.id)
     }
       fun getTag(id : String) : Tag? =  queries.getTag(id).executeAsOneOrNull()?.let {
@@ -53,8 +48,6 @@ class NotesDao : KoinComponent {
     fun getTagsFromDB() : List<Tag> = queries.getTags().executeAsList().map{
           Tag(id = it.id, label = it.label, color= it.color)
     }
-   // 🔧 15-Jul-2026 Summary query: one page of LIST-SCREEN summaries — header + snippet + counts +
-   //   thumbnail, computed in SQL (indexed subqueries). Contents are never loaded for the list.
    fun selectNoteSummariesPage(limit: Int, page: Int): List<com.app.pustakam.core.model.models.response.notes.NoteSummary> {
        val offset = ((page - 1) * limit).coerceAtLeast(0)
        return queries.selectNoteSummariesPage(limit.toLong(), offset.toLong()).executeAsList().map { row ->
@@ -70,18 +63,10 @@ class NotesDao : KoinComponent {
                videoCount = (row.videoCount ?: 0L).toInt(),
                audioCount = (row.audioCount ?: 0L).toInt(),
                docCount = (row.docCount ?: 0L).toInt(),
-               // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: rebase onto the current container (UUID changes on iOS updates)
                thumbnailPath = com.app.pustakam.core.common.util.resolveLocalFilePath(row.thumbnailPath),
            )
        }
    }
-
-   // 🔧 15-Jul-2026 CRASH FIX ("no such module: fts5") — FTS5 is OPTIONAL now. Some devices'
-   //   framework SQLite lacks the fts5 module, so nothing in the managed schema/migrations may
-   //   reference it. Instead, the index is created here AT RUNTIME, once, inside try/catch, and
-   //   ONLY when search is first used — app startup can never touch this path. Devices without
-   //   fts5 permanently fall back to the LIKE query (correct, just slower on huge notes).
-   //   null = not yet probed; true/false = probe result for this process.
    private var ftsAvailable: Boolean? = null
 
    private fun ensureFtsIndex(): Boolean {
@@ -100,7 +85,6 @@ class NotesDao : KoinComponent {
                "CREATE TRIGGER IF NOT EXISTS note_content_fts_update AFTER UPDATE ON NoteContent BEGIN " +
                        "INSERT INTO NoteContentFts(NoteContentFts, rowid, text) VALUES ('delete', old.rowid, old.text); " +
                        "INSERT INTO NoteContentFts(rowid, text) VALUES (new.rowid, new.text); END", 0).value
-           // fresh index → build it from the existing content once ('rebuild' is idempotent)
            if (!existedBefore) {
                driver.execute(null, "INSERT INTO NoteContentFts(NoteContentFts) VALUES('rebuild')", 0).value
            }
@@ -116,10 +100,6 @@ class NotesDao : KoinComponent {
    private fun ftsTableExists(): Boolean = driver.executeQuery(null,
        "SELECT name FROM sqlite_master WHERE type='table' AND name='NoteContentFts'",
        { cursor -> QueryResult.Value(cursor.next().value) }, 0).value
-
-   // 🔧 15-Jul-2026 CRASH FIX: the MATCH query runs as a RAW statement (it can't live in the .sq
-   //   file anymore — SQLDelight would require the fts table in the managed schema). Only reached
-   //   when ensureFtsIndex() returned true.
    private fun searchContentViaFts(match: String): List<com.app.pustakam.core.model.models.response.notes.NoteSummary> {
        val results = mutableListOf<com.app.pustakam.core.model.models.response.notes.NoteSummary>()
        driver.executeQuery(null,
@@ -147,44 +127,34 @@ class NotesDao : KoinComponent {
        return results
    }
 
-   // 🔧 15-Jul-2026 Phase 2.2: full-text search — content matches (FTS5 where the device supports
-   //   it, LIKE fallback everywhere else — never crashes either way) merged with title matches.
-   //   Deduped by note id (content match wins: it carries the snippet), newest first. Raw input is
-   //   wrapped as a quoted prefix phrase so FTS5 operators in user input can't break MATCH syntax.
-   fun searchNotes(rawQuery: String): List<com.app.pustakam.core.model.models.response.notes.NoteSummary> {
+   fun searchNotes(rawQuery: String): List<NoteSummary> {
        val trimmed = rawQuery.trim()
        if (trimmed.isEmpty()) return emptyList()
-       val merged = LinkedHashMap<String, com.app.pustakam.core.model.models.response.notes.NoteSummary>()
+       val merged = LinkedHashMap<String, NoteSummary>()
        val contentMatches = try {
            if (ensureFtsIndex()) {
                searchContentViaFts("\"" + trimmed.replace("\"", "") + "\"*")
            } else {
                queries.searchContentTextLike(trimmed).executeAsList().map { row ->
-                   com.app.pustakam.core.model.models.response.notes.NoteSummary(
+                   NoteSummary(
                        id = row.id, title = row.title, categoryId = row.categoryId,
                        createdAt = row.createdAt, updatedAt = row.updatedAt, snippet = row.snippet,
                    )
                }
            }
        } catch (t: Throwable) {
-           // belt-and-braces: a search must never crash the app — worst case, no content matches
            log_d("NotesDao", "content search failed: ${t.message}")
            emptyList()
        }
        contentMatches.forEach { merged[it.id] = it }
        queries.searchTitles(trimmed).executeAsList().forEach { row ->
-           if (!merged.containsKey(row.id)) merged[row.id] = com.app.pustakam.core.model.models.response.notes.NoteSummary(
+           if (!merged.containsKey(row.id)) merged[row.id] = NoteSummary(
                id = row.id, title = row.title, categoryId = row.categoryId,
                createdAt = row.createdAt, updatedAt = row.updatedAt,
            )
        }
        return merged.values.sortedByDescending { it.updatedAt ?: "" }
    }
-
-   // 🔧 15-Jul-2026 Phase 0.1: paging is OPT-IN — `limit > 0 && page > 0` fetches ONE page of note
-   //   ids (indexed, keyset-cheap) and maps each via the existing selectNoteById mapper. Legacy
-   //   callers (limit = 0, e.g. the iOS bridge) keep the original load-everything behavior, so
-   //   nothing truncates for platforms that don't page yet.
    fun selectAllNotesFromDb(limit : Int = 0, page : Int = 0): Notes {
       if (limit > 0 && page > 0) {
           val pagedOffset = ((page - 1) * limit).coerceAtLeast(0)
@@ -205,7 +175,6 @@ class NotesDao : KoinComponent {
                   title = note.title,
                   createdAt = note.noteCreatedAt,
                   updatedAt = note.noteUpdatedAt,
-                  // 🔧 21-Jul-2026 databasev2.md §2.4: hydrate offline-first sync fields from the row
                   ownerId = note.ownerId,
                   version = note.version,
                   syncStatus = note.syncStatus,
@@ -220,16 +189,12 @@ class NotesDao : KoinComponent {
                                       noteId = row.noteId,
                                       text =  row.text!!,
                                       position = row.position!!,
-                                      // 🔧 timestamps stay String (C3 reverted per review)
                                       createdAt = row.contentCreatedAt,
                                       updatedAt = row.contentUpdatedAt,
                                       metadata =  row.metaData
                                   )
-                              // 🔧 C1: PDF + GIF now round-trip like every other media format
-                              // 🔧 18-Jul-2026: file-import — TXT/MD/EPUB/OTHER round-trip as media rows too
                               ContentType.IMAGE, ContentType.DOCX,  ContentType.VIDEO, ContentType.AUDIO, ContentType.PDF, ContentType.GIF,
                               ContentType.TXT, ContentType.MD, ContentType.EPUB, ContentType.OTHER  ->
-                                  // 🔧 S1: contentTitle = media's OWN column (row.title is the NOTE's title from the join)
                                   NoteContentModel.MediaContent(title = row.contentTitle?:"${row.type}-${row.position}",
                                   id = row.contentId,
                                   noteId = row.noteId,
@@ -239,13 +204,11 @@ class NotesDao : KoinComponent {
                                   updatedAt = row.contentUpdatedAt,
                                   localPath = row.localPath, duration = row.duration?:0,
                                   type =  type,
-                                  // 🔧 C1: media metadata columns
                                   mimeType = row.mimeType ?: "",
                                   sizeBytes = row.sizeBytes ?: 0,
                                   width = row.width?.toInt() ?: 0,
                                   height = row.height?.toInt() ?: 0,
                                   thumbnailPath = row.thumbnailPath,
-                                  // 📖 23-Jul-2026: reading progress travels with the media row
                                   totalPages = (row.totalPages ?: 0L).toInt(),
                                   progressPage = (row.progressPage ?: 0L).toInt(),
                               )
@@ -283,9 +246,6 @@ class NotesDao : KoinComponent {
     }
 
     fun insertNotes(notes: Notes) {
-        // 🔧 F4: synchronous writes inside the transaction — the old fire-and-forget
-        //       CoroutineScope(...).launch escaped the transaction entirely:
-        //       no atomicity, races, and the transaction could commit before any write ran
         database.transaction {
             notes.notes.forEach { note ->
                 insertOrUpdateNoteFromDb(note)
@@ -301,25 +261,20 @@ class NotesDao : KoinComponent {
         var localPath: String? = null
         var long: Double? = null
         var lat: Double? = null
-        // 🔧 metadata was `val ... = null` — NEVER assigned, rich-text metadata was silently dropped
         var metadata : RichTextMetadata? = null
-        // 🔧 C1: media metadata + per-item title now persisted (S1)
         var title: String? = null
         var mimeType: String? = null
         var sizeBytes: Long? = null
         var width: Long? = null
         var height: Long? = null
         var thumbnailPath: String? = null
-        // 📖 23-Jul-2026: reading progress persisted with the media row
         var totalPages: Long = 0
         var progressPage: Long = 0
         when (noteContent) {
-            // 🔧 sealed-type when (was switching on ContentType with fragile as? casts per branch)
             is NoteContentModel.TextContent -> {
                 text = noteContent.text
                 metadata = noteContent.metadata
             }
-            // 🔧 C1: ONE media branch for ALL formats (image/video/audio/docx/pdf/gif/…)
             is NoteContentModel.MediaContent -> {
                 url = noteContent.url
                 localPath = noteContent.localPath
@@ -378,11 +333,8 @@ class NotesDao : KoinComponent {
     }
     fun  deleteNoteContentById(id : String) = queries.deleteNoteContentById(id)
 
-    // 📖 01-Aug-2026: returns the DOMAIN model, not the raw row — the document reader consumes this
     fun getNoteContentById(id: String): NoteContentModel? =
         queries.selectNoteContentById(id).executeAsOneOrNull()?.toNoteContentModel()
-
-    // 📖 01-Aug-2026: single row -> domain mapper (same field mapping the note query already uses)
     private fun NoteContent.toNoteContentModel(): NoteContentModel? {
         if (type.isEmpty()) return null
         return when (val contentType = ContentType.valueOf(type)) {
@@ -429,14 +381,11 @@ class NotesDao : KoinComponent {
             updatedAt = note.updatedAt,
             createdAt = note.createdAt,
             categoryId = note.categoryId,
-            // 🔧 21-Jul-2026 databasev2.md §2.4: persist offline-first sync fields
             ownerId = note.ownerId,
             version = note.version,
             syncStatus = note.syncStatus,
             deleted = if (note.deleted) 1L else 0L,
         )
-           // 🔧 F4: contents written synchronously INSIDE the transaction — the function
-           //       previously returned before contents were saved (fire-and-forget launch)
            database.transaction {
                val contentsToWrite =
                    if (dirtyContentIds == null) note.contents
@@ -457,7 +406,6 @@ class NotesDao : KoinComponent {
                 title = note.title,
                 createdAt = note.noteCreatedAt,
                 updatedAt = note.noteUpdatedAt,
-                // 🔧 21-Jul-2026 databasev2.md §2.4: hydrate offline-first sync fields from the row
                 ownerId = note.ownerId,
                 version = note.version,
                 syncStatus = note.syncStatus,
@@ -474,13 +422,9 @@ class NotesDao : KoinComponent {
                                     position = row.position!!,
                                     createdAt = row.contentCreatedAt,
                                     updatedAt = row.contentUpdatedAt,
-                                    // 🔧 metadata was dropped by this mapper (drifted from the list mapper)
                                     metadata = row.metaData,
                                 )
 
-                            // 🔧 C1: PDF + GIF included; title from contentTitle (S1) —
-                            //       also fixes the drifted "${position}-${type}" fallback (list mapper used type-position)
-                            // 🔧 18-Jul-2026: file-import — TXT/MD/EPUB/OTHER round-trip as media rows too
                             ContentType.IMAGE,ContentType.DOCX,
                             ContentType.VIDEO , ContentType.AUDIO, ContentType.PDF, ContentType.GIF,
                             ContentType.TXT, ContentType.MD, ContentType.EPUB, ContentType.OTHER -> NoteContentModel.MediaContent(
@@ -499,7 +443,6 @@ class NotesDao : KoinComponent {
                                 width = row.width?.toInt() ?: 0,
                                 height = row.height?.toInt() ?: 0,
                                 thumbnailPath = row.thumbnailPath,
-                                // 📖 23-Jul-2026: reading progress travels with the media row
                                 totalPages = (row.totalPages ?: 0L).toInt(),
                                 progressPage = (row.progressPage ?: 0L).toInt(),
                             )
@@ -511,7 +454,6 @@ class NotesDao : KoinComponent {
                                 position = row.position!!,
                                 createdAt = row.contentCreatedAt,
                                 updatedAt = row.contentUpdatedAt,
-
                             )
 
                             ContentType.LOCATION -> NoteContentModel.Location(

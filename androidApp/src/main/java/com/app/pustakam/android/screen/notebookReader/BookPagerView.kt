@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.app.pustakam.android.widgets.zoom.zoomable
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
@@ -85,6 +86,7 @@ fun BookPager(
 
     Box(
         modifier = modifier
+            .zoomable()
             .fillMaxSize()
             .pointerInput(pageCount) {
                 containerWidth = size.width.toFloat()
