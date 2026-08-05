@@ -1,44 +1,16 @@
 package com.app.pustakam.android.screen.notebookReader
 import com.app.pustakam.android.theme.PaperColor
-// 🔧 30-Jul-2026 02:10 shared-player protocol: same ViewModel + events the editor drives
-import com.app.pustakam.android.hardware.audio.player.MediaPlayingUIEvent
-import com.app.pustakam.android.hardware.audio.player.PlayMediaViewModel
-  import com.app.pustakam.core.common.util.ContentType
-import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
-import com.app.pustakam.android.widgets.video.VideoCard
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.pdf.PdfRenderer
-import android.net.Uri
-import android.os.ParcelFileDescriptor
-import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List // 📖 25-Jul-2026 scroll-mode toggle
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MenuBook // 📖 25-Jul-2026 page-curl toggle
-import androidx.compose.material3.Button
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -48,44 +20,32 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.TextAlign
+
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+
 import com.app.pustakam.android.screen.bookUIView.BookPageContent
 import com.app.pustakam.android.screen.bookUIView.BookScrollReader
-import com.app.pustakam.android.screen.bookUIView.PaperPage
+
 import com.app.pustakam.android.screen.bookUIView.ReaderPageContent
 import com.app.pustakam.android.screen.bookUIView.ReaderScrollReader
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.bookwidget.BookWidgetUpdater
-import com.app.pustakam.android.widgets.document.iconForContentType
-import com.app.pustakam.android.widgets.document.readableSize
-import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on pages
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
-import com.app.pustakam.core.filesys.mime.MimeCatalog
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
-import kotlin.math.min
+
 
 
 // 📖 01-Aug-2026: shared with the document reader (screen/bookReading) — one definition, no copy
@@ -96,7 +56,6 @@ fun NoteBookReaderScreen(
     singleContent: Boolean = false,
     bookReaderViewModel: NoteBookReaderViewModel = viewModel(),
     onBack: () -> Unit = {},
-    // 📖 01-Aug-2026: a document inside a note is a card — tapping it opens the document reader
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
     onOpenMedia: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
@@ -120,8 +79,6 @@ fun NoteBookReaderScreen(
 
     Box(Modifier.fillMaxSize().background(Color(0xFF241C14))) {   // dark desk behind the book
         when {
-            // 🔧 19-Jul-2026: FIX — loader ONLY while pages aren't built; never over loaded pages,
-            //   and no error flash on first load (VM suppresses transient read failures).
             state.pages.isEmpty() && state.isLoading -> LoadingUI()
             state.error != null -> SnackBarUi(error = state.error!!) { bookReaderViewModel.clearError(); onBack() }
             state.pages.isNotEmpty() -> {
@@ -175,8 +132,6 @@ fun NoteBookReaderScreen(
         IconButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(6.dp)) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Close book", tint = colorScheme.secondary)
         }
-        // 📖 25-Jul-2026: reading-mode toggle (parity with the iOS reader toolbar). Only shown once
-        //   pages exist. Writes the SAME persisted pref Settings uses.
         if (state.pages.isNotEmpty()) {
             IconButton(
                 onClick = { bookReaderViewModel.toggleReadingMode() },

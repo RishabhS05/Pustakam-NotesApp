@@ -1,13 +1,6 @@
 package com.app.pustakam.android.screen.notebookReader
-
-// 📖 23-Jul-2026: FIX (page-flip realism) — the old flip rotated the leaf as a rigid flat rectangle,
-//   which reads as a spinning card, not paper. This replaces the geometry with a true cylindrical
-//   curl (AGSL, API 33+): the page wraps around a cylinder whose axis slides across the sheet, so the
-//   leading edge curves, the back face shows through, and the curl casts a soft shadow — matching the
-//   feel of iOS UIPageViewController's native .pageCurl (BookReaderView.swift).
 import android.os.Build
 
-// 📖 23-Jul-2026 — devices below API 33 have no RuntimeShader; they keep the (retuned) rigid flip.
 val supportsShaderCurl: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
@@ -83,8 +76,3 @@ half4 main(float2 coord) {
 // 📖 23-Jul-2026 — curl tightness. Smaller radius = tighter roll; this is tuned to read like a
 //   paperback leaf at phone widths rather than a poster tube.
 const val PAGE_CURL_RADIUS_FRACTION = 0.14f
-
-// 🐛 23-Jul-2026: a shared RuntimeShader singleton used to live here. It was wrong — uniforms are
-//   per-instance state, so overlapping flips overwrote each other's `progress` and left pages frozen
-//   mid-curl. Each leaf now remembers its own instance (see ShaderCurlLeaf in BookPagerView.kt);
-//   compiling once per leaf is cheap next to the correctness bug.
