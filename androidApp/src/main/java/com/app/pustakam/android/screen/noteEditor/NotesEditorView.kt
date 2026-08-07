@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,6 +27,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.IosShare   // 🔧 20-Jul-2026: export action
 import androidx.compose.material.icons.filled.Save
@@ -260,6 +263,25 @@ fun NoteEditorScreen(
             colorScheme.background,
         ) ,
             actions = {
+            val noteHistory = noteEditorViewModel.history.collectAsStateWithLifecycle().value
+            IconButton(
+                onClick = { noteEditorViewModel.undo() },
+                enabled = noteHistory.canUndo
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                    contentDescription = "Undo",
+                )
+            }
+            IconButton(
+                onClick = { noteEditorViewModel.redo() },
+                enabled = noteHistory.canRedo
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Redo,
+                    contentDescription = "Redo",
+                )
+            }
 
             IconButton(onClick = {
                     state.value.note?.id?.let {
@@ -295,12 +317,12 @@ fun NoteEditorScreen(
                     contentDescription = "Save",
                 )
             }
-            IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
-                Icon(
-                    imageVector = Icons.Default.SaveAs,
-                    contentDescription = "Save As",
-                )
-            }
+//            IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
+//                Icon(
+//                    imageVector = Icons.Default.SaveAs,
+//                    contentDescription = "Save As",
+//                )
+//            }
             IconButton(onClick = noteEditorViewModel::shareNote) {
                 Icon(
                     Icons.Default.Share,
@@ -416,15 +438,16 @@ fun NotesEditor(
     val focusRequester = rememberFocusRequester()
     val focusManager = LocalFocusManager.current
     val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
-    // 🔧 07-Aug-2026 — one formatting bar for the whole screen, pinned above the keyboard
     val smartTextToolbar = rememberSmartTextToolbarController()
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(topBar = topBar, floatingActionButton = onButtonOverLays) { padding ->
-        // outer box carries no scaffold padding — the toolbar resolves its own ime/navbar insets
-        Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    // 🔧 07-Aug-2026 — without this the list keeps its full height and the
+                    //   focused line ends up underneath the keyboard
+                    .imePadding()
             ) {
                 if (isRuledEnabledState.value) RuledPage()
                 CompositionLocalProvider(LocalSmartTextToolbar provides smartTextToolbar) {
@@ -467,11 +490,11 @@ fun NotesEditor(
                     }
                 }
             }
-            SmartTextKeyboardToolbarHost(
-                controller = smartTextToolbar,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
-        }
+    }
+        SmartTextKeyboardToolbarHost(
+            controller = smartTextToolbar,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 
 }

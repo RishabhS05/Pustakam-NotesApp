@@ -106,6 +106,8 @@ sealed class SmartTextIntent {
 
     data class SetToolbarExpanded(val expanded: Boolean) : SmartTextIntent()
 
+    data object DismissToolbar : SmartTextIntent()
+
     data class ApplySpanStyle(val span: RichSpan) : SmartTextIntent()
 
     data object DeleteFocusedBlock : SmartTextIntent()

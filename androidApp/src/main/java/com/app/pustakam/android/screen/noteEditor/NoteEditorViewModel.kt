@@ -14,6 +14,8 @@ import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
+import com.app.pustakam.feature.notes.domain.history.NoteEditKind
+import com.app.pustakam.feature.notes.domain.history.NoteHistory
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteUseCase
@@ -59,6 +61,40 @@ class NoteEditorViewModel : BaseViewModel() {
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
     private val dirtyContentIds = mutableSetOf<String>()
+
+    // 🔧 07-Aug-2026 — note-wide undo/redo. Capturing media and importing documents are NOT
+    //   recorded: the file is already on disk and rolling the note back would orphan it.
+    private val _history = MutableStateFlow(NoteHistory())
+    val history: StateFlow<NoteHistory> = _history.asStateFlow()
+
+    private fun recordHistory(kind: NoteEditKind) {
+        val note = _noteContentUiState.value.note ?: return
+        _history.update { it.record(note, kind) }
+    }
+
+    private fun restore(note: Note) {
+        note.contents.forEach { dirtyContentIds.add(it.id) }
+        _noteContentUiState.update { state ->
+            state.contents.clear()
+            state.contents.addAll(note.contents)
+            state.titleTextState.value = note.title.orEmpty()
+            state.copy(note = note, contents = state.contents, isAllSetupDone = true)
+        }
+    }
+
+    fun undo() {
+        val current = _noteContentUiState.value.note ?: return
+        val (next, restored) = _history.value.undo(current) ?: return
+        _history.value = next
+        restore(restored)
+    }
+
+    fun redo() {
+        val current = _noteContentUiState.value.note ?: return
+        val (next, restored) = _history.value.redo(current) ?: return
+        _history.value = next
+        restore(restored)
+    }
 
     init {
         viewModelScope.launch {
@@ -283,6 +319,7 @@ class NoteEditorViewModel : BaseViewModel() {
         }
     }
       fun addNewText() {
+          recordHistory(NoteEditKind.ADD_TEXT)
           val note = _noteContentUiState.value.note!!
           if (note.isNotnull()) {
               val textContent =
@@ -299,6 +336,7 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteUiState.update { it.copy(LocationState = value) }
     }
     fun updateContent(index: Int = -1, content: NoteContentModel) {
+        recordHistory(if (content is NoteContentModel.TextContent) NoteEditKind.TEXT else NoteEditKind.ADD_MEDIA)
         dirtyContentIds.add(content.id)   // 🔧 15-Jul-2026 Phase 0.4: touched → will be saved
         if(index== -1) {
             addContentData(content)
@@ -352,6 +390,7 @@ class NoteEditorViewModel : BaseViewModel() {
  * Remove a note content for note
  * */
     fun removeContent(value: String) {
+        recordHistory(NoteEditKind.DELETE_CONTENT)
         dirtyContentIds.remove(value)   // 🔧 15-Jul-2026 Phase 0.4: deleted → nothing to save
         val find = _noteContentUiState.value.note?.contents?.find { value == it.id }
         viewModelScope.launch(Dispatchers.IO) {

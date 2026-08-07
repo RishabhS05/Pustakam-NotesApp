@@ -38,6 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.pustakam.android.widgets.colorPalete.ColorSelector
 import com.app.pustakam.core.richtext.model.ParagraphStyle
 import com.app.pustakam.core.richtext.model.TextAlign
 import com.app.pustakam.core.richtext.presentation.SmartTextCatalog
@@ -191,10 +192,12 @@ private fun TextStyleSheet(current: ParagraphStyle, onStyle: (ParagraphStyle) ->
 @Composable
 private fun ColorSheet(title: String, palette: List<String>, onColor: (String?) -> Unit) {
     val colors = SmartTextTokens.colors
+    var picked by remember { mutableStateOf(SmartTextStyleMapper.parseColor(palette.first())) }
     SheetTitle(title)
+    // quick swatches first, then the full picker already used by Create Tag
     LazyVerticalGrid(
         columns = GridCells.Fixed(5),
-        modifier = Modifier.padding(bottom = 12.dp),
+        modifier = Modifier.padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -208,8 +211,25 @@ private fun ColorSheet(title: String, palette: List<String>, onColor: (String?) 
             )
         }
     }
-    TextButton(onClick = { onColor(null) }, modifier = Modifier.padding(bottom = 16.dp)) {
-        Text("Remove colour", color = colors.accent)
+    ColorSelector(initial = picked) { picked = it }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Button(
+            onClick = { onColor(SmartTextStyleMapper.toHex(picked)) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.accent,
+                contentColor = colors.onAccent
+            )
+        ) {
+            Text("Apply")
+        }
+        TextButton(onClick = { onColor(null) }) {
+            Text("Remove colour", color = colors.accent)
+        }
     }
 }
 

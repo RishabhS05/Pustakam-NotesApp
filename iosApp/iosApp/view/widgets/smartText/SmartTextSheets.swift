@@ -83,38 +83,19 @@ struct SmartTextSheetHost: View {
     }
 
     private func colorSheet(title text: String, palette colors: [String], isBackground: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            title(text)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
-                ForEach(colors, id: \.self) { hex in
-                    Button {
-                        store.dispatch(
-                            isBackground
-                                ? commands.setBackgroundColor(color: hex)
-                                : commands.setTextColor(color: hex)
-                        )
-                        store.sheet = .none
-                    } label: {
-                        Circle()
-                            .fill(Color(smartTextHex: hex) ?? .gray)
-                            .frame(width: 42, height: 42)
-                            .overlay(Circle().stroke(palette.divider, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(hex)
-                }
-            }
-            Button("Remove colour") {
+        ColorSheetBody(
+            title: text,
+            swatches: colors,
+            palette: palette,
+            onPick: { hex in
                 store.dispatch(
                     isBackground
-                        ? commands.setBackgroundColor(color: nil)
-                        : commands.setTextColor(color: nil)
+                        ? commands.setBackgroundColor(color: hex)
+                        : commands.setTextColor(color: hex)
                 )
                 store.sheet = .none
             }
-            .foregroundColor(palette.accent)
-            .padding(.vertical, 16)
-        }
+        )
     }
 
     private var fontSizeSheet: some View {
@@ -333,6 +314,55 @@ private struct LinkSheetBody: View {
                 }
             }
             Spacer()
+        }
+    }
+}
+
+
+/// Quick swatches plus the ColorSelector already used by Create Tag.
+private struct ColorSheetBody: View {
+
+    let title: String
+    let swatches: [String]
+    let palette: SmartTextPalette
+    let onPick: (String?) -> Void
+
+    @State private var picked: Color = .orange
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(palette.onSurface)
+                .padding(.top, 16)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+                ForEach(swatches, id: \.self) { hex in
+                    Button { onPick(hex) } label: {
+                        Circle()
+                            .fill(Color(smartTextHex: hex) ?? .gray)
+                            .frame(width: 42, height: 42)
+                            .overlay(Circle().stroke(palette.divider, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(hex)
+                }
+            }
+
+            ScrollView {
+                ColorSelector(selectedColor: $picked)
+            }
+
+            HStack(spacing: 12) {
+                Button("Apply") { onPick(picked.tohexColor()) }
+                    .foregroundColor(palette.onAccent)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(palette.accent))
+                Button("Remove colour") { onPick(nil) }
+                    .foregroundColor(palette.accent)
+            }
+            .padding(.bottom, 16)
         }
     }
 }

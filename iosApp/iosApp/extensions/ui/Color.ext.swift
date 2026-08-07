@@ -25,16 +25,18 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+    // 🔧 07-Aug-2026 — green/blue were both read from rgba.r, so every colour came out grey;
+    //   the alpha branch also emitted blue before green. Create Tag used this too.
     func tohexColor() ->  String {
         if let rgba = UIColor(self).rgba {
             let red =  Int64(rgba.r*255)
-            let green =  Int64(rgba.r*255)
-            let blue =  Int64(rgba.r*255)
-        
+            let green =  Int64(rgba.g*255)
+            let blue =  Int64(rgba.b*255)
+
             if rgba.a == 1 {
                 return String(format: "#%02X%02X%02X", red, green, blue)
             } else {
-                return String(format: "#%02X%02X%02X%02X", Int(rgba.a*255), red, blue, green)
+                return String(format: "#%02X%02X%02X%02X", Int(rgba.a*255), red, green, blue)
             }
         }
         return "#000000"

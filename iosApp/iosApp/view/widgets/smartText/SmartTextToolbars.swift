@@ -30,6 +30,12 @@ struct SmartTextSelectionToolbar: View {
                     enabled: true,
                     palette: palette
                 ) { onAction(moreAction) }
+                SmartTextToolbarButton(
+                    action: dismissAction,
+                    active: false,
+                    enabled: true,
+                    palette: palette
+                ) { onAction(dismissAction) }
             }
             if expanded {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -60,6 +66,11 @@ struct SmartTextSelectionToolbar: View {
         ToolbarSpec.shared.selectionSecondary.first {
             SmartTextCommands.shared.isMore(action: $0)
         } ?? ToolbarSpec.shared.selectionSecondary[0]
+    }
+
+
+    private var dismissAction: ToolbarAction {
+        SmartTextCommands.shared.dismissAction()
     }
 
     private var secondaryActions: [ToolbarAction] {
@@ -107,6 +118,12 @@ struct SmartTextKeyboardToolbar: View {
                         enabled: true,
                         palette: palette
                     ) { onAction(moreAction) }
+                    SmartTextToolbarButton(
+                        action: dismissAction,
+                        active: false,
+                        enabled: true,
+                        palette: palette
+                    ) { onAction(dismissAction) }
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
@@ -141,6 +158,10 @@ struct SmartTextKeyboardToolbar: View {
         ToolbarSpec.shared.selectionSecondary.first {
             SmartTextCommands.shared.isMore(action: $0)
         } ?? ToolbarSpec.shared.selectionSecondary[0]
+    }
+
+    private var dismissAction: ToolbarAction {
+        SmartTextCommands.shared.dismissAction()
     }
 }
 

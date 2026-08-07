@@ -26,8 +26,19 @@ object SmartTextReducer {
 
         is SmartTextIntent.TypeText -> onTypeText(state, intent)
 
-        is SmartTextIntent.SelectionChanged ->
-            withRefreshedToolbar(state.copy(selection = intent.selection, pendingStyle = null))
+        is SmartTextIntent.SelectionChanged -> withRefreshedToolbar(
+            state.copy(
+                selection = intent.selection,
+                pendingStyle = null,
+                toolbarDismissed = false
+            )
+        )
+
+        SmartTextIntent.DismissToolbar -> state.copy(
+            toolbarDismissed = true,
+            showSelectionToolbar = false,
+            isToolbarExpanded = false
+        )
 
         is SmartTextIntent.SplitBlock -> onSplitBlock(state, intent.blockId, intent.caret)
 
@@ -921,7 +932,7 @@ object SmartTextReducer {
                 fontSize = pending?.fontSize ?: SpanEngine.spanAt(text.spans, start)?.fontSize,
                 fontWeight = pending?.fontWeight ?: SpanEngine.spanAt(text.spans, start)?.fontWeight
             ),
-            showSelectionToolbar = !state.selection.isCollapsed
+            showSelectionToolbar = !state.selection.isCollapsed && !state.toolbarDismissed
         )
     }
 

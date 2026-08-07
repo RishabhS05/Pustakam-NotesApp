@@ -27,6 +27,7 @@ import com.app.pustakam.core.database.localdb.preferences.IAppPreferences
 import com.app.pustakam.core.common.extensions.isNotnull
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
         setContent {
             val themeMode = rememberGranthThemeMode()

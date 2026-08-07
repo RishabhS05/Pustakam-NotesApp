@@ -42,7 +42,8 @@ object SmartTextCommands {
         ToolbarAction.TABLE,
         ToolbarAction.LINK,
         ToolbarAction.FIND_REPLACE,
-        ToolbarAction.MORE -> null
+        ToolbarAction.MORE,
+        ToolbarAction.DISMISS -> null
     }
 
     /**
@@ -92,9 +93,15 @@ object SmartTextCommands {
         ToolbarAction.REDO -> "redo"
         ToolbarAction.FIND_REPLACE -> "findReplace"
         ToolbarAction.MORE -> "more"
+        ToolbarAction.DISMISS -> "dismiss"
     }
 
     fun isMore(action: ToolbarAction): Boolean = action == ToolbarAction.MORE
+
+    fun isDismiss(action: ToolbarAction): Boolean = action == ToolbarAction.DISMISS
+
+    /** Lets Swift reach the DISMISS button without spelling the enum entry. */
+    fun dismissAction(): ToolbarAction = ToolbarAction.DISMISS
 
     fun isLink(action: ToolbarAction): Boolean = action == ToolbarAction.LINK
 
@@ -192,6 +199,8 @@ object SmartTextCommands {
     fun selectParagraph(blockId: String): SmartTextIntent = SmartTextIntent.SelectParagraph(blockId)
 
     fun deleteFocusedBlock(): SmartTextIntent = SmartTextIntent.DeleteFocusedBlock
+
+    fun dismissToolbar(): SmartTextIntent = SmartTextIntent.DismissToolbar
 
     fun tableAddRow(at: Int): TableCommand = TableCommand.AddRow(at)
 

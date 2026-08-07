@@ -78,6 +78,8 @@ data class SmartTextState(
     val search: SearchState = SearchState(),
     val isToolbarExpanded: Boolean = false,
     val showSelectionToolbar: Boolean = false,
+    // set by the bubble's close button; cleared as soon as the selection moves again
+    val toolbarDismissed: Boolean = false,
     val clipboard: ClipboardPayload? = null,
     // styling armed by the toolbar with no selection — applied to the next characters typed
     val pendingStyle: RichSpan? = null

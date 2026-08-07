@@ -1,15 +1,10 @@
 package com.app.pustakam.android.widgets.smartText
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
@@ -19,6 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.core.richtext.presentation.ToolbarAction
@@ -26,8 +23,8 @@ import com.app.pustakam.core.richtext.presentation.ToolbarState
 
 /**
  * A note holds several text contents, each with its own [SmartTextWidget]. The keyboard toolbar
- * must be a single bar pinned above the IME, so the focused widget publishes its state here and
- * the screen renders one [SmartTextKeyboardToolbar] from it.
+ * must be a single bar sitting on the keyboard, so the focused widget publishes its state here
+ * and the screen renders one [SmartTextKeyboardToolbar] from it.
  */
 @Stable
 class SmartTextToolbarController {
@@ -87,33 +84,43 @@ fun rememberSmartTextToolbarController(): SmartTextToolbarController =
     remember { SmartTextToolbarController() }
 
 /**
- * Renders the keyboard toolbar pinned above the IME. Place it as the last child of a
- * full-size Box so it floats over the content instead of scrolling with it.
+ * Renders the keyboard toolbar with its bottom edge on top of the keyboard.
+ *
+ * 🔧 07-Aug-2026 — this places the bar at the window bottom and *translates* it up by the raw
+ * inset instead of padding it. windowInsetsPadding was resolving to zero because an ancestor
+ * (Scaffold) had already consumed the insets, which is what left the bar floating over content.
+ * A layout-time translation reads the inset directly and cannot be consumed away.
+ *
+ * Put it as the last child of a full-size Box so it floats over everything.
  */
 @Composable
 fun SmartTextKeyboardToolbarHost(
     controller: SmartTextToolbarController,
     modifier: Modifier = Modifier
 ) {
+    if (!controller.isVisible) return
+
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    val navigationBottom = WindowInsets.navigationBars.getBottom(density)
+    val lift = maxOf(imeBottom, navigationBottom)
+
     Box(modifier = modifier.fillMaxWidth()) {
-        AnimatedVisibility(
-            visible = controller.isVisible,
-            enter = slideInVertically { it },
-            exit = slideOutVertically { it },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            SmartTextKeyboardToolbar(
-                toolbar = controller.toolbar,
-                expanded = controller.expanded,
-                canUndo = controller.canUndo,
-                canRedo = controller.canRedo,
-                onAction = controller::dispatch,
-                // union, not both: the IME inset already spans the navigation bar when it is up
-                modifier = Modifier.windowInsetsPadding(
-                    WindowInsets.ime.union(WindowInsets.navigationBars)
-                )
-            )
-        }
+        SmartTextKeyboardToolbar(
+            toolbar = controller.toolbar,
+            expanded = controller.expanded,
+            canUndo = controller.canUndo,
+            canRedo = controller.canRedo,
+            onAction = controller::dispatch,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.placeRelative(0, -lift)
+                    }
+                }
+        )
     }
 }
 

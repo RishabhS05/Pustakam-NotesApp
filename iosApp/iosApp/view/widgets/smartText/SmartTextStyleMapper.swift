@@ -205,6 +205,7 @@ enum SmartTextStyleMapper {
         case "undo": return "arrow.uturn.backward"
         case "redo": return "arrow.uturn.forward"
         case "findReplace": return "magnifyingglass"
+        case "dismiss": return "keyboard.chevron.compact.down"
         default: return "ellipsis"
         }
     }

@@ -78,6 +78,7 @@ struct SmartTextEditorView: UIViewRepresentable {
         var parent: SmartTextEditorView
         private weak var placeholderLabel: UILabel?
         private var accessoryHost: UIHostingController<AnyView>?
+        private var accessoryContainer: SmartTextAccessoryView?
 
         init(_ parent: SmartTextEditorView) {
             self.parent = parent
@@ -89,30 +90,74 @@ struct SmartTextEditorView: UIViewRepresentable {
             guard let accessory else {
                 textView.inputAccessoryView = nil
                 accessoryHost = nil
+                accessoryContainer = nil
                 return
             }
             let width = UIScreen.main.bounds.width
+
             let host: UIHostingController<AnyView>
-            if let existing = accessoryHost {
-                host = existing
+            let container: SmartTextAccessoryView
+            if let existingHost = accessoryHost, let existingContainer = accessoryContainer {
+                host = existingHost
+                container = existingContainer
                 host.rootView = accessory
             } else {
                 host = UIHostingController(rootView: accessory)
                 host.view.backgroundColor = .clear
+                host.view.translatesAutoresizingMaskIntoConstraints = false
+                container = SmartTextAccessoryView()
+                container.addSubview(host.view)
+                NSLayoutConstraint.activate([
+                    host.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                    host.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                    host.view.topAnchor.constraint(equalTo: container.topAnchor)
+                ])
                 accessoryHost = host
+                accessoryContainer = container
             }
-            let fitted = host.sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude))
-            let previousHeight = host.view.frame.height
-            host.view.frame = CGRect(x: 0, y: 0, width: width, height: fitted.height)
-            if textView.inputAccessoryView !== host.view {
-                textView.inputAccessoryView = host.view
+
+            let fitted = host.sizeThatFits(
+                in: CGSize(width: width, height: .greatestFiniteMagnitude)
+            )
+            let grew = container.apply(height: fitted.height)
+
+            if textView.inputAccessoryView !== container {
+                textView.inputAccessoryView = container
                 if textView.isFirstResponder { textView.reloadInputViews() }
-            } else if abs(previousHeight - fitted.height) > 0.5, textView.isFirstResponder {
+            } else if grew, textView.isFirstResponder {
+                // expanding More makes the bar taller and can cover the caret
                 textView.reloadInputViews()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak textView] in
+                    guard let textView else { return }
+                    self.scrollCaretIntoView(textView, clearance: fitted.height)
+                }
             }
         }
 
+        /// Our text view does not scroll itself, so this walks up to whichever scroll view
+        /// actually holds the note and lifts the caret clear of the accessory.
+        func scrollCaretIntoView(_ textView: UITextView, clearance: CGFloat) {
+            guard let scrollView = textView.enclosingScrollView(),
+                  let range = textView.selectedTextRange else { return }
+            let caret = textView.convert(textView.caretRect(for: range.end), to: scrollView)
+            let target = caret.insetBy(dx: 0, dy: -(clearance + 24))
+            scrollView.scrollRectToVisible(target, animated: true)
+        }
+
+        // the caret must stay above the keyboard as soon as editing starts, and as text grows
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak textView] in
+                guard let textView else { return }
+                self.scrollCaretIntoView(textView, clearance: self.accessoryHeight)
+            }
+        }
+
+        private var accessoryHeight: CGFloat {
+            accessoryContainer?.intrinsicContentSize.height ?? 0
+        }
+
         func textViewDidChange(_ textView: UITextView) {
+            scrollCaretIntoView(textView, clearance: accessoryHeight)
             let caret = textView.selectedRange.location
             parent.onIntent(
                 SmartTextCommands.shared.typeText(
@@ -201,6 +246,51 @@ struct SmartTextEditorView: UIViewRepresentable {
         if catalog.isQuote(style: block.style) { return "Quote" }
         if catalog.isTitleLike(style: block.style) { return "Heading" }
         return "Keep your thoughts alive."
+    }
+}
+
+/**
+ A keyboard accessory only grows if it reports an intrinsic height AND carries
+ `.flexibleHeight`. Without both, UIKit keeps the bar at its original height and the expanded
+ tray renders outside those bounds — which is what put it behind the keyboard.
+ */
+final class SmartTextAccessoryView: UIView {
+
+    private var measuredHeight: CGFloat = 0
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: measuredHeight)
+    }
+
+    init() {
+        super.init(frame: .zero)
+        autoresizingMask = .flexibleHeight
+        backgroundColor = .clear
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    /// Returns true when the height actually changed and the input views need reloading.
+    @discardableResult
+    func apply(height: CGFloat) -> Bool {
+        guard abs(measuredHeight - height) > 0.5 else { return false }
+        measuredHeight = height
+        frame.size.height = height
+        invalidateIntrinsicContentSize()
+        return true
+    }
+}
+
+extension UIView {
+    /// Nearest ancestor scroll view — the SwiftUI ScrollView that wraps the note editor.
+    func enclosingScrollView() -> UIScrollView? {
+        var candidate: UIView? = superview
+        while let view = candidate {
+            if let scrollView = view as? UIScrollView { return scrollView }
+            candidate = view.superview
+        }
+        return nil
     }
 }
 

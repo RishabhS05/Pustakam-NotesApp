@@ -145,8 +145,6 @@ struct NoteEditorView: View {
                     ActionButtonWithoutBackground(iconName: "tray.and.arrow.down", action: {
                         saveNote()
                     }, tint :Theme.Colors.secondary)
-                    ActionButtonWithoutBackground(iconName: "arrow.down.document",
-                action: {},tint : Theme.Colors.secondary)
                         ActionButtonWithoutBackground(iconName: "trash", action: {
                             setAlert(message: "Are you sure you want to delete this note?", title: "Delete note", alertType: .DELETE )
                         }, tint: Color.red)

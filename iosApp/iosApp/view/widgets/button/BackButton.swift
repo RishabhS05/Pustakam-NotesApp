@@ -5,10 +5,7 @@ struct BackButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack{
                 Image(systemName: "chevron.backward")
-                Text("Back")
-            }
         }
         .foregroundColor(Theme.Colors.secondary)
     }

@@ -35,7 +35,8 @@ enum class ToolbarAction {
     UNDO,
     REDO,
     FIND_REPLACE,
-    MORE
+    MORE,
+    DISMISS
 }
 
 object ToolbarSpec {
@@ -62,6 +63,7 @@ object ToolbarSpec {
         ToolbarAction.MORE
     )
 
+    // 🔧 07-Aug-2026 — UNDO/REDO left this bar: they are note-wide, so they live in the top bar
     /** Toolbar pinned above the keyboard — always visible. */
     val keyboardPrimary: List<ToolbarAction> = listOf(
         ToolbarAction.BOLD,
@@ -70,8 +72,7 @@ object ToolbarSpec {
         ToolbarAction.TEXT_STYLE,
         ToolbarAction.BULLET_LIST,
         ToolbarAction.NUMBERED_LIST,
-        ToolbarAction.UNDO,
-        ToolbarAction.REDO
+        ToolbarAction.CHECKLIST
     )
 
     /** Toolbar above the keyboard — the expandable tray. */
@@ -127,6 +128,7 @@ object ToolbarSpec {
         ToolbarAction.REDO -> "Redo"
         ToolbarAction.FIND_REPLACE -> "Find and replace"
         ToolbarAction.MORE -> "More"
+        ToolbarAction.DISMISS -> "Hide formatting bar"
     }
 
     /** Whether a button should render in its active state. */

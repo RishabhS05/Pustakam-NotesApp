@@ -19,6 +19,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.AnnotatedString
@@ -50,6 +51,7 @@ fun SmartTextWidget(
 ) {
     val clipboard = LocalClipboard.current
     val uriHandler = LocalUriHandler.current
+    val focusManager = LocalFocusManager.current
 
     var state by remember { mutableStateOf(SmartTextState.of(document)) }
     var lastEmitted by remember { mutableStateOf(document) }
@@ -89,6 +91,12 @@ fun SmartTextWidget(
 
     // the action-to-intent mapping is shared, so Compose and SwiftUI cannot drift apart
     fun handle(action: ToolbarAction) {
+        if (SmartTextCommands.isDismiss(action)) {
+            dispatch(SmartTextCommands.dismissToolbar())
+            selectionToolbarExpanded = false
+            focusManager.clearFocus()
+            return
+        }
         if (SmartTextCommands.isMore(action)) {
             selectionToolbarExpanded = !selectionToolbarExpanded
             dispatch(SmartTextCommands.setToolbarExpanded(!state.isToolbarExpanded))
@@ -103,7 +111,12 @@ fun SmartTextWidget(
             runCatching { uriHandler.openUri(existing) }
             return
         }
-        sheet = SmartTextSheet.fromIndex(SmartTextCommands.sheetIndex(action))
+        val opened = SmartTextSheet.fromIndex(SmartTextCommands.sheetIndex(action))
+        // the colour picker is tall — drop the keyboard so the whole sheet is reachable
+        if (opened == SmartTextSheet.TEXT_COLOR || opened == SmartTextSheet.BACKGROUND_COLOR) {
+            focusManager.clearFocus()
+        }
+        sheet = opened
     }
 
     val toolbarHost = LocalSmartTextToolbar.current

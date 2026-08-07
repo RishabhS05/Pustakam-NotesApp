@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material.icons.filled.HorizontalRule
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Subscript
@@ -88,6 +89,9 @@ fun SmartTextSelectionToolbar(
                 ToolbarSeparator()
                 SmartTextToolbarButton(ToolbarAction.MORE, expanded, true) {
                     onAction(ToolbarAction.MORE)
+                }
+                SmartTextToolbarButton(ToolbarAction.DISMISS, false, true) {
+                    onAction(ToolbarAction.DISMISS)
                 }
             }
             AnimatedVisibility(
@@ -178,6 +182,9 @@ fun SmartTextKeyboardToolbar(
                 ToolbarSeparator()
                 SmartTextToolbarButton(ToolbarAction.MORE, expanded, true) {
                     onAction(ToolbarAction.MORE)
+                }
+                SmartTextToolbarButton(ToolbarAction.DISMISS, false, true) {
+                    onAction(ToolbarAction.DISMISS)
                 }
             }
         }
@@ -272,4 +279,5 @@ fun iconFor(action: ToolbarAction): ImageVector = when (action) {
     ToolbarAction.REDO -> Icons.AutoMirrored.Filled.Redo
     ToolbarAction.FIND_REPLACE -> Icons.Default.FindReplace
     ToolbarAction.MORE -> Icons.Default.MoreHoriz
+    ToolbarAction.DISMISS -> Icons.Default.KeyboardArrowDown
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import shared
 
 // the only place iOS mutates the editor — every change goes through the shared reducer
@@ -68,6 +69,14 @@ final class SmartTextStore: ObservableObject {
     // toolbar handling comes straight from shared, so iOS never spells an enum entry
     func handle(_ action: ToolbarAction, openURL: (URL) -> Void) {
         let commands = SmartTextCommands.shared
+        if commands.isDismiss(action: action) {
+            dispatch(commands.dismissToolbar())
+            selectionToolbarExpanded = false
+            UIApplication.shared.sendAction(
+                #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil
+            )
+            return
+        }
         if commands.isMore(action: action) {
             selectionToolbarExpanded.toggle()
             dispatch(commands.setToolbarExpanded(expanded: !state.isToolbarExpanded))
@@ -86,11 +95,18 @@ final class SmartTextStore: ObservableObject {
             openURL(url)
             return
         }
-        sheet = SmartTextSheetKind(index: index)
+        let opened = SmartTextSheetKind(index: index)
+        // the colour picker is tall — drop the keyboard so the whole sheet is reachable
+        if opened == .textColor || opened == .backgroundColor {
+            UIApplication.shared.sendAction(
+                #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil
+            )
+        }
+        sheet = opened
     }
 }
 
-enum SmartTextSheetKind: Identifiable {
+enum SmartTextSheetKind: Identifiable, Equatable {
     case none
     case textStyle
     case textColor
