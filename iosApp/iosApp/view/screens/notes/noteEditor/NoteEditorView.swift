@@ -45,8 +45,12 @@ struct NoteEditorView: View {
                             noteEditorViewModel.updateContent(content: updatedContent)
                         }
                     }
+                    // 🔧 07-Aug-2026 — room so the caret clears the keyboard accessory toolbar
+                    Color.clear.frame(height: 80)
                 }
-            }.frame(maxHeight: .infinity, alignment: .top)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .frame(maxHeight: .infinity, alignment: .top)
             if showRecorder {
                 AudioRecorderView(onSave : { media  in
                     noteEditorViewModel.getCapturedData(media:media)
@@ -160,11 +164,14 @@ struct NoteEditorView: View {
         switch content.type {
             case .text:
                 let textContent = content as! NoteContentModel.TextContent
-                 NoteTextFieldWrapper(
+
+                SmartTextContentWidget(
                     text: textContent.text,
-                    onTextChange: {
-                        newValue in
-                        onUpdate(textContent.withText(newText: newValue.string))
+                    metadata: textContent.metadata,
+                    onDocumentChange: { document in
+                        onUpdate(
+                            RichTextCodec.shared.applyTo(content: textContent, document: document)
+                        )
                     }
                 )
             case .image :

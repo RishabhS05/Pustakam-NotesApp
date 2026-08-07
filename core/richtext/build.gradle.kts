@@ -2,13 +2,13 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.android.lint)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
     androidLibrary {
-        namespace = "com.app.pustakam.core.common"
-
-        compileSdk = 36
+        namespace = "com.app.pustakam.core.richtext"
+        compileSdk = 35
         minSdk = 24
 
         withHostTestBuilder {
@@ -20,7 +20,6 @@ kotlin {
         }
     }
 
-    // 🔧 30-Jul-2026 02:10 — targets WITHOUT binaries.framework: only the :shared umbrella emits an iOS framework; N static frameworks duplicate the Kotlin runtime at link time
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -29,17 +28,15 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(libs.kotlin.stdlib)
-                // 🔧 30-Jul-2026 02:10 — api() not implementation(): these types sit in public signatures of every module above, and export() to Swift only follows api deps
-                api(libs.kotlinx.coroutines.core)
-                api(libs.kotlinx.datetime)
-                // 🔧 30-Jul-2026 02:10 — Logger.kt implements ktor's Logger interface, so ktor-logging is part of THIS module's public API
-                api(libs.ktor.client.logging)
+                // the engine reads/writes RichTextMetadata and generates block ids via :core:common
+                api(projects.core.common)
+                api(projects.core.model)
+                api(libs.kotlinx.serialization.json)
             }
         }
 
         androidMain {
             dependencies {
-                api(libs.kotlinx.coroutines.core)
             }
         }
 

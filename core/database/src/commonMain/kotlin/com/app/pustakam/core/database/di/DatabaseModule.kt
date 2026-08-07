@@ -13,12 +13,15 @@ import org.koin.dsl.module
 
 // 🔧 30-Jul-2026 02:10 — lifted VERBATIM out of :shared/koin/Koin.kt so the module that owns NotesDatabase also owns its registration
 fun databaseModule(): Module = module {
+    // 🔧 07-Aug-2026 — lenient: rows written before a metadata field existed must still decode
+    val richTextJson = Json { ignoreUnknownKeys = true }
+
     val richTextAdapter = object : ColumnAdapter<RichTextMetadata, String> {
         override fun decode(databaseValue: String): RichTextMetadata =
-            Json.decodeFromString(databaseValue)
+            richTextJson.decodeFromString(databaseValue)
 
         override fun encode(value: RichTextMetadata): String =
-            Json.encodeToString(value)
+            richTextJson.encodeToString(value)
     }
 
     single<NotesDatabase> {

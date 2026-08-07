@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,6 +48,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -93,7 +95,12 @@ import com.app.pustakam.android.widgets.document.InlineBookFileWidget
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet   // 🔧 18-Jul-2026: import sheet
-import com.app.pustakam.android.widgets.textField.NoteTextField
+import com.app.pustakam.android.widgets.smartText.LocalSmartTextToolbar
+import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbarHost
+import com.app.pustakam.android.widgets.smartText.SmartTextToolbarReservedHeight
+import com.app.pustakam.android.widgets.smartText.SmartTextWidget
+import com.app.pustakam.android.widgets.smartText.rememberSmartTextToolbarController
+import com.app.pustakam.core.richtext.codec.RichTextCodec
 import com.app.pustakam.android.widgets.video.VideoCard
 import com.app.pustakam.android.export.NoteExporter
 import com.app.pustakam.android.export.shareExportedFile
@@ -331,7 +338,10 @@ fun NoteEditorScreen(
         }
     }, contentList = { focusRequester ->
         Box(modifier = Modifier.fillMaxSize()) {
-            LazyColumn {
+            // 🔧 07-Aug-2026 — bottom room so the caret clears the keyboard and the formatting bar
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = SmartTextToolbarReservedHeight + 24.dp)
+            ) {
                 state.value.contents.let {
                     itemsIndexed(it, key = { _, content -> content.id }) { index, contentValue ->
                         RenderWidget(
@@ -406,47 +416,61 @@ fun NotesEditor(
     val focusRequester = rememberFocusRequester()
     val focusManager = LocalFocusManager.current
     val paddingLeft = if (isRuledEnabledState.value) 100.dp else 12.dp
+    // 🔧 07-Aug-2026 — one formatting bar for the whole screen, pinned above the keyboard
+    val smartTextToolbar = rememberSmartTextToolbarController()
     Scaffold(topBar = topBar, floatingActionButton = onButtonOverLays) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-
-        ) {
-            if (isRuledEnabledState.value) RuledPage()
-            Column {
-                TextField(
-                    value = state.value.titleTextState.value,
-                    textStyle = typography.headlineLarge,
-                    placeholder = {
-                        Text(
-                            "Title : Keep your thoughts alive.",
-                            modifier = Modifier.padding(start = paddingLeft),
+        // outer box carries no scaffold padding — the toolbar resolves its own ime/navbar insets
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                if (isRuledEnabledState.value) RuledPage()
+                CompositionLocalProvider(LocalSmartTextToolbar provides smartTextToolbar) {
+                    Column {
+                        TextField(
+                            value = state.value.titleTextState.value,
+                            textStyle = typography.headlineLarge,
+                            placeholder = {
+                                Text(
+                                    "Title : Keep your thoughts alive.",
+                                    modifier = Modifier.padding(start = paddingLeft),
+                                )
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                cursorColor = colorScheme.tertiary
+                            ),
+                            onValueChange = {
+                                state.value.titleTextState.value = it
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = {
+                                focusManager.moveFocus(FocusDirection.Down)
+                            }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
+                                .padding(top = 2.dp)
                         )
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        cursorColor = colorScheme.tertiary
-                    ),
-                    onValueChange = {
-                        state.value.titleTextState.value = it
-                    },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = {
-                        focusManager.moveFocus(FocusDirection.Down)
-                    }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                        .padding(top = 2.dp)
-                )
-                contentList(focusRequester)
+                        // 🔧 07-Aug-2026 — weight, not fillMaxSize: the list was overflowing the Column
+                        //   past the bottom of the screen instead of scrolling inside it
+                        Box(modifier = Modifier.weight(1f)) {
+                            contentList(focusRequester)
+                        }
+                    }
+                }
             }
+            SmartTextKeyboardToolbarHost(
+                controller = smartTextToolbar,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
     }
 
@@ -466,24 +490,17 @@ fun RenderWidget(
     var focusedMediaId by remember { mutableStateOf<String?>(null) }
     when (content.type) {
         ContentType.TEXT -> {
+            val textContent = content as NoteContentModel.TextContent
             Box(
                 modifier = Modifier
             ) {
-                NoteTextField(
-                    noteContentModel = (content as NoteContentModel.TextContent),
-                    focusRequester = focusRequester,
-                    onUpdate = { onUpdate(content.withText(it)) }) { // 🔧 F2: stamps content updatedAt (was plain copy)
 
-//                        if (it.selection.length > 0) {
-//                            selectionString.value = if (it.selection.start <= it.selection.end)
-//                                it.text.substring(
-//                                    it.selection.start,
-//                                    it.selection.end
-//                                ) else it.text.substring(it.selection.end, it.selection.start)
-//                            println("Selected Text : ${selectionString.value}")
-//                            isDropDownVisible = true
-//                        } else isDropDownVisible = false
-                }
+                SmartTextWidget(
+                    text = textContent.text,
+                    metadata = textContent.metadata,
+                    focusRequester = focusRequester,
+                    onDocumentChange = { onUpdate(RichTextCodec.applyTo(textContent, it)) }
+                )
             }
         }
 

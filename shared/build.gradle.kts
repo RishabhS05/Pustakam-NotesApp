@@ -33,6 +33,7 @@ kotlin {
             //   export() ONLY works on an api() dependency (see commonMain below).
             export(projects.core.common)
             export(projects.core.model)
+            export(projects.core.richtext)
             export(projects.core.database)
             export(projects.core.network)
             export(projects.core.data)
@@ -47,6 +48,7 @@ kotlin {
             // 🔧 30-Jul-2026 02:10 — api(), NOT implementation(): export() above requires an api dependency
             api(projects.core.common)
             api(projects.core.model)
+            api(projects.core.richtext)
             api(projects.core.database)
             api(projects.core.network)
             api(projects.core.data)

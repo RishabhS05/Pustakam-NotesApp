@@ -19,7 +19,8 @@ enum class  TextStyleType{
 }
 @Serializable
 data class RichTextMetadata(
-    val spans: List<TextSpan> = null ?: emptyList()
+    val spans: List<TextSpan> = emptyList(),
+    val document: String? = null
 )
 
 @Serializable

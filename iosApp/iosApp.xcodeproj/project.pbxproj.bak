@@ -85,14 +85,6 @@
 		6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB82CEF363100CC254C /* LocationPermission.swift */; };
 		634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */; };
 		635557452DC0732700C7D533 /* DateTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635557442DC0732100C7D533 /* DateTime.swift */; };
-		1561086F4A784128BB5AA95B /* SmartTextTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */; };
-		A5B04FE8D4D3479BAF878384 /* SmartTextStyleMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */; };
-		344D74CFD4DB40D4A7B8F49D /* SmartTextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781DC0213FDD4E898994B140 /* SmartTextStore.swift */; };
-		0167B273031742A1841BBEC6 /* SmartTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */; };
-		0EBA77A6057B4265B2A98CA6 /* SmartTextBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */; };
-		5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7555D355DB041B79F274266 /* SmartTextToolbars.swift */; };
-		312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */; };
-		1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */; };
 		636341002F012A1B003835E4 /* NoteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636340FF2F012A1B003835E4 /* NoteTextField.swift */; };
 		636341022F016B8C003835E4 /* FormattingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636341012F016B8C003835E4 /* FormattingToolbar.swift */; };
 		63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */; };
@@ -238,14 +230,6 @@
 		6345BFB82CEF363100CC254C /* LocationPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermission.swift; sourceTree = "<group>"; };
 		634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertUseCase.swift; sourceTree = "<group>"; };
 		635557442DC0732100C7D533 /* DateTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTime.swift; sourceTree = "<group>"; };
-		FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextTokens.swift; sourceTree = "<group>"; };
-		9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextStyleMapper.swift; sourceTree = "<group>"; };
-		781DC0213FDD4E898994B140 /* SmartTextStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextStore.swift; sourceTree = "<group>"; };
-		D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextEditorView.swift; sourceTree = "<group>"; };
-		7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextBlockView.swift; sourceTree = "<group>"; };
-		E7555D355DB041B79F274266 /* SmartTextToolbars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextToolbars.swift; sourceTree = "<group>"; };
-		F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextSheets.swift; sourceTree = "<group>"; };
-		475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextWidget.swift; sourceTree = "<group>"; };
 		636340FF2F012A1B003835E4 /* NoteTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextField.swift; sourceTree = "<group>"; };
 		636341012F016B8C003835E4 /* FormattingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingToolbar.swift; sourceTree = "<group>"; };
 		63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
@@ -774,24 +758,8 @@
 				63D089212CAC86EA008FD8CC /* imageview */,
 				63D089202CAC85EF008FD8CC /* styles */,
 				63D0891F2CAC85B4008FD8CC /* textfields */,
-				8B023D68CAFE421A86322695 /* smartText */,
 			);
 			path = widgets;
-			sourceTree = "<group>";
-		};
-		8B023D68CAFE421A86322695 /* smartText */ = {
-			isa = PBXGroup;
-			children = (
-				FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */,
-				9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */,
-				781DC0213FDD4E898994B140 /* SmartTextStore.swift */,
-				D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */,
-				7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */,
-				E7555D355DB041B79F274266 /* SmartTextToolbars.swift */,
-				F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */,
-				475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */,
-			);
-			path = smartText;
 			sourceTree = "<group>";
 		};
 		63D0891F2CAC85B4008FD8CC /* textfields */ = {
@@ -1067,14 +1035,6 @@
 				63CFB9242DB7261800093C96 /* VideoCardView.swift in Sources */,
 				63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */,
 				63C00BE62CEC925900A4907C /* BackButton.swift in Sources */,
-				1561086F4A784128BB5AA95B /* SmartTextTokens.swift in Sources */,
-				A5B04FE8D4D3479BAF878384 /* SmartTextStyleMapper.swift in Sources */,
-				344D74CFD4DB40D4A7B8F49D /* SmartTextStore.swift in Sources */,
-				0167B273031742A1841BBEC6 /* SmartTextEditorView.swift in Sources */,
-				0EBA77A6057B4265B2A98CA6 /* SmartTextBlockView.swift in Sources */,
-				5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */,
-				312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */,
-				1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */,
 				636341002F012A1B003835E4 /* NoteTextField.swift in Sources */,
 				22EAC32230113B4E00EB8A80 /* ThemePalette.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
