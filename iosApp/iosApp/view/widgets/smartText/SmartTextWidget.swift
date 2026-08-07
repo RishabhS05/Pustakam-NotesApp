@@ -46,6 +46,7 @@ struct SmartTextWidget: View {
                             activeSearchRange: store.activeSearchRange(for: block.id),
                             readOnly: readOnly,
                             accessory: keyboardAccessory,
+                            dismissToken: store.keyboardDismissToken,
                             onIntent: store.dispatch
                         )
                     }

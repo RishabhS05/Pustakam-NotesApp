@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -522,7 +523,9 @@ fun RenderWidget(
                     text = textContent.text,
                     metadata = textContent.metadata,
                     focusRequester = focusRequester,
-                    onDocumentChange = { onUpdate(RichTextCodec.applyTo(textContent, it)) }
+                    onDocumentChange = { onUpdate(RichTextCodec.applyTo(textContent, it)) },
+                    modifier = Modifier.padding(vertical = 12.dp)
+
                 )
             }
         }

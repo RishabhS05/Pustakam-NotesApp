@@ -123,8 +123,6 @@ fun NotesListView(
         }
         items(notes.size) { index ->
             NoteBookCardView(summary = notes[index]) { onNavigateNote(notes[index].id) }
-            // 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger — fires once per list growth
-            //   (keyed on size) when the LAST card enters composition.
             if (index == notes.size - 1) {
                 LaunchedEffect(notes.size) { onLoadMore() }
             }

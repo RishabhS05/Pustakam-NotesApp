@@ -71,29 +71,8 @@ private fun rememberGranthThemeMode(): ThemeMode {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppUi(navController: PustakmNavController = rememberPustakmNavController()) {
-    val currentRoute = navController.currentRoute()
-    Scaffold(topBar = {
-        if (currentRoute.isNotnull() && navController.shouldShowTopBar) TopAppBar(title = {
-            Text(text = currentRoute!!, textAlign = TextAlign.Center)
-        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colorScheme.background)
-        )
-    }, bottomBar = {
-        if (navController.shouldShowBottomBar) BottomBar(navController = navController)
-    }, floatingActionButton = {
-        if (navController.shouldShowFloatingButton) {
-            when (currentRoute) {
-                Route.Notes -> AddNewNoteFAB {
-                    navController.navigateTo(Route.NotesEditor)
-                }
-            }
-        }
-    }
-        ) { paddingValues ->
-        AppNavGraph(
-            modifier = Modifier.padding(paddingValues),
-            navController,
-        )
-    }
-
+    AppNavGraph(
+        navHostController = navController,
+    )
 }
 

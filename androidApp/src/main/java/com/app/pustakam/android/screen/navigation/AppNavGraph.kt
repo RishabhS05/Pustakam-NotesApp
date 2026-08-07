@@ -1,28 +1,55 @@
 package com.app.pustakam.android.screen.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.app.pustakam.android.screen.AppViewModel
 import com.app.pustakam.android.screen.navigation.NavRouteRegistry.buildAll
-
 
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navHostController: PustakmNavController = rememberPustakmNavController(),
-                ) {
+) {
     val appViewModel: AppViewModel = viewModel()
     val isAuthenticated = appViewModel.isAuthenticated
         .collectAsStateWithLifecycle(initialValue = false).value
-    val route = if (isAuthenticated) Route.Home else Route.Authentication
-    NavHost(
-        navController = navHostController.navController,
-        startDestination = route,
-        modifier = modifier
-    ) {
-        buildAll(navHostController)
+    val startRoute = if (isAuthenticated) Route.Home else Route.Authentication
+
+    val backStackEntry by navHostController.navController.currentBackStackEntryAsState()
+    val destination = backStackEntry?.destination
+    val section = destination.navSection()
+
+
+    val host = remember(navHostController, startRoute) {
+        movableContentOf<PaddingValues> { padding ->
+            NavHost(
+                navController = navHostController.navController,
+                startDestination = startRoute,
+                modifier = Modifier.padding(padding)
+            ) {
+                buildAll(navHostController)
+            }
+        }
+    }
+
+    when (section) {
+        NavSection.AUTH -> AuthScaffold(modifier) { padding -> host(padding) }
+
+        NavSection.HOME -> HomeScaffold(
+            navController = navHostController,
+            currentRoute = destination?.route,
+            modifier = modifier
+        ) { padding -> host(padding) }
+
+        NavSection.EDITOR -> EditorScaffold(modifier) { padding -> host(padding) }
     }
 }

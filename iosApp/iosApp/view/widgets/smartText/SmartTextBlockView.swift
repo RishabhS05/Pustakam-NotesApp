@@ -12,6 +12,7 @@ struct SmartTextBlockView: View {
     let activeSearchRange: NSRange?
     let readOnly: Bool
     let accessory: AnyView?
+    let dismissToken: Int
     let onIntent: (SmartTextIntent) -> Void
 
     @Environment(\.colorScheme) private var scheme
@@ -57,6 +58,7 @@ struct SmartTextBlockView: View {
                 readOnly: readOnly,
                 palette: palette,
                 accessory: accessory,
+                dismissToken: dismissToken,
                 onIntent: onIntent
             )
             .frame(minHeight: 24)

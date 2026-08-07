@@ -84,16 +84,16 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun undo() {
         val current = _noteContentUiState.value.note ?: return
-        val (next, restored) = _history.value.undo(current) ?: return
-        _history.value = next
-        restore(restored)
+        val step = _history.value.undoStep(current) ?: return
+        _history.value = step.history
+        restore(step.note)
     }
 
     fun redo() {
         val current = _noteContentUiState.value.note ?: return
-        val (next, restored) = _history.value.redo(current) ?: return
-        _history.value = next
-        restore(restored)
+        val step = _history.value.redoStep(current) ?: return
+        _history.value = step.history
+        restore(step.note)
     }
 
     init {

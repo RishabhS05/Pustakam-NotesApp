@@ -132,6 +132,16 @@ struct NoteEditorView: View {
             
             ToolbarItem(placement: .topBarTrailing) {
                 HStack{
+                    ActionButtonWithoutBackground(iconName: "arrow.uturn.backward",
+                                                  enabled : noteEditorViewModel.canUndo,
+                                                  action: {
+                        noteEditorViewModel.undo()
+                    }, tint: Theme.Colors.secondary)
+                    ActionButtonWithoutBackground(iconName: "arrow.uturn.forward",
+                                                  enabled : noteEditorViewModel.canRedo,
+                                                  action: {
+                        noteEditorViewModel.redo()
+                    }, tint: Theme.Colors.secondary)
                     ActionButtonWithoutBackground(iconName: "book",
                                                   enabled : noteEditorViewModel.isNoteValid(),
                                                   action: {

@@ -13,6 +13,7 @@ struct SmartTextEditorView: UIViewRepresentable {
     let palette: SmartTextPalette
     // rendered into the keyboard's inputAccessoryView, which is what pins it above the keyboard
     let accessory: AnyView?
+    let dismissToken: Int
     let onIntent: (SmartTextIntent) -> Void
 
     func makeUIView(context: Context) -> UITextView {
@@ -60,8 +61,34 @@ struct SmartTextEditorView: UIViewRepresentable {
             context.coordinator.hidePlaceholder()
         }
 
-        if isFocused, !uiView.isFirstResponder, !readOnly {
-            DispatchQueue.main.async { uiView.becomeFirstResponder() }
+        syncFirstResponder(uiView, coordinator: context.coordinator)
+    }
+
+    /**
+     Focus is claimed ONCE per block, not on every update.
+
+     The old `if isFocused && !isFirstResponder { becomeFirstResponder() }` ran on every render,
+     so anything that resigned the keyboard — the dismiss button, opening the colour picker — was
+     undone by the very next render and the keyboard bounced straight back.
+     */
+    private func syncFirstResponder(_ textView: UITextView, coordinator: Coordinator) {
+        guard !readOnly else { return }
+
+        if coordinator.lastDismissToken != dismissToken {
+            coordinator.lastDismissToken = dismissToken
+            coordinator.claimedFocusForBlockId = block.id   // do not re-claim after dismissing
+            if textView.isFirstResponder { textView.resignFirstResponder() }
+            return
+        }
+
+        if !isFocused {
+            coordinator.claimedFocusForBlockId = nil
+            return
+        }
+
+        if !textView.isFirstResponder, coordinator.claimedFocusForBlockId != block.id {
+            coordinator.claimedFocusForBlockId = block.id
+            DispatchQueue.main.async { textView.becomeFirstResponder() }
         }
     }
 
@@ -79,6 +106,8 @@ struct SmartTextEditorView: UIViewRepresentable {
         private weak var placeholderLabel: UILabel?
         private var accessoryHost: UIHostingController<AnyView>?
         private var accessoryContainer: SmartTextAccessoryView?
+        var lastDismissToken: Int = 0
+        var claimedFocusForBlockId: String?
 
         init(_ parent: SmartTextEditorView) {
             self.parent = parent
@@ -105,12 +134,19 @@ struct SmartTextEditorView: UIViewRepresentable {
                 host = UIHostingController(rootView: accessory)
                 host.view.backgroundColor = .clear
                 host.view.translatesAutoresizingMaskIntoConstraints = false
+                // a hosting controller adds the bottom safe-area inset by default, which measured
+                // taller than the bar actually draws and left a gap above the keyboard
+                if #available(iOS 16.4, *) { host.safeAreaRegions = [] }
+                host.view.insetsLayoutMarginsFromSafeArea = false
                 container = SmartTextAccessoryView()
                 container.addSubview(host.view)
+                // all four edges: the container height is the single source of truth, so the
+                // SwiftUI content can never be shorter than the bar and leave a gap
                 NSLayoutConstraint.activate([
                     host.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
                     host.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-                    host.view.topAnchor.constraint(equalTo: container.topAnchor)
+                    host.view.topAnchor.constraint(equalTo: container.topAnchor),
+                    host.view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
                 ])
                 accessoryHost = host
                 accessoryContainer = container

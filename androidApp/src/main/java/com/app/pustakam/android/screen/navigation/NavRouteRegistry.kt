@@ -22,6 +22,7 @@ object NavRouteRegistry {
     private val graphs: List<NavGraphBuilder.(PustakmNavController) -> Unit> = listOf(
         { nav -> AuthNavGraph(nav) },
         { nav -> HomeNavGraph(nav) },
+        { nav -> EditorNavGraph(nav) },
     )
 
     fun NavGraphBuilder.buildAll(navController: PustakmNavController) {

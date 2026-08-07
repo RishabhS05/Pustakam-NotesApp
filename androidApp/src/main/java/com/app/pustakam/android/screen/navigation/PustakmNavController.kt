@@ -21,6 +21,7 @@ object Route {
     const val Signup = "SIGNUP"
     const val Notes = "NOTES"
     const val NotesEditor = "NOTES_EDITOR"
+    const val NotesEditorRouter = "NOTES_EDITOR_ROUTER"
     const val Authentication = "AUTH"
     const val ImagePreview = "IMAGE_PREVIEW"
     const val VideoPreview = "VIDEO_PREVIEW"
@@ -104,7 +105,6 @@ private val NavGraph.startDestination: NavDestination?
 
 /**
  * Copied from similar function in NavigationUI.kt
- *
  * https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:navigation/navigation-ui/src/main/java/androidx/navigation/ui/NavigationUI.kt
  */
 private tailrec fun findStartDestination(graph: NavDestination): NavDestination {

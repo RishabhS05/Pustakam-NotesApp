@@ -22,6 +22,43 @@ class NoteEditorViewModel: ObservableObject {
     private var contentUpdatesHandle: Closeable?
     private var dirtyContentIds = Set<String>()
 
+    @Published private(set) var history = NoteHistory(
+        past: [],
+        future: [],
+        limit: NoteHistory.companion.DEFAULT_LIMIT
+    )
+
+    var canUndo: Bool { history.canUndo }
+
+    var canRedo: Bool { history.canRedo }
+
+    private func currentSnapshot() -> Note? {
+        guard let note = state.note else { return nil }
+        return note.withTitleAndContents(newTitle: state.title, newContents: state.noteContents)
+    }
+
+    private func restore(_ note: Note) {
+        state.note = note
+        state.title = note.title ?? ""
+        state.noteContents = note.contents as? [NoteContentModel] ?? []
+        state.noteContents.forEach { dirtyContentIds.insert($0.id) }
+        contentBridge.setSelectedNote(note: note)
+    }
+
+    func undo() {
+        guard let current = currentSnapshot(),
+              let step = history.undoStep(current: current) else { return }
+        history = step.history
+        restore(step.note)
+    }
+
+    func redo() {
+        guard let current = currentSnapshot(),
+              let step = history.redoStep(current: current) else { return }
+        history = step.history
+        restore(step.note)
+    }
+
     /// DI per series convention: defaults keep call sites/tests simple. (fixes E1, E6)
     init(noteId: String? = nil,
          adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
@@ -88,6 +125,11 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     func updateContent(content: NoteContentModel) {
+        if let snapshot = currentSnapshot() {
+            history = content is NoteContentModel.TextContent
+                ? history.recordText(previous: snapshot)
+                : history.recordAddMedia(previous: snapshot)
+        }
         dirtyContentIds.insert(content.id)   // 🔧 15-Jul-2026 iOS parity: touched → will be saved
         if let index = state.noteContents.firstIndex(where: { $0.id == content.id }) {
             state.noteContents[index] = content
@@ -98,6 +140,7 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     func addNewText() {
+        if let snapshot = currentSnapshot() { history = history.recordAddText(previous: snapshot) }
         guard let noteId = state.note?.id else { return }       // fixes E3 (was note!.id)
         let text = NoteContentObjectHelper.shared.createText(
             noteId: noteId,
@@ -315,6 +358,9 @@ class NoteEditorViewModel: ObservableObject {
         adapter.deleteNote(noteId: noteId , onState: { _ in })
     }
     func deleteContent(contentId: String) {
+        if let snapshot = currentSnapshot() {
+            history = history.recordDeleteContent(previous: snapshot)
+        }
         dirtyContentIds.remove(contentId)   // 🔧 15-Jul-2026 iOS parity: deleted → nothing to save
         guard let content = state.noteContents.first(where: { $0.id == contentId }) else { return }
 

@@ -8,6 +8,11 @@ final class SmartTextStore: ObservableObject {
     @Published private(set) var state: SmartTextState
     @Published var sheet: SmartTextSheetKind = .none
     @Published var selectionToolbarExpanded: Bool = false
+    @Published private(set) var keyboardDismissToken: Int = 0
+
+    func requestKeyboardDismiss() {
+        keyboardDismissToken &+= 1
+    }
 
     private var lastEmitted: RichDocument
     private let onDocumentChange: (RichDocument) -> Void
@@ -72,9 +77,7 @@ final class SmartTextStore: ObservableObject {
         if commands.isDismiss(action: action) {
             dispatch(commands.dismissToolbar())
             selectionToolbarExpanded = false
-            UIApplication.shared.sendAction(
-                #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil
-            )
+            requestKeyboardDismiss()
             return
         }
         if commands.isMore(action: action) {
@@ -98,9 +101,7 @@ final class SmartTextStore: ObservableObject {
         let opened = SmartTextSheetKind(index: index)
         // the colour picker is tall — drop the keyboard so the whole sheet is reachable
         if opened == .textColor || opened == .backgroundColor {
-            UIApplication.shared.sendAction(
-                #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil
-            )
+            requestKeyboardDismiss()
         }
         sheet = opened
     }

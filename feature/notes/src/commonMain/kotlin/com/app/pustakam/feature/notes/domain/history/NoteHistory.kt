@@ -2,7 +2,6 @@ package com.app.pustakam.feature.notes.domain.history
 
 import com.app.pustakam.core.model.models.response.notes.Note
 
-/** What kind of edit produced a snapshot — decides whether it can be undone at all. */
 enum class NoteEditKind {
     TEXT,
     FORMATTING,
@@ -14,14 +13,8 @@ enum class NoteEditKind {
     ADD_DOCUMENT
 }
 
-/**
- * Note-wide undo/redo. Snapshots the whole [Note] so a single stack covers typing, formatting,
- * the title, adding a text block and deleting content.
- *
- * Capturing a photo or importing a document is deliberately NOT undoable: the file already exists
- * on disk and rolling the note back would orphan it, so those two kinds are dropped instead of
- * being recorded — undo then steps past them to the last text edit.
- */
+data class NoteHistoryStep(val history: NoteHistory, val note: Note)
+
 data class NoteHistory(
     val past: List<Note> = emptyList(),
     val future: List<Note> = emptyList(),
@@ -31,21 +24,42 @@ data class NoteHistory(
 
     val canRedo: Boolean get() = future.isNotEmpty()
 
-    /** Call with the note as it was BEFORE the edit is applied. */
     fun record(previous: Note, kind: NoteEditKind): NoteHistory {
         if (!isUndoable(kind)) return this
         if (past.lastOrNull()?.let { sameContent(it, previous) } == true) return this
         return copy(past = (past + previous).takeLast(limit), future = emptyList())
     }
 
-    fun undo(current: Note): Pair<NoteHistory, Note>? {
+    fun recordText(previous: Note): NoteHistory = record(previous, NoteEditKind.TEXT)
+
+    fun recordFormatting(previous: Note): NoteHistory = record(previous, NoteEditKind.FORMATTING)
+
+    fun recordTitle(previous: Note): NoteHistory = record(previous, NoteEditKind.TITLE)
+
+    fun recordAddText(previous: Note): NoteHistory = record(previous, NoteEditKind.ADD_TEXT)
+
+    fun recordDeleteContent(previous: Note): NoteHistory =
+        record(previous, NoteEditKind.DELETE_CONTENT)
+
+    fun recordAddMedia(previous: Note): NoteHistory = record(previous, NoteEditKind.ADD_MEDIA)
+
+    fun recordAddDocument(previous: Note): NoteHistory =
+        record(previous, NoteEditKind.ADD_DOCUMENT)
+
+    fun undoStep(current: Note): NoteHistoryStep? {
         val previous = past.lastOrNull() ?: return null
-        return copy(past = past.dropLast(1), future = listOf(current) + future) to previous
+        return NoteHistoryStep(
+            history = copy(past = past.dropLast(1), future = listOf(current) + future),
+            note = previous
+        )
     }
 
-    fun redo(current: Note): Pair<NoteHistory, Note>? {
+    fun redoStep(current: Note): NoteHistoryStep? {
         val next = future.firstOrNull() ?: return null
-        return copy(past = (past + current).takeLast(limit), future = future.drop(1)) to next
+        return NoteHistoryStep(
+            history = copy(past = (past + current).takeLast(limit), future = future.drop(1)),
+            note = next
+        )
     }
 
     fun cleared(): NoteHistory = NoteHistory(limit = limit)
@@ -56,7 +70,6 @@ data class NoteHistory(
         fun isUndoable(kind: NoteEditKind): Boolean =
             kind != NoteEditKind.ADD_MEDIA && kind != NoteEditKind.ADD_DOCUMENT
 
-        /** updatedAt changes on every edit, so equality has to ignore it. */
         private fun sameContent(a: Note, b: Note): Boolean =
             a.title == b.title && a.contents == b.contents
     }
