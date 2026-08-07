@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.app.pustakam.android.extension.toImageVector
 
 @Composable
 fun BottomBar(
@@ -29,7 +30,7 @@ fun BottomBar(
                 icon = {
                     BadgedBox(badge = { }) { }
                     Icon(
-                        imageVector = (if (item.route == currentRoute) item.selectedIcon else item.unselectedIcon),
+                        imageVector = (if (item.route == currentRoute) item.selectedIcon.toImageVector() else item.unselectedIcon.toImageVector()),
                         contentDescription = item.title
                     )
                 },

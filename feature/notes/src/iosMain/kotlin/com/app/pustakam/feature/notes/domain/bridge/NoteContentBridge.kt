@@ -13,9 +13,6 @@ import org.koin.core.component.inject
 import com.app.pustakam.core.common.bridge.Closeable
 import com.app.pustakam.core.data.bridge.watch
 
-// 🔧 F5: use-case-backed — NO repository import anywhere in iosMain anymore.
-//       Public API unchanged (setSelectedNote / updateMediaContent / observeSelectedMedia /
-//       dispose) → zero Swift-side impact.
 /** Selected-note media state for iOS — routed through use cases (use-cases-only rule). */
 class NoteContentBridge : KoinComponent {
 

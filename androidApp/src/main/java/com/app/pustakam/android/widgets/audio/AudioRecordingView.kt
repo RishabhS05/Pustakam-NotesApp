@@ -71,11 +71,7 @@ fun AudioRecording(modifier: Modifier = Modifier,
     }
     val state = viewModel.state.collectAsStateWithLifecycle()
     val levelState = viewModel.audioLevels.collectAsStateWithLifecycle()
-    // 🔧 15-Jul-2026: CRASH FIX (duplicate LazyColumn key) — onStop used to fire from the
-    //   composition body on EVERY recomposition while the state was `stop`, adding the same
-    //   content id twice; and since the ViewModel is retained, reopening the recorder re-read the
-    //   PREVIOUS session's stale `stop` and re-added the previous recording too. LaunchedEffect
-    //   delivers it exactly once, then consumeStop() resets the state so it can never re-fire.
+
     LaunchedEffect(state.value.audioLifecycle) {
         if (state.value.audioLifecycle == AudioLifecycle.stop) {
             state.value.noteContentModel?.let { onStop(it) }

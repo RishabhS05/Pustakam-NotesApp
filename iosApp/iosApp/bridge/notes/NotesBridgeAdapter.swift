@@ -19,8 +19,6 @@ final class NotesBridgeAdapter {
         closeables.append(bridge.observeNotes(onChange: onChange))
     }
 
-    // 🔧 15-Jul-2026 iOS parity: live list-screen summaries (title/snippet/counts/thumbnail) —
-    //   the list never loads full note contents anymore. Same stream Android renders.
     func observeNoteSummaries(onChange: @escaping ([NoteSummary]) -> Void) {
         closeables.append(bridge.observeNoteSummaries(onChange: onChange))
     }
@@ -40,8 +38,6 @@ final class NotesBridgeAdapter {
         ))
     }
 
-    // 🔧 15-Jul-2026 iOS parity: one page of summaries (Android NOTES_PAGE_SIZE parity = 20).
-    //   Usage: adapter.getNoteSummaries(page: 1, limit: 20) { state in ... }
     func getNoteSummaries(page: Int, limit: Int, onState: @escaping (UiState<NSArray>) -> Void) {
         closeables.append(bridge.getNoteSummaries(
             page: Int32(page),
@@ -52,7 +48,6 @@ final class NotesBridgeAdapter {
         ))
     }
 
-    // 🔧 15-Jul-2026 iOS parity: FTS5 search — results are NoteSummary items with a snippet.
     func searchNotes(query: String, onState: @escaping (UiState<NSArray>) -> Void) {
         closeables.append(bridge.searchNotes(
             query: query,
@@ -114,10 +109,6 @@ final class NotesBridgeAdapter {
         )
     }
 
-    // 🔧 14-Jul-2026: NEW — delete a single content block (image/video/audio/text) of a note.
-    //   The note itself stays. Wraps Kotlin NotesBridge.deleteNoteContent (existed, was never
-    //   called from any UI path). Write call — not retained, survives screen death (see note above).
-    //   Usage: adapter.deleteNoteContent(contentId: content.id) { state in ... }
     func deleteNoteContent(contentId: String?, onState: @escaping (UiState<KotlinBoolean>) -> Void) {
         _ = bridge.deleteNoteContent(
             contentId: contentId,

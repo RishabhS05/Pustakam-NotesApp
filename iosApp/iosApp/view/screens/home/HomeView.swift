@@ -18,7 +18,7 @@ struct HomeView : View {
             NotesView()
                 .background(Theme.Colors.background)
                 .tabItem {
-                Image(systemName: "note.text.badge.plus")
+                Image("book_icon")
                 Text("Notes")
             }
             .tag(0)

@@ -46,7 +46,6 @@ data class BookUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val note: Note? = null,
-    // 📖 01-Aug-2026: pages now come from the shared PageLayoutEngine, one page = many widgets
     val pages: List<ReaderPage> = emptyList(),
     val startPageIndex: Int = 0,
     val readingMode: ReadingMode = ReadingMode.PAGE,
@@ -54,17 +53,11 @@ data class BookUiState(
 
 class NoteBookReaderViewModel : BaseViewModel() {
     private val readNoteUseCase by inject<ReadNoteUseCase>()
-    // 📖 23-Jul-2026: progress persistence via its own use case (mirror of the delete-content flow)
     private val updateReadingProgressUseCase by inject<UpdateReadingProgressUseCase>()
-    // 📖 25-Jul-2026: reading-mode preference — SAME IAppPreferences the Settings screen writes, so
-    //   the reader's toggle and Settings stay in sync. UI never sees the shared prefs type directly.
     private val userPrefs by inject<IAppPreferences>()
 
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
-
-    // 📖 01-Aug-2026: the ONE policy pages are generated against; the UI reads it back so what it
-    //   draws (grid columns, gaps, cell counts) always matches the heights the engine reserved.
     var layoutPolicy: PageLayoutPolicy = PageLayoutPolicy.standard()
         private set
 
@@ -86,10 +79,7 @@ class NoteBookReaderViewModel : BaseViewModel() {
         private val saveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
     private var startContentId: String? = null
-    // 🔧 19-Jul-2026: FIX — open ONE file as its own book (tapped doc card), not the whole note
     private var singleContentMode: Boolean = false
-
-    // 📖 23-Jul-2026: the document whose reading progress is being tracked, and the last shown page.
     private var progressContentId: String? = null
     private var lastKnownPage: Int = 0
     private var totalPages: Int = 0
@@ -137,15 +127,11 @@ class NoteBookReaderViewModel : BaseViewModel() {
     }
 
     override fun onLoading(taskCode: TaskCode) {
-        // 🔧 19-Jul-2026: FIX (loader lifecycle) — the flow can emit Loading again after content
-        //   is up; never bring the loader back over already-built pages.
         _uiState.update { if (it.pages.isEmpty()) it.copy(isLoading = true) else it }
     }
 
     override fun onSuccess(taskCode: TaskCode, result: Result.Success<BaseResponse<*>>) {
         val note = result.data.data as Note
-        // 📖 01-Aug-2026: pages are generated ONCE, here, by the shared engine. Both reading modes
-        //   consume this same list, so toggling the mode never re-paginates and never moves a page.
         viewModelScope.launch(Dispatchers.IO) {
             val pages = PageLayoutEngine.buildPages(note, layoutPolicy)
             // an explicit startContentId (tapped card) is an intentional jump and wins over resume

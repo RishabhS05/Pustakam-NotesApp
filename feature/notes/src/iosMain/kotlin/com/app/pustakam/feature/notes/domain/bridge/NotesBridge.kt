@@ -43,11 +43,6 @@ class NotesBridge : KoinComponent {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private companion object {
-        // 🔧 REALTIME-FIX: WRITES must SURVIVE screen death. The editor saves in
-        //   onDisappear; the VM (and adapter) deallocate immediately after, and
-        //   dispose() was cancelling the in-flight save coroutine BEFORE the DB
-        //   write committed → note never persisted / never emitted. App-lifetime
-        //   scope for writes; callbacks into dead VMs are no-ops via [weak self].
         private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     }
 
@@ -183,8 +178,6 @@ class NotesBridge : KoinComponent {
     fun observeNotes(onChange: (Notes) -> Unit): Closeable =
         getNotesUseCase.notes.watch(scope) { onChange(it) }
 
-    // 🔧 15-Jul-2026 iOS parity: live list-screen summaries — kept in sync by the repository on
-    //   every save/delete (Note.toSummary), same stream Android renders.
     fun observeNoteSummaries(onChange: (List<NoteSummary>) -> Unit): Closeable =
         getNoteSummariesUseCase.noteSummaries.watch(scope) { onChange(it) }
 

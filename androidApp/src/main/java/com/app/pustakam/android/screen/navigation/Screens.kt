@@ -1,17 +1,18 @@
 package com.app.pustakam.android.screen.navigation
 
+
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.app.pustakam.android.R
+
 import kotlinx.serialization.Serializable
 
 sealed class BottomNavigationItem(
     val title: String,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
+    val selectedIcon: Any,
+    val unselectedIcon: Any,
     val batchCount: Int? = null,
     val hasNotification: Boolean, val route: String
 )
@@ -26,10 +27,10 @@ sealed class Screen(val route: String) {
     }
 
     data object HomeScreen : BottomNavigationItem(
-        "Notes", selectedIcon = Icons.Filled.Add, unselectedIcon = Icons.Default.Add, hasNotification = false, route = Route.Home
+        "Notes", selectedIcon = R.drawable.ic_book_icon, unselectedIcon = R.drawable.ic_book_icon, hasNotification = false, route = Route.Home
     ) {
         data object NotesScreen : BottomNavigationItem(
-            "Notes", selectedIcon = Icons.Filled.Add, unselectedIcon = Icons.Default.Add, hasNotification = false, route = Route.Notes
+            "Notes", selectedIcon =  R.drawable.ic_book_icon, unselectedIcon =  R.drawable.ic_book_icon, hasNotification = false, route = Route.Notes
         )
 
         data object SearchScreen : BottomNavigationItem(
