@@ -1,7 +1,9 @@
 package com.app.pustakam.feature.notes.di
 
+import com.app.pustakam.feature.notes.data.repositoryImpl.CanvasRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteRepository
+import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
 import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
@@ -33,6 +35,7 @@ fun notesModule(): Module = module {
     single<IRemoteNoteRepository> { get<INoteRepository>() }
 
     single<INoteContentRepository> { NoteContentRepository() }
+    single<ICanvasRepository> { CanvasRepository() }
     factory<CreateORUpdateNoteUseCase> { CreateORUpdateNoteUseCase() }
     factory<DeleteNoteUseCase> { DeleteNoteUseCase() }
     factory<ReadNoteUseCase> { ReadNoteUseCase() }

@@ -93,6 +93,9 @@
 		5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7555D355DB041B79F274266 /* SmartTextToolbars.swift */; };
 		312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */; };
 		1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */; };
+		2726147D08F5407291A0A0FC /* MasterTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08388C412E274077A00FBD08 /* MasterTextRenderer.swift */; };
+		1C10EA8217A04B009EC18CFC /* MasterTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF92072904EC4D0D9452A8D2 /* MasterTextWidget.swift */; };
+		88B70711427343E9B8E4BD16 /* MasterCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3586C0322639420B890AB835 /* MasterCanvas.swift */; };
 		636341002F012A1B003835E4 /* NoteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636340FF2F012A1B003835E4 /* NoteTextField.swift */; };
 		636341022F016B8C003835E4 /* FormattingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636341012F016B8C003835E4 /* FormattingToolbar.swift */; };
 		63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */; };
@@ -246,6 +249,9 @@
 		E7555D355DB041B79F274266 /* SmartTextToolbars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextToolbars.swift; sourceTree = "<group>"; };
 		F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextSheets.swift; sourceTree = "<group>"; };
 		475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextWidget.swift; sourceTree = "<group>"; };
+		08388C412E274077A00FBD08 /* MasterTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextRenderer.swift; sourceTree = "<group>"; };
+		BF92072904EC4D0D9452A8D2 /* MasterTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextWidget.swift; sourceTree = "<group>"; };
+		3586C0322639420B890AB835 /* MasterCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterCanvas.swift; sourceTree = "<group>"; };
 		636340FF2F012A1B003835E4 /* NoteTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextField.swift; sourceTree = "<group>"; };
 		636341012F016B8C003835E4 /* FormattingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingToolbar.swift; sourceTree = "<group>"; };
 		63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
@@ -774,6 +780,7 @@
 				63D089212CAC86EA008FD8CC /* imageview */,
 				63D089202CAC85EF008FD8CC /* styles */,
 				63D0891F2CAC85B4008FD8CC /* textfields */,
+				436BBA5FFD3D4781B0C47AB0 /* masterEditor */,
 				8B023D68CAFE421A86322695 /* smartText */,
 			);
 			path = widgets;
@@ -792,6 +799,16 @@
 				475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */,
 			);
 			path = smartText;
+			sourceTree = "<group>";
+		};
+		436BBA5FFD3D4781B0C47AB0 /* masterEditor */ = {
+			isa = PBXGroup;
+			children = (
+				3586C0322639420B890AB835 /* MasterCanvas.swift */,
+				08388C412E274077A00FBD08 /* MasterTextRenderer.swift */,
+				BF92072904EC4D0D9452A8D2 /* MasterTextWidget.swift */,
+			);
+			path = masterEditor;
 			sourceTree = "<group>";
 		};
 		63D0891F2CAC85B4008FD8CC /* textfields */ = {
@@ -1075,6 +1092,9 @@
 				5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */,
 				312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */,
 				1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */,
+				2726147D08F5407291A0A0FC /* MasterTextRenderer.swift in Sources */,
+				1C10EA8217A04B009EC18CFC /* MasterTextWidget.swift in Sources */,
+				88B70711427343E9B8E4BD16 /* MasterCanvas.swift in Sources */,
 				636341002F012A1B003835E4 /* NoteTextField.swift in Sources */,
 				22EAC32230113B4E00EB8A80 /* ThemePalette.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,

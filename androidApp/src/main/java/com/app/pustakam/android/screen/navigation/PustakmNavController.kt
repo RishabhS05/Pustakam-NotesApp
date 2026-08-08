@@ -22,6 +22,7 @@ object Route {
     const val Notes = "NOTES"
     const val NotesEditor = "NOTES_EDITOR"
     const val NotesEditorRouter = "NOTES_EDITOR_ROUTER"
+    const val MasterEditor = "MASTER_EDITOR"
     const val Authentication = "AUTH"
     const val ImagePreview = "IMAGE_PREVIEW"
     const val VideoPreview = "VIDEO_PREVIEW"

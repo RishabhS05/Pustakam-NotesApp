@@ -21,6 +21,7 @@ import com.app.pustakam.android.hardware.camera.ImageEditorScreen
 import com.app.pustakam.android.hardware.camera.MediaProcessingEvent
 import com.app.pustakam.android.hardware.video.VideoPreviewScreen
 import com.app.pustakam.android.screen.bookReading.BookReaderScreen
+import com.app.pustakam.android.screen.masterEditor.MasterEditorScreen
 import com.app.pustakam.android.screen.noteEditor.NoteEditorScreen
 import com.app.pustakam.android.screen.noteEditor.NoteEditorViewModel
 import com.app.pustakam.android.screen.notes.list.NotesView
@@ -160,6 +161,14 @@ fun NavGraphBuilder.EditorNavGraph(navController: PustakmNavController){
                 imageDataViewModel = imageViewModel,
                 navigateTo = navController::navigateTo)
         }
+        composable(
+            route = Route.MasterEditor + "/{noteId}"
+        ) { backStackEntry ->
+            MasterEditorScreen(
+                noteId = backStackEntry.arguments?.getString("noteId"),
+                onBack = navController::upPress
+            )
+        }
         /** just wanted to use navigation with args style to remember this way of passing data*/
         composable(
             route = Route.NotesEditor+"/{noteId}"
@@ -173,7 +182,9 @@ fun NavGraphBuilder.EditorNavGraph(navController: PustakmNavController){
             NoteEditorScreen(id = noteId,
                 noteEditorViewModel = viewModel,
                 imageDataViewModel = imageViewModel,
-                onBack = navController::upPress, navController::navigateTo)
+                onBack = navController::upPress, onMasterEditor = {
+                    navController.navigateTo(Route.MasterEditor + "/$noteId")
+                }, navController::navigateTo, )
         }
     }
 

@@ -56,6 +56,35 @@ CREATE INDEX idx_notecontent_note_position ON NoteContent(noteId, position);
 --   every device supports. FTS5 is now created AT RUNTIME, only where supported and only when
 --   search is first used — see NotesDao.ensureFtsIndex(); other devices use searchContentTextLike.
 
+CREATE TABLE CanvasNode(
+id TEXT NOT NULL PRIMARY KEY,
+noteId TEXT NOT NULL,
+kind TEXT NOT NULL,
+contentId TEXT,
+parentId TEXT,
+x REAL NOT NULL DEFAULT 0.0,
+y REAL NOT NULL DEFAULT 0.0,
+width REAL NOT NULL DEFAULT 0.0,
+height REAL NOT NULL DEFAULT 0.0,
+z INTEGER NOT NULL DEFAULT 0,
+locked INTEGER NOT NULL DEFAULT 0,
+hidden INTEGER NOT NULL DEFAULT 0,
+links TEXT NOT NULL DEFAULT '',
+updatedAt TEXT
+);
+
+CREATE INDEX idx_canvasnode_note ON CanvasNode(noteId, z);
+
+CREATE INDEX idx_canvasnode_viewport ON CanvasNode(noteId, x, y);
+
+CREATE TABLE CanvasViewport(
+noteId TEXT NOT NULL PRIMARY KEY,
+offsetX REAL NOT NULL DEFAULT 0.0,
+offsetY REAL NOT NULL DEFAULT 0.0,
+scale REAL NOT NULL DEFAULT 1.0,
+updatedAt TEXT
+);
+
 CREATE TABLE Tags(
 id TEXT NOT NULL PRIMARY KEY,
 color TEXT,
@@ -257,3 +286,44 @@ SELECT id, label, color FROM Tags;
 
 getTag:
 SELECT id, label, color FROM Tags WHERE id = ?;
+
+
+upsertCanvasNode:
+INSERT OR REPLACE INTO CanvasNode(id, noteId, kind, contentId, parentId, x, y, width, height, z, locked, hidden, links, updatedAt)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+
+deleteCanvasNode:
+DELETE FROM CanvasNode WHERE id = ?;
+
+deleteCanvasNodesForNote:
+DELETE FROM CanvasNode WHERE noteId = ?;
+
+selectCanvasNodes:
+SELECT * FROM CanvasNode WHERE noteId = ? ORDER BY z ASC;
+
+selectCanvasNodesInRect:
+SELECT * FROM CanvasNode
+WHERE noteId = :noteId
+AND hidden = 0
+AND x < :right AND (x + width) > :left
+AND y < :bottom AND (y + height) > :top
+ORDER BY z ASC;
+
+countCanvasNodes:
+SELECT count(*) FROM CanvasNode WHERE noteId = ?;
+
+moveCanvasNode:
+UPDATE CanvasNode SET x = ?, y = ?, updatedAt = ? WHERE id = ?;
+
+resizeCanvasNode:
+UPDATE CanvasNode SET width = ?, height = ?, updatedAt = ? WHERE id = ?;
+
+raiseCanvasNode:
+UPDATE CanvasNode SET z = ?, updatedAt = ? WHERE id = ?;
+
+upsertCanvasViewport:
+INSERT OR REPLACE INTO CanvasViewport(noteId, offsetX, offsetY, scale, updatedAt)
+VALUES(?,?,?,?,?);
+
+selectCanvasViewport:
+SELECT * FROM CanvasViewport WHERE noteId = ?;

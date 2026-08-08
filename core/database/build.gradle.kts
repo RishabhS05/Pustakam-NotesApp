@@ -34,6 +34,7 @@ kotlin {
                 // 🔧 30-Jul-2026 02:10 — NotesDao maps rows to Note/Notes/Tag and takes RichTextMetadata: both are public API here
                 api(projects.core.common)
                 api(projects.core.model)
+                api(projects.core.richtext)
                 api(libs.kotlinx.coroutines.core)
                 api(libs.kotlinx.datetime)
                 api(libs.datastore.preferences)
