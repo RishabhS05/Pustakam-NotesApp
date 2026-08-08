@@ -1,9 +1,6 @@
 package com.app.pustakam.android.widgets.colorPalete
 
-// build.gradle (module)
-// implementation("androidx.compose.material3:material3:<latest>")
-// implementation("androidx.compose.foundation:foundation:<latest>")
-
+import android.annotation.SuppressLint
 import com.app.pustakam.android.theme.DarkBrown1
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.background
@@ -13,7 +10,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -26,7 +25,12 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.alpha
 import com.app.pustakam.android.theme.toHexString
+import com.app.pustakam.android.theme.typography
+import com.app.pustakam.android.widgets.smartText.SmartTextStyleMapper
+import com.app.pustakam.android.widgets.smartText.SmartTextTokens
+import com.app.pustakam.core.richtext.presentation.SmartTextCatalog
 import kotlin.math.roundToInt
 
 @Composable
@@ -65,6 +69,32 @@ fun ColorSelector(
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.weight(1f))
+            // Quick palette (material-ish)
+            val swatches = SmartTextCatalog.textColors
+            Text("Swatches", style = typography.labelLarge)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(5),
+                modifier = Modifier.height(96.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(swatches) { hex ->
+                    var color = SmartTextStyleMapper.parseColor(hex)
+                    Box(
+                        Modifier
+                            .size(42.dp)
+                            .background(color
+                                , CircleShape)
+                            .border(width = if (colorsClose(color, current)) 2.dp else 1.dp,
+                                color = if (colorsClose(color, current)) colorScheme.primary else colorScheme.outlineVariant,
+                                CircleShape)
+                            .clickable {
+                                val (h, s, v) = colorToHSV(color)
+                                hue = h; sat = s; value = v; alpha = color.alpha
+                            }
+                    )
+                }
+            }
             // Quick contrast preview chip
             AssistChip(
                 onClick = {},
@@ -76,37 +106,6 @@ fun ColorSelector(
             )
         }
 
-        // Quick palette (material-ish)
-        val swatches = listOf(
-            0xFF000000, 0xFFFFFFFF, 0xFFEF4444, 0xFFF59E0B, 0xFF10B981, 0xFF3B82F6,
-            0xFF8B5CF6, 0xFFEC4899, 0xFFFB923C, 0xFF22D3EE, 0xFF84CC16, 0xFF14B8A6
-        ).map { Color(it) }
-
-        Text("Swatches", style = MaterialTheme.typography.labelLarge)
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(6),
-            modifier = Modifier.height(96.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(swatches) { c ->
-                Box(
-                    Modifier
-                        .aspectRatio(1f)
-                        .clip(MaterialTheme.shapes.large)
-                        .background(c)
-                        .border(
-                            width = if (colorsClose(c, current)) 2.dp else 1.dp,
-                            color = if (colorsClose(c, current)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                            shape = MaterialTheme.shapes.large
-                        )
-                        .clickable {
-                            val (h, s, v) = colorToHSV(c)
-                            hue = h; sat = s; value = v; alpha = c.alpha
-                        }
-                )
-            }
-        }
 
         // Sliders
         LabeledSlider(
@@ -200,8 +199,8 @@ private fun LabeledSlider(
                         .height(8.dp)
                         .clip(MaterialTheme.shapes.small)
                         .background(trackBrush ?: Brush.horizontalGradient(listOf(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.colorScheme.surfaceVariant
+                            colorScheme.surfaceVariant,
+                            colorScheme.surfaceVariant
                         )))
                 )
             }
@@ -233,8 +232,8 @@ private fun colorsClose(a: Color, b: Color): Boolean {
 @Composable
 private fun checkerBrush(size: Int = 6): Brush {
     // lightweight checkerboard for alpha track backdrop
-    val light = MaterialTheme.colorScheme.surfaceVariant
-    val dark = MaterialTheme.colorScheme.outlineVariant
+    val light =colorScheme.surfaceVariant
+    val dark = colorScheme.outlineVariant
     val squares = List(8) { row ->
         List(8) { col -> if ((row + col) % 2 == 0) light else dark }
     }.flatten()

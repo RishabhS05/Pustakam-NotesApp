@@ -129,6 +129,7 @@ private fun TextBlockRow(
     var fieldValue by remember(block.id) {
         mutableStateOf(TextFieldValue(block.text, TextRange(block.text.length)))
     }
+    var hasFocus by remember(block.id) { mutableStateOf(false) }
     // pull external edits (undo, replace-all, markdown rewrite) back into the field
     if (fieldValue.text != block.text) {
         val caret = if (isFocused) selection.normalizedEnd.coerceIn(0, block.text.length)
@@ -171,13 +172,11 @@ private fun TextBlockRow(
                         return@BasicTextField
                     }
                     fieldValue = newValue
-                    // TypeText already positions the caret; a follow-up SelectionChanged would
-                    // undo the caret move a markdown shortcut just made
                     if (newValue.text != block.text) {
                         onIntent(
                             SmartTextIntent.TypeText(block.id, newValue.text, newValue.selection.end)
                         )
-                    } else {
+                    } else if (hasFocus) {
                         onIntent(
                             SmartTextIntent.SelectionChanged(
                                 DocumentSelection(
@@ -226,6 +225,7 @@ private fun TextBlockRow(
                     .defaultMinSize(minHeight = 24.dp)
                     .focusRequester(focusRequester)
                     .onFocusChanged { focus ->
+                        hasFocus = focus.isFocused
                         if (focus.isFocused) {
                             onIntent(
                                 SmartTextIntent.SelectionChanged(

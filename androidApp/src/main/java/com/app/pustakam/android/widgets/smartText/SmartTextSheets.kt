@@ -194,23 +194,6 @@ private fun ColorSheet(title: String, palette: List<String>, onColor: (String?) 
     val colors = SmartTextTokens.colors
     var picked by remember { mutableStateOf(SmartTextStyleMapper.parseColor(palette.first())) }
     SheetTitle(title)
-    // quick swatches first, then the full picker already used by Create Tag
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(5),
-        modifier = Modifier.padding(bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(palette) { hex ->
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(SmartTextStyleMapper.parseColor(hex), CircleShape)
-                    .border(1.dp, colors.divider, CircleShape)
-                    .clickable { onColor(hex) }
-            )
-        }
-    }
     ColorSelector(initial = picked) { picked = it }
     Row(
         modifier = Modifier
@@ -219,7 +202,7 @@ private fun ColorSheet(title: String, palette: List<String>, onColor: (String?) 
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Button(
-            onClick = { onColor(SmartTextStyleMapper.toHex(picked)) },
+            onClick = { onColor(picked.toHexString()) },
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.accent,
                 contentColor = colors.onAccent

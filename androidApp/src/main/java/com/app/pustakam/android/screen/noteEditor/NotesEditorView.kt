@@ -483,8 +483,6 @@ fun NotesEditor(
                                 .focusRequester(focusRequester)
                                 .padding(top = 2.dp)
                         )
-                        // 🔧 07-Aug-2026 — weight, not fillMaxSize: the list was overflowing the Column
-                        //   past the bottom of the screen instead of scrolling inside it
                         Box(modifier = Modifier.weight(1f)) {
                             contentList(focusRequester)
                         }
@@ -524,7 +522,7 @@ fun RenderWidget(
                     metadata = textContent.metadata,
                     focusRequester = focusRequester,
                     onDocumentChange = { onUpdate(RichTextCodec.applyTo(textContent, it)) },
-                    modifier = Modifier.padding(vertical = 12.dp)
+                    modifier = Modifier.padding( 16.dp)
 
                 )
             }

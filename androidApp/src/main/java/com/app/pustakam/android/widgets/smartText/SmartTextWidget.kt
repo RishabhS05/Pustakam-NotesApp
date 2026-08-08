@@ -29,6 +29,7 @@ import com.app.pustakam.core.richtext.codec.RichTextCodec
 import com.app.pustakam.core.richtext.engine.ListEngine
 import com.app.pustakam.core.richtext.model.RichBlock
 import com.app.pustakam.core.richtext.model.RichDocument
+import com.app.pustakam.core.richtext.presentation.DocumentSelection
 import com.app.pustakam.core.richtext.presentation.SmartTextCommands
 import com.app.pustakam.core.richtext.presentation.SmartTextIntent
 import com.app.pustakam.core.richtext.presentation.SmartTextReducer
@@ -57,6 +58,7 @@ fun SmartTextWidget(
     var lastEmitted by remember { mutableStateOf(document) }
     var sheet by rememberSaveable { mutableStateOf(SmartTextSheet.NONE) }
     var selectionToolbarExpanded by remember { mutableStateOf(false) }
+    var selectionAtSheetOpen by remember { mutableStateOf<DocumentSelection?>(null) }
 
     // only a document we did NOT produce replaces the editor state — otherwise typing would reset it
     LaunchedEffect(document) {
@@ -112,11 +114,20 @@ fun SmartTextWidget(
             return
         }
         val opened = SmartTextSheet.fromIndex(SmartTextCommands.sheetIndex(action))
-        // the colour picker is tall — drop the keyboard so the whole sheet is reachable
+        selectionAtSheetOpen = state.selection
         if (opened == SmartTextSheet.TEXT_COLOR || opened == SmartTextSheet.BACKGROUND_COLOR) {
             focusManager.clearFocus()
         }
         sheet = opened
+    }
+
+    fun applyFromSheet(intent: SmartTextIntent) {
+        selectionAtSheetOpen
+            ?.takeIf { it != state.selection }
+            ?.let { dispatch(SmartTextIntent.SelectionChanged(it)) }
+        dispatch(intent)
+        selectionAtSheetOpen = null
+        sheet = SmartTextSheet.NONE
     }
 
     val toolbarHost = LocalSmartTextToolbar.current
@@ -202,30 +213,26 @@ fun SmartTextWidget(
         currentMatch = state.search.currentIndex,
         tableRowCount = focusedTable?.data?.rowCount ?: 0,
         tableColumnCount = focusedTable?.data?.columnCount ?: 0,
-        onDismiss = { sheet = SmartTextSheet.NONE },
-        onStyle = {
-            dispatch(SmartTextIntent.SetParagraphStyle(it))
+        onDismiss = {
+            selectionAtSheetOpen = null
             sheet = SmartTextSheet.NONE
         },
-        onAlign = {
-            dispatch(SmartTextIntent.SetAlignment(it))
-            sheet = SmartTextSheet.NONE
+        onStyle = { applyFromSheet(SmartTextIntent.SetParagraphStyle(it)) },
+        onAlign = { applyFromSheet(SmartTextIntent.SetAlignment(it)) },
+        onColor = { color ->
+            applyFromSheet(
+                if (sheet == SmartTextSheet.BACKGROUND_COLOR) {
+                    SmartTextIntent.SetBackgroundColor(color)
+                } else {
+                    SmartTextIntent.SetTextColor(color)
+                }
+            )
         },
-        onColor = {
-            if (sheet == SmartTextSheet.BACKGROUND_COLOR) {
-                dispatch(SmartTextIntent.SetBackgroundColor(it))
-            } else {
-                dispatch(SmartTextIntent.SetTextColor(it))
-            }
-            sheet = SmartTextSheet.NONE
-        },
-        onFontSize = {
-            dispatch(SmartTextIntent.SetFontSize(it))
-            sheet = SmartTextSheet.NONE
-        },
-        onLink = {
-            dispatch(if (it == null) SmartTextIntent.RemoveLink else SmartTextIntent.SetLink(it))
-            sheet = SmartTextSheet.NONE
+        onFontSize = { applyFromSheet(SmartTextIntent.SetFontSize(it)) },
+        onLink = { url ->
+            applyFromSheet(
+                if (url == null) SmartTextIntent.RemoveLink else SmartTextIntent.SetLink(url)
+            )
         },
         onTable = { command ->
             focusedTable?.let { dispatch(SmartTextIntent.TableAction(it.id, command)) }

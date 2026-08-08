@@ -13,11 +13,13 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import com.app.pustakam.core.richtext.model.ParagraphStyle
 import com.app.pustakam.core.richtext.model.RichBlock
 import com.app.pustakam.core.richtext.model.RichSpan
 import com.app.pustakam.core.richtext.model.TextAlign
 import com.app.pustakam.core.richtext.model.TextFormat
+import kotlin.math.roundToInt
 
 // turns the shared span model into Compose styling — the only place that mapping lives on Android
 object SmartTextStyleMapper {
@@ -120,10 +122,16 @@ object SmartTextStyleMapper {
         }
     }.getOrDefault(Color.Unspecified)
 
-    fun toHex(color: Color): String {
-        val red = (color.red * 255).toInt()
-        val green = (color.green * 255).toInt()
-        val blue = (color.blue * 255).toInt()
-        return "#%02X%02X%02X".format(red, green, blue)
-    }
+
+}
+fun Color.toHexString(): String {
+    val alpha = (this.alpha * 255).roundToInt()
+    val red = (this.red * 255).roundToInt()
+    val green = (this.green * 255).roundToInt()
+    val blue = (this.blue * 255).roundToInt()
+    return if (alpha == 255) String.format("#%02X%02X%02X", red, green, blue)
+    else String.format("#%02X%02X%02X%02X", alpha, red, green, blue)
+}
+fun String.toColor() : Color {
+    return Color(this.toColorInt())
 }
