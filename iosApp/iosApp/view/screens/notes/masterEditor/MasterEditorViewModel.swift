@@ -188,6 +188,56 @@ final class MasterEditorViewModel: ObservableObject {
         }
     }
 
+    func deleteNode(nodeId: String) {
+        guard let note else { return }
+        let contentId = canvas.document.nodeById(nodeId: nodeId)?.contentId
+        onCanvasIntent(CanvasCommands.shared.removeNode(nodeId: nodeId))
+        texts[nodeId] = nil
+        if let contentId {
+            let nextNote = note.withContents(
+                newContents: note.contents.filter { $0.id != contentId }
+            )
+            self.note = nextNote
+            adapter.createOrUpdateNote(note: nextNote) { _ in }
+        }
+    }
+
+    func renameNode(nodeId: String, name: String) {
+        onCanvasIntent(CanvasCommands.shared.renameNode(nodeId: nodeId, name: name))
+        canvasBridge.rename(nodeId: nodeId, name: name)
+    }
+
+    func rebuildLayoutFromNote() {
+        guard let note, let noteId else { return }
+        let document = NoteCanvasConverter.shared.toCanvas(contents: note.contents)
+        onCanvasIntent(CanvasCommands.shared.replaceDocument(document: document))
+
+        var built: [String: MasterTextState] = [:]
+        for node in document.nodes where node.kind == CanvasNodeKind.masterText {
+            guard let contentId = node.contentId,
+                  let content = note.contents
+                    .compactMap({ $0 as? NoteContentModel.TextContent })
+                    .first(where: { $0.id == contentId }) else { continue }
+            built[node.id] = MasterTextState.companion.of(
+                document: RichTextCodec.shared.documentFrom(content: content)
+            )
+        }
+        texts = built
+        canvasBridge.removeAll(noteId: noteId)
+        canvasBridge.saveAll(noteId: noteId, nodes: document.nodes)
+    }
+
+    func applyCanvasOrderToNote() {
+        guard let note else { return }
+        let reordered = NoteCanvasConverter.shared.reorderContents(
+            contents: note.contents,
+            document: canvas.document
+        )
+        let nextNote = note.withContents(newContents: reordered)
+        self.note = nextNote
+        adapter.createOrUpdateNote(note: nextNote) { _ in }
+    }
+
     func addTextNode() {
         guard let note else { return }
         let content = NoteContentObjectHelper.shared.createText(

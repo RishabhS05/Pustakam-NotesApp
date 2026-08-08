@@ -15,6 +15,7 @@ import com.app.pustakam.core.richtext.master.presentation.CanvasEditorState
 import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
 import com.app.pustakam.core.richtext.master.presentation.MasterTextReducer
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
+import com.app.pustakam.core.richtext.master.presentation.NoteCanvasConverter
 import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
@@ -230,6 +231,56 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
     }
 
     fun linkedNodes(nodeId: String) = CanvasCommands.linkedNodes(_state.value.canvas, nodeId)
+
+    fun deleteNode(nodeId: String) {
+        val note = _state.value.note ?: return
+        val contentId = _state.value.canvas.document.nodeById(nodeId)?.contentId
+        onCanvasIntent(CanvasCommands.removeNode(nodeId))
+        _state.update { it.copy(texts = it.texts - nodeId) }
+        if (contentId != null) {
+            val nextNote = note.withContents(note.contents.filterNot { it.id == contentId })
+            _state.update { it.copy(note = nextNote) }
+            viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
+        }
+    }
+
+    fun renameNode(nodeId: String, name: String) {
+        onCanvasIntent(CanvasCommands.renameNode(nodeId, name))
+        viewModelScope.launch { canvasRepository.rename(nodeId, name) }
+    }
+
+    fun rebuildLayoutFromNote() {
+        val note = _state.value.note ?: return
+        val document = NoteCanvasConverter.toCanvas(note.contents)
+        onCanvasIntent(CanvasCommands.replaceDocument(document))
+        _state.update { current ->
+            val texts = document.nodes
+                .filter { it.kind == CanvasNodeKind.MASTER_TEXT }
+                .mapNotNull { node ->
+                    val content = note.contents
+                        .filterIsInstance<NoteContentModel.TextContent>()
+                        .firstOrNull { it.id == node.contentId } ?: return@mapNotNull null
+                    node.id to MasterTextState.of(RichTextCodec.documentFrom(content))
+                }
+                .toMap()
+            current.copy(texts = texts)
+        }
+        viewModelScope.launch {
+            canvasRepository.removeAll(note.id)
+            canvasRepository.saveAll(note.id, document.nodes)
+        }
+    }
+
+    fun applyCanvasOrderToNote() {
+        val note = _state.value.note ?: return
+        val reordered = NoteCanvasConverter.reorderContents(
+            note.contents,
+            _state.value.canvas.document
+        )
+        val nextNote = note.withContents(reordered)
+        _state.update { it.copy(note = nextNote) }
+        viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
+    }
 
     fun addTextNode() {
         val note = _state.value.note ?: return

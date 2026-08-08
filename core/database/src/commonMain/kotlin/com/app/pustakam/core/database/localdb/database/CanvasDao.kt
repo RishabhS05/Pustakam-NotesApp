@@ -16,6 +16,7 @@ class CanvasDao(private val database: NotesDatabase) {
             id = node.id,
             noteId = noteId,
             kind = node.kind.name,
+            name = node.name,
             contentId = node.contentId,
             parentId = node.parentId,
             x = node.rect.x.toDouble(),
@@ -52,6 +53,11 @@ class CanvasDao(private val database: NotesDatabase) {
 
     fun count(noteId: String): Long = queries.countCanvasNodes(noteId).executeAsOne()
 
+    fun nodeForContent(contentId: String): CanvasNode? =
+        queries.selectCanvasNodeForContent(contentId).executeAsOneOrNull()?.toNode()
+
+    fun pruneOrphans() = queries.deleteOrphanCanvasNodes()
+
     fun move(nodeId: String, x: Float, y: Float) =
         queries.moveCanvasNode(x.toDouble(), y.toDouble(), getCurrentTimestamp().toString(), nodeId)
 
@@ -65,6 +71,9 @@ class CanvasDao(private val database: NotesDatabase) {
 
     fun raise(nodeId: String, z: Int) =
         queries.raiseCanvasNode(z.toLong(), getCurrentTimestamp().toString(), nodeId)
+
+    fun rename(nodeId: String, name: String) =
+        queries.renameCanvasNode(name, getCurrentTimestamp().toString(), nodeId)
 
     fun saveViewport(noteId: String, viewport: Viewport) {
         queries.upsertCanvasViewport(
@@ -89,6 +98,7 @@ class CanvasDao(private val database: NotesDatabase) {
         id = id,
         kind = runCatching { CanvasNodeKind.valueOf(kind) }
             .getOrDefault(CanvasNodeKind.MASTER_TEXT),
+        name = name,
         rect = CanvasRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat()),
         z = z.toInt(),
         contentId = contentId,

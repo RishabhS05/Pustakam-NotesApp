@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.IosShare   // 🔧 20-Jul-2026: export action
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAlt
@@ -292,6 +293,18 @@ fun NoteEditorScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Redo,
                     contentDescription = "Redo",
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    state.value.note?.id?.let { navigateTo(Route.MasterEditor + "/${it}") }
+                },
+                enabled = noteEditorViewModel.isNoteValid()
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.GridView,
+                    contentDescription = "Open canvas editor",
                 )
             }
 

@@ -1,17 +1,27 @@
 package com.app.pustakam.android.screen.masterEditor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
 import com.app.pustakam.android.widgets.document.InlineBookFileWidget
 import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.masterEditor.MasterTextWidget
@@ -33,7 +43,8 @@ fun MasterNodeContent(
     content: NoteContentModel?,
     onTextIntent: (com.app.pustakam.core.richtext.master.presentation.MasterTextIntent) -> Unit,
     onFocused: () -> Unit,
-    onOpenMedia: () -> Unit
+    onOpenMedia: () -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     val colors = SmartTextTokens.colors
 
@@ -68,6 +79,11 @@ fun MasterNodeContent(
                     onClick = onOpenMedia
                 )
 
+                ContentType.AUDIO -> AudioPlayerUIState(
+                    noteContentModel = media,
+                    onDelete = { onDelete() }
+                )
+
                 else -> MasterNodePlaceholder("Media")
             }
         }
@@ -87,20 +103,63 @@ fun MasterNodeContent(
 
         CanvasNodeKind.LINK -> {
             val link = content as? NoteContentModel.Link
-            Column(modifier = Modifier.padding(16.dp)) {
+            val uriHandler = LocalUriHandler.current
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        link?.url?.takeIf { it.isNotBlank() }
+                            ?.let { runCatching { uriHandler.openUri(it) } }
+                    }
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Link,
+                    contentDescription = null,
+                    tint = colors.accent,
+                    modifier = Modifier.size(20.dp)
+                )
                 Text(
                     text = link?.url.orEmpty().ifEmpty { "Link" },
-                    style = TextStyle(color = colors.accent, fontSize = 15.sp)
+                    style = TextStyle(color = colors.accent, fontSize = 15.sp),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
 
         CanvasNodeKind.LOCATION -> {
             val location = content as? NoteContentModel.Location
-            Column(modifier = Modifier.padding(16.dp)) {
+            val uriHandler = LocalUriHandler.current
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        location?.let {
+                            runCatching {
+                                uriHandler.openUri("geo:${it.latitude},${it.longitude}")
+                            }
+                        }
+                    }
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = colors.accent,
+                    modifier = Modifier.size(20.dp)
+                )
                 Text(
-                    text = location?.address ?: "Location",
-                    style = TextStyle(color = colors.onSurface, fontSize = 15.sp)
+                    text = location?.address?.takeIf { it.isNotBlank() }
+                        ?: location?.let { "${it.latitude}, ${it.longitude}" }
+                        ?: "Location",
+                    style = TextStyle(color = colors.onSurface, fontSize = 15.sp),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }

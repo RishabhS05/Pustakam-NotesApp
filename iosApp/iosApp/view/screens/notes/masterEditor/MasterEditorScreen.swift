@@ -18,7 +18,8 @@ struct MasterEditorScreen: View {
         ZStack(alignment: .bottom) {
             MasterCanvas(
                 state: viewModel.canvas,
-                onIntent: viewModel.onCanvasIntent
+                onIntent: viewModel.onCanvasIntent,
+                onRename: { viewModel.renameNode(nodeId: $0, name: $1) }
             ) { node, isEditing in
                 MasterNodeContent(
                     node: node,
@@ -28,7 +29,8 @@ struct MasterEditorScreen: View {
                     content: viewModel.content(for: node),
                     dismissToken: viewModel.keyboardDismissToken,
                     onTextIntent: { viewModel.onTextIntent(nodeId: node.id, intent: $0) },
-                    onFocused: { viewModel.onCanvasIntent(commands.setEditing(nodeId: node.id)) }
+                    onFocused: { viewModel.onCanvasIntent(commands.setEditing(nodeId: node.id)) },
+                    onDelete: { viewModel.deleteNode(nodeId: node.id) }
                 )
             }
 
@@ -51,6 +53,8 @@ struct MasterEditorScreen: View {
             Button("Text") { viewModel.addTextNode() }
             Button("Table") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.table) }
             Button("Drawing") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.drawing) }
+            Button("Rebuild layout from note order") { viewModel.rebuildLayoutFromNote() }
+            Button("Apply canvas order back to the note") { viewModel.applyCanvasOrderToNote() }
             Button("Cancel", role: .cancel) {}
         }
     }
@@ -117,39 +121,135 @@ struct MasterNodeContent: View {
     let dismissToken: Int
     let onTextIntent: (MasterTextIntent) -> Void
     let onFocused: () -> Void
+    var onOpenMedia: () -> Void = {}
+    var onDelete: () -> Void = {}
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.openURL) private var openURL
 
     private var palette: SmartTextPalette { SmartTextPalette.of(scheme) }
+
+    private var media: NoteContentModel.MediaContent? {
+        content as? NoteContentModel.MediaContent
+    }
 
     var body: some View {
         switch node.kind {
         case CanvasNodeKind.masterText:
-            if let textState {
-                MasterTextWidget(
-                    state: textState,
-                    readOnly: !isEditing,
-                    scale: scale,
-                    accessory: nil,
-                    dismissToken: dismissToken,
-                    shouldFocus: isEditing,
-                    onIntent: onTextIntent
-                )
-                .padding(16)
-                .onTapGesture { onFocused() }
-            } else {
-                placeholder("Empty text")
-            }
+            textBody
 
         case CanvasNodeKind.media:
-            if let media = content as? NoteContentModel.MediaContent {
-                CardImageEditor(content: media, actionClick: {}, actionDelete: {}, actionSave: {})
+            mediaBody
+
+        case CanvasNodeKind.document:
+            if let media {
+                InlineBookFileView(
+                    media: media,
+                    onOpenFull: onOpenMedia,
+                    onDelete: onDelete
+                )
             } else {
-                placeholder("Media")
+                placeholder("Document")
             }
+
+        case CanvasNodeKind.link:
+            linkBody
+
+        case CanvasNodeKind.location:
+            locationBody
 
         default:
             placeholder(node.kind.name)
+        }
+    }
+
+    @ViewBuilder
+    private var textBody: some View {
+        if let textState {
+            MasterTextWidget(
+                state: textState,
+                readOnly: !isEditing,
+                scale: scale,
+                accessory: nil,
+                dismissToken: dismissToken,
+                shouldFocus: isEditing,
+                onIntent: onTextIntent
+            )
+            .padding(16)
+            .onTapGesture { onFocused() }
+        } else {
+            placeholder("Empty text")
+        }
+    }
+
+    @ViewBuilder
+    private var mediaBody: some View {
+        if let media {
+            switch media.type {
+            case ContentType.image, ContentType.gif:
+                CardImageEditor(
+                    content: media,
+                    actionClick: onOpenMedia,
+                    actionDelete: onDelete
+                )
+
+            case ContentType.video:
+                VideoCardPlayer(
+                    content: media,
+                    actionClick: onOpenMedia,
+                    actionDelete: onDelete
+                )
+
+            case ContentType.audio:
+                AudioPlayView(mediaContent: media, onDelete: onDelete)
+
+            default:
+                placeholder("Media")
+            }
+        } else {
+            placeholder("Media")
+        }
+    }
+
+    private var linkBody: some View {
+        let link = content as? NoteContentModel.Link
+        return VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: "link").foregroundColor(palette.accent)
+            Text(link?.url.isEmpty == false ? link!.url : "Link")
+                .font(.system(size: 15))
+                .foregroundColor(palette.accent)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(16)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let raw = link?.url, let url = URL(string: raw) { openURL(url) }
+        }
+    }
+
+    private var locationBody: some View {
+        let location = content as? NoteContentModel.Location
+        let label: String = {
+            if let address = location?.address, !address.isEmpty { return address }
+            if let location { return "\(location.latitude), \(location.longitude)" }
+            return "Location"
+        }()
+        return VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: "mappin.and.ellipse").foregroundColor(palette.accent)
+            Text(label)
+                .font(.system(size: 15))
+                .foregroundColor(palette.onSurface)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(16)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard let location,
+                  let url = URL(string: "maps://?ll=\(location.latitude),\(location.longitude)")
+            else { return }
+            openURL(url)
         }
     }
 

@@ -68,6 +68,10 @@ sealed class CanvasEditorIntent {
     data class SetEditing(val nodeId: String?) : CanvasEditorIntent()
 
     data class LinkNodes(val fromId: String, val toId: String) : CanvasEditorIntent()
+
+    data class RenameNode(val nodeId: String, val name: String) : CanvasEditorIntent()
+
+    data class ReplaceDocument(val document: CanvasDocument) : CanvasEditorIntent()
 }
 
 object CanvasEditorReducer {
@@ -192,6 +196,15 @@ object CanvasEditorReducer {
                 if (from == null) state
                 else state.copy(document = state.document.replacing(from.linkedTo(intent.toId)))
             }
+
+            is CanvasEditorIntent.RenameNode -> {
+                val node = state.document.nodeById(intent.nodeId)
+                if (node == null) state
+                else state.copy(document = state.document.replacing(node.renamedTo(intent.name)))
+            }
+
+            is CanvasEditorIntent.ReplaceDocument ->
+                state.copy(document = intent.document, selectedNodeId = null, editingNodeId = null)
         }
 }
 
@@ -238,6 +251,12 @@ object CanvasCommands {
         state.document.linkedTo(nodeId)
 
     fun removeNode(nodeId: String): CanvasEditorIntent = CanvasEditorIntent.RemoveNode(nodeId)
+
+    fun renameNode(nodeId: String, name: String): CanvasEditorIntent =
+        CanvasEditorIntent.RenameNode(nodeId, name)
+
+    fun replaceDocument(document: CanvasDocument): CanvasEditorIntent =
+        CanvasEditorIntent.ReplaceDocument(document)
 
     fun setEditing(nodeId: String?): CanvasEditorIntent = CanvasEditorIntent.SetEditing(nodeId)
 

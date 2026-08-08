@@ -40,11 +40,18 @@ internal class CanvasRepository : ICanvasRepository, KoinComponent {
 
     override suspend fun raise(nodeId: String, z: Int) = onIo { dao.raise(nodeId, z) }
 
+    override suspend fun rename(nodeId: String, name: String) = onIo { dao.rename(nodeId, name) }
+
     override suspend fun remove(nodeId: String) = onIo { dao.delete(nodeId) }
 
     override suspend fun removeAll(noteId: String) = onIo { dao.deleteAll(noteId) }
 
     override suspend fun count(noteId: String): Int = onIo { dao.count(noteId).toInt() }
+
+    override suspend fun nodeForContent(contentId: String): CanvasNode? =
+        onIo { dao.nodeForContent(contentId) }
+
+    override suspend fun pruneOrphans() = onIo { dao.pruneOrphans() }
 
     override suspend fun loadViewport(noteId: String): Viewport? = onIo { dao.viewport(noteId) }
 

@@ -58,10 +58,11 @@ CREATE INDEX idx_notecontent_note_position ON NoteContent(noteId, position);
 
 CREATE TABLE CanvasNode(
 id TEXT NOT NULL PRIMARY KEY,
-noteId TEXT NOT NULL,
+noteId TEXT NOT NULL REFERENCES Notes(id) ON DELETE CASCADE,
 kind TEXT NOT NULL,
-contentId TEXT,
-parentId TEXT,
+name TEXT NOT NULL DEFAULT '',
+contentId TEXT REFERENCES NoteContent(id) ON DELETE CASCADE,
+parentId TEXT REFERENCES CanvasNode(id) ON DELETE SET NULL,
 x REAL NOT NULL DEFAULT 0.0,
 y REAL NOT NULL DEFAULT 0.0,
 width REAL NOT NULL DEFAULT 0.0,
@@ -78,7 +79,7 @@ CREATE INDEX idx_canvasnode_note ON CanvasNode(noteId, z);
 CREATE INDEX idx_canvasnode_viewport ON CanvasNode(noteId, x, y);
 
 CREATE TABLE CanvasViewport(
-noteId TEXT NOT NULL PRIMARY KEY,
+noteId TEXT NOT NULL PRIMARY KEY REFERENCES Notes(id) ON DELETE CASCADE,
 offsetX REAL NOT NULL DEFAULT 0.0,
 offsetY REAL NOT NULL DEFAULT 0.0,
 scale REAL NOT NULL DEFAULT 1.0,
@@ -289,8 +290,8 @@ SELECT id, label, color FROM Tags WHERE id = ?;
 
 
 upsertCanvasNode:
-INSERT OR REPLACE INTO CanvasNode(id, noteId, kind, contentId, parentId, x, y, width, height, z, locked, hidden, links, updatedAt)
-VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+INSERT OR REPLACE INTO CanvasNode(id, noteId, kind, name, contentId, parentId, x, y, width, height, z, locked, hidden, links, updatedAt)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 
 deleteCanvasNode:
 DELETE FROM CanvasNode WHERE id = ?;
@@ -312,6 +313,14 @@ ORDER BY z ASC;
 countCanvasNodes:
 SELECT count(*) FROM CanvasNode WHERE noteId = ?;
 
+selectCanvasNodeForContent:
+SELECT * FROM CanvasNode WHERE contentId = ?;
+
+deleteOrphanCanvasNodes:
+DELETE FROM CanvasNode
+WHERE contentId IS NOT NULL
+AND contentId NOT IN (SELECT id FROM NoteContent);
+
 moveCanvasNode:
 UPDATE CanvasNode SET x = ?, y = ?, updatedAt = ? WHERE id = ?;
 
@@ -320,6 +329,9 @@ UPDATE CanvasNode SET width = ?, height = ?, updatedAt = ? WHERE id = ?;
 
 raiseCanvasNode:
 UPDATE CanvasNode SET z = ?, updatedAt = ? WHERE id = ?;
+
+renameCanvasNode:
+UPDATE CanvasNode SET name = ?, updatedAt = ? WHERE id = ?;
 
 upsertCanvasViewport:
 INSERT OR REPLACE INTO CanvasViewport(noteId, offsetX, offsetY, scale, updatedAt)

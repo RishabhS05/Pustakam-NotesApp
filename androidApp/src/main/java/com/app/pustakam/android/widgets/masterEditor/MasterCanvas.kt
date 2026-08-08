@@ -5,17 +5,33 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
 import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.presentation.CanvasCommands
@@ -28,6 +44,7 @@ fun MasterCanvas(
     state: CanvasEditorState,
     modifier: Modifier = Modifier,
     onIntent: (CanvasEditorIntent) -> Unit,
+    onRename: (String, String) -> Unit = { _, _ -> },
     nodeContent: @Composable (CanvasNode, Boolean) -> Unit
 ) {
     val colors = SmartTextTokens.colors
@@ -106,8 +123,63 @@ fun MasterCanvas(
                         )
                     }
             ) {
-                nodeContent(node, isEditing)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    MasterNodeNameBar(
+                        node = node,
+                        index = state.document.nodes.indexOfFirst { it.id == node.id },
+                        isSelected = isSelected,
+                        onRename = { onRename(node.id, it) }
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        nodeContent(node, isEditing)
+                    }
+                }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun MasterNodeNameBar(
+    node: CanvasNode,
+    index: Int,
+    isSelected: Boolean,
+    onRename: (String) -> Unit
+) {
+    val colors = SmartTextTokens.colors
+    var editing by remember(node.id) { mutableStateOf(false) }
+    var draft by remember(node.id, node.name) { mutableStateOf(node.name) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (isSelected) colors.accentSoft else colors.surface)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        if (editing) {
+            BasicTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                singleLine = true,
+                textStyle = TextStyle(color = colors.onSurface, fontSize = 12.sp),
+                cursorBrush = SolidColor(colors.accent),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    editing = false
+                    onRename(draft.trim())
+                }),
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            Text(
+                text = node.displayName(index.coerceAtLeast(0)),
+                style = TextStyle(
+                    color = if (isSelected) colors.accent else colors.onSurfaceMuted,
+                    fontSize = 12.sp
+                ),
+                modifier = Modifier.clickable { editing = true }
+            )
         }
     }
 }

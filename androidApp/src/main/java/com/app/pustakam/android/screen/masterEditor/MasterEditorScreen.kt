@@ -49,7 +49,8 @@ import com.app.pustakam.core.richtext.master.presentation.CanvasTool
 fun MasterEditorScreen(
     noteId: String? = null,
     viewModel: MasterEditorViewModel = viewModel(),
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onOpenMedia: (String?) -> Unit = {}
 ) {
     val colors = SmartTextTokens.colors
     val uiState by viewModel.state.collectAsStateWithLifecycle()
@@ -61,7 +62,8 @@ fun MasterEditorScreen(
     Box(modifier = Modifier.fillMaxSize().background(colors.page)) {
         MasterCanvas(
             state = canvas,
-            onIntent = viewModel::onCanvasIntent
+            onIntent = viewModel::onCanvasIntent,
+            onRename = viewModel::renameNode
         ) { node, isEditing ->
             MasterNodeContent(
                 node = node,
@@ -71,7 +73,8 @@ fun MasterEditorScreen(
                 content = uiState.note?.contents?.firstOrNull { it.id == node.contentId },
                 onTextIntent = { viewModel.onTextIntent(node.id, it) },
                 onFocused = { viewModel.onCanvasIntent(CanvasCommands.setEditing(node.id)) },
-                onOpenMedia = {}
+                onOpenMedia = { onOpenMedia(node.contentId) },
+                onDelete = { viewModel.deleteNode(node.id) }
             )
         }
 
@@ -155,6 +158,28 @@ fun MasterEditorScreen(
                         text = "Add beside the focused widget",
                         style = TextStyle(color = colors.onSurfaceMuted, fontSize = 13.sp),
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                    Text(
+                        text = "Rebuild layout from note order",
+                        style = TextStyle(color = colors.accent, fontSize = 16.sp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showAttach = false
+                                viewModel.rebuildLayoutFromNote()
+                            }
+                            .padding(horizontal = 20.dp, vertical = 14.dp)
+                    )
+                    Text(
+                        text = "Apply canvas order back to the note",
+                        style = TextStyle(color = colors.accent, fontSize = 16.sp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showAttach = false
+                                viewModel.applyCanvasOrderToNote()
+                            }
+                            .padding(horizontal = 20.dp, vertical = 14.dp)
                     )
                     listOf(
                         "Text" to CanvasNodeKind.MASTER_TEXT,

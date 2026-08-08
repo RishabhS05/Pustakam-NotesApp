@@ -41,6 +41,14 @@ class CanvasBridge : KoinComponent {
         scope.launch { repository.resize(nodeId, width, height) }
     }
 
+    fun rename(nodeId: String, name: String) {
+        scope.launch { repository.rename(nodeId, name) }
+    }
+
+    fun removeAll(noteId: String) {
+        scope.launch { repository.removeAll(noteId) }
+    }
+
     fun remove(nodeId: String) {
         scope.launch { repository.remove(nodeId) }
     }

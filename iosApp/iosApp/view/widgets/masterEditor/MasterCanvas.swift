@@ -5,6 +5,7 @@ struct MasterCanvas<NodeContent: View>: View {
 
     let state: CanvasEditorState
     let onIntent: (CanvasEditorIntent) -> Void
+    var onRename: (String, String) -> Void = { _, _ in }
     @ViewBuilder let nodeContent: (CanvasNode, Bool) -> NodeContent
 
     @Environment(\.colorScheme) private var scheme
@@ -27,7 +28,17 @@ struct MasterCanvas<NodeContent: View>: View {
                     let isEditing = node.id == state.editingNodeId
                     let isSelected = node.id == state.selectedNodeId
 
-                    nodeContent(node, isEditing)
+                    VStack(spacing: 0) {
+                        MasterNodeNameBar(
+                            node: node,
+                            index: state.document.nodes.firstIndex { $0.id == node.id } ?? 0,
+                            isSelected: isSelected,
+                            palette: palette,
+                            onRename: { onRename(node.id, $0) }
+                        )
+                        nodeContent(node, isEditing)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                         .frame(width: CGFloat(screen.width), height: CGFloat(screen.height))
                         .background(
                             RoundedRectangle(cornerRadius: 8).fill(palette.surface)
@@ -118,5 +129,45 @@ struct MasterCanvas<NodeContent: View>: View {
                 lastPan = .zero
                 onIntent(commands.endDrag())
             }
+    }
+}
+
+
+private struct MasterNodeNameBar: View {
+
+    let node: CanvasNode
+    let index: Int
+    let isSelected: Bool
+    let palette: SmartTextPalette
+    let onRename: (String) -> Void
+
+    @State private var editing = false
+    @State private var draft = ""
+
+    var body: some View {
+        Group {
+            if editing {
+                TextField("Name", text: $draft, onCommit: {
+                    editing = false
+                    onRename(draft.trimmingCharacters(in: .whitespaces))
+                })
+                .font(.system(size: 12))
+                .foregroundColor(palette.onSurface)
+            } else {
+                Text(node.displayName(fallbackIndex: Int32(max(index, 0))))
+                    .font(.system(size: 12))
+                    .foregroundColor(isSelected ? palette.accent : palette.onSurfaceMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        draft = node.name
+                        editing = true
+                    }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isSelected ? palette.accentSoft : palette.surface)
     }
 }

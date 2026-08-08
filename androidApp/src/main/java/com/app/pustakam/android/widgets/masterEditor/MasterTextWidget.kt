@@ -1,6 +1,8 @@
 package com.app.pustakam.android.widgets.masterEditor
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -78,7 +80,11 @@ fun MasterTextWidget(
         backgroundColor = colors.accent.copy(alpha = 0.24f)
     )
 
-    Box(modifier = modifier.fillMaxWidth()) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+    ) {
         if (state.text.isEmpty()) {
             Text(
                 text = placeholder,
