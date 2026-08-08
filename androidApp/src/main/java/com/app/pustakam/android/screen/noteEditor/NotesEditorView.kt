@@ -27,6 +27,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -129,6 +131,7 @@ fun NoteEditorScreen(
     noteEditorViewModel: NoteEditorViewModel = viewModel(),
     imageDataViewModel: ImageDataViewModel = viewModel(),
     onBack: () -> Unit = {},
+    onMasterEditor: () -> Unit = {},
     navigateTo: (Any) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -265,7 +268,15 @@ fun NoteEditorScreen(
         ) ,
             actions = {
             val noteHistory = noteEditorViewModel.history.collectAsStateWithLifecycle().value
-            IconButton(
+                IconButton(
+                    onClick = onMasterEditor
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
+                        contentDescription = "MasterEditor",
+                    )
+                }
+                IconButton(
                 onClick = { noteEditorViewModel.undo() },
                 enabled = noteHistory.canUndo
             ) {
