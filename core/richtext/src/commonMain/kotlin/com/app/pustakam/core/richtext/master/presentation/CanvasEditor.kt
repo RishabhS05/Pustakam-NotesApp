@@ -228,6 +228,15 @@ object CanvasCommands {
 
     fun addNode(node: CanvasNode): CanvasEditorIntent = CanvasEditorIntent.AddNode(node)
 
+    fun linkNodes(fromId: String, toId: String): CanvasEditorIntent =
+        CanvasEditorIntent.LinkNodes(fromId, toId)
+
+    fun anchorOf(state: CanvasEditorState): CanvasNode? =
+        (state.editingNodeId ?: state.selectedNodeId)?.let { state.document.nodeById(it) }
+
+    fun linkedNodes(state: CanvasEditorState, nodeId: String): List<CanvasNode> =
+        state.document.linkedTo(nodeId)
+
     fun removeNode(nodeId: String): CanvasEditorIntent = CanvasEditorIntent.RemoveNode(nodeId)
 
     fun setEditing(nodeId: String?): CanvasEditorIntent = CanvasEditorIntent.SetEditing(nodeId)

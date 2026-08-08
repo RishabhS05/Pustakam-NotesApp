@@ -18,6 +18,7 @@ enum class CanvasNodeKind {
 data class CanvasNode(
     val id: String,
     val kind: CanvasNodeKind,
+    val name: String = "",
     val rect: CanvasRect,
     val z: Int = 0,
     val contentId: String? = null,
@@ -34,6 +35,11 @@ data class CanvasNode(
 
     fun movedTo(x: Float, y: Float): CanvasNode = copy(rect = rect.copy(x = x, y = y))
 
+    fun renamedTo(newName: String): CanvasNode = copy(name = newName)
+
+    fun displayName(fallbackIndex: Int = 0): String =
+        if (name.isNotBlank()) name else defaultName(kind, fallbackIndex)
+
     fun linkedTo(other: String): CanvasNode =
         if (links.contains(other)) this else copy(links = links + other)
 
@@ -41,6 +47,54 @@ data class CanvasNode(
         const val MIN_SIZE = 24f
         const val DEFAULT_TEXT_WIDTH = 720f
         const val DEFAULT_TEXT_HEIGHT = 960f
+        const val DEFAULT_GAP = 48f
+        const val DEFAULT_MEDIA_WIDTH = 480f
+        const val DEFAULT_MEDIA_HEIGHT = 360f
+
+        fun defaultName(kind: CanvasNodeKind, index: Int): String = when (kind) {
+            CanvasNodeKind.MASTER_TEXT -> "Page ${index + 1}"
+            CanvasNodeKind.MEDIA -> "Media ${index + 1}"
+            CanvasNodeKind.TABLE -> "Table ${index + 1}"
+            CanvasNodeKind.DOCUMENT -> "Document ${index + 1}"
+            CanvasNodeKind.LINK -> "Link ${index + 1}"
+            CanvasNodeKind.LOCATION -> "Location ${index + 1}"
+            CanvasNodeKind.DRAWING -> "Drawing ${index + 1}"
+        }
+
+        fun of(
+            kind: CanvasNodeKind,
+            contentId: String?,
+            x: Float,
+            y: Float,
+            width: Float = DEFAULT_TEXT_WIDTH,
+            height: Float = DEFAULT_TEXT_HEIGHT,
+            parentId: String? = null,
+            name: String = ""
+        ): CanvasNode = CanvasNode(
+            id = UniqueIdGenerator.generateUniqueId(),
+            kind = kind,
+            name = name,
+            rect = CanvasRect(x, y, width, height),
+            contentId = contentId,
+            parentId = parentId
+        )
+
+        fun nextTo(
+            anchor: CanvasNode,
+            kind: CanvasNodeKind,
+            contentId: String?,
+            width: Float = DEFAULT_TEXT_WIDTH,
+            height: Float = DEFAULT_TEXT_HEIGHT,
+            gap: Float = DEFAULT_GAP
+        ): CanvasNode = of(
+            kind = kind,
+            contentId = contentId,
+            x = anchor.rect.right + gap,
+            y = anchor.rect.y,
+            width = width,
+            height = height,
+            parentId = anchor.id
+        )
 
         fun masterText(
             contentId: String?,

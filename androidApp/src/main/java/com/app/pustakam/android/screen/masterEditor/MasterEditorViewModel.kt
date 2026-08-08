@@ -8,6 +8,7 @@ import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.core.richtext.codec.RichTextCodec
 import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
+import com.app.pustakam.core.richtext.master.presentation.CanvasCommands
 import com.app.pustakam.core.richtext.master.presentation.CanvasEditorIntent
 import com.app.pustakam.core.richtext.master.presentation.CanvasEditorReducer
 import com.app.pustakam.core.richtext.master.presentation.CanvasEditorState
@@ -175,6 +176,60 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         _state.update { it.copy(note = nextNote) }
         viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
     }
+
+    fun addWidgetNearFocused(kind: CanvasNodeKind, content: NoteContentModel? = null) {
+        val note = _state.value.note ?: return
+        val canvas = _state.value.canvas
+        val anchor = CanvasCommands.anchorOf(canvas)
+        val node = if (anchor == null) {
+            CanvasNode.of(
+                kind = kind,
+                contentId = content?.id,
+                x = canvas.document.bounds.right + CanvasNode.DEFAULT_GAP,
+                y = canvas.document.bounds.y,
+                width = CanvasNode.DEFAULT_MEDIA_WIDTH,
+                height = CanvasNode.DEFAULT_MEDIA_HEIGHT
+            )
+        } else {
+            CanvasNode.nextTo(
+                anchor = anchor,
+                kind = kind,
+                contentId = content?.id,
+                width = if (kind == CanvasNodeKind.MASTER_TEXT) CanvasNode.DEFAULT_TEXT_WIDTH
+                else CanvasNode.DEFAULT_MEDIA_WIDTH,
+                height = if (kind == CanvasNodeKind.MASTER_TEXT) CanvasNode.DEFAULT_TEXT_HEIGHT
+                else CanvasNode.DEFAULT_MEDIA_HEIGHT
+            )
+        }
+
+        if (content != null) {
+            val nextNote = note.withContents(note.contents + content)
+            _state.update { it.copy(note = nextNote) }
+            viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
+        }
+        if (kind == CanvasNodeKind.MASTER_TEXT && content is NoteContentModel.TextContent) {
+            _state.update {
+                it.copy(
+                    texts = it.texts + (node.id to MasterTextState.of(RichTextCodec.documentFrom(content)))
+                )
+            }
+        }
+        onCanvasIntent(CanvasEditorIntent.AddNode(node))
+        anchor?.let { onCanvasIntent(CanvasCommands.linkNodes(it.id, node.id)) }
+    }
+
+    fun addMediaNear(content: NoteContentModel) {
+        val kind = when (content.type) {
+            com.app.pustakam.core.common.util.ContentType.LINK -> CanvasNodeKind.LINK
+            com.app.pustakam.core.common.util.ContentType.LOCATION -> CanvasNodeKind.LOCATION
+            com.app.pustakam.core.common.util.ContentType.PDF,
+            com.app.pustakam.core.common.util.ContentType.DOCX -> CanvasNodeKind.DOCUMENT
+            else -> CanvasNodeKind.MEDIA
+        }
+        addWidgetNearFocused(kind, content)
+    }
+
+    fun linkedNodes(nodeId: String) = CanvasCommands.linkedNodes(_state.value.canvas, nodeId)
 
     fun addTextNode() {
         val note = _state.value.note ?: return
