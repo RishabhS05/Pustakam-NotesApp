@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.widgets.masterEditor.MasterCanvas
 import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbar
+import com.app.pustakam.android.widgets.smartText.SmartTextSheet
+import com.app.pustakam.android.widgets.smartText.SmartTextSheetHost
 import com.app.pustakam.core.richtext.master.presentation.MasterTextCommands
 import com.app.pustakam.core.richtext.presentation.SmartTextCommands
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
@@ -56,6 +59,7 @@ fun MasterEditorScreen(
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val canvas = uiState.canvas
     var showAttach by remember { mutableStateOf(false) }
+    var sheet by remember { mutableStateOf(SmartTextSheet.NONE) }
 
     LaunchedEffect(noteId) { viewModel.load(noteId) }
 
@@ -81,6 +85,7 @@ fun MasterEditorScreen(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
                 .padding(16.dp)
                 .background(colors.toolbar, RoundedCornerShape(12.dp))
                 .padding(horizontal = 6.dp, vertical = 2.dp),
@@ -111,14 +116,12 @@ fun MasterEditorScreen(
                         else CanvasCommands.useHandTool()
                     )
                 }
-            ) {
-                Icon(
+            ) { Icon(
                     imageVector = if (canvas.tool == CanvasTool.HAND) Icons.Default.PanTool
                     else Icons.Default.TouchApp,
                     contentDescription = "Hand tool",
                     tint = if (canvas.tool == CanvasTool.HAND) colors.accent else colors.onSurface
-                )
-            }
+                ) }
             IconButton(onClick = { showAttach = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add widget", tint = colors.accent)
             }
@@ -141,13 +144,71 @@ fun MasterEditorScreen(
                     } else if (SmartTextCommands.isDismiss(action)) {
                         viewModel.onCanvasIntent(CanvasCommands.setEditing(null))
                     } else {
-                        MasterTextCommands.forToolbar(action)
-                            ?.let { viewModel.onTextIntent(nodeId, it) }
+                        val intent = MasterTextCommands.forToolbar(action)
+                        if (intent != null) {
+                            viewModel.onTextIntent(nodeId, intent)
+                        } else {
+                            // style / colour / size / align / link open a sheet — without this
+                            // branch they silently did nothing in the MasterEditor
+                            sheet = SmartTextSheet
+                                .fromIndex(MasterTextCommands.sheetIndex(action))
+                        }
                     }
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .imePadding()
+            )
+        }
+
+        val sheetNodeId = canvas.editingNodeId
+        if (sheet != SmartTextSheet.NONE && focusedText != null && sheetNodeId != null) {
+            SmartTextSheetHost(
+                sheet = sheet,
+                currentStyle = focusedText.toolbar.paragraphStyle,
+                currentAlign = focusedText.toolbar.align,
+                currentFontSize = focusedText.toolbar.fontSize,
+                currentLink = focusedText.toolbar.link,
+                searchQuery = "",
+                replacement = "",
+                matchCount = 0,
+                currentMatch = 0,
+                tableRowCount = 0,
+                tableColumnCount = 0,
+                onDismiss = { sheet = SmartTextSheet.NONE },
+                onStyle = {
+                    viewModel.onTextIntent(sheetNodeId, MasterTextCommands.setParagraphStyle(it))
+                    sheet = SmartTextSheet.NONE
+                },
+                onAlign = {
+                    viewModel.onTextIntent(sheetNodeId, MasterTextCommands.setAlignment(it))
+                    sheet = SmartTextSheet.NONE
+                },
+                onColor = {
+                    val intent = if (sheet == SmartTextSheet.BACKGROUND_COLOR) {
+                        MasterTextCommands.setBackgroundColor(it)
+                    } else {
+                        MasterTextCommands.setTextColor(it)
+                    }
+                    viewModel.onTextIntent(sheetNodeId, intent)
+                    sheet = SmartTextSheet.NONE
+                },
+                onFontSize = {
+                    viewModel.onTextIntent(sheetNodeId, MasterTextCommands.setFontSize(it))
+                    sheet = SmartTextSheet.NONE
+                },
+                onLink = {
+                    viewModel.onTextIntent(sheetNodeId, MasterTextCommands.setLink(it))
+                    sheet = SmartTextSheet.NONE
+                },
+                onTable = { sheet = SmartTextSheet.NONE },
+                onInsertTable = { _, _ -> sheet = SmartTextSheet.NONE },
+                onSearchQuery = {},
+                onReplacement = {},
+                onFindNext = {},
+                onFindPrevious = {},
+                onReplaceCurrent = {},
+                onReplaceAll = {}
             )
         }
 

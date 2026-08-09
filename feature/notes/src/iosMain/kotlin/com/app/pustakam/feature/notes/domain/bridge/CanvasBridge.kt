@@ -17,11 +17,21 @@ class CanvasBridge : KoinComponent {
     private val repository by inject<ICanvasRepository>()
     private val scope = CoroutineScope(SupervisorJob() + provideDispatcher().io)
 
-    fun load(noteId: String, onLoaded: (CanvasDocument, Viewport?) -> Unit) {
+    // 🔧 09-Aug-2026: a throw in here used to be swallowed by scope.launch, so a failed read
+    //   left the editor on an empty canvas with no error anywhere. Failures now report back.
+    fun load(
+        noteId: String,
+        onLoaded: (CanvasDocument, Viewport?) -> Unit,
+        onError: (String) -> Unit
+    ) {
         scope.launch {
-            val document = repository.load(noteId)
-            val viewport = repository.loadViewport(noteId)
-            onLoaded(document, viewport)
+            try {
+                val document = repository.load(noteId)
+                val viewport = repository.loadViewport(noteId)
+                onLoaded(document, viewport)
+            } catch (error: Throwable) {
+                onError(error.message ?: "Could not read the canvas for this note.")
+            }
         }
     }
 

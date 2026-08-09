@@ -21,14 +21,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.selection.selectable
+
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
-import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -76,12 +75,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.pustakam.R
 import com.app.pustakam.android.MyApplicationTheme
 import com.app.pustakam.android.extension.startServiceWrapper
 import com.app.pustakam.android.fileUtils.saveMediaToGallery
@@ -124,7 +125,7 @@ import com.app.pustakam.core.filesys.naming.FileNameGenerator.suggestedFileNameF
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
-@SuppressLint("StateFlowValueCalledInComposition")
+@SuppressLint("StateFlowValueCalledInComposition", "SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
@@ -259,11 +260,7 @@ fun NoteEditorScreen(
     }
     NotesEditor(state = state, topBar = {
         TopAppBar(title = {
-            state.value.note?.updatedAt?.let {
-                Text(
-                    it.toLocalFormat(), style = typography.titleSmall
-                )
-            }
+
         }, colors = TopAppBarDefaults.topAppBarColors(
             colorScheme.background,
         ) ,
@@ -273,8 +270,9 @@ fun NoteEditorScreen(
                     onClick = onMasterEditor
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
+                         painterResource(com.app.pustakam.android.R.drawable.ic_board_icon),
                         contentDescription = "MasterEditor",
+                        Modifier.size(24.dp)
                     )
                 }
                 IconButton(
@@ -385,7 +383,6 @@ fun NoteEditorScreen(
         }
     }, contentList = { focusRequester ->
         Box(modifier = Modifier.fillMaxSize()) {
-            // 🔧 07-Aug-2026 — bottom room so the caret clears the keyboard and the formatting bar
             LazyColumn(
                 contentPadding = PaddingValues(bottom = SmartTextToolbarReservedHeight + 24.dp)
             ) {
@@ -413,7 +410,6 @@ fun NoteEditorScreen(
                                 }
                             },
                             onMediaPreview = {
-
                                 imageDataViewModel.onSetMediaToPreview(
                                     (contentValue as NoteContentModel.MediaContent).getMediaUrl(),
                                     contentValue.type,
@@ -477,6 +473,12 @@ fun NotesEditor(
                 if (isRuledEnabledState.value) RuledPage()
                 CompositionLocalProvider(LocalSmartTextToolbar provides smartTextToolbar) {
                     Column {
+                        state.value.note?.updatedAt?.let {
+                            Text(
+                                it.toLocalFormat(), style = typography.bodySmall,
+                                modifier = Modifier.padding(start = paddingLeft)
+                            )
+                        }
                         TextField(
                             value = state.value.titleTextState.value,
                             textStyle = typography.headlineLarge,
@@ -540,7 +542,6 @@ fun RenderWidget(
             Box(
                 modifier = Modifier
             ) {
-
                 SmartTextWidget(
                     text = textContent.text,
                     metadata = textContent.metadata,

@@ -21,7 +21,11 @@
 		0000000022B2CB1000000016 /* DocumentBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000017 /* DocumentBlockView.swift */; };
 		0000000022B2CB1000000018 /* LinkBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000019 /* LinkBlockView.swift */; };
 		0000000022B2CB100000001A /* LocationBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000001B /* LocationBlockView.swift */; };
+		0167B273031742A1841BBEC6 /* SmartTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */; };
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
+		0EBA77A6057B4265B2A98CA6 /* SmartTextBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */; };
+		1561086F4A784128BB5AA95B /* SmartTextTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */; };
+		1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		2261696B3021FDCE00B49A04 /* HardwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2261696A3021FDCE00B49A04 /* HardwareManager.swift */; };
 		2261696D3021FDEB00B49A04 /* PermissionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2261696C3021FDEB00B49A04 /* PermissionGate.swift */; };
@@ -65,9 +69,18 @@
 		22BC34F830081CBA00C9057D /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 22BC34F730081CBA00C9057D /* FirebaseCrashlytics */; };
 		22BC350130083CB400C9057D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 22BC350030083CB400C9057D /* GoogleService-Info.plist */; };
 		22D0B517301F3C1D00BF1F4C /* CardActionsButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D0B516301F3C1D00BF1F4C /* CardActionsButton.swift */; };
+		22D196C430283E37000CF5F1 /* MasterEditorScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */; };
+		22D196C530283E37000CF5F1 /* MasterEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */; };
+		22D196C930283E37000CF5F1 /* MasterTextSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C830283E37000CF5F1 /* MasterTextSheets.swift */; };
+		22D196BD30283E37000CF5F1 /* MasterTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */; };
+		22D196BE30283E37000CF5F1 /* MasterTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */; };
+		22D196BF30283E37000CF5F1 /* MasterCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196B930283E37000CF5F1 /* MasterCanvas.swift */; };
 		22EAC32230113B4E00EB8A80 /* ThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EAC32130113B4E00EB8A80 /* ThemePalette.swift */; };
 		22EAC32430113C2400EB8A80 /* ThemeTilePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EAC32330113C2400EB8A80 /* ThemeTilePicker.swift */; };
 		22EAC32A3011603000EB8A80 /* ReaderPrefsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EAC3283011603000EB8A80 /* ReaderPrefsAdapter.swift */; };
+		312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */; };
+		344D74CFD4DB40D4A7B8F49D /* SmartTextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781DC0213FDD4E898994B140 /* SmartTextStore.swift */; };
+		5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7555D355DB041B79F274266 /* SmartTextToolbars.swift */; };
 		630BA1762CF0CF7700D148C8 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */; };
 		630BA1782CF0CFA800D148C8 /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */; };
 		630BA17E2CF10ED800D148C8 /* CameraPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */; };
@@ -85,23 +98,11 @@
 		6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6345BFB82CEF363100CC254C /* LocationPermission.swift */; };
 		634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */; };
 		635557452DC0732700C7D533 /* DateTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635557442DC0732100C7D533 /* DateTime.swift */; };
-		1561086F4A784128BB5AA95B /* SmartTextTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */; };
-		A5B04FE8D4D3479BAF878384 /* SmartTextStyleMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */; };
-		344D74CFD4DB40D4A7B8F49D /* SmartTextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781DC0213FDD4E898994B140 /* SmartTextStore.swift */; };
-		0167B273031742A1841BBEC6 /* SmartTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */; };
-		0EBA77A6057B4265B2A98CA6 /* SmartTextBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */; };
-		5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7555D355DB041B79F274266 /* SmartTextToolbars.swift */; };
-		312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */; };
-		1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */; };
-		2726147D08F5407291A0A0FC /* MasterTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08388C412E274077A00FBD08 /* MasterTextRenderer.swift */; };
-		1C10EA8217A04B009EC18CFC /* MasterTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF92072904EC4D0D9452A8D2 /* MasterTextWidget.swift */; };
-		88B70711427343E9B8E4BD16 /* MasterCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3586C0322639420B890AB835 /* MasterCanvas.swift */; };
-		64823EBFF6614340B90DD57A /* MasterEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5F5BD264B3458D821B3A6E /* MasterEditorViewModel.swift */; };
-		9DB4D18953694A84939D07A2 /* MasterEditorScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F72B192D0E42F3A749C588 /* MasterEditorScreen.swift */; };
 		636341002F012A1B003835E4 /* NoteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636340FF2F012A1B003835E4 /* NoteTextField.swift */; };
 		636341022F016B8C003835E4 /* FormattingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636341012F016B8C003835E4 /* FormattingToolbar.swift */; };
 		63682AAD2CE9094C00425C35 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */; };
 		63682AB02CE9118700425C35 /* StaggeredGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */; };
+		22D196C730283E37000CF5F1 /* MasterEditor.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C630283E37000CF5F1 /* MasterEditor.ext.swift */; };
 		63682AB22CE9337400425C35 /* Note.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63682AB12CE9336500425C35 /* Note.ext.swift */; };
 		639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEF42CDC7B6B00E0E00D /* LoadingUI.swift */; };
 		639BBEFC2CDD4AA400E0E00D /* View.ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639BBEFB2CDD4A9B00E0E00D /* View.ext.swift */; };
@@ -129,6 +130,7 @@
 		63DF20132DBC59BF001E0EDE /* MediaControlledPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DF20122DBC59BF001E0EDE /* MediaControlledPlayer.swift */; };
 		63FDAFCA2D96DFBC0067169C /* ActionButtonWithoutBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FDAFC92D96DFA50067169C /* ActionButtonWithoutBackground.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
+		A5B04FE8D4D3479BAF878384 /* SmartTextStyleMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -223,9 +225,16 @@
 		22B8109B301DC72200DAF43F /* GenericGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericGrid.swift; sourceTree = "<group>"; };
 		22BC350030083CB400C9057D /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		22D0B516301F3C1D00BF1F4C /* CardActionsButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardActionsButton.swift; sourceTree = "<group>"; };
+		22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorScreen.swift; sourceTree = "<group>"; };
+		22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorViewModel.swift; sourceTree = "<group>"; };
+		22D196C830283E37000CF5F1 /* MasterTextSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextSheets.swift; sourceTree = "<group>"; };
+		22D196B930283E37000CF5F1 /* MasterCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterCanvas.swift; sourceTree = "<group>"; };
+		22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextRenderer.swift; sourceTree = "<group>"; };
+		22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextWidget.swift; sourceTree = "<group>"; };
 		22EAC32130113B4E00EB8A80 /* ThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePalette.swift; sourceTree = "<group>"; };
 		22EAC32330113C2400EB8A80 /* ThemeTilePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeTilePicker.swift; sourceTree = "<group>"; };
 		22EAC3283011603000EB8A80 /* ReaderPrefsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPrefsAdapter.swift; sourceTree = "<group>"; };
+		475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextWidget.swift; sourceTree = "<group>"; };
 		630BA1752CF0CF6A00D148C8 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
 		630BA1772CF0CF9B00D148C8 /* CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreview.swift; sourceTree = "<group>"; };
 		630BA17D2CF10ECF00D148C8 /* CameraPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPermission.swift; sourceTree = "<group>"; };
@@ -243,23 +252,11 @@
 		6345BFB82CEF363100CC254C /* LocationPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermission.swift; sourceTree = "<group>"; };
 		634F659D2DA9CF6900DD5142 /* AlertUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertUseCase.swift; sourceTree = "<group>"; };
 		635557442DC0732100C7D533 /* DateTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTime.swift; sourceTree = "<group>"; };
-		FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextTokens.swift; sourceTree = "<group>"; };
-		9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextStyleMapper.swift; sourceTree = "<group>"; };
-		781DC0213FDD4E898994B140 /* SmartTextStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextStore.swift; sourceTree = "<group>"; };
-		D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextEditorView.swift; sourceTree = "<group>"; };
-		7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextBlockView.swift; sourceTree = "<group>"; };
-		E7555D355DB041B79F274266 /* SmartTextToolbars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextToolbars.swift; sourceTree = "<group>"; };
-		F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextSheets.swift; sourceTree = "<group>"; };
-		475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextWidget.swift; sourceTree = "<group>"; };
-		08388C412E274077A00FBD08 /* MasterTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextRenderer.swift; sourceTree = "<group>"; };
-		BF92072904EC4D0D9452A8D2 /* MasterTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextWidget.swift; sourceTree = "<group>"; };
-		3586C0322639420B890AB835 /* MasterCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterCanvas.swift; sourceTree = "<group>"; };
-		1B5F5BD264B3458D821B3A6E /* MasterEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorViewModel.swift; sourceTree = "<group>"; };
-		81F72B192D0E42F3A749C588 /* MasterEditorScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorScreen.swift; sourceTree = "<group>"; };
 		636340FF2F012A1B003835E4 /* NoteTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextField.swift; sourceTree = "<group>"; };
 		636341012F016B8C003835E4 /* FormattingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingToolbar.swift; sourceTree = "<group>"; };
 		63682AAC2CE9093C00425C35 /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
 		63682AAF2CE9116C00425C35 /* StaggeredGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaggeredGrid.swift; sourceTree = "<group>"; };
+		22D196C630283E37000CF5F1 /* MasterEditor.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditor.ext.swift; sourceTree = "<group>"; };
 		63682AB12CE9336500425C35 /* Note.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.ext.swift; sourceTree = "<group>"; };
 		639BBEF42CDC7B6B00E0E00D /* LoadingUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingUI.swift; sourceTree = "<group>"; };
 		639BBEFB2CDD4A9B00E0E00D /* View.ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = View.ext.swift; sourceTree = "<group>"; };
@@ -289,6 +286,13 @@
 		7555FF7B242A565900829871 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		781DC0213FDD4E898994B140 /* SmartTextStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextStore.swift; sourceTree = "<group>"; };
+		7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextBlockView.swift; sourceTree = "<group>"; };
+		9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextStyleMapper.swift; sourceTree = "<group>"; };
+		D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextEditorView.swift; sourceTree = "<group>"; };
+		E7555D355DB041B79F274266 /* SmartTextToolbars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextToolbars.swift; sourceTree = "<group>"; };
+		F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextSheets.swift; sourceTree = "<group>"; };
+		FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -473,11 +477,21 @@
 			path = noteList;
 			sourceTree = "<group>";
 		};
+		22D196C130283E37000CF5F1 /* masterEditor */ = {
+			isa = PBXGroup;
+			children = (
+				22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */,
+				22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */,
+			);
+			path = masterEditor;
+			sourceTree = "<group>";
+		};
 		22B2CA6A30119961002AD701 /* notes */ = {
 			isa = PBXGroup;
 			children = (
 				22B2CA6530119961002AD701 /* noteEditor */,
 				22B2CA6930119961002AD701 /* noteList */,
+				22D196C130283E37000CF5F1 /* masterEditor */,
 			);
 			path = notes;
 			sourceTree = "<group>";
@@ -547,6 +561,17 @@
 				22A0C16B300C1834008D5904 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		22D196BC30283E37000CF5F1 /* masterEditor */ = {
+			isa = PBXGroup;
+			children = (
+				22D196B930283E37000CF5F1 /* MasterCanvas.swift */,
+				22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */,
+				22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */,
+				22D196C830283E37000CF5F1 /* MasterTextSheets.swift */,
+			);
+			path = masterEditor;
 			sourceTree = "<group>";
 		};
 		22EAC3293011603000EB8A80 /* reader */ = {
@@ -698,6 +723,7 @@
 			children = (
 				63682AB12CE9336500425C35 /* Note.ext.swift */,
 				63AA02522D9C647C0040E872 /* NoteContents.ext.swift */,
+				22D196C630283E37000CF5F1 /* MasterEditor.ext.swift */,
 			);
 			path = note;
 			sourceTree = "<group>";
@@ -784,45 +810,10 @@
 				63D089212CAC86EA008FD8CC /* imageview */,
 				63D089202CAC85EF008FD8CC /* styles */,
 				63D0891F2CAC85B4008FD8CC /* textfields */,
-				0B8D4B93628F47ADA1243EC8 /* masterEditor */,
-				436BBA5FFD3D4781B0C47AB0 /* masterEditor */,
 				8B023D68CAFE421A86322695 /* smartText */,
+				22D196BC30283E37000CF5F1 /* masterEditor */,
 			);
 			path = widgets;
-			sourceTree = "<group>";
-		};
-		8B023D68CAFE421A86322695 /* smartText */ = {
-			isa = PBXGroup;
-			children = (
-				FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */,
-				9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */,
-				781DC0213FDD4E898994B140 /* SmartTextStore.swift */,
-				D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */,
-				7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */,
-				E7555D355DB041B79F274266 /* SmartTextToolbars.swift */,
-				F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */,
-				475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */,
-			);
-			path = smartText;
-			sourceTree = "<group>";
-		};
-		436BBA5FFD3D4781B0C47AB0 /* masterEditor */ = {
-			isa = PBXGroup;
-			children = (
-				3586C0322639420B890AB835 /* MasterCanvas.swift */,
-				08388C412E274077A00FBD08 /* MasterTextRenderer.swift */,
-				BF92072904EC4D0D9452A8D2 /* MasterTextWidget.swift */,
-			);
-			path = masterEditor;
-			sourceTree = "<group>";
-		};
-		0B8D4B93628F47ADA1243EC8 /* masterEditor */ = {
-			isa = PBXGroup;
-			children = (
-				1B5F5BD264B3458D821B3A6E /* MasterEditorViewModel.swift */,
-				81F72B192D0E42F3A749C588 /* MasterEditorScreen.swift */,
-			);
-			path = masterEditor;
 			sourceTree = "<group>";
 		};
 		63D0891F2CAC85B4008FD8CC /* textfields */ = {
@@ -910,6 +901,21 @@
 				22BC350030083CB400C9057D /* GoogleService-Info.plist */,
 			);
 			path = iosApp;
+			sourceTree = "<group>";
+		};
+		8B023D68CAFE421A86322695 /* smartText */ = {
+			isa = PBXGroup;
+			children = (
+				FEAD1FB8676E463C87126315 /* SmartTextTokens.swift */,
+				9348CB7296064B919C59882E /* SmartTextStyleMapper.swift */,
+				781DC0213FDD4E898994B140 /* SmartTextStore.swift */,
+				D56641EA9DFE4226B27A9866 /* SmartTextEditorView.swift */,
+				7EE6C8D4164A4F368A2458A0 /* SmartTextBlockView.swift */,
+				E7555D355DB041B79F274266 /* SmartTextToolbars.swift */,
+				F5A6249BEECE480894E43F9D /* SmartTextSheets.swift */,
+				475FA9AFF07B4000B329B496 /* SmartTextWidget.swift */,
+			);
+			path = smartText;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1075,6 +1081,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				63682AB22CE9337400425C35 /* Note.ext.swift in Sources */,
+				22D196C730283E37000CF5F1 /* MasterEditor.ext.swift in Sources */,
 				630BA1762CF0CF7700D148C8 /* CameraCaptureView.swift in Sources */,
 				636341022F016B8C003835E4 /* FormattingToolbar.swift in Sources */,
 				22A0C18C300C2B01008D5904 /* ZoomableView.swift in Sources */,
@@ -1106,17 +1113,18 @@
 				5DBDE3D4629F459E9A7D74BA /* SmartTextToolbars.swift in Sources */,
 				312388B88A39484490DE82AB /* SmartTextSheets.swift in Sources */,
 				1594266FF2D04FC4880FA22F /* SmartTextWidget.swift in Sources */,
-				2726147D08F5407291A0A0FC /* MasterTextRenderer.swift in Sources */,
-				1C10EA8217A04B009EC18CFC /* MasterTextWidget.swift in Sources */,
-				88B70711427343E9B8E4BD16 /* MasterCanvas.swift in Sources */,
-				64823EBFF6614340B90DD57A /* MasterEditorViewModel.swift in Sources */,
-				9DB4D18953694A84939D07A2 /* MasterEditorScreen.swift in Sources */,
 				636341002F012A1B003835E4 /* NoteTextField.swift in Sources */,
 				22EAC32230113B4E00EB8A80 /* ThemePalette.swift in Sources */,
 				639BBEF52CDC7B7500E0E00D /* LoadingUI.swift in Sources */,
 				228AE49F30012F2D00F53C82 /* UiState.swift in Sources */,
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
 				63302FE92E55198D0038B1FD /* Color.ext.swift in Sources */,
+				22D196BD30283E37000CF5F1 /* MasterTextWidget.swift in Sources */,
+				22D196C930283E37000CF5F1 /* MasterTextSheets.swift in Sources */,
+				22D196C430283E37000CF5F1 /* MasterEditorScreen.swift in Sources */,
+				22D196C530283E37000CF5F1 /* MasterEditorViewModel.swift in Sources */,
+				22D196BE30283E37000CF5F1 /* MasterTextRenderer.swift in Sources */,
+				22D196BF30283E37000CF5F1 /* MasterCanvas.swift in Sources */,
 				63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */,
 				22B8109C301DC72200DAF43F /* GenericGrid.swift in Sources */,
 				63DF200B2DBC3698001E0EDE /* PlayerUiState.swift in Sources */,

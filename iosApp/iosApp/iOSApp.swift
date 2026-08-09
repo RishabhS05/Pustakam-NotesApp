@@ -49,6 +49,9 @@ private struct AppRootView: View {
                             BookReaderView(bookId: bookId)
                         case .NoteBookReader(let noteId, let startContentId):
                             NoteBookReaderView(noteId: noteId, startContentId: startContentId)
+                        // 🎨 09-Aug-2026: free canvas editor over the same note
+                        case .MasterEditor(let noteId):
+                            MasterEditorScreen(noteId: noteId)
                         default: LoginView()
                     }
                 }

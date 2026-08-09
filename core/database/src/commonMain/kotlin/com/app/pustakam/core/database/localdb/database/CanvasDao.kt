@@ -94,7 +94,7 @@ class CanvasDao(private val database: NotesDatabase) {
             )
         }
 
-    private fun com.app.pustakam.core.database.CanvasNode.toNode(): CanvasNode = CanvasNode(
+    private fun com.app.pustakam.core.database.CanvasNodeEntity.toNode(): CanvasNode = CanvasNode(
         id = id,
         kind = runCatching { CanvasNodeKind.valueOf(kind) }
             .getOrDefault(CanvasNodeKind.MASTER_TEXT),

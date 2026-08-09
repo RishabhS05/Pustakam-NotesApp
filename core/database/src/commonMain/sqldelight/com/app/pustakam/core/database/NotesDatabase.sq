@@ -56,13 +56,13 @@ CREATE INDEX idx_notecontent_note_position ON NoteContent(noteId, position);
 --   every device supports. FTS5 is now created AT RUNTIME, only where supported and only when
 --   search is first used — see NotesDao.ensureFtsIndex(); other devices use searchContentTextLike.
 
-CREATE TABLE CanvasNode(
+CREATE TABLE CanvasNodeEntity(
 id TEXT NOT NULL PRIMARY KEY,
 noteId TEXT NOT NULL REFERENCES Notes(id) ON DELETE CASCADE,
 kind TEXT NOT NULL,
 name TEXT NOT NULL DEFAULT '',
 contentId TEXT REFERENCES NoteContent(id) ON DELETE CASCADE,
-parentId TEXT REFERENCES CanvasNode(id) ON DELETE SET NULL,
+parentId TEXT REFERENCES CanvasNodeEntity(id) ON DELETE SET NULL,
 x REAL NOT NULL DEFAULT 0.0,
 y REAL NOT NULL DEFAULT 0.0,
 width REAL NOT NULL DEFAULT 0.0,
@@ -74,9 +74,9 @@ links TEXT NOT NULL DEFAULT '',
 updatedAt TEXT
 );
 
-CREATE INDEX idx_canvasnode_note ON CanvasNode(noteId, z);
+CREATE INDEX idx_canvasnode_note ON CanvasNodeEntity(noteId, z);
 
-CREATE INDEX idx_canvasnode_viewport ON CanvasNode(noteId, x, y);
+CREATE INDEX idx_canvasnode_viewport ON CanvasNodeEntity(noteId, x, y);
 
 CREATE TABLE CanvasViewport(
 noteId TEXT NOT NULL PRIMARY KEY REFERENCES Notes(id) ON DELETE CASCADE,
@@ -290,20 +290,20 @@ SELECT id, label, color FROM Tags WHERE id = ?;
 
 
 upsertCanvasNode:
-INSERT OR REPLACE INTO CanvasNode(id, noteId, kind, name, contentId, parentId, x, y, width, height, z, locked, hidden, links, updatedAt)
+INSERT OR REPLACE INTO CanvasNodeEntity(id, noteId, kind, name, contentId, parentId, x, y, width, height, z, locked, hidden, links, updatedAt)
 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 
 deleteCanvasNode:
-DELETE FROM CanvasNode WHERE id = ?;
+DELETE FROM CanvasNodeEntity WHERE id = ?;
 
 deleteCanvasNodesForNote:
-DELETE FROM CanvasNode WHERE noteId = ?;
+DELETE FROM CanvasNodeEntity WHERE noteId = ?;
 
 selectCanvasNodes:
-SELECT * FROM CanvasNode WHERE noteId = ? ORDER BY z ASC;
+SELECT * FROM CanvasNodeEntity WHERE noteId = ? ORDER BY z ASC;
 
 selectCanvasNodesInRect:
-SELECT * FROM CanvasNode
+SELECT * FROM CanvasNodeEntity
 WHERE noteId = :noteId
 AND hidden = 0
 AND x < :right AND (x + width) > :left
@@ -311,27 +311,27 @@ AND y < :bottom AND (y + height) > :top
 ORDER BY z ASC;
 
 countCanvasNodes:
-SELECT count(*) FROM CanvasNode WHERE noteId = ?;
+SELECT count(*) FROM CanvasNodeEntity WHERE noteId = ?;
 
 selectCanvasNodeForContent:
-SELECT * FROM CanvasNode WHERE contentId = ?;
+SELECT * FROM CanvasNodeEntity WHERE contentId = ?;
 
 deleteOrphanCanvasNodes:
-DELETE FROM CanvasNode
+DELETE FROM CanvasNodeEntity
 WHERE contentId IS NOT NULL
 AND contentId NOT IN (SELECT id FROM NoteContent);
 
 moveCanvasNode:
-UPDATE CanvasNode SET x = ?, y = ?, updatedAt = ? WHERE id = ?;
+UPDATE CanvasNodeEntity SET x = ?, y = ?, updatedAt = ? WHERE id = ?;
 
 resizeCanvasNode:
-UPDATE CanvasNode SET width = ?, height = ?, updatedAt = ? WHERE id = ?;
+UPDATE CanvasNodeEntity SET width = ?, height = ?, updatedAt = ? WHERE id = ?;
 
 raiseCanvasNode:
-UPDATE CanvasNode SET z = ?, updatedAt = ? WHERE id = ?;
+UPDATE CanvasNodeEntity SET z = ?, updatedAt = ? WHERE id = ?;
 
 renameCanvasNode:
-UPDATE CanvasNode SET name = ?, updatedAt = ? WHERE id = ?;
+UPDATE CanvasNodeEntity SET name = ?, updatedAt = ? WHERE id = ?;
 
 upsertCanvasViewport:
 INSERT OR REPLACE INTO CanvasViewport(noteId, offsetX, offsetY, scale, updatedAt)

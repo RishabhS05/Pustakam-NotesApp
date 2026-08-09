@@ -43,13 +43,25 @@ data class CanvasNode(
     fun linkedTo(other: String): CanvasNode =
         if (links.contains(other)) this else copy(links = links + other)
 
+    fun reparentedTo(newParentId: String?): CanvasNode = copy(parentId = newParentId)
+
+    fun raisedTo(newZ: Int): CanvasNode = copy(z = newZ)
+
+    val isPage: Boolean get() = parentId == null && kind == CanvasNodeKind.MASTER_TEXT
+
     companion object {
         const val MIN_SIZE = 24f
-        const val DEFAULT_TEXT_WIDTH = 720f
-        const val DEFAULT_TEXT_HEIGHT = 960f
+
+        // 🔧 09-Aug-2026: a 720-wide page fit a phone at ~0.5 zoom, which rendered 16sp body
+        //   text at 8sp. Narrower paper keeps the fitted zoom — and the type — readable.
+        const val DEFAULT_TEXT_WIDTH = 560f
+        const val DEFAULT_TEXT_HEIGHT = 760f
         const val DEFAULT_GAP = 48f
-        const val DEFAULT_MEDIA_WIDTH = 480f
-        const val DEFAULT_MEDIA_HEIGHT = 360f
+        const val DEFAULT_MEDIA_WIDTH = 420f
+        const val DEFAULT_MEDIA_HEIGHT = 320f
+
+        /** Body type on canvas paper sits a notch above the note editor's. */
+        const val BASE_FONT_SCALE = 1.15f
 
         fun defaultName(kind: CanvasNodeKind, index: Int): String = when (kind) {
             CanvasNodeKind.MASTER_TEXT -> "Page ${index + 1}"
@@ -118,10 +130,38 @@ data class CanvasDocument(
     val bounds: CanvasRect
         get() = nodes.map { it.rect }.reduceOrNull { acc, rect -> acc.union(rect) } ?: CanvasRect()
 
+    /** Top-level paper. Widgets live on a page through [CanvasNode.parentId]. */
+    val pages: List<CanvasNode>
+        get() = nodes.filter { it.parentId == null && it.kind == CanvasNodeKind.MASTER_TEXT }
+
     fun nodeById(nodeId: String): CanvasNode? = nodes.firstOrNull { it.id == nodeId }
 
     fun nodeForContent(contentId: String): CanvasNode? =
         nodes.firstOrNull { it.contentId == contentId }
+
+    fun childrenOf(nodeId: String): List<CanvasNode> = nodes.filter { it.parentId == nodeId }
+
+    fun descendantsOf(nodeId: String): List<CanvasNode> {
+        val direct = childrenOf(nodeId)
+        return direct + direct.flatMap { descendantsOf(it.id) }
+    }
+
+    /** The page a point lands on, topmost first — this is what a drop re-parents to. */
+    fun pageAt(canvasX: Float, canvasY: Float): CanvasNode? =
+        pages.filterNot { it.hidden }.sortedBy { it.z }
+            .lastOrNull { it.rect.contains(canvasX, canvasY) }
+
+    fun pageOf(nodeId: String): CanvasNode? =
+        nodeById(nodeId)?.let { node ->
+            if (node.parentId == null) node.takeIf { it.kind == CanvasNodeKind.MASTER_TEXT }
+            else pageOf(node.parentId)
+        }
+
+    fun replacingAll(updated: List<CanvasNode>): CanvasDocument {
+        if (updated.isEmpty()) return this
+        val byId = updated.associateBy { it.id }
+        return copy(nodes = nodes.map { byId[it.id] ?: it })
+    }
 
     fun replacing(node: CanvasNode): CanvasDocument {
         val index = nodes.indexOfFirst { it.id == node.id }

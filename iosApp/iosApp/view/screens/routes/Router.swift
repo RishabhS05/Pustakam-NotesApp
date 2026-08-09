@@ -16,6 +16,7 @@ import SwiftUI
         case Camera (onCapture : (CapturedMedia?) -> Void)
         case BookReader (bookId : String)
         case NoteBookReader (noteId : String, startContentId : String? = nil)
+        case MasterEditor (noteId : String)
 
         func hash(into hasher: inout Hasher) {
             switch self {
@@ -25,6 +26,8 @@ import SwiftUI
                     hasher.combine(bookId)
                 case .NoteBookReader(let noteId, let contentId):
                     hasher.combine(noteId); hasher.combine(contentId)
+                case .MasterEditor(let noteId):
+                    hasher.combine("MasterEditor"); hasher.combine(noteId)
                 default:
                     hasher.combine(String(describing: self))
             }
@@ -38,6 +41,8 @@ import SwiftUI
                     return lB == rB
                 case (.NoteBookReader(let lId, let lC), .NoteBookReader(let rId, let rC)):
                     return lId == rId && lC == rC
+                case (.MasterEditor(let lhsId), .MasterEditor(let rhsId)):
+                    return lhsId == rhsId
                 default:
                     return String(describing: lhs) == String(describing: rhs)
             }

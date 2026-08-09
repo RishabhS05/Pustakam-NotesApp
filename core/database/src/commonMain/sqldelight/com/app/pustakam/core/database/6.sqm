@@ -1,0 +1,38 @@
+-- 🔧 09-Aug-2026: 5.sqm originally created this table as CanvasNode, which collided with the
+--   richtext CanvasNode class inside shared.framework and made Swift resolve the wrong type.
+--   The table was renamed to CanvasNodeEntity in place, so any install that already ran the OLD
+--   5.sqm still carries the old table and every canvas query fails with "no such table".
+--   Rebuilt here rather than renamed: node rows are derived layout, regenerated from the note on
+--   first open. Notes and NoteContent are never touched.
+--   Every statement is idempotent, so an install that ran the NEW 5.sqm passes straight through.
+DROP TABLE IF EXISTS CanvasNode;
+
+CREATE TABLE IF NOT EXISTS CanvasNodeEntity(
+id TEXT NOT NULL PRIMARY KEY,
+noteId TEXT NOT NULL REFERENCES Notes(id) ON DELETE CASCADE,
+kind TEXT NOT NULL,
+name TEXT NOT NULL DEFAULT '',
+contentId TEXT REFERENCES NoteContent(id) ON DELETE CASCADE,
+parentId TEXT REFERENCES CanvasNodeEntity(id) ON DELETE SET NULL,
+x REAL NOT NULL DEFAULT 0.0,
+y REAL NOT NULL DEFAULT 0.0,
+width REAL NOT NULL DEFAULT 0.0,
+height REAL NOT NULL DEFAULT 0.0,
+z INTEGER NOT NULL DEFAULT 0,
+locked INTEGER NOT NULL DEFAULT 0,
+hidden INTEGER NOT NULL DEFAULT 0,
+links TEXT NOT NULL DEFAULT '',
+updatedAt TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_canvasnode_note ON CanvasNodeEntity(noteId, z);
+
+CREATE INDEX IF NOT EXISTS idx_canvasnode_viewport ON CanvasNodeEntity(noteId, x, y);
+
+CREATE TABLE IF NOT EXISTS CanvasViewport(
+noteId TEXT NOT NULL PRIMARY KEY REFERENCES Notes(id) ON DELETE CASCADE,
+offsetX REAL NOT NULL DEFAULT 0.0,
+offsetY REAL NOT NULL DEFAULT 0.0,
+scale REAL NOT NULL DEFAULT 1.0,
+updatedAt TEXT
+);

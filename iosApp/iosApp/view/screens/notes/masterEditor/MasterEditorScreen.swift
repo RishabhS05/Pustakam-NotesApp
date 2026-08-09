@@ -4,11 +4,13 @@ import shared
 struct MasterEditorScreen: View {
 
     let noteId: String?
+    var onOpenMedia: (String?) -> Void = { _ in }
 
     @StateObject private var viewModel = MasterEditorViewModel()
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
     @State private var showAttach = false
+    @State private var sheet: MasterTextSheet = .none
 
     private var palette: SmartTextPalette { SmartTextPalette.of(scheme) }
 
@@ -16,83 +18,160 @@ struct MasterEditorScreen: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            MasterCanvas(
-                state: viewModel.canvas,
-                onIntent: viewModel.onCanvasIntent,
-                onRename: { viewModel.renameNode(nodeId: $0, name: $1) }
-            ) { node, isEditing in
-                MasterNodeContent(
-                    node: node,
-                    isEditing: isEditing,
-                    scale: CGFloat(viewModel.canvas.viewport.scale),
-                    textState: viewModel.text(for: node.id),
-                    content: viewModel.content(for: node),
-                    dismissToken: viewModel.keyboardDismissToken,
-                    onTextIntent: { viewModel.onTextIntent(nodeId: node.id, intent: $0) },
-                    onFocused: { viewModel.onCanvasIntent(commands.setEditing(nodeId: node.id)) },
-                    onDelete: { viewModel.deleteNode(nodeId: node.id) }
-                )
-            }
-
+            canvas
+            banner
             zoomBar
-
-            if let editingId = viewModel.canvas.editingNodeId,
-               let focused = viewModel.text(for: editingId) {
-                SmartTextKeyboardToolbar(
-                    toolbar: focused.toolbar,
-                    expanded: focused.isToolbarExpanded,
-                    canUndo: focused.canUndo,
-                    canRedo: focused.canRedo,
-                    onAction: { action in handle(action, nodeId: editingId, state: focused) }
-                )
-            }
+            keyboardToolbar
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(palette.page.ignoresSafeArea())
         .onAppear { viewModel.load(noteId: noteId) }
-        .confirmationDialog("Add beside the focused widget", isPresented: $showAttach, titleVisibility: .visible) {
-            Button("Text") { viewModel.addTextNode() }
-            Button("Table") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.table) }
-            Button("Drawing") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.drawing) }
-            Button("Rebuild layout from note order") { viewModel.rebuildLayoutFromNote() }
-            Button("Apply canvas order back to the note") { viewModel.applyCanvasOrderToNote() }
-            Button("Cancel", role: .cancel) {}
+        .confirmationDialog(
+            "Add beside the focused widget",
+            isPresented: $showAttach,
+            titleVisibility: .visible
+        ) {
+            attachActions
+        }
+        .sheet(isPresented: Binding(
+            get: { sheet.isPresented },
+            set: { if !$0 { sheet = .none } }
+        )) {
+            if let editingId = viewModel.canvas.editingNodeId,
+               let focused = viewModel.text(for: editingId) {
+                MasterTextSheetHost(
+                    sheet: sheet,
+                    toolbar: focused.toolbar,
+                    onIntent: { viewModel.onTextIntent(nodeId: editingId, intent: $0) },
+                    onDismiss: { sheet = .none }
+                )
+            }
         }
     }
 
+    private var canvas: some View {
+        MasterCanvas(
+            state: viewModel.canvas,
+            onIntent: viewModel.onCanvasIntent,
+            onRename: { nodeId, name in viewModel.renameNode(nodeId: nodeId, name: name) }
+        ) { node, isEditing in
+            nodeBody(node: node, isEditing: isEditing)
+        }
+    }
+
+    private func nodeBody(node: CanvasNode, isEditing: Bool) -> MasterNodeContent {
+        let nodeId: String = node.id
+        let scale = CGFloat(viewModel.canvas.viewport.scale)
+        return MasterNodeContent(
+            node: node,
+            isEditing: isEditing,
+            scale: scale,
+            textState: viewModel.text(for: nodeId),
+            content: viewModel.content(for: node),
+            dismissToken: viewModel.keyboardDismissToken,
+            onTextIntent: { intent in viewModel.onTextIntent(nodeId: nodeId, intent: intent) },
+            onFocused: { viewModel.onCanvasIntent(commands.setEditing(nodeId: nodeId)) },
+            onOpenMedia: { onOpenMedia(node.contentId) },
+            onDelete: { viewModel.deleteNode(nodeId: nodeId) }
+        )
+    }
+
+    /// Shown only while the canvas has nothing to draw. Tells us which stage of
+    /// load -> read note -> read canvas -> measure viewport actually failed.
+    @ViewBuilder
+    private var banner: some View {
+        if viewModel.canvas.document.nodes.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("No canvas nodes yet")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("note id: \(viewModel.note?.id ?? "nil")")
+                Text("contents: \(viewModel.noteContents.count)  ·  texts: \(viewModel.texts.count)")
+                Text("viewport: \(Int(viewModel.canvas.viewport.widthPx))×\(Int(viewModel.canvas.viewport.heightPx)) @ \(viewModel.canvas.zoomPercent)%")
+                Text("loading: \(viewModel.isLoading ? "yes" : "no")")
+                if let message = viewModel.errorMessage {
+                    Text(message).foregroundColor(palette.accent)
+                }
+            }
+            .font(.system(size: 12, design: .monospaced))
+            .foregroundColor(palette.onSurface)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(palette.codeBackground)
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+    }
+
+    @ViewBuilder
+    private var keyboardToolbar: some View {
+        if let editingId = viewModel.canvas.editingNodeId,
+           let focused = viewModel.text(for: editingId) {
+            SmartTextKeyboardToolbar(
+                toolbar: focused.toolbar,
+                expanded: focused.isToolbarExpanded,
+                canUndo: focused.canUndo,
+                canRedo: focused.canRedo,
+                onAction: { action in handle(action, nodeId: editingId, state: focused) }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var attachActions: some View {
+        Button("Rebuild layout from note order") { viewModel.rebuildLayoutFromNote() }
+        Button("Apply canvas order back to the note") { viewModel.applyCanvasOrderToNote() }
+        Button("Text") { viewModel.addTextNode() }
+        Button("Table") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.table) }
+        Button("Drawing") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.drawing) }
+        Button("Cancel", role: .cancel) {}
+    }
+
+    private var isHandTool: Bool { commands.isHandTool(state: viewModel.canvas) }
+
+    private var zoomLabel: String { "\(viewModel.canvas.zoomPercent)%" }
+
     private var zoomBar: some View {
         HStack(spacing: 4) {
-            Button { viewModel.onCanvasIntent(commands.zoomOut()) } label: {
-                Image(systemName: "minus").foregroundColor(palette.onSurface)
+            barButton(icon: "minus", tint: palette.onSurface) {
+                viewModel.onCanvasIntent(commands.zoomOut())
             }
-            Text("\(viewModel.canvas.zoomPercent)%")
+            Text(zoomLabel)
                 .font(.system(size: 13))
                 .foregroundColor(palette.onSurfaceMuted)
-            Button { viewModel.onCanvasIntent(commands.zoomIn()) } label: {
-                Image(systemName: "plus").foregroundColor(palette.onSurface)
+            barButton(icon: "plus", tint: palette.onSurface) {
+                viewModel.onCanvasIntent(commands.zoomIn())
             }
-            Button { viewModel.onCanvasIntent(commands.zoomToFit()) } label: {
-                Image(systemName: "viewfinder").foregroundColor(palette.onSurface)
+            barButton(icon: "viewfinder", tint: palette.onSurface) {
+                viewModel.onCanvasIntent(commands.zoomToFit())
             }
-            Button {
-                viewModel.onCanvasIntent(
-                    commands.isHandTool(state: viewModel.canvas)
-                        ? commands.useSelectTool()
-                        : commands.useHandTool()
-                )
-            } label: {
-                Image(systemName: commands.isHandTool(state: viewModel.canvas) ? "hand.raised.fill" : "hand.point.up.left")
-                    .foregroundColor(
-                        commands.isHandTool(state: viewModel.canvas) ? palette.accent : palette.onSurface
-                    )
-            }
-            Button { showAttach = true } label: {
-                Image(systemName: "plus.square.on.square").foregroundColor(palette.accent)
+            handToolButton
+            barButton(icon: "plus.square.on.square", tint: palette.accent) {
+                showAttach = true
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 12).fill(palette.toolbar))
-        .padding(.bottom, 16)
+        .padding(.bottom, 28)
+    }
+
+    private var handToolButton: some View {
+        let active: Bool = isHandTool
+        let icon: String = active ? "hand.raised.fill" : "hand.point.up.left"
+        let tint: Color = active ? palette.accent : palette.onSurface
+        return barButton(icon: icon, tint: tint) {
+            let intent = active ? commands.useSelectTool() : commands.useHandTool()
+            viewModel.onCanvasIntent(intent)
+        }
+    }
+
+    private func barButton(
+        icon: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon).foregroundColor(tint)
+        }
     }
 
     private func handle(_ action: ToolbarAction, nodeId: String, state: MasterTextState) {
@@ -107,6 +186,13 @@ struct MasterEditorScreen: View {
             viewModel.onCanvasIntent(commands.setEditing(nodeId: nil))
         } else if let intent = master.forToolbar(action: action) {
             viewModel.onTextIntent(nodeId: nodeId, intent: intent)
+        } else {
+            // style / colour / size / align / link have no intent — they open a sheet
+            let opened = MasterTextSheet.of(action: action)
+            if opened.isPresented {
+                viewModel.keyboardDismissToken &+= 1
+                sheet = opened
+            }
         }
     }
 }
@@ -166,17 +252,20 @@ struct MasterNodeContent: View {
     @ViewBuilder
     private var textBody: some View {
         if let textState {
+            // NOT readOnly: !isEditing — flipping editability as the view becomes first
+            // responder tears down and rebuilds the input session, which closed the
+            // keyboard and reopened it. Focus drives editingNodeId, never the reverse.
             MasterTextWidget(
                 state: textState,
-                readOnly: !isEditing,
+                readOnly: false,
                 scale: scale,
                 accessory: nil,
                 dismissToken: dismissToken,
                 shouldFocus: isEditing,
+                onFocused: onFocused,
                 onIntent: onTextIntent
             )
             .padding(16)
-            .onTapGesture { onFocused() }
         } else {
             placeholder("Empty text")
         }

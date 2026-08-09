@@ -132,6 +132,14 @@ struct NoteEditorView: View {
             
             ToolbarItem(placement: .topBarTrailing) {
                 HStack{
+                    ActionButtonWithoutBackground(iconName: "board_icon",
+                                                  enabled : noteEditorViewModel.isNoteValid(),
+                                                  action: {
+                        if let noteId = noteEditorViewModel.state.note?.id {
+                            router.navigate(to: .MasterEditor(noteId: noteId))
+                        }
+                    }, tint: Theme.Colors.secondary)
+                    
                     ActionButtonWithoutBackground(iconName: "arrow.uturn.backward",
                                                   enabled : noteEditorViewModel.canUndo,
                                                   action: {

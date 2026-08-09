@@ -10,19 +10,25 @@ struct MasterTextWidget: UIViewRepresentable {
     var accessory: AnyView?
     var dismissToken: Int = 0
     var shouldFocus: Bool = false
+    var placeholder: String = "Keep your thoughts alive."
+    var onFocused: () -> Void = {}
     let onIntent: (MasterTextIntent) -> Void
 
     @Environment(\.colorScheme) private var scheme
 
     private var palette: SmartTextPalette { SmartTextPalette.of(scheme) }
 
-    private var baseSize: CGFloat { SmartTextMetrics.baseFontSize * scale }
+    private var baseSize: CGFloat {
+        SmartTextMetrics.baseFontSize * scale * CGFloat(CanvasNode.companion.BASE_FONT_SCALE)
+    }
 
     func makeUIView(context: Context) -> MasterTextUITextView {
         let textView = MasterTextUITextView()
         textView.delegate = context.coordinator
         textView.backgroundColor = .clear
-        textView.isScrollEnabled = false
+        // scrolls inside the fixed node frame — mirrors Android's verticalScroll(). With this off,
+        // sizeThatFits laid out the whole document on every SwiftUI pass and froze the canvas.
+        textView.isScrollEnabled = true
         textView.isEditable = !readOnly
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
@@ -30,6 +36,7 @@ struct MasterTextWidget: UIViewRepresentable {
         textView.tintColor = UIColor(palette.accent)
         textView.dataDetectorTypes = []
         textView.alwaysBounceVertical = false
+        textView.showsVerticalScrollIndicator = false
         textView.configure(palette: palette, baseSize: baseSize)
 
         let doubleTap = UITapGestureRecognizer(
@@ -63,22 +70,30 @@ struct MasterTextWidget: UIViewRepresentable {
         )
         if uiView.attributedText != rendered {
             let previous = uiView.selectedRange
+            // assigning attributedText fires textViewDidChangeSelection synchronously; without
+            // this flag that delegate publishes new state from inside the SwiftUI update pass
+            context.coordinator.isSyncing = true
             uiView.attributedText = rendered
             let limit = (state.text as NSString).length
             uiView.selectedRange = NSRange(
                 location: min(previous.location, limit),
                 length: min(previous.length, max(limit - min(previous.location, limit), 0))
             )
+            context.coordinator.isSyncing = false
+            uiView.setNeedsDisplay()
         }
-        uiView.setNeedsDisplay()
+        uiView.showPlaceholder(state.text.isEmpty ? placeholder : nil)
         context.coordinator.syncAccessory(on: uiView, accessory: accessory)
         context.coordinator.syncFirstResponder(uiView)
     }
 
+    /// Takes the frame the canvas node gives it and scrolls internally. Measuring the document
+    /// here re-laid out every visible node on every layout pass.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MasterTextUITextView, context: Context) -> CGSize? {
-        let width = proposal.width ?? UIScreen.main.bounds.width
-        let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: max(size.height, baseSize * 2))
+        CGSize(
+            width: proposal.width ?? UIScreen.main.bounds.width,
+            height: proposal.height ?? baseSize * 2
+        )
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -90,12 +105,21 @@ struct MasterTextWidget: UIViewRepresentable {
         private var accessoryContainer: SmartTextAccessoryView?
         private var lastDismissToken: Int = 0
         private var claimedFocus = false
+        var isSyncing = false
 
         init(_ parent: MasterTextWidget) {
             self.parent = parent
         }
 
+        /// UIKit's counterpart to Compose's onFocusChanged — the node that gains the caret
+        /// becomes the editing node.
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            guard !isSyncing else { return }
+            parent.onFocused()
+        }
+
         func textViewDidChange(_ textView: UITextView) {
+            guard !isSyncing else { return }
             let range = textView.selectedRange
             parent.onIntent(
                 MasterTextCommands.shared.edit(
@@ -107,6 +131,7 @@ struct MasterTextWidget: UIViewRepresentable {
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
+            guard !isSyncing else { return }
             guard textView.text == parent.state.text else { return }
             let range = textView.selectedRange
             parent.onIntent(
@@ -138,6 +163,12 @@ struct MasterTextWidget: UIViewRepresentable {
 
         @objc func handleSingleTap(_ recognizer: UITapGestureRecognizer) {
             guard let textView = recognizer.view as? MasterTextUITextView else { return }
+            // read-only means the node is not the editing node yet — a tap claims it,
+            // the same way Android's onFocusChanged does
+            guard !parent.readOnly else {
+                parent.onFocused()
+                return
+            }
             let point = recognizer.location(in: textView)
             guard let offset = MasterTextRenderer.checklistOffset(
                 state: parent.state,
@@ -214,10 +245,37 @@ final class MasterTextUITextView: UITextView {
     var masterState: MasterTextState?
     private var palette: SmartTextPalette = .light
     private var baseSize: CGFloat = 16
+    private weak var placeholderLabel: UILabel?
 
     func configure(palette: SmartTextPalette, baseSize: CGFloat) {
         self.palette = palette
         self.baseSize = baseSize
+    }
+
+    func showPlaceholder(_ text: String?) {
+        guard let text else {
+            placeholderLabel?.removeFromSuperview()
+            placeholderLabel = nil
+            return
+        }
+        if let label = placeholderLabel {
+            label.text = text
+            label.textColor = UIColor(palette.onSurfaceMuted)
+            label.font = .systemFont(ofSize: baseSize)
+            return
+        }
+        let label = UILabel()
+        label.text = text
+        label.textColor = UIColor(palette.onSurfaceMuted)
+        label.font = .systemFont(ofSize: baseSize)
+        label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: leadingAnchor),
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 2)
+        ])
+        placeholderLabel = label
     }
 
     override func draw(_ rect: CGRect) {

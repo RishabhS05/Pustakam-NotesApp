@@ -38,6 +38,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
+import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.presentation.MasterTextCommands
 import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
@@ -56,7 +57,7 @@ fun MasterTextWidget(
     val colors = SmartTextTokens.colors
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val baseSize: TextUnit = SmartTextTokens.baseFontSize * scale
+    val baseSize: TextUnit = SmartTextTokens.baseFontSize * scale * CanvasNode.BASE_FONT_SCALE
 
     var fieldValue by remember { mutableStateOf(TextFieldValue(state.text)) }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }

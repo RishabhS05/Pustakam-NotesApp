@@ -57,7 +57,7 @@ fun MasterNodeContent(
                     state = textState,
                     modifier = Modifier.padding(16.dp),
                     scale = scale,
-                    readOnly = !isEditing,
+                    readOnly = false,
                     onIntent = onTextIntent,
                     onFocusChanged = { if (it) onFocused() }
                 )

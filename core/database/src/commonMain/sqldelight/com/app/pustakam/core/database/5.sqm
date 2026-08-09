@@ -1,10 +1,10 @@
-CREATE TABLE CanvasNode(
+CREATE TABLE CanvasNodeEntity(
 id TEXT NOT NULL PRIMARY KEY,
 noteId TEXT NOT NULL REFERENCES Notes(id) ON DELETE CASCADE,
 kind TEXT NOT NULL,
 name TEXT NOT NULL DEFAULT '',
 contentId TEXT REFERENCES NoteContent(id) ON DELETE CASCADE,
-parentId TEXT REFERENCES CanvasNode(id) ON DELETE SET NULL,
+parentId TEXT REFERENCES CanvasNodeEntity(id) ON DELETE SET NULL,
 x REAL NOT NULL DEFAULT 0.0,
 y REAL NOT NULL DEFAULT 0.0,
 width REAL NOT NULL DEFAULT 0.0,
@@ -16,9 +16,9 @@ links TEXT NOT NULL DEFAULT '',
 updatedAt TEXT
 );
 
-CREATE INDEX idx_canvasnode_note ON CanvasNode(noteId, z);
+CREATE INDEX idx_canvasnode_note ON CanvasNodeEntity(noteId, z);
 
-CREATE INDEX idx_canvasnode_viewport ON CanvasNode(noteId, x, y);
+CREATE INDEX idx_canvasnode_viewport ON CanvasNodeEntity(noteId, x, y);
 
 CREATE TABLE CanvasViewport(
 noteId TEXT NOT NULL PRIMARY KEY REFERENCES Notes(id) ON DELETE CASCADE,

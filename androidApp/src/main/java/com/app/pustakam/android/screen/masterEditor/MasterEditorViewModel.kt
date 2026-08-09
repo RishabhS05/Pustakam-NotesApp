@@ -62,9 +62,12 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         }
     }
 
+    // 🔧 09-Aug-2026: canvas rows are derived layout — a read failure must degrade to an
+    //   empty canvas, never take the editor down with it (was an uncaught SQLiteException)
     private suspend fun hydrate(note: Note) {
-        val stored = canvasRepository.load(note.id)
-        val savedViewport = canvasRepository.loadViewport(note.id)
+        val stored = runCatching { canvasRepository.load(note.id) }
+            .getOrElse { com.app.pustakam.core.richtext.master.model.CanvasDocument() }
+        val savedViewport = runCatching { canvasRepository.loadViewport(note.id) }.getOrNull()
 
         val textContents = note.contents.filterIsInstance<NoteContentModel.TextContent>()
         val nodes = if (stored.nodes.isNotEmpty()) {
@@ -88,13 +91,7 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
             it.copy(
                 note = note,
                 isLoading = false,
-                canvas = it.canvas.copy(
-                    document = com.app.pustakam.core.richtext.master.model.CanvasDocument(nodes),
-                    viewport = savedViewport?.withSize(
-                        it.canvas.viewport.widthPx,
-                        it.canvas.viewport.heightPx
-                    ) ?: it.canvas.viewport
-                ),
+                canvas = CanvasCommands.loaded(it.canvas, nodes, savedViewport),
                 texts = texts
             )
         }
@@ -107,12 +104,7 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         val contents = textContents.ifEmpty {
             listOf(NoteContentObjectHelper.createText(noteId = note.id, positionedAt = 0.0))
         }
-        var y = 0f
-        return contents.mapIndexed { index, content ->
-            val node = CanvasNode.masterText(contentId = content.id, x = 0f, y = y)
-            y += CanvasNode.DEFAULT_TEXT_HEIGHT + 48f
-            node.copy(z = index)
-        }
+        return CanvasCommands.stackedTextNodes(contents.map { it.id })
     }
 
     fun onCanvasIntent(intent: CanvasEditorIntent) {
@@ -129,30 +121,38 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
     ) {
         val id = noteId ?: return
         viewModelScope.launch {
-            when (intent) {
-                is CanvasEditorIntent.EndDrag -> {
-                    before.draggingNodeId
-                        ?.let { next.document.nodeById(it) }
-                        ?.let { canvasRepository.move(it.id, it.rect.x, it.rect.y) }
+            runCatching {
+                when (intent) {
+                    // full upsert, not move(): a drop can also have changed the parent page
+                    is CanvasEditorIntent.EndDrag -> {
+                        before.draggingNodeId
+                            ?.let { next.document.nodeById(it) }
+                            ?.let { canvasRepository.save(id, it) }
+                    }
+
+                    is CanvasEditorIntent.ReparentNode ->
+                        next.document.nodeById(intent.nodeId)
+                            ?.let { canvasRepository.save(id, it) }
+
+                    is CanvasEditorIntent.ResizeNode ->
+                        next.document.nodeById(intent.nodeId)
+                            ?.let { canvasRepository.resize(it.id, it.rect.width, it.rect.height) }
+
+                    is CanvasEditorIntent.AddNode -> canvasRepository.save(id, intent.node)
+
+                    is CanvasEditorIntent.RemoveNode -> canvasRepository.remove(intent.nodeId)
+
+                    is CanvasEditorIntent.Pan,
+                    is CanvasEditorIntent.Zoom,
+                    is CanvasEditorIntent.ZoomTo,
+                    CanvasEditorIntent.ZoomIn,
+                    CanvasEditorIntent.ZoomOut,
+                    CanvasEditorIntent.ZoomToFit,
+                    is CanvasEditorIntent.FocusNode ->
+                        canvasRepository.saveViewport(id, next.viewport)
+
+                    else -> Unit
                 }
-
-                is CanvasEditorIntent.ResizeNode ->
-                    next.document.nodeById(intent.nodeId)
-                        ?.let { canvasRepository.resize(it.id, it.rect.width, it.rect.height) }
-
-                is CanvasEditorIntent.AddNode -> canvasRepository.save(id, intent.node)
-
-                is CanvasEditorIntent.RemoveNode -> canvasRepository.remove(intent.nodeId)
-
-                is CanvasEditorIntent.Pan,
-                is CanvasEditorIntent.Zoom,
-                is CanvasEditorIntent.ZoomTo,
-                CanvasEditorIntent.ZoomIn,
-                CanvasEditorIntent.ZoomOut,
-                CanvasEditorIntent.ZoomToFit,
-                is CanvasEditorIntent.FocusNode -> canvasRepository.saveViewport(id, next.viewport)
-
-                else -> Unit
             }
         }
     }
@@ -182,26 +182,7 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         val note = _state.value.note ?: return
         val canvas = _state.value.canvas
         val anchor = CanvasCommands.anchorOf(canvas)
-        val node = if (anchor == null) {
-            CanvasNode.of(
-                kind = kind,
-                contentId = content?.id,
-                x = canvas.document.bounds.right + CanvasNode.DEFAULT_GAP,
-                y = canvas.document.bounds.y,
-                width = CanvasNode.DEFAULT_MEDIA_WIDTH,
-                height = CanvasNode.DEFAULT_MEDIA_HEIGHT
-            )
-        } else {
-            CanvasNode.nextTo(
-                anchor = anchor,
-                kind = kind,
-                contentId = content?.id,
-                width = if (kind == CanvasNodeKind.MASTER_TEXT) CanvasNode.DEFAULT_TEXT_WIDTH
-                else CanvasNode.DEFAULT_MEDIA_WIDTH,
-                height = if (kind == CanvasNodeKind.MASTER_TEXT) CanvasNode.DEFAULT_TEXT_HEIGHT
-                else CanvasNode.DEFAULT_MEDIA_HEIGHT
-            )
-        }
+        val node = CanvasCommands.nodeFor(canvas, kind, content?.id)
 
         if (content != null) {
             val nextNote = note.withContents(note.contents + content)

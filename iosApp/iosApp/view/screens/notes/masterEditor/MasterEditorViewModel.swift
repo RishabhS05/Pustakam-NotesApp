@@ -1,18 +1,28 @@
-import SwiftUI
-import Combine
 import shared
+import Combine
+import SwiftUI
 
 final class MasterEditorViewModel: ObservableObject {
 
     @Published private(set) var note: Note?
-    @Published private(set) var canvas = CanvasEditorState()
+    @Published private(set) var noteContents: [NoteContentModel] = []
+    @Published private(set) var canvas = CanvasCommands.shared.initialState()
     @Published private(set) var texts: [String: MasterTextState] = [:]
     @Published private(set) var isLoading = false
+    @Published private(set) var errorMessage: String?
     @Published var keyboardDismissToken: Int = 0
 
     private let adapter: NotesBridgeAdapter
     private let canvasBridge: CanvasBridge
+    private var dirtyContentIds = Set<String>()
     private var noteId: String?
+    private var hydratedNoteId: String?
+
+    private var commands: CanvasCommands { CanvasCommands.shared }
+
+    private var textContents: [NoteContentModel.TextContent] {
+        noteContents.compactMap { $0 as? NoteContentModel.TextContent }
+    }
 
     init(
         adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
@@ -22,83 +32,172 @@ final class MasterEditorViewModel: ObservableObject {
         self.canvasBridge = canvasBridge
     }
 
+    deinit {
+        canvasBridge.dispose()
+    }
+
     func text(for nodeId: String) -> MasterTextState? { texts[nodeId] }
 
     func content(for node: CanvasNode) -> NoteContentModel? {
         guard let contentId = node.contentId else { return nil }
-        return note?.contents.first { $0.id == contentId }
+        return noteContents.first { $0.id == contentId }
     }
+
+    // MARK: - Load
 
     func load(noteId: String?) {
         guard let noteId else { return }
+        // onAppear fires again on every return from a pushed screen — never clobber unsaved edits
+        guard self.noteId != noteId || note == nil, dirtyContentIds.isEmpty else { return }
         self.noteId = noteId
-        isLoading = true
-        adapter.readNote(noteId: noteId) { [weak self] state in
+        adapter.readNote(noteId: noteId) { [weak self] result in
             guard let self else { return }
-            if let loaded = state.data { self.hydrate(loaded) }
-        }
-    }
-
-    private func hydrate(_ loaded: Note) {
-        note = loaded
-        isLoading = false
-
-        let textContents = loaded.contents.compactMap { $0 as? NoteContentModel.TextContent }
-        canvasBridge.load(noteId: loaded.id) { [weak self] document, savedViewport in
-            guard let self else { return }
-            var nodes = document.nodes
-            if nodes.isEmpty {
-                nodes = self.buildInitialNodes(loaded, textContents)
-                self.canvasBridge.saveAll(noteId: loaded.id, nodes: nodes)
-            }
-
-            var built: [String: MasterTextState] = [:]
-            for node in nodes where node.kind == CanvasNodeKind.masterText {
-                guard let contentId = node.contentId,
-                      let content = textContents.first(where: { $0.id == contentId }) else { continue }
-                built[node.id] = MasterTextState.companion.of(
-                    document: RichTextCodec.shared.documentFrom(content: content)
-                )
-            }
-
-            DispatchQueue.main.async {
-                self.texts = built
-                self.canvas = self.canvas.doCopy(
-                    document: CanvasDocument(nodes: nodes),
-                    viewport: savedViewport?.withSize(
-                        width: self.canvas.viewport.widthPx,
-                        height: self.canvas.viewport.heightPx
-                    ) ?? self.canvas.viewport,
-                    tool: self.canvas.tool,
-                    selectedNodeId: self.canvas.selectedNodeId,
-                    draggingNodeId: self.canvas.draggingNodeId,
-                    editingNodeId: self.canvas.editingNodeId
-                )
+            switch result {
+            case .loading:
+                self.isLoading = true
+            case .success(let note):
+                self.isLoading = false
+                if let note { self.apply(note: note) }
+            case .failure(let error):
+                self.isLoading = false
+                self.errorMessage = error.message
+            case .idle:
+                break
             }
         }
     }
 
-    private func buildInitialNodes(
-        _ loaded: Note,
-        _ textContents: [NoteContentModel.TextContent]
+    /// readNote is a Flow subscription, so this runs again after every write we make.
+    /// Only the note snapshot is refreshed here — re-reading the canvas on each emission
+    /// rebuilt every MasterTextState mid-keystroke and pinned the CPU.
+    private func apply(note: Note) {
+        self.note = note
+        if dirtyContentIds.isEmpty {
+            noteContents = note.contents as? [NoteContentModel] ?? []
+        }
+        guard hydratedNoteId != note.id else {
+            refreshMissingTexts()
+            return
+        }
+        hydratedNoteId = note.id
+        hydrateCanvas(noteId: note.id)
+    }
+
+    private func hydrateCanvas(noteId: String) {
+        let contents = textContents
+        canvasBridge.load(
+            noteId: noteId,
+            onLoaded: { [weak self] document, savedViewport in
+                guard let self else { return }
+                DispatchQueue.main.async {
+                    var nodes: [CanvasNode] = document.nodes
+                    if nodes.isEmpty {
+                        nodes = self.seedNodes(noteId: noteId, contents: contents)
+                        self.canvasBridge.saveAll(noteId: noteId, nodes: nodes)
+                    }
+                    self.render(nodes: nodes, viewport: savedViewport)
+                }
+            },
+            onError: { [weak self] message in
+                guard let self else { return }
+                DispatchQueue.main.async {
+                    // never leave the editor on a blank canvas: show the note in memory anyway
+                    self.errorMessage = message
+                    self.hydratedNoteId = nil
+                    self.render(nodes: self.seedNodes(noteId: noteId, contents: contents), viewport: nil)
+                }
+            }
+        )
+    }
+
+    private func render(nodes: [CanvasNode], viewport: Viewport?) {
+        texts = buildTexts(nodes: nodes, contents: textContents, keeping: texts)
+        canvas = commands.loaded(state: canvas, nodes: nodes, viewport: viewport)
+    }
+
+    /// Fills in states for nodes that gained content since the last emission, and leaves
+    /// every existing editor untouched so typing is never interrupted.
+    private func refreshMissingTexts() {
+        let existing = texts
+        let built = buildTexts(nodes: canvas.document.nodes, contents: textContents, keeping: existing)
+        if Set(built.keys) != Set(existing.keys) { texts = built }
+    }
+
+    private func seedNodes(
+        noteId: String,
+        contents: [NoteContentModel.TextContent]
     ) -> [CanvasNode] {
-        let contents: [NoteContentModel.TextContent] = textContents.isEmpty
-            ? [NoteContentObjectHelper.shared.createText(
-                noteId: loaded.id, positionedAt: 0, text: "")]
-            : textContents
-        var y: Float = 0
-        return contents.map { content in
-            let node = CanvasNode.companion.masterText(
-                contentId: content.id,
-                x: 0,
-                y: y,
-                width: CanvasNode.companion.DEFAULT_TEXT_WIDTH,
-                height: CanvasNode.companion.DEFAULT_TEXT_HEIGHT
+        if contents.isEmpty {
+            let seed = NoteContentObjectHelper.shared.createText(
+                noteId: noteId,
+                positionedAt: 0,
+                text: ""
             )
-            y += CanvasNode.companion.DEFAULT_TEXT_HEIGHT + CanvasNode.companion.DEFAULT_GAP
-            return node
+            addContent(seed)
+            return commands.stackedTextNodes(contentIds: [seed.id])
+        }
+        return commands.stackedTextNodes(contentIds: contents.map { $0.id })
+    }
+
+    private func buildTexts(
+        nodes: [CanvasNode],
+        contents: [NoteContentModel.TextContent],
+        keeping existing: [String: MasterTextState] = [:]
+    ) -> [String: MasterTextState] {
+        var built: [String: MasterTextState] = [:]
+        for node in nodes where node.isText {
+            guard let contentId = node.contentId else { continue }
+            if let live = existing[node.id] {
+                built[node.id] = live
+                continue
+            }
+            guard let content = contents.first(where: { $0.id == contentId }) else { continue }
+            built[node.id] = MasterTextState.companion.of(
+                document: RichTextCodec.shared.documentFrom(content: content)
+            )
+        }
+        return built
+    }
+
+    // MARK: - Content editing
+
+    private func addContent(_ content: NoteContentModel) {
+        dirtyContentIds.insert(content.id)
+        noteContents.append(content)
+    }
+
+    private func updateContent(_ content: NoteContentModel) {
+        dirtyContentIds.insert(content.id)
+        if let index = noteContents.firstIndex(where: { $0.id == content.id }) {
+            noteContents[index] = content
+        } else {
+            noteContents.append(content)
         }
     }
+
+    private func removeContent(id: String) {
+        dirtyContentIds.insert(id)
+        noteContents.removeAll { $0.id == id }
+    }
+
+    func saveNote() {
+        guard let note else { return }
+        let toSave = note.withContents(newContents: noteContents)
+        let dirtySnapshot = dirtyContentIds
+        adapter.createOrUpdateNote(note: toSave, dirtyContentIds: dirtySnapshot) { [weak self] result in
+            switch result {
+            case .success:
+                self?.dirtyContentIds.subtract(dirtySnapshot)
+            case .failure(let error):
+                self?.errorMessage = error.message
+                print("MasterEditor saveNote failed [\(error.code)] \(error.message)")
+            case .loading, .idle:
+                break
+            }
+        }
+    }
+
+    // MARK: - Canvas
 
     func onCanvasIntent(_ intent: CanvasEditorIntent) {
         let before = canvas
@@ -108,19 +207,30 @@ final class MasterEditorViewModel: ObservableObject {
 
     private func persistCanvas(before: CanvasEditorState, intent: CanvasEditorIntent) {
         guard let noteId else { return }
-        if intent is CanvasEditorIntentEndDrag {
-            if let dragging = before.draggingNodeId,
-               let node = canvas.document.nodeById(nodeId: dragging) {
-                canvasBridge.move(nodeId: node.id, x: node.rect.x, y: node.rect.y)
+        if commands.isEndDrag(intent: intent) {
+            guard let dragging = before.draggingNodeId,
+                  let node = canvas.document.nodeById(nodeId: dragging) else { return }
+            // full upsert, not move(): a drop can also have changed the parent page
+            canvasBridge.save(noteId: noteId, node: node)
+            for child in canvas.document.descendantsOf(nodeId: node.id) {
+                canvasBridge.save(noteId: noteId, node: child)
             }
-        } else if let add = intent as? CanvasEditorIntentAddNode {
-            canvasBridge.save(noteId: noteId, node: add.node)
-        } else if let remove = intent as? CanvasEditorIntentRemoveNode {
-            canvasBridge.remove(nodeId: remove.nodeId)
-        } else {
+        } else if let reparentedId = commands.reparentedNodeId(intent: intent) {
+            guard let node = canvas.document.nodeById(nodeId: reparentedId) else { return }
+            canvasBridge.save(noteId: noteId, node: node)
+        } else if let added = commands.addedNode(intent: intent) {
+            canvasBridge.save(noteId: noteId, node: added)
+        } else if let removedId = commands.removedNodeId(intent: intent) {
+            canvasBridge.remove(nodeId: removedId)
+        } else if let resizedId = commands.resizedNodeId(intent: intent) {
+            guard let node = canvas.document.nodeById(nodeId: resizedId) else { return }
+            canvasBridge.resize(nodeId: node.id, width: node.rect.width, height: node.rect.height)
+        } else if commands.affectsViewport(intent: intent) {
             canvasBridge.saveViewport(noteId: noteId, viewport: canvas.viewport)
         }
     }
+
+    // MARK: - Text
 
     func onTextIntent(nodeId: String, intent: MasterTextIntent) {
         guard let current = texts[nodeId] else { return }
@@ -130,121 +240,76 @@ final class MasterEditorViewModel: ObservableObject {
     }
 
     private func persistText(nodeId: String, state: MasterTextState) {
-        guard let note,
-              let contentId = canvas.document.nodeById(nodeId: nodeId)?.contentId,
-              let content = note.contents
-                .compactMap({ $0 as? NoteContentModel.TextContent })
-                .first(where: { $0.id == contentId }) else { return }
-
-        let updated = RichTextCodec.shared.applyTo(content: content, document: state.document)
-        let contents = note.contents.map { $0.id == updated.id ? updated : $0 }
-        let nextNote = note.withContents(newContents: contents)
-        self.note = nextNote
-        adapter.createOrUpdateNote(note: nextNote) { _ in }
+        guard let contentId = canvas.document.nodeById(nodeId: nodeId)?.contentId,
+              let content = textContents.first(where: { $0.id == contentId }) else { return }
+        updateContent(RichTextCodec.shared.applyTo(content: content, document: state.document))
+        saveNote()
     }
 
+    // MARK: - Nodes
+
     func addWidgetNearFocused(kind: CanvasNodeKind, content: NoteContentModel? = nil) {
-        guard let note else { return }
-        let anchor = CanvasCommands.shared.anchorOf(state: canvas)
-        let node: CanvasNode
-        if let anchor {
-            node = CanvasNode.companion.nextTo(
-                anchor: anchor,
-                kind: kind,
-                contentId: content?.id,
-                width: kind == CanvasNodeKind.masterText
-                    ? CanvasNode.companion.DEFAULT_TEXT_WIDTH
-                    : CanvasNode.companion.DEFAULT_MEDIA_WIDTH,
-                height: kind == CanvasNodeKind.masterText
-                    ? CanvasNode.companion.DEFAULT_TEXT_HEIGHT
-                    : CanvasNode.companion.DEFAULT_MEDIA_HEIGHT,
-                gap: CanvasNode.companion.DEFAULT_GAP
-            )
-        } else {
-            node = CanvasNode.companion.of(
-                kind: kind,
-                contentId: content?.id,
-                x: canvas.document.bounds.right + CanvasNode.companion.DEFAULT_GAP,
-                y: canvas.document.bounds.y,
-                width: CanvasNode.companion.DEFAULT_MEDIA_WIDTH,
-                height: CanvasNode.companion.DEFAULT_MEDIA_HEIGHT,
-                parentId: nil
-            )
-        }
+        guard note != nil else { return }
+        let anchor = commands.anchorOf(state: canvas)
+        let node = commands.nodeFor(state: canvas, kind: kind, contentId: content?.id)
 
         if let content {
-            let nextNote = note.withContents(newContents: note.contents + [content])
-            self.note = nextNote
-            adapter.createOrUpdateNote(note: nextNote) { _ in }
+            addContent(content)
             if let text = content as? NoteContentModel.TextContent {
                 texts[node.id] = MasterTextState.companion.of(
                     document: RichTextCodec.shared.documentFrom(content: text)
                 )
             }
+            saveNote()
         }
-        onCanvasIntent(CanvasCommands.shared.addNode(node: node))
+        onCanvasIntent(commands.addNode(node: node))
         if let anchor {
-            onCanvasIntent(CanvasCommands.shared.linkNodes(fromId: anchor.id, toId: node.id))
+            onCanvasIntent(commands.linkNodes(fromId: anchor.id, toId: node.id))
         }
-    }
-
-    func deleteNode(nodeId: String) {
-        guard let note else { return }
-        let contentId = canvas.document.nodeById(nodeId: nodeId)?.contentId
-        onCanvasIntent(CanvasCommands.shared.removeNode(nodeId: nodeId))
-        texts[nodeId] = nil
-        if let contentId {
-            let nextNote = note.withContents(
-                newContents: note.contents.filter { $0.id != contentId }
-            )
-            self.note = nextNote
-            adapter.createOrUpdateNote(note: nextNote) { _ in }
-        }
-    }
-
-    func renameNode(nodeId: String, name: String) {
-        onCanvasIntent(CanvasCommands.shared.renameNode(nodeId: nodeId, name: name))
-        canvasBridge.rename(nodeId: nodeId, name: name)
-    }
-
-    func rebuildLayoutFromNote() {
-        guard let note, let noteId else { return }
-        let document = NoteCanvasConverter.shared.toCanvas(contents: note.contents)
-        onCanvasIntent(CanvasCommands.shared.replaceDocument(document: document))
-
-        var built: [String: MasterTextState] = [:]
-        for node in document.nodes where node.kind == CanvasNodeKind.masterText {
-            guard let contentId = node.contentId,
-                  let content = note.contents
-                    .compactMap({ $0 as? NoteContentModel.TextContent })
-                    .first(where: { $0.id == contentId }) else { continue }
-            built[node.id] = MasterTextState.companion.of(
-                document: RichTextCodec.shared.documentFrom(content: content)
-            )
-        }
-        texts = built
-        canvasBridge.removeAll(noteId: noteId)
-        canvasBridge.saveAll(noteId: noteId, nodes: document.nodes)
-    }
-
-    func applyCanvasOrderToNote() {
-        guard let note else { return }
-        let reordered = NoteCanvasConverter.shared.reorderContents(
-            contents: note.contents,
-            document: canvas.document
-        )
-        let nextNote = note.withContents(newContents: reordered)
-        self.note = nextNote
-        adapter.createOrUpdateNote(note: nextNote) { _ in }
     }
 
     func addTextNode() {
         guard let note else { return }
         let content = NoteContentObjectHelper.shared.createText(
             noteId: note.id,
-            positionedAt: Double(note.contents.count),
+            positionedAt: Double(noteContents.count),
             text: ""
         )
         addWidgetNearFocused(kind: CanvasNodeKind.masterText, content: content)
+    }
+
+    func deleteNode(nodeId: String) {
+        let contentId = canvas.document.nodeById(nodeId: nodeId)?.contentId
+        onCanvasIntent(commands.removeNode(nodeId: nodeId))
+        texts[nodeId] = nil
+        guard let contentId else { return }
+        removeContent(id: contentId)
+        saveNote()
+    }
+
+    func renameNode(nodeId: String, name: String) {
+        onCanvasIntent(commands.renameNode(nodeId: nodeId, name: name))
+        canvasBridge.rename(nodeId: nodeId, name: name)
+    }
+
+    // MARK: - Conversion
+
+    func rebuildLayoutFromNote() {
+        guard let noteId else { return }
+        let document = NoteCanvasConverter.shared.toCanvas(contents: noteContents)
+        onCanvasIntent(commands.replaceDocument(document: document))
+        texts = buildTexts(nodes: document.nodes, contents: textContents)
+        canvasBridge.removeAll(noteId: noteId)
+        canvasBridge.saveAll(noteId: noteId, nodes: document.nodes)
+    }
+
+    func applyCanvasOrderToNote() {
+        let reordered = NoteCanvasConverter.shared.reorderContents(
+            contents: noteContents,
+            document: canvas.document
+        )
+        noteContents = reordered as? [NoteContentModel] ?? noteContents
+        noteContents.forEach { dirtyContentIds.insert($0.id) }
+        saveNote()
     }
 }

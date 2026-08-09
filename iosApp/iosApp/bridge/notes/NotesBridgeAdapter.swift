@@ -1,8 +1,6 @@
 import Foundation
 import shared
 
-/// Owns the Kotlin bridge and every Closeable it hands out.
-/// ViewModels never see Closeable/dispose — deinit here cancels everything.
 final class NotesBridgeAdapter {
 
     private let bridge = NotesBridge()
@@ -122,9 +120,7 @@ final class NotesBridgeAdapter {
     /***
      CRUD For TAGS
      */
-    
-    
-    
+
     func createTag(tag: Tag, onState: @escaping (UiState<Tag>) -> Void) {
         _ = bridge.createTag(   // 🔧 write — not retained (see above)
             tag: tag,
