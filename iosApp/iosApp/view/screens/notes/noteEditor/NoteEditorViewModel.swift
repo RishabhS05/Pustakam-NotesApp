@@ -16,6 +16,7 @@ struct NoteEditorUIState {
 class NoteEditorViewModel: ObservableObject {
 
     @Published var state = NoteEditorUIState()
+    @Published private(set) var capabilities = EditorCapabilityCommands.shared.empty()
 
     private let adapter: NotesBridgeAdapter
     private let contentBridge: NoteContentBridge
@@ -150,62 +151,37 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     func getCapturedData(media: CapturedMedia?) {
-        guard let noteId = state.note?.id else { return }       // fixes E3 (was note!.id)
-        let timeStamp = DateTimeUtilsKt.getCurrentTimestamp()
-        switch media {
-        case .image(let image):
-            let type = ContentType.image
-            guard let data = image.pngData() else { return }
-            let dest = PathPolicy.shared.capturePath(type: type, noteId: noteId, timestamp: timeStamp)
-            let path = saveImageFile(data: data, in: dest.folder, to: dest.fileName)
-            saveMedia(type: type, localPath: path, noteId: noteId, timestamp: "\(timeStamp)")
-
-        case .video(let path):
-            let type = ContentType.video
-            let dest = PathPolicy.shared.capturePath(type: type, noteId: noteId, timestamp: timeStamp)
-            guard let saved = copyFile(to: dest.folder, fileName: dest.fileName, from: path)
-            else { return }
-            saveMedia(type: type, localPath: saved.path, noteId: noteId, timestamp: "\(timeStamp)")
-
-        case .audio(let path):
-            let type = ContentType.audio
-            let dest = PathPolicy.shared.capturePath(type: type, noteId: noteId, timestamp: timeStamp)
-            guard let saved = copyFile(to: dest.folder, fileName: dest.fileName, from: path)
-            else { return }
-            saveMedia(type: type, localPath: saved.path, noteId: noteId, timestamp: "\(timeStamp)")
-
-        case .none:
-            break
-        }
+        guard let noteId = state.note?.id else { return }
+        guard let content = EditorCapture.persist(
+            media: media,
+            noteId: noteId,
+            positionedAt: Double(state.noteContents.count)
+        ) else { return }
+        addContent(content: content)
+        generateThumbnailAsync(for: content)
+        capabilities = EditorCapabilityReducer.shared.captureFinished(state: capabilities)
     }
 
-    /// ONE construction/append path for captured media (was triplicated + note.contents).
-    /// Private method (promoted from nested func): reusable by future flows, e.g. file import.
-    /// noteId/timestamp are explicit params now — callers must keep them consistent
-    /// with the saved file's folder/name (the nested version guaranteed this by capture).
-    private func saveMedia(type: ContentType, localPath: String,
-                           noteId: String, timestamp: String) {  // timestamps stay String (platform formats differ)
-        let media = NoteContentObjectHelper.shared.createMedia(
-            contentType: type,
-            noteId: noteId,
-            // 🔧 C4: Double position, appended at end (was hardcoded 0 for every media — ordering bug)
-            positionedAt: Double(state.noteContents.count),
-            localPath: localPath,
-            url: "",
-            duration: 0,
-            timestamp: timestamp,
-            // 🔧 C1: new media-metadata params (Kotlin defaults don't export to Swift — pass explicitly)
-            title: "",
-            mimeType: "",
-            sizeBytes: 0,
-            width: 0,
-            height: 0,
-            thumbnailPath: nil)
-        addContent(content: media)
-        // 🔧 15-Jul-2026 iOS parity (Phase 2.3): thumbnail generated AFTER the media is already
-        //   visible, off the main thread; on completion the LATEST version of the content is
-        //   updated by id (never clobbers meanwhile edits) — updateContent marks it dirty too.
-        generateThumbnailAsync(for: media)
+    func onCapabilityState(_ next: EditorCapabilityState) {
+        capabilities = next
+    }
+
+    func requestCapture(_ kind: CaptureKind) {
+        capabilities = EditorCapabilityReducer.shared.requestCapture(
+            state: capabilities,
+            kind: kind
+        )
+    }
+
+    func askDeleteContent(_ contentId: String) {
+        capabilities = EditorCapabilityReducer.shared.askDeleteContent(
+            state: capabilities,
+            contentId: contentId
+        )
+    }
+
+    func askDeleteNote() {
+        capabilities = EditorCapabilityReducer.shared.askDeleteNote(state: capabilities)
     }
 
     // MARK: - File import (18-Jul-2026)

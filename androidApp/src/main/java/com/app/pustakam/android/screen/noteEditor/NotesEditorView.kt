@@ -2,7 +2,6 @@ package com.app.pustakam.android.screen.noteEditor
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Intent
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -84,25 +83,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.R
 import com.app.pustakam.android.MyApplicationTheme
-import com.app.pustakam.android.extension.startServiceWrapper
 import com.app.pustakam.android.fileUtils.saveMediaToGallery
 import com.app.pustakam.android.fileUtils.writeMediaToUri
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
-import com.app.pustakam.android.permission.AskPermissions
+import com.app.pustakam.android.screen.editor.EditorCapabilityCallbacks
+import com.app.pustakam.android.screen.editor.EditorCapabilityHost
+import com.app.pustakam.android.screen.editor.permissionsFor
+import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.screen.navigation.Route
-import com.app.pustakam.android.services.locationService.LocationService
 import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
-import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
-import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.document.InlineBookFileWidget
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
-import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet   // 🔧 18-Jul-2026: import sheet
 import com.app.pustakam.android.widgets.smartText.LocalSmartTextToolbar
 import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbarHost
 import com.app.pustakam.android.widgets.smartText.SmartTextToolbarReservedHeight
@@ -156,16 +153,27 @@ fun NoteEditorScreen(
             }
         }
     }
-    var showImportSheet by remember { mutableStateOf(false) }
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris ->
-        if (uris.isNotEmpty()) noteEditorViewModel.importDeviceFiles(context, uris)
-    }
-    if (showImportSheet) ImportFilesSheet(
-        onDismiss = { showImportSheet = false },
-        onPickFromDevice = { filePickerLauncher.launch(arrayOf("*/*")) },   // any file type
-        onImportFromLink = { link -> noteEditorViewModel.importFromLink(context, link) },
+    val capabilities = noteEditorViewModel.capabilities.collectAsStateWithLifecycle().value
+    EditorCapabilityHost(
+        state = capabilities,
+        noteTitle = noteEditorViewModel.noteContentUiState.value.note?.title.orEmpty(),
+        permissions = permissionsFor(capabilities.pendingCapture),
+        audioDraft = { ctx ->
+            noteEditorViewModel.addNewContent(ctx, ContentType.AUDIO)
+                as? NoteContentModel.MediaContent
+        },
+        callbacks = EditorCapabilityCallbacks(
+            onState = noteEditorViewModel::onCapabilityState,
+            onOpenCamera = {
+                noteEditorViewModel.noteContentUiState.value.note?.id
+                    ?.let { navigateTo(CameraData(it)) }
+            },
+            onAudioSaved = { noteEditorViewModel.updateContent(content = it) },
+            onFilesPicked = { ctx, uris -> noteEditorViewModel.importDeviceFiles(ctx, uris) },
+            onImportLink = { ctx, link -> noteEditorViewModel.importFromLink(ctx, link) },
+            onDeleteContent = { noteEditorViewModel.removeContent(it) },
+            onDeleteNote = { id?.let { noteId -> noteEditorViewModel.deleteNote(noteId) } }
+        )
     )
 
     OnLifecycleEvent { _, event ->
@@ -192,53 +200,6 @@ fun NoteEditorScreen(
             isLoading -> LoadingUI()
             error.isNotnull() -> SnackBarUi(error = error!!) {
                 noteEditorViewModel.clearError()
-            }
-
-            showPermissionAlert == true -> {
-                AskPermissions(permissionsRequired = permissions, onDismiss = {
-                    noteEditorViewModel.showPermissionAlert(null)
-                }, onGrantPermission = {
-                    noteEditorViewModel.showPermissionAlert(null)
-                    when (contentType) {
-                        ContentType.IMAGE, ContentType.VIDEO -> navigateTo(
-                            CameraData(
-                                noteEditorViewModel.noteContentUiState.value.note?.id!!
-                            )
-                        )
-                        ContentType.AUDIO -> noteEditorViewModel.startStopAudioRecording()
-                        ContentType.LOCATION -> {
-                            noteEditorViewModel.locationState(true)
-                        }
-
-                        else -> {}
-                    }
-                })
-            }
-
-            LocationState -> {
-                val intent = Intent(context, LocationService::class.java).apply {
-                    action = LocationService.ACTION_START
-                }
-                (context as Activity).startServiceWrapper(intent = intent)
-            }
-
-            showDeleteAlert -> {
-                if (deleteNoteContentId.isNotnull()) {
-                    DeleteNoteAlert(noteTitle = "Recorded Note", onConfirm = {
-                        noteEditorViewModel.removeContent(value = deleteNoteContentId!!)
-                    }) {
-                        noteEditorViewModel.showDeleteAlertBox(false, null)
-                    }
-                } else {
-                    DeleteNoteAlert(
-                        noteTitle = if (!noteEditorViewModel.noteContentUiState.value.note?.title.isNullOrEmpty()) noteEditorViewModel.noteContentUiState.value.note?.title!! else "",
-                        onConfirm = {
-                            noteEditorViewModel.deleteNote(noteId = id!!)
-                            noteEditorViewModel.showDeleteAlertBox(false)
-                        }) {
-                        noteEditorViewModel.showDeleteAlertBox(false)
-                    }
-                }
             }
         }
     }
@@ -353,7 +314,7 @@ fun NoteEditorScreen(
                 )
             }
             if (stateEditor.showDeleteButton) IconButton(onClick = {
-                noteEditorViewModel.showDeleteAlertBox(true)
+                noteEditorViewModel.askDeleteNote()
             }) {
                 Icon(
                     Icons.Default.Delete, tint = colorScheme.error,
@@ -369,16 +330,10 @@ fun NoteEditorScreen(
                     noteEditorViewModel.addNewText()
                 },
                 onArrowButton = { focusManager.clearFocus() },
-                onRecordMic = {
-                    noteEditorViewModel.preparePermissionDialog(contentType = ContentType.AUDIO)
-                },
-                onLocation = {
-                    noteEditorViewModel.preparePermissionDialog(contentType = ContentType.LOCATION)
-                },
-                onCameraAction = {
-                    noteEditorViewModel.preparePermissionDialog(contentType = ContentType.IMAGE)
-                },
-                onImportFile = { showImportSheet = true },   // 🔧 18-Jul-2026: import sheet trigger
+                onRecordMic = { noteEditorViewModel.requestCapture(CaptureKind.AUDIO) },
+                onLocation = { noteEditorViewModel.requestCapture(CaptureKind.LOCATION) },
+                onCameraAction = { noteEditorViewModel.requestCapture(CaptureKind.IMAGE) },
+                onImportFile = { noteEditorViewModel.requestCapture(CaptureKind.FILE) },
             )
         }
     }, contentList = { focusRequester ->
@@ -394,12 +349,7 @@ fun NoteEditorScreen(
                             onUpdate = { value ->
                                 noteEditorViewModel.updateContent(index, value)
                             },
-                            onDelete = { value ->
-                                noteEditorViewModel.showDeleteAlertBox(
-                                    true,
-                                    deleteNoteContentId = value.id
-                                )
-                            },
+                            onDelete = { value -> noteEditorViewModel.askDeleteContent(value.id) },
                             onShare = {},
                             onOpenDocument = {
                                 val cid = contentValue.id
@@ -422,22 +372,6 @@ fun NoteEditorScreen(
                             })
                     }
                 }
-            }
-            if (stateEditor.showAudioRecorder) {
-                val recordingContent = remember {
-                    noteEditorViewModel.addNewContent(
-                        context,
-                        contentType = ContentType.AUDIO
-                    ) as NoteContentModel.MediaContent
-                }
-                AudioRecording(
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    noteContentModel = recordingContent,
-                    onStop = {
-                        noteEditorViewModel.updateContent(content = it)
-                        noteEditorViewModel.startStopAudioRecording(false)
-                    },
-                )
             }
         }
     })

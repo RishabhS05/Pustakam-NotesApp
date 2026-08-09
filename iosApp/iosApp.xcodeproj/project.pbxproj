@@ -72,6 +72,7 @@
 		22D196C430283E37000CF5F1 /* MasterEditorScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */; };
 		22D196C530283E37000CF5F1 /* MasterEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */; };
 		22D196C930283E37000CF5F1 /* MasterTextSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C830283E37000CF5F1 /* MasterTextSheets.swift */; };
+		22D196CC30283E37000CF5F1 /* EditorCapabilityHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196CB30283E37000CF5F1 /* EditorCapabilityHost.swift */; };
 		22D196BD30283E37000CF5F1 /* MasterTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */; };
 		22D196BE30283E37000CF5F1 /* MasterTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */; };
 		22D196BF30283E37000CF5F1 /* MasterCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196B930283E37000CF5F1 /* MasterCanvas.swift */; };
@@ -228,6 +229,7 @@
 		22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorScreen.swift; sourceTree = "<group>"; };
 		22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorViewModel.swift; sourceTree = "<group>"; };
 		22D196C830283E37000CF5F1 /* MasterTextSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextSheets.swift; sourceTree = "<group>"; };
+		22D196CB30283E37000CF5F1 /* EditorCapabilityHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCapabilityHost.swift; sourceTree = "<group>"; };
 		22D196B930283E37000CF5F1 /* MasterCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterCanvas.swift; sourceTree = "<group>"; };
 		22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextRenderer.swift; sourceTree = "<group>"; };
 		22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextWidget.swift; sourceTree = "<group>"; };
@@ -477,6 +479,14 @@
 			path = noteList;
 			sourceTree = "<group>";
 		};
+		22D196CA30283E37000CF5F1 /* editor */ = {
+			isa = PBXGroup;
+			children = (
+				22D196CB30283E37000CF5F1 /* EditorCapabilityHost.swift */,
+			);
+			path = editor;
+			sourceTree = "<group>";
+		};
 		22D196C130283E37000CF5F1 /* masterEditor */ = {
 			isa = PBXGroup;
 			children = (
@@ -492,6 +502,7 @@
 				22B2CA6530119961002AD701 /* noteEditor */,
 				22B2CA6930119961002AD701 /* noteList */,
 				22D196C130283E37000CF5F1 /* masterEditor */,
+				22D196CA30283E37000CF5F1 /* editor */,
 			);
 			path = notes;
 			sourceTree = "<group>";
@@ -1120,6 +1131,7 @@
 				63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */,
 				63302FE92E55198D0038B1FD /* Color.ext.swift in Sources */,
 				22D196BD30283E37000CF5F1 /* MasterTextWidget.swift in Sources */,
+				22D196CC30283E37000CF5F1 /* EditorCapabilityHost.swift in Sources */,
 				22D196C930283E37000CF5F1 /* MasterTextSheets.swift in Sources */,
 				22D196C430283E37000CF5F1 /* MasterEditorScreen.swift in Sources */,
 				22D196C530283E37000CF5F1 /* MasterEditorViewModel.swift in Sources */,

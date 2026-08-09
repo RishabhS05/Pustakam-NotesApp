@@ -1,10 +1,17 @@
 package com.app.pustakam.android.screen.masterEditor
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.pustakam.android.fileimport.FileImportManager
+import com.app.pustakam.android.fileimport.ImportResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
+import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.richtext.codec.RichTextCodec
 import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
@@ -16,6 +23,9 @@ import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
 import com.app.pustakam.core.richtext.master.presentation.MasterTextReducer
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 import com.app.pustakam.core.richtext.master.presentation.NoteCanvasConverter
+import com.app.pustakam.feature.notes.domain.editor.CaptureKind
+import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
+import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
 import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
@@ -32,7 +42,9 @@ data class MasterEditorUiState(
     val note: Note? = null,
     val canvas: CanvasEditorState = CanvasEditorState(),
     val texts: Map<String, MasterTextState> = emptyMap(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val capabilities: EditorCapabilityState = EditorCapabilityState(),
+    val audioDraft: NoteContentModel.MediaContent? = null
 ) {
     fun textFor(nodeId: String): MasterTextState? = texts[nodeId]
 }
@@ -200,6 +212,42 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         anchor?.let { onCanvasIntent(CanvasCommands.linkNodes(it.id, node.id)) }
     }
 
+    fun deleteContent(contentId: String) {
+        val nodeId = _state.value.canvas.document.nodeForContent(contentId)?.id
+        if (nodeId != null) deleteNode(nodeId) else removeContentOnly(contentId)
+    }
+
+    private fun removeContentOnly(contentId: String) {
+        val note = _state.value.note ?: return
+        val nextNote = note.withContents(note.contents.filterNot { it.id == contentId })
+        _state.update { it.copy(note = nextNote) }
+        viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
+    }
+
+    fun importDeviceFiles(context: Context, uris: List<Uri>) {
+        val note = _state.value.note ?: return
+        if (uris.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val items = FileImportManager.importUris(
+                context.applicationContext, note.id, note.contents.count().toDouble(), uris
+            )
+            withContext(Dispatchers.Main) { items.forEach { addMediaNear(it) } }
+        }
+    }
+
+    fun importFromLink(context: Context, url: String) {
+        val note = _state.value.note ?: return
+        if (url.isBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = FileImportManager.importFromUrl(
+                context.applicationContext, note.id, note.contents.count().toDouble(), url
+            )
+            withContext(Dispatchers.Main) {
+                if (result is ImportResult.Success) result.contents.forEach { addMediaNear(it) }
+            }
+        }
+    }
+
     fun addMediaNear(content: NoteContentModel) {
         val kind = when (content.type) {
             com.app.pustakam.core.common.util.ContentType.LINK -> CanvasNodeKind.LINK
@@ -261,6 +309,54 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         val nextNote = note.withContents(reordered)
         _state.update { it.copy(note = nextNote) }
         viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
+    }
+
+    fun onCapabilityState(next: EditorCapabilityState) {
+        _state.update { it.copy(capabilities = next) }
+    }
+
+    fun requestCapture(kind: CaptureKind) {
+        val note = _state.value.note ?: return
+        val draft = if (kind == CaptureKind.AUDIO) {
+            NoteContentObjectHelper.createMedia(
+                contentType = ContentType.AUDIO,
+                noteId = note.id,
+                positionedAt = note.contents.size.toDouble()
+            )
+        } else {
+            _state.value.audioDraft
+        }
+        _state.update {
+            it.copy(
+                audioDraft = draft,
+                capabilities = EditorCapabilityReducer.requestCapture(it.capabilities, kind)
+            )
+        }
+    }
+
+    fun onCaptured(content: NoteContentModel?) {
+        val media = content ?: return
+        addMediaNear(media)
+        _state.update {
+            it.copy(
+                audioDraft = null,
+                capabilities = EditorCapabilityReducer.captureFinished(it.capabilities)
+            )
+        }
+    }
+
+    fun askDeleteContent(contentId: String) {
+        _state.update {
+            it.copy(
+                capabilities = EditorCapabilityReducer.askDeleteContent(it.capabilities, contentId)
+            )
+        }
+    }
+
+    fun setAttachSheet(visible: Boolean) {
+        _state.update {
+            it.copy(capabilities = EditorCapabilityReducer.setAttachSheet(it.capabilities, visible))
+        }
     }
 
     fun addTextNode() {

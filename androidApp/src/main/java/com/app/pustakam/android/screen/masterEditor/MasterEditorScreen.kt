@@ -36,7 +36,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.pustakam.android.screen.editor.EditorCapabilityCallbacks
+import com.app.pustakam.android.screen.editor.EditorCapabilityHost
+import com.app.pustakam.android.screen.editor.permissionsFor
 import com.app.pustakam.android.widgets.masterEditor.MasterCanvas
+import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbar
 import com.app.pustakam.android.widgets.smartText.SmartTextSheet
 import com.app.pustakam.android.widgets.smartText.SmartTextSheetHost
@@ -53,7 +57,8 @@ fun MasterEditorScreen(
     noteId: String? = null,
     viewModel: MasterEditorViewModel = viewModel(),
     onBack: () -> Unit = {},
-    onOpenMedia: (String?) -> Unit = {}
+    onOpenMedia: (String?) -> Unit = {},
+    onCaptureMedia: (String?) -> Unit = {}
 ) {
     val colors = SmartTextTokens.colors
     val uiState by viewModel.state.collectAsStateWithLifecycle()
@@ -62,6 +67,22 @@ fun MasterEditorScreen(
     var sheet by remember { mutableStateOf(SmartTextSheet.NONE) }
 
     LaunchedEffect(noteId) { viewModel.load(noteId) }
+
+    EditorCapabilityHost(
+        state = uiState.capabilities,
+        noteTitle = uiState.note?.title.orEmpty(),
+        permissions = permissionsFor(uiState.capabilities.pendingCapture),
+        audioDraft = { uiState.audioDraft },
+        callbacks = EditorCapabilityCallbacks(
+            onState = viewModel::onCapabilityState,
+            onOpenCamera = { onCaptureMedia(uiState.note?.id) },
+            onAudioSaved = viewModel::onCaptured,
+            onFilesPicked = { context, uris -> viewModel.importDeviceFiles(context, uris) },
+            onImportLink = { context, link -> viewModel.importFromLink(context, link) },
+            onDeleteContent = viewModel::deleteContent,
+            onDeleteNote = { onBack() }
+        )
+    )
 
     Box(modifier = Modifier.fillMaxSize().background(colors.page)) {
         MasterCanvas(
@@ -256,6 +277,25 @@ fun MasterEditorScreen(
                                     showAttach = false
                                     if (kind == CanvasNodeKind.MASTER_TEXT) viewModel.addTextNode()
                                     else viewModel.addWidgetNearFocused(kind)
+                                }
+                                .padding(horizontal = 20.dp, vertical = 14.dp)
+                        )
+                    }
+
+                    listOf(
+                        "Photo or video" to CaptureKind.IMAGE,
+                        "Record audio" to CaptureKind.AUDIO,
+                        "Location" to CaptureKind.LOCATION,
+                        "Import a file" to CaptureKind.FILE
+                    ).forEach { (label, kind) ->
+                        Text(
+                            text = label,
+                            style = TextStyle(color = colors.onSurface, fontSize = 16.sp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showAttach = false
+                                    viewModel.requestCapture(kind)
                                 }
                                 .padding(horizontal = 20.dp, vertical = 14.dp)
                         )

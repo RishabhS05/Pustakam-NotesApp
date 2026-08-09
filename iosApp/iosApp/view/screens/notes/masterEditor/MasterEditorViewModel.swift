@@ -10,6 +10,7 @@ final class MasterEditorViewModel: ObservableObject {
     @Published private(set) var texts: [String: MasterTextState] = [:]
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
+    @Published private(set) var capabilities = EditorCapabilityCommands.shared.empty()
     @Published var keyboardDismissToken: Int = 0
 
     private let adapter: NotesBridgeAdapter
@@ -285,6 +286,85 @@ final class MasterEditorViewModel: ObservableObject {
         guard let contentId else { return }
         removeContent(id: contentId)
         saveNote()
+    }
+
+    func onCapabilityState(_ next: EditorCapabilityState) {
+        capabilities = next
+    }
+
+    func requestCapture(_ kind: CaptureKind) {
+        capabilities = EditorCapabilityReducer.shared.requestCapture(
+            state: capabilities,
+            kind: kind
+        )
+    }
+
+    func onCaptured(_ media: CapturedMedia?) {
+        guard let note else { return }
+        let content = EditorCapture.persist(
+            media: media,
+            noteId: note.id,
+            positionedAt: Double(noteContents.count)
+        )
+        if let content {
+            addWidgetNearFocused(
+                kind: NoteCanvasConverter.shared.kindOf(content: content),
+                content: content
+            )
+        }
+        capabilities = EditorCapabilityReducer.shared.captureFinished(state: capabilities)
+    }
+
+    func importFiles(urls: [URL]) {
+        guard let note else { return }
+        let items = FileImportService.importPicked(
+            urls: urls,
+            noteId: note.id,
+            startPosition: Double(noteContents.count)
+        )
+        for item in items {
+            addWidgetNearFocused(kind: NoteCanvasConverter.shared.kindOf(content: item), content: item)
+        }
+    }
+
+    func importFromLink(_ url: String) {
+        guard let note else { return }
+        FileImportService.importFromLink(
+            url,
+            noteId: note.id,
+            startPosition: Double(noteContents.count)
+        ) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let items):
+                for item in items {
+                    self.addWidgetNearFocused(
+                        kind: NoteCanvasConverter.shared.kindOf(content: item),
+                        content: item
+                    )
+                }
+            case .noFileFound:
+                self.errorMessage = "No file found at this link."
+            case .failed(let message):
+                self.errorMessage = message
+            }
+        }
+    }
+
+    func askDeleteContent(_ contentId: String) {
+        capabilities = EditorCapabilityReducer.shared.askDeleteContent(
+            state: capabilities,
+            contentId: contentId
+        )
+    }
+
+    func deleteContent(_ contentId: String) {
+        guard let nodeId = canvas.document.nodeForContent(contentId: contentId)?.id else {
+            removeContent(id: contentId)
+            saveNote()
+            return
+        }
+        deleteNode(nodeId: nodeId)
     }
 
     func renameNode(nodeId: String, name: String) {

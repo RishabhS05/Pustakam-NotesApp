@@ -14,6 +14,9 @@ import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
+import com.app.pustakam.feature.notes.domain.editor.CaptureKind
+import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
+import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
 import com.app.pustakam.feature.notes.domain.history.NoteEditKind
 import com.app.pustakam.feature.notes.domain.history.NoteHistory
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
@@ -312,6 +315,30 @@ class NoteEditorViewModel : BaseViewModel() {
     }
 
    /**permission dialog setup*/
+    private val _capabilities = MutableStateFlow(EditorCapabilityState())
+    val capabilities: StateFlow<EditorCapabilityState> = _capabilities.asStateFlow()
+
+    fun onCapabilityState(next: EditorCapabilityState) {
+        _capabilities.value = next
+    }
+
+    fun requestCapture(kind: CaptureKind) {
+        _capabilities.value = EditorCapabilityReducer.requestCapture(_capabilities.value, kind)
+    }
+
+    fun captureFinished() {
+        _capabilities.value = EditorCapabilityReducer.captureFinished(_capabilities.value)
+    }
+
+    fun askDeleteContent(contentId: String) {
+        _capabilities.value =
+            EditorCapabilityReducer.askDeleteContent(_capabilities.value, contentId)
+    }
+
+    fun askDeleteNote() {
+        _capabilities.value = EditorCapabilityReducer.askDeleteNote(_capabilities.value)
+    }
+
     fun preparePermissionDialog(contentType: ContentType? = null) {
         val permission = getPermissions(contentType)
         _noteUiState.update {

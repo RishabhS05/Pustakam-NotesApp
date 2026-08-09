@@ -7,6 +7,7 @@ struct MasterEditorScreen: View {
     var onOpenMedia: (String?) -> Void = { _ in }
 
     @StateObject private var viewModel = MasterEditorViewModel()
+    @Environment(Router.self) var router: Router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
     @State private var showAttach = false
@@ -33,6 +34,21 @@ struct MasterEditorScreen: View {
         ) {
             attachActions
         }
+        .editorCapabilities(
+            state: viewModel.capabilities,
+            noteTitle: viewModel.note?.title ?? "this note",
+            callbacks: EditorCapabilityCallbacks(
+                onState: { viewModel.onCapabilityState($0) },
+                onOpenCamera: {
+                    router.navigate(to: .Camera { media in viewModel.onCaptured(media) })
+                },
+                onCaptured: { viewModel.onCaptured($0) },
+                onFilesPicked: { viewModel.importFiles(urls: $0) },
+                onImportLink: { viewModel.importFromLink($0) },
+                onDeleteContent: { viewModel.deleteContent($0) },
+                onDeleteNote: { dismiss() }
+            )
+        )
         .sheet(isPresented: Binding(
             get: { sheet.isPresented },
             set: { if !$0 { sheet = .none } }
@@ -117,11 +133,15 @@ struct MasterEditorScreen: View {
 
     @ViewBuilder
     private var attachActions: some View {
-        Button("Rebuild layout from note order") { viewModel.rebuildLayoutFromNote() }
-        Button("Apply canvas order back to the note") { viewModel.applyCanvasOrderToNote() }
         Button("Text") { viewModel.addTextNode() }
+        Button("Photo or video") { viewModel.requestCapture(CaptureKind.image) }
+        Button("Record audio") { viewModel.requestCapture(CaptureKind.audio) }
+        Button("Location") { viewModel.requestCapture(CaptureKind.location) }
+        Button("Import a file") { viewModel.requestCapture(CaptureKind.file) }
         Button("Table") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.table) }
         Button("Drawing") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.drawing) }
+        Button("Rebuild layout from note order") { viewModel.rebuildLayoutFromNote() }
+        Button("Apply canvas order back to the note") { viewModel.applyCanvasOrderToNote() }
         Button("Cancel", role: .cancel) {}
     }
 

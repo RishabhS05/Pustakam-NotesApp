@@ -4,16 +4,11 @@ import shared
 struct NoteEditorView: View {
     @Environment(Router.self) var router: Router
     @Environment(\.dismiss) private var dismiss
-    @State private var showRecorder = false
     @State private var errorField: ErrorField = ErrorField()
     @State private var noteContent: String = ""
     @State private var isRulledEnabled: Bool = false
     @State private var  showDelete : Bool = false
     @State private var deleteContentId : String? = nil
-    @State private var showImportOptions = false
-    @State private var showFilePicker = false
-    @State private var showLinkPrompt = false
-    @State private var importLink = ""
     @State private var readerPrefs = ReaderPrefsAdapter()
     // 🔧 20-Jul-2026: NEW — path of the image shown in the full-screen preview (nil = hidden)
     @State private var previewImagePath: String? = nil
@@ -51,50 +46,39 @@ struct NoteEditorView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .frame(maxHeight: .infinity, alignment: .top)
-            if showRecorder {
-                AudioRecorderView(onSave : { media  in
-                    noteEditorViewModel.getCapturedData(media:media)
-                    showRecorder = false
-                }).frame(alignment : .topTrailing)
-            }
             if noteEditorViewModel.state.isLoading || isExporting {  // 🔧 spinner: VM state or export
                 LoadingUI().frame(alignment: .center)
                 Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
             }
             OverlayEditorButtons(
                 showDelete: noteEditorViewModel.state.note != nil,  // 🔧 state.note — updates when async note arrives
-                onMediaCapture: {
-                    requirePermission(cameraPermission, onGranted: {
-                        requirePermission(micPermission, onGranted: {
-                            router.navigate(to: .Camera(){ data in
-                                noteEditorViewModel.getCapturedData(media: data)
-                            })
-                        }, onDenied: { setAlert(alertType: .MIC) })
-                    }, onDenied: { setAlert(alertType: .CAMERA) })
-                },
+                onMediaCapture: { noteEditorViewModel.requestCapture(CaptureKind.image) },
                 onShare: { print("Share action") },
-                onRecordMic: {
-                    requirePermission(micPermission, onGranted: {
-                        showRecorder = true
-                    }, onDenied: { setAlert(alertType: .MIC) })
-                }, onAddTextField: {
-                    noteEditorViewModel.addNewText()
-                },
+                onRecordMic: { noteEditorViewModel.requestCapture(CaptureKind.audio) },
+                onAddTextField: { noteEditorViewModel.addNewText() },
                 onArrowButton: {},
-                onImportFile: { showImportOptions = true }   // 🔧 18-Jul-2026: import entry point
+                onImportFile: { noteEditorViewModel.requestCapture(CaptureKind.file) }
             )
             .frame(alignment: .bottomTrailing)
             .padding()
         }
-
-        .confirmationDialog("Import files", isPresented: $showImportOptions, titleVisibility: .visible) {
-            Button("Import files from device") { showFilePicker = true }
-            Button("Import from link") { importLink = ""; showLinkPrompt = true }
-            Button("Cancel", role: .cancel) {}
-        }
-        .sheet(isPresented: $showFilePicker) {
-            MultiFilePicker { urls in noteEditorViewModel.importFiles(urls: urls) }
-        }
+        .editorCapabilities(
+            state: noteEditorViewModel.capabilities,
+            noteTitle: noteEditorViewModel.state.title,
+            callbacks: EditorCapabilityCallbacks(
+                onState: { noteEditorViewModel.onCapabilityState($0) },
+                onOpenCamera: {
+                    router.navigate(to: .Camera { data in
+                        noteEditorViewModel.getCapturedData(media: data)
+                    })
+                },
+                onCaptured: { noteEditorViewModel.getCapturedData(media: $0) },
+                onFilesPicked: { noteEditorViewModel.importFiles(urls: $0) },
+                onImportLink: { noteEditorViewModel.importFromLink($0) },
+                onDeleteContent: { noteEditorViewModel.deleteContent(contentId: $0) },
+                onDeleteNote: { noteEditorViewModel.deleteNote { dismiss() } }
+            )
+        )
 
         .fullScreenCover(isPresented: Binding(
             get: { previewImagePath != nil },
@@ -109,14 +93,6 @@ struct NoteEditorView: View {
             Button("Export as Image") { runExport(.image) }
             Button("Export as Word (DOCX)") { runExport(.docx) }
             Button("Cancel", role: .cancel) {}
-        }
-        .alert("Import from link", isPresented: $showLinkPrompt) {
-            TextField("https://example.com/file.pdf", text: $importLink)
-                .textInputAutocapitalization(.never).keyboardType(.URL)
-            Button("Import") { noteEditorViewModel.importFromLink(importLink) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Downloads the file behind any URL. If the link has no file, you'll see “No file found”.")
         }
         .alert(isPresented: $errorField.showErrorAlert) {
             throwAlert()

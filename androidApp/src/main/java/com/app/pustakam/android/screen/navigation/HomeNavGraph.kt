@@ -166,7 +166,8 @@ fun NavGraphBuilder.EditorNavGraph(navController: PustakmNavController){
         ) { backStackEntry ->
             MasterEditorScreen(
                 noteId = backStackEntry.arguments?.getString("noteId"),
-                onBack = navController::upPress
+                onBack = navController::upPress,
+                onCaptureMedia = { id -> id?.let { navController.navigateTo(CameraData(it)) } }
             )
         }
         /** just wanted to use navigation with args style to remember this way of passing data*/
