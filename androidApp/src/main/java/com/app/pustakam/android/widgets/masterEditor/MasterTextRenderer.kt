@@ -24,6 +24,11 @@ import com.app.pustakam.core.richtext.model.ParagraphStyle
 
 object MasterTextRenderer {
 
+    private const val BULLET_SCALE = 0.55f
+    private const val NUMBER_SCALE = 0.85f
+    private const val CHECKBOX_DP = 16f
+
+
     const val INDENT_STEP_SP = 20f
     const val MARKER_GUTTER_SP = 26f
 
@@ -99,19 +104,35 @@ object MasterTextRenderer {
             }
 
             if (paragraph.isChecklist) {
-                drawCheckbox(scope, indentPx, top, paragraph.checked, colors, density)
+                val lineHeight = layout.getLineBottom(line) - top
+                val boxPx = with(density) { CHECKBOX_DP.dp.toPx() }
+                val gutterPx = with(density) { MARKER_GUTTER_SP.sp.toPx() }
+                drawCheckbox(
+                    scope,
+                    indentPx + (gutterPx - boxPx) / 2f,
+                    top + (lineHeight - boxPx) / 2f,
+                    paragraph.checked,
+                    colors,
+                    density
+                )
                 return@forEach
             }
 
+            val markerScale =
+                if (paragraph.listStyle == ListStyle.BULLET) BULLET_SCALE else NUMBER_SCALE
             val glyph = measurer.measure(
                 text = AnnotatedString(paragraph.marker),
                 style = TextStyle(
                     color = colors.accent,
-                    fontSize = baseSize * paragraph.style.relativeSize,
+                    fontSize = baseSize * paragraph.style.relativeSize * markerScale,
                     fontWeight = FontWeight.Medium
                 )
             )
-            scope.drawText(glyph, topLeft = Offset(indentPx, top))
+            val lineHeight = layout.getLineBottom(line) - top
+            val centred = top + (lineHeight - glyph.size.height) / 2f
+            val gutterPx = with(density) { MARKER_GUTTER_SP.sp.toPx() }
+            val centredX = indentPx + (gutterPx - glyph.size.width) / 2f
+            scope.drawText(glyph, topLeft = Offset(centredX, centred))
         }
     }
 
@@ -123,10 +144,10 @@ object MasterTextRenderer {
         colors: SmartTextColors,
         density: Density
     ) {
-        val size = with(density) { 16.dp.toPx() }
+        val size = with(density) { CHECKBOX_DP.dp.toPx() }
         val stroke = with(density) { 1.5.dp.toPx() }
         val corner = with(density) { 4.dp.toPx() }
-        val offset = Offset(left, top + stroke)
+        val offset = Offset(left, top)
         if (checked) {
             scope.drawRoundRect(
                 color = colors.accent,
@@ -159,7 +180,7 @@ object MasterTextRenderer {
                 ?: return@firstOrNull false
             val indentPx = with(density) { (paragraph.indentLevel * INDENT_STEP_SP).sp.toPx() }
             position.y in layout.getLineTop(line)..layout.getLineBottom(line) &&
-                position.x in indentPx..(indentPx + gutter)
+                position.x >= indentPx && position.x <= indentPx + gutter
         }?.start
     }
 }

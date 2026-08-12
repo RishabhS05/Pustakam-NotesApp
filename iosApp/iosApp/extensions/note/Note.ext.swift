@@ -1,5 +1,6 @@
 
 import shared
+
 extension Note : @retroactive Identifiable, @retroactive ObservableObject{
              
 }

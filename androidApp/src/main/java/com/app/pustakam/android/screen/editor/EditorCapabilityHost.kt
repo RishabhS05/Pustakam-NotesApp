@@ -8,14 +8,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.app.pustakam.android.permission.AskPermissions
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.services.locationService.LocationService
 import com.app.pustakam.android.extension.startServiceWrapper
 import com.app.pustakam.android.widgets.alert.DeleteNoteAlert
-import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
@@ -37,7 +35,6 @@ fun EditorCapabilityHost(
     state: EditorCapabilityState,
     noteTitle: String,
     permissions: List<NeededPermission>,
-    audioDraft: (Context) -> NoteContentModel.MediaContent?,
     callbacks: EditorCapabilityCallbacks
 ) {
     val context = LocalContext.current
@@ -70,20 +67,6 @@ fun EditorCapabilityHost(
             }
             (context as Activity).startServiceWrapper(intent = intent)
             callbacks.onState(EditorCapabilityReducer.stopLocation(state))
-        }
-    }
-
-    if (state.isRecordingAudio) {
-        val draft = remember(state.isRecordingAudio) { audioDraft(context) }
-        if (draft != null) {
-            AudioRecording(
-                noteContentModel = draft,
-                onStop = {
-                    callbacks.onAudioSaved(it)
-                    callbacks.onState(EditorCapabilityReducer.stopAudio(state))
-                },
-                onDelete = { callbacks.onState(EditorCapabilityReducer.stopAudio(state)) }
-            )
         }
     }
 

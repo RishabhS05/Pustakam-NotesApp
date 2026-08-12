@@ -12,6 +12,7 @@ struct MasterEditorScreen: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showAttach = false
     @State private var sheet: MasterTextSheet = .none
+    @State private var keyboardHeight: CGFloat = 0
 
     private var palette: SmartTextPalette { SmartTextPalette.of(scheme) }
 
@@ -27,6 +28,16 @@ struct MasterEditorScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(palette.page.ignoresSafeArea())
         .onAppear { viewModel.load(noteId: noteId) }
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
+        ) { note in
+            guard let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+            else { return }
+            keyboardHeight = max(UIScreen.main.bounds.height - frame.origin.y, 0)
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+        ) { _ in keyboardHeight = 0 }
         .confirmationDialog(
             "Add beside the focused widget",
             isPresented: $showAttach,
@@ -73,6 +84,9 @@ struct MasterEditorScreen: View {
         ) { node, isEditing in
             nodeBody(node: node, isEditing: isEditing)
         }
+        // without this SwiftUI lifts the whole canvas when the keyboard opens, which moves
+        // the page off the screen it was fitted to
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     private func nodeBody(node: CanvasNode, isEditing: Bool) -> MasterNodeContent {
@@ -88,7 +102,8 @@ struct MasterEditorScreen: View {
             onTextIntent: { intent in viewModel.onTextIntent(nodeId: nodeId, intent: intent) },
             onFocused: { viewModel.onCanvasIntent(commands.setEditing(nodeId: nodeId)) },
             onOpenMedia: { onOpenMedia(node.contentId) },
-            onDelete: { viewModel.deleteNode(nodeId: nodeId) }
+            onDelete: { viewModel.deleteNode(nodeId: nodeId) },
+            keyboardInsetPx: keyboardHeight
         )
     }
 
@@ -134,6 +149,7 @@ struct MasterEditorScreen: View {
     @ViewBuilder
     private var attachActions: some View {
         Button("New page") { viewModel.addPage() }
+        Button("Text") { viewModel.addWidget(kind: ContentType.text)}
         Button("Photo or video") { viewModel.requestCapture(ContentType.image) }
         Button("Record audio") { viewModel.requestCapture(ContentType.audio) }
         Button("Location") { viewModel.requestCapture(ContentType.location) }
@@ -235,6 +251,7 @@ struct MasterNodeContent: View {
     let onFocused: () -> Void
     var onOpenMedia: () -> Void = {}
     var onDelete: () -> Void = {}
+    var keyboardInsetPx: CGFloat = 0
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.openURL) private var openURL
@@ -287,10 +304,14 @@ struct MasterNodeContent: View {
                 accessory: nil,
                 dismissToken: dismissToken,
                 shouldFocus: isEditing,
+                scrollable: false,
+                minLines: 5,
+                keyboardInsetPx: keyboardInsetPx,
                 onFocused: onFocused,
                 onIntent: onTextIntent
             )
             .padding(16)
+            .frame(maxHeight: .infinity, alignment: .top)
         } else {
             placeholder("Empty text")
         }

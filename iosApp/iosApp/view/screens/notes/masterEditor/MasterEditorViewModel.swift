@@ -70,7 +70,7 @@ final class MasterEditorViewModel: ObservableObject {
     private func apply(note: Note) {
         self.note = note
         if dirtyContentIds.isEmpty {
-            noteContents = note.contents as? [NoteContentModel] ?? []
+            noteContents = note.contents
         }
         guard hydratedNoteId != note.id else {
             refreshMissingTexts()
@@ -219,6 +219,18 @@ final class MasterEditorViewModel: ObservableObject {
         } else if let resizedId = commands.resizedNodeId(intent: intent) {
             guard let node = canvas.document.nodeById(nodeId: resizedId) else { return }
             canvasBridge.resize(nodeId: node.id, width: node.rect.width, height: node.rect.height)
+        } else if let fittedId = commands.fittedPageId(state: canvas, intent: intent) {
+            if let page = canvas.document.nodeById(nodeId: fittedId),
+               page.rect != before.document.nodeById(nodeId: fittedId)?.rect {
+                canvasBridge.resize(
+                    nodeId: page.id,
+                    width: page.rect.width,
+                    height: page.rect.height
+                )
+            }
+            if canvas.viewport != before.viewport {
+                canvasBridge.saveViewport(noteId: noteId, viewport: canvas.viewport)
+            }
         } else if commands.affectsViewport(intent: intent) {
             canvasBridge.saveViewport(noteId: noteId, viewport: canvas.viewport)
         }
@@ -262,7 +274,7 @@ final class MasterEditorViewModel: ObservableObject {
     func addWidget(kind : ContentType , content: NoteContentModel? = nil) {
         guard note != nil, content != nil else { return }
         
-        if let content, content.type == ContentType.text {
+        if kind == ContentType.text {
             addPage()
             return
         }
@@ -400,7 +412,7 @@ final class MasterEditorViewModel: ObservableObject {
             contents: noteContents,
             document: canvas.document
         )
-        noteContents = reordered as? [NoteContentModel] ?? noteContents
+        noteContents = reordered
         noteContents.forEach { dirtyContentIds.insert($0.id) }
         saveNote()
     }

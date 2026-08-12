@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -45,7 +46,8 @@ fun MasterNodeContent(
     onTextIntent: (MasterTextIntent) -> Unit,
     onFocused: () -> Unit,
     onOpenMedia: () -> Unit,
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    keyboardInsetPx: Float = 0f
 ) {
     val colors = SmartTextTokens.colors
     when  {
@@ -55,10 +57,13 @@ fun MasterNodeContent(
             } else {
                 MasterTextWidget(
                     state = textState,
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                     scale = scale,
+                    scrollable = false,
+                    minLines = 5,
                     readOnly = false,
                     onIntent = onTextIntent,
+                    keyboardInsetPx = keyboardInsetPx,
                     onFocusChanged = { if (it) onFocused() }
                 )
             }

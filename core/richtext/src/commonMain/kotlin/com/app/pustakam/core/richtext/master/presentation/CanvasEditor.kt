@@ -188,10 +188,41 @@ sealed class CanvasEditorIntent {
 
 const val EDIT_TOP_INSET = 12f
 
+const val PAGE_SCREEN_MARGIN = 16f
+
 object CanvasEditorReducer {
 
     fun reduce(state: CanvasEditorState, intent: CanvasEditorIntent): CanvasEditorState =
         if (blocked(state, intent)) state else apply(state, intent)
+
+
+    /**
+     * A single tap on a page enters edit mode: the canvas stays at 100%, the page itself is
+     * resized to the device screen less a margin, and the permits for EDITING lock it there.
+     * Growing widgets scroll inside the page and never move its boundary.
+     */
+    private fun fittedToScreen(
+        state: CanvasEditorState,
+        page: CanvasNode
+    ): CanvasEditorState {
+        val viewport = state.viewport
+        if (viewport.widthPx <= 0f || viewport.heightPx <= 0f) return state
+        val width = viewport.widthPx - PAGE_SCREEN_MARGIN * 2f
+        val height = viewport.heightPx - PAGE_SCREEN_MARGIN * 2f
+        if (width <= CanvasNode.MIN_SIZE || height <= CanvasNode.MIN_SIZE) return state
+
+        val resized = page.resizedTo(width, height)
+        val settled = state.document.replacing(resized)
+            .withoutOverlap(resized, CanvasNode.DEFAULT_GAP)
+        return state.copy(
+            document = state.document.replacing(settled),
+            viewport = viewport.copy(
+                scale = Viewport.DEFAULT_SCALE,
+                offsetX = PAGE_SCREEN_MARGIN - settled.rect.x,
+                offsetY = PAGE_SCREEN_MARGIN - settled.rect.y
+            )
+        )
+    }
 
     private fun blocked(state: CanvasEditorState, intent: CanvasEditorIntent): Boolean {
         val permits = state.permits
@@ -261,10 +292,7 @@ object CanvasEditorReducer {
             is CanvasEditorIntent.FocusNode -> {
                 val node = state.document.nodeById(intent.nodeId)
                 if (node == null) state
-                else state.copy(
-                    viewport = state.viewport.focusedOnTop(node.rect, EDIT_TOP_INSET),
-                    selectedNodeId = node.id
-                )
+                else fittedToScreen(state.copy(selectedNodeId = node.id), node)
             }
 
             // tapping the node that is already being edited must NOT drop focus — doing so
@@ -276,6 +304,15 @@ object CanvasEditorReducer {
                 val staysEditing = state.editingNodeId != null && state.editingNodeId == hit?.id
                 if (staysEditing) {
                     state.copy(selectedNodeId = hit?.id)
+                } else if (hit != null && hit.isPage) {
+                    fittedToScreen(
+                        state.copy(
+                            selectedNodeId = hit.id,
+                            editingNodeId = hit.id,
+                            focusedRect = null
+                        ),
+                        hit
+                    )
                 } else {
                     state.copy(
                         selectedNodeId = hit?.id,
@@ -287,10 +324,24 @@ object CanvasEditorReducer {
                 }
             }
 
-            is CanvasEditorIntent.SelectNode -> state.copy(
-                selectedNodeId = intent.nodeId,
-                editingNodeId = state.editingNodeId.takeIf { it == intent.nodeId }
-            )
+            is CanvasEditorIntent.SelectNode -> {
+                val node = intent.nodeId?.let { state.document.nodeById(it) }
+                if (node != null && node.isPage && state.editingNodeId != node.id) {
+                    fittedToScreen(
+                        state.copy(
+                            selectedNodeId = node.id,
+                            editingNodeId = node.id,
+                            focusedRect = null
+                        ),
+                        node
+                    )
+                } else {
+                    state.copy(
+                        selectedNodeId = intent.nodeId,
+                        editingNodeId = state.editingNodeId.takeIf { it == intent.nodeId }
+                    )
+                }
+            }
 
             is CanvasEditorIntent.BeginDrag -> state.copy(
                 draggingNodeId = intent.nodeId,
@@ -317,8 +368,17 @@ object CanvasEditorReducer {
             // a widget released over a page joins that page; released on bare canvas it leaves
             CanvasEditorIntent.EndDrag -> {
                 val dragged = state.draggingNodeId?.let { state.document.nodeById(it) }
-                if (dragged == null || dragged.isPage) {
+                if (dragged == null) {
                     state.copy(draggingNodeId = null)
+                } else if (dragged.isPage) {
+                    val settled = state.document.withoutOverlap(dragged, CanvasNode.DEFAULT_GAP)
+                    val shiftX = settled.rect.x - dragged.rect.x
+                    val moved = listOf(settled) + state.document.descendantsOf(dragged.id)
+                        .map { it.movedBy(shiftX, 0f) }
+                    state.copy(
+                        draggingNodeId = null,
+                        document = state.document.replacingAll(moved)
+                    )
                 } else {
                     val target = state.document.pageAt(dragged.rect.centerX, dragged.rect.centerY)
                     val document =
@@ -398,7 +458,11 @@ object CanvasEditorReducer {
                         draggingNodeId = null,
                         resizingNodeId = null,
                         focusedRect = state.focusedRect ?: state.viewport.visibleRect,
-                        viewport = state.viewport.focusedOnTop(node.rect, EDIT_TOP_INSET)
+                        viewport = state.viewport.copy(
+                            scale = Viewport.DEFAULT_SCALE,
+                            offsetX = PAGE_SCREEN_MARGIN - node.rect.x,
+                            offsetY = PAGE_SCREEN_MARGIN - node.rect.y
+                        )
                     )
                 }
             }
@@ -528,11 +592,23 @@ object CanvasCommands {
         state: CanvasEditorState,
         nodes: List<CanvasNode>,
         viewport: Viewport?
-    ): CanvasEditorState = state.copy(
-        document = CanvasDocument(nodes),
-        viewport = viewport?.withSize(state.viewport.widthPx, state.viewport.heightPx)
-            ?: state.viewport
-    )
+    ): CanvasEditorState {
+        val restored = viewport
+            ?.takeIf { it.scale in SANE_MIN_SCALE..SANE_MAX_SCALE }
+            ?.withSize(state.viewport.widthPx, state.viewport.heightPx)
+        return state.copy(
+            document = CanvasDocument(nodes),
+            viewport = restored ?: state.viewport.copy(
+                scale = Viewport.DEFAULT_SCALE,
+                offsetX = 0f,
+                offsetY = 0f
+            )
+        )
+    }
+
+    const val SANE_MIN_SCALE = 0.25f
+
+    const val SANE_MAX_SCALE = 4f
 
     fun isEndDrag(intent: CanvasEditorIntent): Boolean = intent is CanvasEditorIntent.EndDrag
 
@@ -555,10 +631,21 @@ object CanvasCommands {
         CanvasEditorIntent.ZoomIn,
         CanvasEditorIntent.ZoomOut,
         CanvasEditorIntent.ZoomToFit,
+        is CanvasEditorIntent.SelectAt,
+        is CanvasEditorIntent.SelectNode,
         is CanvasEditorIntent.FocusNode -> true
 
         else -> false
     }
+
+    /** The page a select has just fitted to the screen, so its new size can be stored. */
+    fun fittedPageId(state: CanvasEditorState, intent: CanvasEditorIntent): String? =
+        when (intent) {
+            is CanvasEditorIntent.SelectAt,
+            is CanvasEditorIntent.SelectNode -> state.selectedNode?.takeIf { it.isPage }?.id
+
+            else -> null
+        }
 
     fun defaultWidth(kind: ContentType): Float =
         if (kind == ContentType.TEXT) CanvasNode.DEFAULT_TEXT_WIDTH
@@ -662,6 +749,14 @@ object CanvasCommands {
     }
 
     const val PAGE_PADDING = 24f
+
+    const val CARET_MARGIN = 24f
+
+    /** Lines of clearance kept between the caret and the keyboard. */
+    const val CARET_TRAILING_LINES = 4
+
+    fun caretRevealPadding(lineHeightPx: Float): Float =
+        if (lineHeightPx > 0f) lineHeightPx * CARET_TRAILING_LINES else CARET_MARGIN
 
     fun pageForSpawn(state: CanvasEditorState): CanvasNode? = selectedPage(state)
 

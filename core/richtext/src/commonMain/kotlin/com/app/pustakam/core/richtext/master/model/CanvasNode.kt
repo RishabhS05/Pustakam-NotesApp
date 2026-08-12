@@ -43,8 +43,8 @@ data class CanvasNode(
 
         // 🔧 09-Aug-2026: a 720-wide page fit a phone at ~0.5 zoom, which rendered 16sp body
         //   text at 8sp. Narrower paper keeps the fitted zoom — and the type — readable.
-        const val DEFAULT_TEXT_WIDTH = 560f
-        const val DEFAULT_TEXT_HEIGHT = 760f
+        const val DEFAULT_TEXT_WIDTH = 360f
+        const val DEFAULT_TEXT_HEIGHT = 640f
         const val DEFAULT_GAP = 48f
         const val DEFAULT_MEDIA_WIDTH = 420f
         const val DEFAULT_MEDIA_HEIGHT = 320f
@@ -145,6 +145,20 @@ data class CanvasDocument(
             if (node.parentId == null) node.takeIf { it.kind == TEXT }
             else pageOf(node.parentId)
         }
+
+    fun overlaps(node: CanvasNode): CanvasNode? =
+        pages.firstOrNull { it.id != node.id && it.rect.intersects(node.rect) }
+
+    fun withoutOverlap(node: CanvasNode, gap: Float): CanvasNode {
+        var placed = node
+        var guard = 0
+        while (guard < 64) {
+            val clash = overlaps(placed) ?: return placed
+            placed = placed.movedTo(clash.rect.right + gap, placed.rect.y)
+            guard++
+        }
+        return placed
+    }
 
     fun replacingAll(updated: List<CanvasNode>): CanvasDocument {
         if (updated.isEmpty()) return this

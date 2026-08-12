@@ -24,7 +24,6 @@ enum class ContentType {
     }, GIF{
         override fun getExt() = ".gif"    // 🔧 18-Jul-2026: real ext (was "")
     },
-    // 🔧 18-Jul-2026: NEW — imported document formats the book reader renders as pages
     TXT{
         override fun getExt() = ".txt"
     },

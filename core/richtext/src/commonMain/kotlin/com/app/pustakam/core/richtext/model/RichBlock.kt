@@ -73,7 +73,7 @@ sealed class RichBlock {
     val isEditableText: Boolean get() = this is Text || this is Code
 
     companion object {
-        const val DEFAULT_LINE_HEIGHT = 1.45f
+        const val DEFAULT_LINE_HEIGHT = 0.9f
         const val DEFAULT_PARAGRAPH_SPACING = 8f
     }
 }

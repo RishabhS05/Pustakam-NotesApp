@@ -97,6 +97,7 @@ import com.app.pustakam.android.theme.typography
 import com.app.pustakam.android.widgets.LoadingUI
 import com.app.pustakam.android.widgets.SnackBarUi
 import com.app.pustakam.android.widgets.audio.AudioPlayerUIState
+import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.document.InlineBookFileWidget
 import com.app.pustakam.android.widgets.fabWidget.OverLayEditorButtons
 import com.app.pustakam.android.widgets.image.ImageCard
@@ -154,14 +155,13 @@ fun NoteEditorScreen(
         }
     }
     val capabilities = noteEditorViewModel.capabilities.collectAsStateWithLifecycle().value
+    LaunchedEffect(capabilities.isRecordingAudio) {
+        if (capabilities.isRecordingAudio) noteEditorViewModel.startStopAudioRecording()
+    }
     EditorCapabilityHost(
         state = capabilities,
         noteTitle = noteEditorViewModel.noteContentUiState.value.note?.title.orEmpty(),
         permissions = permissionsFor(capabilities.pendingCapture),
-        audioDraft = { ctx ->
-            noteEditorViewModel.addNewContent(ctx, ContentType.AUDIO)
-                as? NoteContentModel.MediaContent
-        },
         callbacks = EditorCapabilityCallbacks(
             onState = noteEditorViewModel::onCapabilityState,
             onOpenCamera = {
@@ -373,6 +373,22 @@ fun NoteEditorScreen(
                     }
                 }
             }
+            if (stateEditor.showAudioRecorder) {
+                val recordingContent = remember {
+                    noteEditorViewModel.addNewContent(
+                        context,
+                        contentType = ContentType.AUDIO
+                    ) as NoteContentModel.MediaContent
+                }
+                AudioRecording(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    noteContentModel = recordingContent,
+                    onStop = {
+                        noteEditorViewModel.updateContent(content = it)
+                        noteEditorViewModel.startStopAudioRecording(false)
+                    },
+                )
+            }
         }
     })
 
@@ -541,7 +557,7 @@ fun RenderWidget(
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val exportLauncher = rememberLauncherForActivityResult(
-                contract = CreateDocument(MimeCatalog.mimeFor(contentAudio.type))
+                contract =CreateDocument(MimeCatalog.mimeFor(contentAudio.type))
             ) { uri ->
                 if (uri != null) {
                     scope.launch {

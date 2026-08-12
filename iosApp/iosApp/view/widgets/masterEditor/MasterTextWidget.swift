@@ -4,6 +4,8 @@ import shared
 
 struct MasterTextWidget: UIViewRepresentable {
 
+    static let lineHeight: CGFloat = 1.2
+
     let state: MasterTextState
     var readOnly: Bool = false
     var scale: CGFloat = 1
@@ -11,7 +13,9 @@ struct MasterTextWidget: UIViewRepresentable {
     var dismissToken: Int = 0
     var shouldFocus: Bool = false
     var scrollable: Bool = true
+    var minLines: Int = 1
     var placeholder: String = "Keep your thoughts alive."
+    var keyboardInsetPx: CGFloat = 0
     var onFocused: () -> Void = {}
     let onIntent: (MasterTextIntent) -> Void
 
@@ -35,24 +39,33 @@ struct MasterTextWidget: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = 0
         textView.keyboardDismissMode = .interactive
         textView.tintColor = UIColor(palette.accent)
+        textView.adjustsFontForContentSizeCategory = true
         textView.dataDetectorTypes = []
         textView.alwaysBounceVertical = false
         textView.showsVerticalScrollIndicator = false
+        textView.setContentCompressionResistancePriority(.required, for: .vertical)
+        textView.setContentHuggingPriority(.required, for: .vertical)
         textView.configure(palette: palette, baseSize: baseSize)
 
+        // both must let touches through, or UITextView never gets the tap that places the
+        // caret and makes it first responder — the field looks alive but cannot be edited
         let doubleTap = UITapGestureRecognizer(
             target: context.coordinator,
             action: #selector(Coordinator.handleDoubleTap(_:))
         )
         doubleTap.numberOfTapsRequired = 2
+        doubleTap.cancelsTouchesInView = false
+        doubleTap.delaysTouchesEnded = false
+        doubleTap.delegate = context.coordinator
         textView.addGestureRecognizer(doubleTap)
 
         let singleTap = UITapGestureRecognizer(
             target: context.coordinator,
             action: #selector(Coordinator.handleSingleTap(_:))
         )
-        singleTap.require(toFail: doubleTap)
         singleTap.cancelsTouchesInView = false
+        singleTap.delaysTouchesEnded = false
+        singleTap.delegate = context.coordinator
         textView.addGestureRecognizer(singleTap)
 
         return textView
@@ -97,12 +110,18 @@ struct MasterTextWidget: UIViewRepresentable {
             return CGSize(width: width, height: proposal.height ?? baseSize * 2)
         }
         let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: max(fitted.height, baseSize * 2))
+        let floorHeight = baseSize * MasterTextWidget.lineHeight * CGFloat(minLines)
+        return CGSize(width: width, height: max(fitted.height, floorHeight))
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
+        ) -> Bool { true }
 
         var parent: MasterTextWidget
         private var accessoryHost: UIHostingController<AnyView>?
@@ -116,14 +135,21 @@ struct MasterTextWidget: UIViewRepresentable {
         }
 
         /// UIKit's counterpart to Compose's onFocusChanged — the node that gains the caret
-        /// becomes the editing node.
+        /// becomes the editing node, with the caret parked at the end of the text.
         func textViewDidBeginEditing(_ textView: UITextView) {
             guard !isSyncing else { return }
+            let end = (textView.text as NSString?)?.length ?? 0
+            textView.selectedRange = NSRange(location: end, length: 0)
             parent.onFocused()
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let textView else { return }
+                self?.revealCaret(textView)
+            }
         }
 
         func textViewDidChange(_ textView: UITextView) {
             guard !isSyncing else { return }
+            revealCaret(textView)
             let range = textView.selectedRange
             parent.onIntent(
                 MasterTextCommands.shared.edit(
@@ -134,8 +160,49 @@ struct MasterTextWidget: UIViewRepresentable {
             )
         }
 
+        /// Scrolls the caret clear of the keyboard inside whichever scroll view owns the text —
+        /// the page body on the canvas. The canvas viewport is never touched, so the page
+        /// stays locked where it was fitted.
+        func revealCaret(_ textView: UITextView) {
+            guard let range = textView.selectedTextRange else { return }
+            let caret = textView.caretRect(for: range.end)
+            guard caret.height.isFinite, !caret.isNull else { return }
+            guard let scroll = scrollHost(of: textView) else { return }
+
+            let rect = textView.convert(caret, to: scroll)
+            let clearance = CGFloat(
+                CanvasCommands.shared.caretRevealPadding(lineHeightPx: Float(caret.height))
+            )
+            let top = scroll.contentOffset.y
+            let bottom = top + scroll.bounds.height - parent.keyboardInsetPx
+            var target = top
+            if rect.maxY + clearance > bottom {
+                target = top + (rect.maxY + clearance - bottom)
+            } else if rect.minY < top {
+                target = rect.minY
+            } else {
+                return
+            }
+            let limit = max(scroll.contentSize.height - scroll.bounds.height, 0)
+            let settled = min(max(target, 0), limit)
+            guard abs(settled - scroll.contentOffset.y) > 0.5 else { return }
+            scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: settled), animated: true)
+        }
+
+        /// The text view when it scrolls itself, otherwise the nearest scrolling ancestor.
+        private func scrollHost(of textView: UITextView) -> UIScrollView? {
+            if textView.isScrollEnabled { return textView }
+            var next = textView.superview
+            while let candidate = next {
+                if let scroll = candidate as? UIScrollView { return scroll }
+                next = candidate.superview
+            }
+            return nil
+        }
+
         func textViewDidChangeSelection(_ textView: UITextView) {
             guard !isSyncing else { return }
+            revealCaret(textView)
             guard textView.text == parent.state.text else { return }
             let range = textView.selectedRange
             parent.onIntent(
@@ -309,8 +376,8 @@ final class MasterTextUITextView: UITextView {
     }
 
     private func drawCheckbox(at point: CGPoint, checked: Bool) {
-        let side: CGFloat = 16
-        let box = CGRect(x: point.x, y: point.y + 2, width: side, height: side)
+        let side: CGFloat = MasterTextRenderer.checkboxSide
+        let box = CGRect(x: point.x, y: point.y, width: side, height: side)
         let path = UIBezierPath(roundedRect: box, cornerRadius: 4)
         if checked {
             UIColor(palette.accent).setFill()

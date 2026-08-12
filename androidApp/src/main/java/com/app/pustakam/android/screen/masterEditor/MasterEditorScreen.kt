@@ -17,14 +17,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PanTool
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.ZoomOut
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.IconButton
@@ -36,7 +34,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,6 +72,8 @@ fun MasterEditorScreen(
     val canvas = uiState.canvas
     var showAttach by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf(SmartTextSheet.NONE) }
+    val density = LocalDensity.current
+    val imeHeightPx = WindowInsets.ime.getBottom(density).toFloat()
 
     LaunchedEffect(noteId) { viewModel.load(noteId) }
 
@@ -78,7 +81,6 @@ fun MasterEditorScreen(
         state = uiState.capabilities,
         noteTitle = uiState.note?.title.orEmpty(),
         permissions = permissionsFor(uiState.capabilities.pendingCapture),
-        audioDraft = { uiState.audioDraft },
         callbacks = EditorCapabilityCallbacks(
             onState = viewModel::onCapabilityState,
             onOpenCamera = { onCaptureMedia(uiState.note?.id) },
@@ -90,7 +92,11 @@ fun MasterEditorScreen(
         )
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(colors.page)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.page)
+    ) {
         MasterCanvas(
             state = canvas,
             onIntent = viewModel::onCanvasIntent,
@@ -105,7 +111,8 @@ fun MasterEditorScreen(
                 onTextIntent = { viewModel.onTextIntent(node.id, it) },
                 onFocused = { viewModel.onCanvasIntent(CanvasCommands.setEditing(node.id)) },
                 onOpenMedia = { onOpenMedia(node.contentId) },
-                onDelete = { viewModel.deleteNode(node.id) }
+                onDelete = { viewModel.deleteNode(node.id) },
+                keyboardInsetPx = imeHeightPx
             )
         }
 

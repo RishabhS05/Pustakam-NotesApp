@@ -108,10 +108,14 @@ struct MasterCanvas<NodeContent: View>: View {
                 palette: palette,
                 onRename: { newName in onRename(node.id, newName) }
             )
-            nodeContent(node, placement.isEditing)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ScrollView(.vertical, showsIndicators: false) {
+                nodeContent(node, placement.isEditing)
+                    .frame(maxWidth: .infinity, alignment: .top)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: frame.width, height: frame.height)
+        .clipped()
         .background(nodeSurface)
         .overlay(nodeBorder(placement.isSelected))
         .overlay(alignment: .bottomTrailing) {

@@ -169,6 +169,15 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
 
                     is CanvasEditorIntent.RemoveNode -> removeCanvasNode(intent.nodeId)
 
+                    is CanvasEditorIntent.SelectAt,
+                    is CanvasEditorIntent.SelectNode -> {
+                        CanvasCommands.fittedPageId(next, intent)
+                            ?.let { next.document.nodeById(it) }
+                            ?.takeIf { it.rect != before.document.nodeById(it.id)?.rect }
+                            ?.let { resizeCanvasNode(it.id, it.rect.width, it.rect.height) }
+                        if (before.viewport != next.viewport) saveCanvasViewport(id, next.viewport)
+                    }
+
                     is CanvasEditorIntent.Pan,
                     is CanvasEditorIntent.Zoom,
                     is CanvasEditorIntent.ZoomTo,

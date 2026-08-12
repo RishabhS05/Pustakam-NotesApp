@@ -6,6 +6,9 @@ enum MasterTextRenderer {
 
     static let indentStep: CGFloat = 20
     static let markerGutter: CGFloat = 26
+    static let bulletScale: CGFloat = 1.0
+    static let numberScale: CGFloat = 1.0
+    static let checkboxSide: CGFloat = 16
 
     static func attributed(
         state: MasterTextState,
@@ -146,10 +149,17 @@ enum MasterTextRenderer {
             rect.origin.x += textView.textContainerInset.left
             rect.origin.y += textView.textContainerInset.top
             let indent = CGFloat(paragraph.indentLevel) * indentStep
+            // centred on the line rather than pinned to its top
+            let markerSize = baseSize * CGFloat(paragraph.style.relativeSize)
+                * (paragraph.listStyle == ListStyle.bullet ? bulletScale : numberScale)
+            let box = paragraph.isChecklist ? checkboxSide : markerSize
             return (
                 paragraph,
-                CGPoint(x: rect.minX + indent, y: rect.minY),
-                baseSize * CGFloat(paragraph.style.relativeSize)
+                CGPoint(
+                    x: rect.minX + indent + (markerGutter - box) / 2,
+                    y: rect.minY + (rect.height - box) / 2
+                ),
+                markerSize
             )
         }
     }

@@ -1,6 +1,8 @@
 package com.app.pustakam.android.widgets.masterEditor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -31,6 +33,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -71,6 +74,8 @@ fun MasterCanvas(
         modifier = modifier
             .fillMaxSize()
             .background(colors.page)
+            // decorFitsSystemWindows is false and nothing here applies imePadding, so this
+            // size - and the page fitted to it - does not change when the keyboard opens
             .onSizeChanged {
                 onIntent(CanvasCommands.viewportResized(it.width.toFloat(), it.height.toFloat()))
             }
@@ -168,6 +173,7 @@ private fun BoxScope.MasterCanvasNode(
                 height = with(density) { screen.height.toDp() }
             )
             .background(colors.surface, RoundedCornerShape(8.dp))
+            .clipToBounds()
             .then(
                 if (isSelected) Modifier.border(1.5.dp, colors.accent, RoundedCornerShape(8.dp))
                 else Modifier.border(1.dp, colors.divider, RoundedCornerShape(8.dp))
@@ -192,7 +198,12 @@ private fun BoxScope.MasterCanvasNode(
                 isSelected = isSelected,
                 onRename = { onRename(node.id, it) }
             )
-            Box(modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clipToBounds()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 nodeContent(node, isEditing)
             }
         }

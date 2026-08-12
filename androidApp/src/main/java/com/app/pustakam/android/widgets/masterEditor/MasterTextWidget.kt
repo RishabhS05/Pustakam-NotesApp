@@ -1,11 +1,15 @@
 package com.app.pustakam.android.widgets.masterEditor
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,16 +20,22 @@ import androidx.compose.material3.Text
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextLayoutResult
@@ -53,11 +63,13 @@ import com.app.pustakam.core.richtext.presentation.SmartTextCommands
 import com.app.pustakam.core.richtext.presentation.ToolbarAction
 import java.util.UUID
 import com.app.pustakam.core.richtext.master.model.CanvasNode
+import com.app.pustakam.core.richtext.master.presentation.CanvasCommands
 import com.app.pustakam.core.richtext.master.presentation.MasterTextCommands
 import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
 import com.app.pustakam.core.richtext.master.presentation.MasterTextReducer
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MasterTextWidget(
     state: MasterTextState,
@@ -66,8 +78,10 @@ fun MasterTextWidget(
     readOnly: Boolean = false,
     scale: Float = 1f,
     scrollable: Boolean = true,
+    minLines: Int = 1,
     placeholder: String = "Keep your thoughts alive.",
     onIntent: (MasterTextIntent) -> Unit,
+    keyboardInsetPx: Float = 0f,
     onFocusChanged: (Boolean) -> Unit = {}
 ) {
     val colors = SmartTextTokens.colors
@@ -77,6 +91,8 @@ fun MasterTextWidget(
 
     var fieldValue by remember { mutableStateOf(TextFieldValue(state.text)) }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var caretRect by remember { mutableStateOf<Rect?>(null) }
+    val caretRevealer = remember { BringIntoViewRequester() }
 
     if (fieldValue.text != state.text) {
         fieldValue = TextFieldValue(
@@ -97,12 +113,39 @@ fun MasterTextWidget(
         backgroundColor = colors.accent.copy(alpha = 0.24f)
     )
 
+    val minHeight = with(density) { (baseSize.toPx() * LINE_HEIGHT * minLines).toDp() }
+
+    LaunchedEffect(caretRect, keyboardInsetPx) {
+        val caret = caretRect ?: return@LaunchedEffect
+        val clearance = CanvasCommands.caretRevealPadding(caret.height) + keyboardInsetPx
+        caretRevealer.bringIntoView(
+            Rect(caret.left, caret.top, caret.right, caret.bottom + clearance)
+        )
+    }
+
+    val checkboxTaps = Modifier.pointerInput(state.document, readOnly) {
+        if (readOnly) return@pointerInput
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            val result = layout ?: return@awaitEachGesture
+            val hit = MasterTextRenderer
+                .markerHitOffset(state, result, down.position, density)
+                ?: return@awaitEachGesture
+            down.consume()
+            val up = waitForUpOrCancellation(PointerEventPass.Initial)
+            if (up != null) {
+                up.consume()
+                onIntent(MasterTextCommands.toggleChecked(hit))
+            }
+        }
+    }
+
     Box(
-        modifier = if (scrollable) {
+        modifier = (if (scrollable) {
             modifier.fillMaxSize().verticalScroll(rememberScrollState())
         } else {
-            modifier.fillMaxWidth()
-        }
+            modifier.fillMaxWidth().heightIn(min = minHeight)
+        }).then(checkboxTaps)
     ) {
         if (state.text.isEmpty()) {
             Text(
@@ -138,14 +181,29 @@ fun MasterTextWidget(
                 textStyle = TextStyle(color = colors.onSurface, fontSize = baseSize),
                 cursorBrush = SolidColor(colors.accent),
                 keyboardOptions = KeyboardOptions.Default,
-                onTextLayout = { layout = it },
+                onTextLayout = {
+                    layout = it
+                    caretRect = runCatching {
+                        it.getCursorRect(
+                            state.selection.normalizedEnd.coerceIn(0, state.text.length)
+                        )
+                    }.getOrNull()
+                },
                 visualTransformation = remember(rendered) {
                     VisualTransformation { TransformedText(rendered, OffsetMapping.Identity) }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .bringIntoViewRequester(caretRevealer)
                     .focusRequester(focusRequester)
-                    .onFocusChanged { onFocusChanged(it.isFocused) }
+                    .onFocusChanged { focus ->
+                        if (focus.isFocused) {
+                            val end = state.text.length
+                            fieldValue = fieldValue.copy(selection = TextRange(end))
+                            onIntent(MasterTextCommands.selectionChanged(end, end))
+                        }
+                        onFocusChanged(focus.isFocused)
+                    }
                     .drawBehind {
                         layout?.let { result ->
                             MasterTextRenderer.drawMarkers(
@@ -169,12 +227,6 @@ fun MasterTextWidget(
                                         )
                                     )
                                 }
-                            },
-                            onTap = { position ->
-                                val result = layout ?: return@detectTapGestures
-                                MasterTextRenderer
-                                    .markerHitOffset(state, result, position, density)
-                                    ?.let { onIntent(MasterTextCommands.toggleChecked(it)) }
                             },
                             onLongPress = { position ->
                                 layout?.let { result ->
@@ -305,3 +357,5 @@ fun MasterTextContentWidget(
         onReplaceAll = {}
     )
 }
+
+private const val LINE_HEIGHT = 1.2f
