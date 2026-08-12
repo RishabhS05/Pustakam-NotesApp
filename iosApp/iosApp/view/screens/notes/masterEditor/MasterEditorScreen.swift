@@ -133,19 +133,17 @@ struct MasterEditorScreen: View {
 
     @ViewBuilder
     private var attachActions: some View {
-        Button("Text") { viewModel.addTextNode() }
-        Button("Photo or video") { viewModel.requestCapture(CaptureKind.image) }
-        Button("Record audio") { viewModel.requestCapture(CaptureKind.audio) }
-        Button("Location") { viewModel.requestCapture(CaptureKind.location) }
-        Button("Import a file") { viewModel.requestCapture(CaptureKind.file) }
-        Button("Table") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.table) }
-        Button("Drawing") { viewModel.addWidgetNearFocused(kind: CanvasNodeKind.drawing) }
+        Button("New page") { viewModel.addPage() }
+        Button("Photo or video") { viewModel.requestCapture(ContentType.image) }
+        Button("Record audio") { viewModel.requestCapture(ContentType.audio) }
+        Button("Location") { viewModel.requestCapture(ContentType.location) }
+        Button("Import a file") { viewModel.openImportSheet() }
+        Button("Table") { viewModel.addWidget(kind: ContentType.table) }
+        Button("Drawing") { viewModel.addWidget(kind: ContentType.drawing) }
         Button("Rebuild layout from note order") { viewModel.rebuildLayoutFromNote() }
         Button("Apply canvas order back to the note") { viewModel.applyCanvasOrderToNote() }
         Button("Cancel", role: .cancel) {}
     }
-
-    private var isHandTool: Bool { commands.isHandTool(state: viewModel.canvas) }
 
     private var zoomLabel: String { "\(viewModel.canvas.zoomPercent)%" }
 
@@ -163,7 +161,7 @@ struct MasterEditorScreen: View {
             barButton(icon: "viewfinder", tint: palette.onSurface) {
                 viewModel.onCanvasIntent(commands.zoomToFit())
             }
-            handToolButton
+            toolButtons
             barButton(icon: "plus.square.on.square", tint: palette.accent) {
                 showAttach = true
             }
@@ -174,13 +172,21 @@ struct MasterEditorScreen: View {
         .padding(.bottom, 28)
     }
 
-    private var handToolButton: some View {
-        let active: Bool = isHandTool
-        let icon: String = active ? "hand.raised.fill" : "hand.point.up.left"
-        let tint: Color = active ? palette.accent : palette.onSurface
-        return barButton(icon: icon, tint: tint) {
-            let intent = active ? commands.useSelectTool() : commands.useHandTool()
-            viewModel.onCanvasIntent(intent)
+    private var toolButtons: some View {
+        ForEach(commands.tools(), id: \.self) { tool in
+            let active = commands.isTool(state: viewModel.canvas, tool: tool)
+            barButton(icon: icon(for: tool), tint: active ? palette.accent : palette.onSurface) {
+                viewModel.onCanvasIntent(commands.setTool(tool: tool))
+            }
+        }
+    }
+
+    private func icon(for tool: CanvasTool) -> String {
+        switch tool {
+        case CanvasTool.hand: return "hand.raised.fill"
+        case CanvasTool.zoom: return "plus.magnifyingglass"
+        case CanvasTool.lock: return "lock.fill"
+        default: return "hand.point.up.left"
         }
     }
 
@@ -239,32 +245,31 @@ struct MasterNodeContent: View {
         content as? NoteContentModel.MediaContent
     }
 
+    @ViewBuilder
     var body: some View {
-        switch node.kind {
-        case CanvasNodeKind.masterText:
+        if content is NoteContentModel.TextContent {
             textBody
+        } else if let media {
+            switch media.type {
+            case ContentType.image, ContentType.gif, ContentType.video, ContentType.audio:
+                mediaBody
 
-        case CanvasNodeKind.media:
-            mediaBody
-
-        case CanvasNodeKind.document:
-            if let media {
+            case ContentType.docx, ContentType.epub, ContentType.md,
+                 ContentType.pdf, ContentType.other:
                 InlineBookFileView(
                     media: media,
                     onOpenFull: onOpenMedia,
                     onDelete: onDelete
                 )
-            } else {
-                placeholder("Document")
+
+            default:
+                placeholder("Media")
             }
-
-        case CanvasNodeKind.link:
+        } else if content is NoteContentModel.Link {
             linkBody
-
-        case CanvasNodeKind.location:
+        } else if content is NoteContentModel.Location {
             locationBody
-
-        default:
+        } else {
             placeholder(node.kind.name)
         }
     }

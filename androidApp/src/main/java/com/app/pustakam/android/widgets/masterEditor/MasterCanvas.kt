@@ -27,6 +27,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +65,7 @@ fun MasterCanvas(
 ) {
     val colors = SmartTextTokens.colors
     val viewport = state.viewport
-    val handMode = state.tool == CanvasTool.HAND
+    val permits = state.permits
 
     Box(
         modifier = modifier
@@ -77,21 +78,23 @@ fun MasterCanvas(
             // runs on the Main pass, so the BasicTextField filling each page consumed the pinch
             // first and the canvas never scaled. Two fingers are always ours; one finger is only
             // ours in hand mode, which leaves normal taps and text selection to the page.
-            .pointerInput(handMode) {
+            .pointerInput(permits) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                     do {
                         val event = awaitPointerEvent(PointerEventPass.Initial)
                         val pressed = event.changes.count { it.pressed }
                         val multiTouch = pressed >= 2
-                        if (multiTouch || handMode) {
+                        val owns = (multiTouch && permits.canZoom) ||
+                            (permits.canPan && state.tool != CanvasTool.SELECT)
+                        if (owns) {
                             val zoom = event.calculateZoom()
                             val pan = event.calculatePan()
-                            if (multiTouch && zoom != 1f) {
+                            if (multiTouch && permits.canZoom && zoom != 1f) {
                                 val centroid = event.calculateCentroid(useCurrent = false)
                                 onIntent(CanvasCommands.zoom(zoom, centroid.x, centroid.y))
                             }
-                            if (pan != Offset.Zero) {
+                            if (pan != Offset.Zero && permits.canPan) {
                                 onIntent(CanvasCommands.pan(pan.x, pan.y))
                             }
                             if (multiTouch || pan != Offset.Zero) {
@@ -101,7 +104,7 @@ fun MasterCanvas(
                     } while (event.changes.any { it.pressed })
                 }
             }
-            .pointerInput(state.document, handMode) {
+            .pointerInput(state.document, permits) {
                 detectTapGestures(
                     onTap = { onIntent(CanvasCommands.selectAt(it.x, it.y)) },
                     onDoubleTap = { position ->
@@ -109,8 +112,10 @@ fun MasterCanvas(
                             viewport.toCanvasX(position.x),
                             viewport.toCanvasY(position.y)
                         )
-                        if (node != null) onIntent(CanvasCommands.focusNode(node.id))
-                        else onIntent(CanvasCommands.zoomToFit())
+                        if (node != null) onIntent(CanvasCommands.setEditing(node.id))
+                        else if (CanvasCommands.isEditing(state)) {
+                            onIntent(CanvasCommands.exitEditing())
+                        } else onIntent(CanvasCommands.zoomToFit())
                     }
                 )
             }
@@ -122,7 +127,6 @@ fun MasterCanvas(
                 MasterCanvasNode(
                     node = node,
                     state = state,
-                    handMode = handMode,
                     onIntent = onIntent,
                     onRename = onRename,
                     nodeContent = nodeContent
@@ -136,19 +140,22 @@ fun MasterCanvas(
 private fun BoxScope.MasterCanvasNode(
     node: CanvasNode,
     state: CanvasEditorState,
-    handMode: Boolean,
     onIntent: (CanvasEditorIntent) -> Unit,
     onRename: (String, String) -> Unit,
     nodeContent: @Composable (CanvasNode, Boolean) -> Unit
 ) {
     val colors = SmartTextTokens.colors
     val density = LocalDensity.current
+    // pointerInput below is keyed on node.id only, so its lambda would capture the state from
+    // first composition forever. resizedTo() would then add each delta to the original width.
+    val liveState by rememberUpdatedState(state)
     val screen = CanvasCommands.screenRectOf(node, state.viewport)
     val isSelected = node.id == state.selectedNodeId
     val isEditing = node.id == state.editingNodeId
     // dragging only after the node is selected, so a pinch that starts over a page still
     // reaches the scaling layer above instead of being consumed as a node drag
-    val draggable = isSelected && !handMode && !isEditing && !node.locked
+    val permits = state.permits
+    val draggable = isSelected && permits.canDragNode && !node.locked
 
     Box(
         modifier = Modifier
@@ -190,7 +197,7 @@ private fun BoxScope.MasterCanvasNode(
             }
         }
 
-        if (isSelected && !handMode && !node.locked) {
+        if (isSelected && permits.canResizeNode && !node.locked) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -198,12 +205,17 @@ private fun BoxScope.MasterCanvasNode(
                     .size(22.dp)
                     .background(colors.accent, RoundedCornerShape(4.dp))
                     .pointerInput(node.id) {
-                        detectDragGestures { change, drag ->
-                            change.consume()
-                            CanvasCommands
-                                .resizedTo(state, node.id, drag.x, drag.y)
-                                ?.let(onIntent)
-                        }
+                        detectDragGestures(
+                            onDragStart = { onIntent(CanvasCommands.beginResize(node.id)) },
+                            onDragEnd = { onIntent(CanvasCommands.endResize()) },
+                            onDragCancel = { onIntent(CanvasCommands.endResize()) },
+                            onDrag = { change, drag ->
+                                change.consume()
+                                CanvasCommands
+                                    .resizedTo(liveState, node.id, drag.x, drag.y)
+                                    ?.let(onIntent)
+                            }
+                        )
                     }
             )
         }

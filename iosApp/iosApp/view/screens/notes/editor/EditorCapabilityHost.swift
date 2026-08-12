@@ -9,7 +9,7 @@ struct EditorCapabilityCallbacks {
     var onImportLink: (String) -> Void = { _ in }
     var onDeleteContent: (String) -> Void = { _ in }
     var onDeleteNote: () -> Void = {}
-    var onPermissionDenied: (CaptureKind) -> Void = { _ in }
+    var onPermissionDenied: (ContentType) -> Void = { _ in }
 }
 
 struct EditorCapabilityHost: ViewModifier {
@@ -118,7 +118,7 @@ struct EditorCapabilityHost: ViewModifier {
     private func resolvePermission() {
         guard let kind = state.pendingCapture else { return }
         switch kind {
-        case CaptureKind.image, CaptureKind.video:
+        case ContentType.image, ContentType.video:
             requirePermission(cameraPermission, onGranted: {
                 requirePermission(micPermission, onGranted: {
                     callbacks.onState(reducer.granted(state: state))
@@ -126,7 +126,7 @@ struct EditorCapabilityHost: ViewModifier {
                 }, onDenied: { deny(kind) })
             }, onDenied: { deny(kind) })
 
-        case CaptureKind.audio:
+        case ContentType.audio:
             requirePermission(micPermission, onGranted: {
                 callbacks.onState(reducer.granted(state: state))
             }, onDenied: { deny(kind) })
@@ -136,7 +136,7 @@ struct EditorCapabilityHost: ViewModifier {
         }
     }
 
-    private func deny(_ kind: CaptureKind) {
+    private func deny(_ kind: ContentType) {
         callbacks.onState(reducer.denied(state: state))
         callbacks.onPermissionDenied(kind)
     }

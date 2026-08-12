@@ -2,32 +2,8 @@ package com.app.pustakam.feature.notes.domain.editor
 
 import com.app.pustakam.core.common.util.ContentType
 
-enum class CaptureKind {
-    IMAGE,
-    VIDEO,
-    AUDIO,
-    LOCATION,
-    FILE,
-    LINK;
-
-    val contentType: ContentType
-        get() = when (this) {
-            IMAGE -> ContentType.IMAGE
-            VIDEO -> ContentType.VIDEO
-            AUDIO -> ContentType.AUDIO
-            LOCATION -> ContentType.LOCATION
-            FILE -> ContentType.PDF
-            LINK -> ContentType.LINK
-        }
-
-    val needsPermission: Boolean
-        get() = this == IMAGE || this == VIDEO || this == AUDIO || this == LOCATION
-
-    val opensCamera: Boolean get() = this == IMAGE || this == VIDEO
-}
-
 data class EditorCapabilityState(
-    val pendingCapture: CaptureKind? = null,
+    val pendingCapture: ContentType? = null,
     val isPermissionPromptVisible: Boolean = false,
     val isRecordingAudio: Boolean = false,
     val isTrackingLocation: Boolean = false,
@@ -45,21 +21,28 @@ data class EditorCapabilityState(
 
 object EditorCapabilityReducer {
 
-    fun requestCapture(state: EditorCapabilityState, kind: CaptureKind): EditorCapabilityState =
-        if (kind.needsPermission) {
-            state.copy(pendingCapture = kind, isPermissionPromptVisible = true)
+    fun needsPermission(type: ContentType): Boolean = when (type) {
+        ContentType.IMAGE, ContentType.VIDEO, ContentType.AUDIO, ContentType.LOCATION -> true
+        else -> false
+    }
+
+    fun opensCamera(type: ContentType): Boolean =
+        type == ContentType.IMAGE || type == ContentType.VIDEO
+
+    fun requestCapture(state: EditorCapabilityState, type: ContentType): EditorCapabilityState =
+        if (needsPermission(type)) {
+            state.copy(pendingCapture = type, isPermissionPromptVisible = true)
         } else {
-            granted(state.copy(pendingCapture = kind))
+            granted(state.copy(pendingCapture = type))
         }
 
     fun granted(state: EditorCapabilityState): EditorCapabilityState {
-        val kind = state.pendingCapture ?: return state.copy(isPermissionPromptVisible = false)
+        val type = state.pendingCapture ?: return state.copy(isPermissionPromptVisible = false)
         val cleared = state.copy(isPermissionPromptVisible = false)
-        return when (kind) {
-            CaptureKind.AUDIO -> cleared.copy(isRecordingAudio = true)
-            CaptureKind.LOCATION -> cleared.copy(isTrackingLocation = true)
-            CaptureKind.FILE, CaptureKind.LINK -> cleared.copy(isImportSheetVisible = true)
-            CaptureKind.IMAGE, CaptureKind.VIDEO -> cleared
+        return when (type) {
+            ContentType.AUDIO -> cleared.copy(isRecordingAudio = true)
+            ContentType.LOCATION -> cleared.copy(isTrackingLocation = true)
+            else -> cleared
         }
     }
 
@@ -102,22 +85,4 @@ object EditorCapabilityReducer {
 object EditorCapabilityCommands {
 
     fun empty(): EditorCapabilityState = EditorCapabilityState()
-
-    fun image(): CaptureKind = CaptureKind.IMAGE
-
-    fun video(): CaptureKind = CaptureKind.VIDEO
-
-    fun audio(): CaptureKind = CaptureKind.AUDIO
-
-    fun location(): CaptureKind = CaptureKind.LOCATION
-
-    fun file(): CaptureKind = CaptureKind.FILE
-
-    fun link(): CaptureKind = CaptureKind.LINK
-
-    fun opensCamera(state: EditorCapabilityState): Boolean =
-        state.pendingCapture?.opensCamera == true
-
-    fun pendingContentType(state: EditorCapabilityState): ContentType? =
-        state.pendingCapture?.contentType
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
@@ -38,9 +39,23 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalFocusManager
+import com.app.pustakam.android.widgets.smartText.LocalSmartTextToolbar
+import com.app.pustakam.android.widgets.smartText.SmartTextSheet
+import com.app.pustakam.android.widgets.smartText.SmartTextSheetHost
+import com.app.pustakam.core.model.models.RichTextMetadata
+import com.app.pustakam.core.richtext.codec.RichTextCodec
+import com.app.pustakam.core.richtext.model.RichDocument
+import com.app.pustakam.core.richtext.presentation.SmartTextCommands
+import com.app.pustakam.core.richtext.presentation.ToolbarAction
+import java.util.UUID
 import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.presentation.MasterTextCommands
 import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
+import com.app.pustakam.core.richtext.master.presentation.MasterTextReducer
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 
 @Composable
@@ -50,6 +65,7 @@ fun MasterTextWidget(
     focusRequester: FocusRequester = remember { FocusRequester() },
     readOnly: Boolean = false,
     scale: Float = 1f,
+    scrollable: Boolean = true,
     placeholder: String = "Keep your thoughts alive.",
     onIntent: (MasterTextIntent) -> Unit,
     onFocusChanged: (Boolean) -> Unit = {}
@@ -82,9 +98,11 @@ fun MasterTextWidget(
     )
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+        modifier = if (scrollable) {
+            modifier.fillMaxSize().verticalScroll(rememberScrollState())
+        } else {
+            modifier.fillMaxWidth()
+        }
     ) {
         if (state.text.isEmpty()) {
             Text(
@@ -172,4 +190,118 @@ fun MasterTextWidget(
             )
         }
     }
+}
+
+@Composable
+fun MasterTextContentWidget(
+    text: String,
+    metadata: RichTextMetadata?,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester = remember { FocusRequester() },
+    readOnly: Boolean = false,
+    showKeyboardToolbar: Boolean = true,
+    onDocumentChange: (RichDocument) -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+    val document = remember(text, metadata) { RichTextCodec.documentFrom(text, metadata) }
+
+    var state by remember { mutableStateOf(MasterTextState.of(document)) }
+    var lastEmitted by remember { mutableStateOf(document) }
+    var isFocused by remember { mutableStateOf(false) }
+    var sheet by remember { mutableStateOf(SmartTextSheet.NONE) }
+
+    if (document != lastEmitted && document != state.document) {
+        state = MasterTextState.of(document)
+        lastEmitted = document
+    }
+
+    fun dispatch(intent: MasterTextIntent) {
+        val next = MasterTextReducer.reduce(state, intent)
+        state = next
+        if (next.document != lastEmitted) {
+            lastEmitted = next.document
+            onDocumentChange(next.document)
+        }
+    }
+
+    fun handle(action: ToolbarAction) {
+        when {
+            SmartTextCommands.isMore(action) ->
+                dispatch(MasterTextCommands.setToolbarExpanded(!state.isToolbarExpanded))
+
+            SmartTextCommands.isDismiss(action) -> focusManager.clearFocus()
+
+            else -> {
+                val intent = MasterTextCommands.forToolbar(action)
+                if (intent != null) dispatch(intent)
+                else sheet = SmartTextSheet.fromIndex(MasterTextCommands.sheetIndex(action))
+            }
+        }
+    }
+
+    val toolbarHost = LocalSmartTextToolbar.current
+    val widgetId = rememberSaveable { UUID.randomUUID().toString() }
+
+    LaunchedEffect(isFocused, state.toolbar, state.isToolbarExpanded, state.canUndo, state.canRedo) {
+        if (toolbarHost == null) return@LaunchedEffect
+        if (isFocused && !readOnly && showKeyboardToolbar) {
+            toolbarHost.publish(
+                ownerId = widgetId,
+                toolbar = state.toolbar,
+                expanded = state.isToolbarExpanded,
+                canUndo = state.canUndo,
+                canRedo = state.canRedo,
+                onAction = ::handle
+            )
+        } else {
+            toolbarHost.release(widgetId)
+        }
+    }
+    DisposableEffect(widgetId) { onDispose { toolbarHost?.release(widgetId) } }
+
+    MasterTextWidget(
+        state = state,
+        modifier = modifier,
+        focusRequester = focusRequester,
+        readOnly = readOnly,
+        scrollable = false,
+        onIntent = ::dispatch,
+        onFocusChanged = { isFocused = it }
+    )
+
+    SmartTextSheetHost(
+        sheet = sheet,
+        currentStyle = state.toolbar.paragraphStyle,
+        currentAlign = state.toolbar.align,
+        currentFontSize = state.toolbar.fontSize,
+        currentLink = state.toolbar.link,
+        searchQuery = "",
+        replacement = "",
+        matchCount = 0,
+        currentMatch = 0,
+        tableRowCount = 0,
+        tableColumnCount = 0,
+        onDismiss = { sheet = SmartTextSheet.NONE },
+        onStyle = { dispatch(MasterTextCommands.setParagraphStyle(it)); sheet = SmartTextSheet.NONE },
+        onAlign = { dispatch(MasterTextCommands.setAlignment(it)); sheet = SmartTextSheet.NONE },
+        onColor = {
+            val intent = if (sheet == SmartTextSheet.BACKGROUND_COLOR) {
+                MasterTextCommands.setBackgroundColor(it)
+            } else {
+                MasterTextCommands.setTextColor(it)
+            }
+            dispatch(intent)
+            sheet = SmartTextSheet.NONE
+        },
+        onFontSize = { dispatch(MasterTextCommands.setFontSize(it)); sheet = SmartTextSheet.NONE },
+        onLink = { dispatch(MasterTextCommands.setLink(it)); sheet = SmartTextSheet.NONE },
+        onTable = { sheet = SmartTextSheet.NONE },
+        onInsertTable = { _, _ -> sheet = SmartTextSheet.NONE },
+        onSearchQuery = {},
+        onReplacement = {},
+        onFindNext = {},
+        onFindPrevious = {},
+        onReplaceCurrent = {},
+        onReplaceAll = {}
+    )
 }

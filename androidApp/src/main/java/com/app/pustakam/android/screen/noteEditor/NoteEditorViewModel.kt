@@ -14,7 +14,6 @@ import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
-import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
 import com.app.pustakam.feature.notes.domain.history.NoteEditKind
@@ -322,8 +321,12 @@ class NoteEditorViewModel : BaseViewModel() {
         _capabilities.value = next
     }
 
-    fun requestCapture(kind: CaptureKind) {
-        _capabilities.value = EditorCapabilityReducer.requestCapture(_capabilities.value, kind)
+    fun requestCapture(type: ContentType) {
+        _capabilities.value = EditorCapabilityReducer.requestCapture(_capabilities.value, type)
+    }
+
+    fun openImportSheet() {
+        _capabilities.value = EditorCapabilityReducer.setImportSheet(_capabilities.value, true)
     }
 
     fun captureFinished() {

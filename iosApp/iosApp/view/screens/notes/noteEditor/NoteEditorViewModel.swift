@@ -166,10 +166,17 @@ class NoteEditorViewModel: ObservableObject {
         capabilities = next
     }
 
-    func requestCapture(_ kind: CaptureKind) {
+    func requestCapture(_ type: ContentType) {
         capabilities = EditorCapabilityReducer.shared.requestCapture(
             state: capabilities,
-            kind: kind
+            type: type
+        )
+    }
+
+    func openImportSheet() {
+        capabilities = EditorCapabilityReducer.shared.setImportSheet(
+            state: capabilities,
+            visible: true
         )
     }
 

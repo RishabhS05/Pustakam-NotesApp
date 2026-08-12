@@ -14,7 +14,6 @@ import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.richtext.codec.RichTextCodec
 import com.app.pustakam.core.richtext.master.model.CanvasNode
-import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
 import com.app.pustakam.core.richtext.master.presentation.CanvasCommands
 import com.app.pustakam.core.richtext.master.presentation.CanvasEditorIntent
 import com.app.pustakam.core.richtext.master.presentation.CanvasEditorReducer
@@ -23,10 +22,18 @@ import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
 import com.app.pustakam.core.richtext.master.presentation.MasterTextReducer
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 import com.app.pustakam.core.richtext.master.presentation.NoteCanvasConverter
-import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
-import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
+import com.app.pustakam.feature.notes.domain.usecase.ClearCanvasUseCase
+import com.app.pustakam.feature.notes.domain.usecase.MoveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasViewportUseCase
+import com.app.pustakam.feature.notes.domain.usecase.RemoveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.RenameCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ResizeCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SaveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SaveCanvasNodesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SaveCanvasViewportUseCase
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
 import com.app.pustakam.core.common.util.Result
@@ -51,7 +58,16 @@ data class MasterEditorUiState(
 
 class MasterEditorViewModel : ViewModel(), KoinComponent {
 
-    private val canvasRepository by inject<ICanvasRepository>()
+    private val readCanvas by inject<ReadCanvasUseCase>()
+    private val readCanvasViewport by inject<ReadCanvasViewportUseCase>()
+    private val saveCanvasNode by inject<SaveCanvasNodeUseCase>()
+    private val saveCanvasNodes by inject<SaveCanvasNodesUseCase>()
+    private val moveCanvasNode by inject<MoveCanvasNodeUseCase>()
+    private val resizeCanvasNode by inject<ResizeCanvasNodeUseCase>()
+    private val renameCanvasNode by inject<RenameCanvasNodeUseCase>()
+    private val removeCanvasNode by inject<RemoveCanvasNodeUseCase>()
+    private val clearCanvas by inject<ClearCanvasUseCase>()
+    private val saveCanvasViewport by inject<SaveCanvasViewportUseCase>()
     private val readNoteUseCase by inject<ReadNoteUseCase>()
     private val saveNoteUseCase by inject<CreateORUpdateNoteUseCase>()
 
@@ -77,21 +93,20 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
     // 🔧 09-Aug-2026: canvas rows are derived layout — a read failure must degrade to an
     //   empty canvas, never take the editor down with it (was an uncaught SQLiteException)
     private suspend fun hydrate(note: Note) {
-        val stored = runCatching { canvasRepository.load(note.id) }
-            .getOrElse { com.app.pustakam.core.richtext.master.model.CanvasDocument() }
-        val savedViewport = runCatching { canvasRepository.loadViewport(note.id) }.getOrNull()
+        val stored = readCanvas(note.id)
+        val savedViewport = readCanvasViewport(note.id)
 
         val textContents = note.contents.filterIsInstance<NoteContentModel.TextContent>()
         val nodes = if (stored.nodes.isNotEmpty()) {
             stored.nodes
         } else {
             buildInitialNodes(note, textContents).also {
-                canvasRepository.saveAll(note.id, it)
+                saveCanvasNodes(note.id, it)
             }
         }
 
         val texts = nodes
-            .filter { it.kind == CanvasNodeKind.MASTER_TEXT }
+            .filter { it.kind == ContentType.TEXT }
             .mapNotNull { node ->
                 val content = textContents.firstOrNull { it.id == node.contentId }
                     ?: return@mapNotNull null
@@ -139,20 +154,20 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
                     is CanvasEditorIntent.EndDrag -> {
                         before.draggingNodeId
                             ?.let { next.document.nodeById(it) }
-                            ?.let { canvasRepository.save(id, it) }
+                            ?.let { saveCanvasNode(id, it) }
                     }
 
                     is CanvasEditorIntent.ReparentNode ->
                         next.document.nodeById(intent.nodeId)
-                            ?.let { canvasRepository.save(id, it) }
+                            ?.let { saveCanvasNode(id, it) }
 
                     is CanvasEditorIntent.ResizeNode ->
                         next.document.nodeById(intent.nodeId)
-                            ?.let { canvasRepository.resize(it.id, it.rect.width, it.rect.height) }
+                            ?.let { resizeCanvasNode(it.id, it.rect.width, it.rect.height) }
 
-                    is CanvasEditorIntent.AddNode -> canvasRepository.save(id, intent.node)
+                    is CanvasEditorIntent.AddNode -> saveCanvasNode(id, intent.node)
 
-                    is CanvasEditorIntent.RemoveNode -> canvasRepository.remove(intent.nodeId)
+                    is CanvasEditorIntent.RemoveNode -> removeCanvasNode(intent.nodeId)
 
                     is CanvasEditorIntent.Pan,
                     is CanvasEditorIntent.Zoom,
@@ -161,7 +176,7 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
                     CanvasEditorIntent.ZoomOut,
                     CanvasEditorIntent.ZoomToFit,
                     is CanvasEditorIntent.FocusNode ->
-                        canvasRepository.saveViewport(id, next.viewport)
+                        saveCanvasViewport(id, next.viewport)
 
                     else -> Unit
                 }
@@ -190,26 +205,44 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
     }
 
-    fun addWidgetNearFocused(kind: CanvasNodeKind, content: NoteContentModel? = null) {
+    fun addPage() {
         val note = _state.value.note ?: return
-        val canvas = _state.value.canvas
-        val anchor = CanvasCommands.anchorOf(canvas)
-        val node = CanvasCommands.nodeFor(canvas, kind, content?.id)
+        val content = NoteContentObjectHelper.createText(
+            noteId = note.id,
+            positionedAt = note.contents.size.toDouble()
+        )
+        val page = CanvasCommands.pageNode(_state.value.canvas, content.id)
+        val nextNote = note.withContents(note.contents + content)
+        _state.update {
+            it.copy(
+                note = nextNote,
+                texts = it.texts + (page.id to MasterTextState.of(RichTextCodec.documentFrom(content)))
+            )
+        }
+        onCanvasIntent(CanvasEditorIntent.AddNode(page))
+        onCanvasIntent(CanvasCommands.selectNode(page.id))
+        viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
+    }
 
+    fun addWidget(kind: ContentType, content: NoteContentModel? = null) {
+        if (kind == ContentType.TEXT) {
+            addPage()
+            return
+        }
+        val note = _state.value.note ?: return
+        val page = CanvasCommands.pageForSpawn(_state.value.canvas)
+        if (page == null) {
+            addPage()
+            addWidget(kind, content)
+            return
+        }
+        val node = CanvasCommands.widgetIn(_state.value.canvas, page, kind, content?.id)
         if (content != null) {
             val nextNote = note.withContents(note.contents + content)
             _state.update { it.copy(note = nextNote) }
             viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
         }
-        if (kind == CanvasNodeKind.MASTER_TEXT && content is NoteContentModel.TextContent) {
-            _state.update {
-                it.copy(
-                    texts = it.texts + (node.id to MasterTextState.of(RichTextCodec.documentFrom(content)))
-                )
-            }
-        }
         onCanvasIntent(CanvasEditorIntent.AddNode(node))
-        anchor?.let { onCanvasIntent(CanvasCommands.linkNodes(it.id, node.id)) }
     }
 
     fun deleteContent(contentId: String) {
@@ -231,7 +264,6 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
             val items = FileImportManager.importUris(
                 context.applicationContext, note.id, note.contents.count().toDouble(), uris
             )
-            withContext(Dispatchers.Main) { items.forEach { addMediaNear(it) } }
         }
     }
 
@@ -242,22 +274,10 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
             val result = FileImportManager.importFromUrl(
                 context.applicationContext, note.id, note.contents.count().toDouble(), url
             )
-            withContext(Dispatchers.Main) {
-                if (result is ImportResult.Success) result.contents.forEach { addMediaNear(it) }
-            }
         }
     }
 
-    fun addMediaNear(content: NoteContentModel) {
-        val kind = when (content.type) {
-            com.app.pustakam.core.common.util.ContentType.LINK -> CanvasNodeKind.LINK
-            com.app.pustakam.core.common.util.ContentType.LOCATION -> CanvasNodeKind.LOCATION
-            com.app.pustakam.core.common.util.ContentType.PDF,
-            com.app.pustakam.core.common.util.ContentType.DOCX -> CanvasNodeKind.DOCUMENT
-            else -> CanvasNodeKind.MEDIA
-        }
-        addWidgetNearFocused(kind, content)
-    }
+
 
     fun linkedNodes(nodeId: String) = CanvasCommands.linkedNodes(_state.value.canvas, nodeId)
 
@@ -275,7 +295,7 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
 
     fun renameNode(nodeId: String, name: String) {
         onCanvasIntent(CanvasCommands.renameNode(nodeId, name))
-        viewModelScope.launch { canvasRepository.rename(nodeId, name) }
+        viewModelScope.launch { renameCanvasNode(nodeId, name) }
     }
 
     fun rebuildLayoutFromNote() {
@@ -284,7 +304,7 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         onCanvasIntent(CanvasCommands.replaceDocument(document))
         _state.update { current ->
             val texts = document.nodes
-                .filter { it.kind == CanvasNodeKind.MASTER_TEXT }
+                .filter { it.kind == ContentType.TEXT }
                 .mapNotNull { node ->
                     val content = note.contents
                         .filterIsInstance<NoteContentModel.TextContent>()
@@ -295,8 +315,8 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
             current.copy(texts = texts)
         }
         viewModelScope.launch {
-            canvasRepository.removeAll(note.id)
-            canvasRepository.saveAll(note.id, document.nodes)
+            clearCanvas(note.id)
+            saveCanvasNodes(note.id, document.nodes)
         }
     }
 
@@ -315,9 +335,9 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         _state.update { it.copy(capabilities = next) }
     }
 
-    fun requestCapture(kind: CaptureKind) {
+    fun requestCapture(type: ContentType) {
         val note = _state.value.note ?: return
-        val draft = if (kind == CaptureKind.AUDIO) {
+        val draft = if (type == ContentType.AUDIO) {
             NoteContentObjectHelper.createMedia(
                 contentType = ContentType.AUDIO,
                 noteId = note.id,
@@ -329,14 +349,12 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         _state.update {
             it.copy(
                 audioDraft = draft,
-                capabilities = EditorCapabilityReducer.requestCapture(it.capabilities, kind)
+                capabilities = EditorCapabilityReducer.requestCapture(it.capabilities, type)
             )
         }
     }
 
     fun onCaptured(content: NoteContentModel?) {
-        val media = content ?: return
-        addMediaNear(media)
         _state.update {
             it.copy(
                 audioDraft = null,
@@ -359,26 +377,4 @@ class MasterEditorViewModel : ViewModel(), KoinComponent {
         }
     }
 
-    fun addTextNode() {
-        val note = _state.value.note ?: return
-        val content = NoteContentObjectHelper.createText(
-            noteId = note.id,
-            positionedAt = note.contents.size.toDouble()
-        )
-        val bounds = _state.value.canvas.document.bounds
-        val node = CanvasNode.masterText(
-            contentId = content.id,
-            x = bounds.right + 48f,
-            y = bounds.y
-        )
-        val nextNote = note.withContents(note.contents + content)
-        _state.update {
-            it.copy(
-                note = nextNote,
-                texts = it.texts + (node.id to MasterTextState.of(RichTextCodec.documentFrom(content)))
-            )
-        }
-        onCanvasIntent(CanvasEditorIntent.AddNode(node))
-        viewModelScope.launch { saveNoteUseCase(nextNote).collect { } }
-    }
 }

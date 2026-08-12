@@ -19,7 +19,6 @@ import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.importsheet.ImportFilesSheet
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
-import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
 
@@ -58,8 +57,8 @@ fun EditorCapabilityHost(
                 val granted = EditorCapabilityReducer.granted(state)
                 callbacks.onState(granted)
                 state.pendingCapture
-                    ?.takeIf { it.opensCamera }
-                    ?.let { callbacks.onOpenCamera(it.contentType) }
+                    ?.takeIf { EditorCapabilityReducer.opensCamera(it) }
+                    ?.let { callbacks.onOpenCamera(it) }
             }
         )
     }
@@ -124,11 +123,11 @@ fun EditorCapabilityHost(
     }
 }
 
-fun permissionsFor(kind: CaptureKind?): List<NeededPermission> = when (kind) {
-    CaptureKind.VIDEO -> listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO)
-    CaptureKind.AUDIO -> listOf(NeededPermission.RECORD_AUDIO)
-    CaptureKind.IMAGE -> listOf(NeededPermission.CAMERA)
-    CaptureKind.LOCATION -> listOf(
+fun permissionsFor(type: ContentType?): List<NeededPermission> = when (type) {
+    ContentType.VIDEO -> listOf(NeededPermission.CAMERA, NeededPermission.RECORD_AUDIO)
+    ContentType.AUDIO -> listOf(NeededPermission.RECORD_AUDIO)
+    ContentType.IMAGE -> listOf(NeededPermission.CAMERA)
+    ContentType.LOCATION -> listOf(
         NeededPermission.COARSE_LOCATION,
         NeededPermission.FINE_LOCATION,
         NeededPermission.BACKGROUND_LOCATION

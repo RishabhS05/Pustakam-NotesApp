@@ -1,9 +1,12 @@
 package com.app.pustakam.core.common.util
 
 // 🔧 18-Jul-2026: file-import feature — original order kept (ordinal-safe); new types appended
+
 enum class ContentType {
-    TEXT{},
-    IMAGE{
+
+    TEXT,
+
+    IMAGE {
         override fun getExt() = ".png"
     }
     , VIDEO{
@@ -12,9 +15,11 @@ enum class ContentType {
     , AUDIO{
         override fun getExt() = ".mp3"
     }
-    , LINK, DOCX{
+    , LINK,
+    DOCX{
         override fun getExt() = ".docx"   // 🔧 18-Jul-2026: real ext (was "")
-    }, LOCATION, PDF{
+    }, LOCATION,
+    PDF{
         override fun getExt() = ".pdf"    // 🔧 18-Jul-2026: real ext (was "")
     }, GIF{
         override fun getExt() = ".gif"    // 🔧 18-Jul-2026: real ext (was "")
@@ -29,7 +34,10 @@ enum class ContentType {
     EPUB{
         override fun getExt() = ".epub"
     },
-    // 🔧 18-Jul-2026: NEW — fallback so ANY picked file can still be attached/imported
+    DRAWING,
+    FORMULA,
+    TABLE,
     OTHER;
+
    open fun getExt() = ""
 }

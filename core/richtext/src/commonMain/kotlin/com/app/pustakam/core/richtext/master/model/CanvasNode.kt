@@ -1,23 +1,12 @@
 package com.app.pustakam.core.richtext.master.model
 
+import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.ContentType.*
 import com.app.pustakam.core.common.util.UniqueIdGenerator
-import kotlinx.serialization.Serializable
 
-@Serializable
-enum class CanvasNodeKind {
-    MASTER_TEXT,
-    MEDIA,
-    TABLE,
-    DOCUMENT,
-    LINK,
-    LOCATION,
-    DRAWING
-}
-
-@Serializable
 data class CanvasNode(
     val id: String,
-    val kind: CanvasNodeKind,
+    val kind: ContentType,
     val name: String = "",
     val rect: CanvasRect,
     val z: Int = 0,
@@ -47,7 +36,7 @@ data class CanvasNode(
 
     fun raisedTo(newZ: Int): CanvasNode = copy(z = newZ)
 
-    val isPage: Boolean get() = parentId == null && kind == CanvasNodeKind.MASTER_TEXT
+    val isPage: Boolean get() = parentId == null && kind == ContentType.TEXT
 
     companion object {
         const val MIN_SIZE = 24f
@@ -63,18 +52,19 @@ data class CanvasNode(
         /** Body type on canvas paper sits a notch above the note editor's. */
         const val BASE_FONT_SCALE = 1.15f
 
-        fun defaultName(kind: CanvasNodeKind, index: Int): String = when (kind) {
-            CanvasNodeKind.MASTER_TEXT -> "Page ${index + 1}"
-            CanvasNodeKind.MEDIA -> "Media ${index + 1}"
-            CanvasNodeKind.TABLE -> "Table ${index + 1}"
-            CanvasNodeKind.DOCUMENT -> "Document ${index + 1}"
-            CanvasNodeKind.LINK -> "Link ${index + 1}"
-            CanvasNodeKind.LOCATION -> "Location ${index + 1}"
-            CanvasNodeKind.DRAWING -> "Drawing ${index + 1}"
+        fun defaultName(kind: ContentType, index: Int): String = when (kind) {
+        TEXT -> "Page ${index + 1}"
+        AUDIO, IMAGE, VIDEO, GIF -> "Media ${index + 1}"
+            TABLE -> "Table ${index + 1}"
+        DOCX, PDF, TXT, MD, EPUB, OTHER -> "Document ${index + 1}"
+           LINK -> "Link ${index + 1}"
+           LOCATION -> "Location ${index + 1}"
+            DRAWING -> "Drawing ${index + 1}"
+            FORMULA -> ""
         }
 
         fun of(
-            kind: CanvasNodeKind,
+            kind: ContentType,
             contentId: String?,
             x: Float,
             y: Float,
@@ -93,7 +83,7 @@ data class CanvasNode(
 
         fun nextTo(
             anchor: CanvasNode,
-            kind: CanvasNodeKind,
+            kind: ContentType,
             contentId: String?,
             width: Float = DEFAULT_TEXT_WIDTH,
             height: Float = DEFAULT_TEXT_HEIGHT,
@@ -116,14 +106,13 @@ data class CanvasNode(
             height: Float = DEFAULT_TEXT_HEIGHT
         ): CanvasNode = CanvasNode(
             id = UniqueIdGenerator.generateUniqueId(),
-            kind = CanvasNodeKind.MASTER_TEXT,
+            kind = ContentType.TEXT,
             rect = CanvasRect(x, y, width, height),
             contentId = contentId
         )
     }
 }
 
-@Serializable
 data class CanvasDocument(
     val nodes: List<CanvasNode> = emptyList()
 ) {
@@ -132,7 +121,7 @@ data class CanvasDocument(
 
     /** Top-level paper. Widgets live on a page through [CanvasNode.parentId]. */
     val pages: List<CanvasNode>
-        get() = nodes.filter { it.parentId == null && it.kind == CanvasNodeKind.MASTER_TEXT }
+        get() = nodes.filter { it.parentId == null && it.kind == TEXT }
 
     fun nodeById(nodeId: String): CanvasNode? = nodes.firstOrNull { it.id == nodeId }
 
@@ -153,7 +142,7 @@ data class CanvasDocument(
 
     fun pageOf(nodeId: String): CanvasNode? =
         nodeById(nodeId)?.let { node ->
-            if (node.parentId == null) node.takeIf { it.kind == CanvasNodeKind.MASTER_TEXT }
+            if (node.parentId == null) node.takeIf { it.kind == TEXT }
             else pageOf(node.parentId)
         }
 

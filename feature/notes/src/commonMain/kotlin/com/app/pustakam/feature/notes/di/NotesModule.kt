@@ -8,7 +8,19 @@ import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
 import com.app.pustakam.feature.notes.domain.repository.IRemoteNoteRepository
+import com.app.pustakam.feature.notes.domain.usecase.ClearCanvasUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ClearSelectedNoteContentUseCase
+import com.app.pustakam.feature.notes.domain.usecase.MoveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.PruneCanvasOrphansUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasViewportUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ReadVisibleCanvasUseCase
+import com.app.pustakam.feature.notes.domain.usecase.RemoveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.RenameCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ResizeCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SaveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SaveCanvasNodesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SaveCanvasViewportUseCase
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.CreateTagUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
@@ -45,6 +57,18 @@ fun notesModule(): Module = module {
     factory<DeleteNoteContentUseCase> { DeleteNoteContentUseCase() }
     factory<UpdateReadingProgressUseCase> { UpdateReadingProgressUseCase() }
     factory<ReadContentUseCase> { ReadContentUseCase() }
+    factory<ReadCanvasUseCase> { ReadCanvasUseCase() }
+    factory<ReadVisibleCanvasUseCase> { ReadVisibleCanvasUseCase() }
+    factory<ReadCanvasViewportUseCase> { ReadCanvasViewportUseCase() }
+    factory<SaveCanvasNodeUseCase> { SaveCanvasNodeUseCase() }
+    factory<SaveCanvasNodesUseCase> { SaveCanvasNodesUseCase() }
+    factory<MoveCanvasNodeUseCase> { MoveCanvasNodeUseCase() }
+    factory<ResizeCanvasNodeUseCase> { ResizeCanvasNodeUseCase() }
+    factory<RenameCanvasNodeUseCase> { RenameCanvasNodeUseCase() }
+    factory<RemoveCanvasNodeUseCase> { RemoveCanvasNodeUseCase() }
+    factory<ClearCanvasUseCase> { ClearCanvasUseCase() }
+    factory<SaveCanvasViewportUseCase> { SaveCanvasViewportUseCase() }
+    factory<PruneCanvasOrphansUseCase> { PruneCanvasOrphansUseCase() }
     factory<GetTagCase> { GetTagCase() }
     factory<CreateTagUseCase> { CreateTagUseCase() }
     factory<UpdateTagUseCase> { UpdateTagUseCase() }

@@ -13,6 +13,7 @@ import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.common.util.log_d
 import org.koin.core.component.KoinComponent
 import com.app.pustakam.core.model.models.RichTextMetadata
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel.*
 import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import org.koin.core.component.get
 
@@ -232,6 +233,8 @@ class NotesDao : KoinComponent {
                                   createdAt = row.contentCreatedAt,
                                   updatedAt = row.contentUpdatedAt,
                               )
+
+                              else -> {}
                           }
                       } else null
                   }.toMutableList() as ArrayList<NoteContentModel>
@@ -338,14 +341,14 @@ class NotesDao : KoinComponent {
     private fun NoteContent.toNoteContentModel(): NoteContentModel? {
         if (type.isEmpty()) return null
         return when (val contentType = ContentType.valueOf(type)) {
-            ContentType.TEXT -> NoteContentModel.TextContent(
+            ContentType.TEXT -> TextContent(
                 id = id, noteId = noteId, text = text ?: "", position = position ?: 0.0,
                 createdAt = createdAt, updatedAt = updatedAt, metadata = metaData,
             )
 
             ContentType.IMAGE, ContentType.DOCX, ContentType.VIDEO, ContentType.AUDIO,
             ContentType.PDF, ContentType.GIF, ContentType.TXT, ContentType.MD,
-            ContentType.EPUB, ContentType.OTHER -> NoteContentModel.MediaContent(
+            ContentType.EPUB, ContentType.OTHER -> MediaContent(
                 title = title ?: "$type-$position",
                 id = id, noteId = noteId, url = url ?: "", position = position ?: 0.0,
                 createdAt = createdAt, updatedAt = updatedAt,
@@ -356,16 +359,20 @@ class NotesDao : KoinComponent {
                 totalPages = totalPages.toInt(), progressPage = progressPage.toInt(),
             )
 
-            ContentType.LINK -> NoteContentModel.Link(
+            ContentType.LINK -> Link(
                 url = url ?: "", id = id, noteId = noteId, position = position ?: 0.0,
                 createdAt = createdAt, updatedAt = updatedAt,
             )
 
-            ContentType.LOCATION -> NoteContentModel.Location(
+            ContentType.LOCATION -> Location(
                 latitude = lat ?: 0.0, longitude = long ?: 0.0, address = address,
                 position = position ?: 0.0, id = id, noteId = noteId,
                 createdAt = createdAt, updatedAt = updatedAt,
             )
+
+            ContentType.DRAWING -> TODO()
+            ContentType.FORMULA -> TODO()
+            ContentType.TABLE -> TODO()
         }
     }
     suspend fun deleteNoteByIdFromDb(id: String) : Boolean {
@@ -466,7 +473,10 @@ class NotesDao : KoinComponent {
                                 createdAt = row.contentCreatedAt,
                                 updatedAt = row.contentUpdatedAt,
                             )
+
+                            else -> {}
                         }
+
                     } else null
                 }.toMutableList() as ArrayList<NoteContentModel>
             )

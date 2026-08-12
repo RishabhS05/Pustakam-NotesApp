@@ -15,10 +15,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.IconButton
@@ -40,14 +46,14 @@ import com.app.pustakam.android.screen.editor.EditorCapabilityCallbacks
 import com.app.pustakam.android.screen.editor.EditorCapabilityHost
 import com.app.pustakam.android.screen.editor.permissionsFor
 import com.app.pustakam.android.widgets.masterEditor.MasterCanvas
-import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbar
 import com.app.pustakam.android.widgets.smartText.SmartTextSheet
 import com.app.pustakam.android.widgets.smartText.SmartTextSheetHost
 import com.app.pustakam.core.richtext.master.presentation.MasterTextCommands
 import com.app.pustakam.core.richtext.presentation.SmartTextCommands
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
-import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
+import com.app.pustakam.core.common.util.ContentType
+
 import com.app.pustakam.core.richtext.master.presentation.CanvasCommands
 import com.app.pustakam.core.richtext.master.presentation.CanvasTool
 
@@ -107,20 +113,27 @@ fun MasterEditorScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 16.dp)
                 .background(colors.toolbar, RoundedCornerShape(12.dp))
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 6.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             IconButton(onClick = { viewModel.onCanvasIntent(CanvasCommands.zoomOut()) }) {
-                Icon(Icons.Default.Remove, contentDescription = "Zoom out", tint = colors.onSurface)
+                Icon(Icons.Default.ZoomOut, contentDescription = "Zoom out", tint = colors.onSurface)
             }
             Text(
                 text = "${canvas.zoomPercent}%",
                 style = TextStyle(color = colors.onSurfaceMuted, fontSize = 13.sp)
             )
             IconButton(onClick = { viewModel.onCanvasIntent(CanvasCommands.zoomIn()) }) {
+                Icon(Icons.Default.ZoomIn, contentDescription = "Zoom in", tint = colors.onSurface)
+            }
+            IconButton(
+                onClick = { showAttach = true },
+
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Zoom in", tint = colors.onSurface)
             }
             IconButton(onClick = { viewModel.onCanvasIntent(CanvasCommands.zoomToFit()) }) {
@@ -130,24 +143,22 @@ fun MasterEditorScreen(
                     tint = colors.onSurface
                 )
             }
-            IconButton(
-                onClick = {
-                    viewModel.onCanvasIntent(
-                        if (canvas.tool == CanvasTool.HAND) CanvasCommands.useSelectTool()
-                        else CanvasCommands.useHandTool()
+            CanvasCommands.tools().forEach { tool ->
+                val active = canvas.tool == tool
+                IconButton(onClick = { viewModel.onCanvasIntent(CanvasCommands.setTool(tool)) }) {
+                    Icon(
+                        imageVector = when (tool) {
+                            CanvasTool.SELECT -> Icons.Default.TouchApp
+                            CanvasTool.HAND -> Icons.Default.PanTool
+                            CanvasTool.ZOOM -> Icons.Default.ZoomIn
+                            CanvasTool.LOCK -> Icons.Default.Lock
+                        },
+                        contentDescription = CanvasCommands.toolLabel(tool),
+                        tint = if (active) colors.accent else colors.onSurface
                     )
                 }
-            ) { Icon(
-                    imageVector = if (canvas.tool == CanvasTool.HAND) Icons.Default.PanTool
-                    else Icons.Default.TouchApp,
-                    contentDescription = "Hand tool",
-                    tint = if (canvas.tool == CanvasTool.HAND) colors.accent else colors.onSurface
-                ) }
-            IconButton(onClick = { showAttach = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add widget", tint = colors.accent)
             }
         }
-
         val focusedText = canvas.editingNodeId?.let { uiState.textFor(it) }
         if (focusedText != null) {
             SmartTextKeyboardToolbar(
@@ -169,8 +180,6 @@ fun MasterEditorScreen(
                         if (intent != null) {
                             viewModel.onTextIntent(nodeId, intent)
                         } else {
-                            // style / colour / size / align / link open a sheet — without this
-                            // branch they silently did nothing in the MasterEditor
                             sheet = SmartTextSheet
                                 .fromIndex(MasterTextCommands.sheetIndex(action))
                         }
@@ -264,9 +273,9 @@ fun MasterEditorScreen(
                             .padding(horizontal = 20.dp, vertical = 14.dp)
                     )
                     listOf(
-                        "Text" to CanvasNodeKind.MASTER_TEXT,
-                        "Table" to CanvasNodeKind.TABLE,
-                        "Drawing" to CanvasNodeKind.DRAWING
+                        "New page" to ContentType.TEXT,
+                        "Table" to ContentType.TABLE,
+                        "Drawing" to ContentType.DRAWING
                     ).forEach { (label, kind) ->
                         Text(
                             text = label,
@@ -275,18 +284,16 @@ fun MasterEditorScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     showAttach = false
-                                    if (kind == CanvasNodeKind.MASTER_TEXT) viewModel.addTextNode()
-                                    else viewModel.addWidgetNearFocused(kind)
+                                    viewModel.addWidget(kind)
                                 }
                                 .padding(horizontal = 20.dp, vertical = 14.dp)
                         )
                     }
 
                     listOf(
-                        "Photo or video" to CaptureKind.IMAGE,
-                        "Record audio" to CaptureKind.AUDIO,
-                        "Location" to CaptureKind.LOCATION,
-                        "Import a file" to CaptureKind.FILE
+                        "Photo or video" to ContentType.IMAGE,
+                        "Record audio" to ContentType.AUDIO,
+                        "Location" to ContentType.LOCATION
                     ).forEach { (label, kind) ->
                         Text(
                             text = label,

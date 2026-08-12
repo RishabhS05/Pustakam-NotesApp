@@ -31,7 +31,8 @@ import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.getMediaUrl
 import com.app.pustakam.core.richtext.master.model.CanvasNode
-import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
+import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
+
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 
 @Composable
@@ -41,21 +42,20 @@ fun MasterNodeContent(
     scale: Float,
     textState: MasterTextState?,
     content: NoteContentModel?,
-    onTextIntent: (com.app.pustakam.core.richtext.master.presentation.MasterTextIntent) -> Unit,
+    onTextIntent: (MasterTextIntent) -> Unit,
     onFocused: () -> Unit,
     onOpenMedia: () -> Unit,
     onDelete: () -> Unit = {}
 ) {
     val colors = SmartTextTokens.colors
-
-    when (node.kind) {
-        CanvasNodeKind.MASTER_TEXT -> {
+    when  {
+         content is NoteContentModel.TextContent  -> {
             if (textState == null) {
                 MasterNodePlaceholder("Empty text")
             } else {
                 MasterTextWidget(
                     state = textState,
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
                     scale = scale,
                     readOnly = false,
                     onIntent = onTextIntent,
@@ -63,108 +63,99 @@ fun MasterNodeContent(
                 )
             }
         }
-
-        CanvasNodeKind.MEDIA -> {
-            val media = content as? NoteContentModel.MediaContent
-            when (media?.type) {
+        content is NoteContentModel.MediaContent -> {
+            when (content.type) {
                 ContentType.IMAGE, ContentType.GIF -> ImageCard(
                     modifier = Modifier.fillMaxSize(),
-                    imageUrl = media.getMediaUrl(),
+                    imageUrl = content.getMediaUrl(),
                     onClick = onOpenMedia
                 )
 
                 ContentType.VIDEO -> VideoCard(
                     modifier = Modifier.fillMaxSize(),
-                    contentVideo = media,
+                    contentVideo = content,
                     onClick = onOpenMedia
                 )
 
                 ContentType.AUDIO -> AudioPlayerUIState(
-                    noteContentModel = media,
+                    noteContentModel = content,
                     onDelete = { onDelete() }
                 )
 
-                else -> MasterNodePlaceholder("Media")
-            }
-        }
+                ContentType.DOCX, ContentType.EPUB, ContentType.MD, ContentType.PDF, ContentType.OTHER -> {
+                        InlineBookFileWidget(
+                            media = content,
+                            modifier = Modifier.fillMaxSize(),
+                            onOpenFull = onOpenMedia
+                        )
+                }
 
-        CanvasNodeKind.DOCUMENT -> {
-            val media = content as? NoteContentModel.MediaContent
-            if (media == null) {
-                MasterNodePlaceholder("Document")
-            } else {
-                InlineBookFileWidget(
-                    media = media,
-                    modifier = Modifier.fillMaxSize(),
-                    onOpenFull = onOpenMedia
-                )
-            }
-        }
-
-        CanvasNodeKind.LINK -> {
-            val link = content as? NoteContentModel.Link
-            val uriHandler = LocalUriHandler.current
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        link?.url?.takeIf { it.isNotBlank() }
-                            ?.let { runCatching { uriHandler.openUri(it) } }
-                    }
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Link,
-                    contentDescription = null,
-                    tint = colors.accent,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = link?.url.orEmpty().ifEmpty { "Link" },
-                    style = TextStyle(color = colors.accent, fontSize = 15.sp),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-        }
-
-        CanvasNodeKind.LOCATION -> {
-            val location = content as? NoteContentModel.Location
-            val uriHandler = LocalUriHandler.current
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        location?.let {
-                            runCatching {
-                                uriHandler.openUri("geo:${it.latitude},${it.longitude}")
+                ContentType.LINK -> {
+                    val link = content as? NoteContentModel.Link
+                    val uriHandler = LocalUriHandler.current
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable {
+                                link?.url?.takeIf { it.isNotBlank() }
+                                    ?.let { runCatching { uriHandler.openUri(it) } }
                             }
-                        }
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Link,
+                            contentDescription = null,
+                            tint = colors.accent,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = link?.url.orEmpty().ifEmpty { "Link" },
+                            style = TextStyle(color = colors.accent, fontSize = 15.sp),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                     }
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = colors.accent,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = location?.address?.takeIf { it.isNotBlank() }
-                        ?: location?.let { "${it.latitude}, ${it.longitude}" }
-                        ?: "Location",
-                    style = TextStyle(color = colors.onSurface, fontSize = 15.sp),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                }
+
+                ContentType.LOCATION -> {
+                    val location = content as? NoteContentModel.Location
+                    val uriHandler = LocalUriHandler.current
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable {
+                                location?.let {
+                                    runCatching {
+                                        uriHandler.openUri("geo:${it.latitude},${it.longitude}")
+                                    }
+                                }
+                            }
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = colors.accent,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = location?.address?.takeIf { it.isNotBlank() }
+                                ?: location?.let { "${it.latitude}, ${it.longitude}" }
+                                ?: "Location",
+                            style = TextStyle(color = colors.onSurface, fontSize = 15.sp),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+
+                else -> MasterNodePlaceholder(node.kind.name)
             }
         }
-
-        else -> MasterNodePlaceholder(node.kind.name)
     }
 }
 

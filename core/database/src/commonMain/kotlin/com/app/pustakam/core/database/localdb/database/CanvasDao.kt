@@ -1,9 +1,9 @@
 package com.app.pustakam.core.database.localdb.database
 
+import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.getCurrentTimestamp
 import com.app.pustakam.core.database.NotesDatabase
 import com.app.pustakam.core.richtext.master.model.CanvasNode
-import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
 import com.app.pustakam.core.richtext.master.model.CanvasRect
 import com.app.pustakam.core.richtext.master.model.Viewport
 
@@ -96,8 +96,8 @@ class CanvasDao(private val database: NotesDatabase) {
 
     private fun com.app.pustakam.core.database.CanvasNodeEntity.toNode(): CanvasNode = CanvasNode(
         id = id,
-        kind = runCatching { CanvasNodeKind.valueOf(kind) }
-            .getOrDefault(CanvasNodeKind.MASTER_TEXT),
+        kind = runCatching { ContentType.valueOf(kind) }
+            .getOrDefault(ContentType.TEXT),
         name = name,
         rect = CanvasRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat()),
         z = z.toInt(),

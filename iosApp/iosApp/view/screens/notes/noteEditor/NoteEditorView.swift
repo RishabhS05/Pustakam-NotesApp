@@ -52,12 +52,12 @@ struct NoteEditorView: View {
             }
             OverlayEditorButtons(
                 showDelete: noteEditorViewModel.state.note != nil,  // 🔧 state.note — updates when async note arrives
-                onMediaCapture: { noteEditorViewModel.requestCapture(CaptureKind.image) },
+                onMediaCapture: { noteEditorViewModel.requestCapture(ContentType.image) },
                 onShare: { print("Share action") },
-                onRecordMic: { noteEditorViewModel.requestCapture(CaptureKind.audio) },
+                onRecordMic: { noteEditorViewModel.requestCapture(ContentType.audio) },
                 onAddTextField: { noteEditorViewModel.addNewText() },
                 onArrowButton: {},
-                onImportFile: { noteEditorViewModel.requestCapture(CaptureKind.file) }
+                onImportFile: { noteEditorViewModel.openImportSheet() }
             )
             .frame(alignment: .bottomTrailing)
             .padding()
@@ -157,7 +157,7 @@ struct NoteEditorView: View {
             case .text:
                 let textContent = content as! NoteContentModel.TextContent
 
-                SmartTextContentWidget(
+                MasterTextContentWidget(
                     text: textContent.text,
                     metadata: textContent.metadata,
                     onDocumentChange: { document in

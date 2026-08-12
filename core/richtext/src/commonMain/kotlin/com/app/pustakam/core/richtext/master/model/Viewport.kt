@@ -1,8 +1,6 @@
 package com.app.pustakam.core.richtext.master.model
 
-import kotlinx.serialization.Serializable
 
-@Serializable
 data class CanvasRect(
     val x: Float = 0f,
     val y: Float = 0f,
@@ -36,7 +34,6 @@ data class CanvasRect(
     }
 }
 
-@Serializable
 data class Viewport(
     val offsetX: Float = 0f,
     val offsetY: Float = 0f,
@@ -86,6 +83,16 @@ data class Viewport(
             scale = target,
             offsetX = widthPx / 2f - rect.centerX * target,
             offsetY = heightPx / 2f - rect.centerY * target
+        )
+    }
+
+    fun focusedOnTop(rect: CanvasRect, topInset: Float = 0f, padding: Float = FOCUS_PADDING): Viewport {
+        if (rect.width <= 0f || widthPx <= 0f || heightPx <= 0f) return this
+        val target = (widthPx / (rect.width + padding * 2f)).coerceIn(MIN_SCALE, MAX_SCALE)
+        return copy(
+            scale = target,
+            offsetX = widthPx / 2f - rect.centerX * target,
+            offsetY = topInset - rect.y * target
         )
     }
 

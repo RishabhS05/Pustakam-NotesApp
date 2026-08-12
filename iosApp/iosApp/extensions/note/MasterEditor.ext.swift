@@ -18,7 +18,7 @@ extension CanvasRect {
 }
 
 extension CanvasNode {
-    var isText: Bool { kind == CanvasNodeKind.masterText }
+    var isText: Bool { kind == ContentType.text }
 
     var canvasFrame: CGRect { rect.cgRect }
 }

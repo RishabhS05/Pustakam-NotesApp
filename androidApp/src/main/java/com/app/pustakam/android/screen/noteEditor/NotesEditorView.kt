@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -89,7 +90,6 @@ import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.screen.editor.EditorCapabilityCallbacks
 import com.app.pustakam.android.screen.editor.EditorCapabilityHost
 import com.app.pustakam.android.screen.editor.permissionsFor
-import com.app.pustakam.feature.notes.domain.editor.CaptureKind
 import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.screen.navigation.Route
@@ -103,7 +103,7 @@ import com.app.pustakam.android.widgets.image.ImageCard
 import com.app.pustakam.android.widgets.smartText.LocalSmartTextToolbar
 import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbarHost
 import com.app.pustakam.android.widgets.smartText.SmartTextToolbarReservedHeight
-import com.app.pustakam.android.widgets.smartText.SmartTextWidget
+import com.app.pustakam.android.widgets.masterEditor.MasterTextContentWidget
 import com.app.pustakam.android.widgets.smartText.rememberSmartTextToolbarController
 import com.app.pustakam.core.richtext.codec.RichTextCodec
 import com.app.pustakam.android.widgets.video.VideoCard
@@ -330,10 +330,10 @@ fun NoteEditorScreen(
                     noteEditorViewModel.addNewText()
                 },
                 onArrowButton = { focusManager.clearFocus() },
-                onRecordMic = { noteEditorViewModel.requestCapture(CaptureKind.AUDIO) },
-                onLocation = { noteEditorViewModel.requestCapture(CaptureKind.LOCATION) },
-                onCameraAction = { noteEditorViewModel.requestCapture(CaptureKind.IMAGE) },
-                onImportFile = { noteEditorViewModel.requestCapture(CaptureKind.FILE) },
+                onRecordMic = { noteEditorViewModel.requestCapture(ContentType.AUDIO) },
+                onLocation = { noteEditorViewModel.requestCapture(ContentType.LOCATION) },
+                onCameraAction = { noteEditorViewModel.requestCapture(ContentType.IMAGE) },
+                onImportFile = { noteEditorViewModel.openImportSheet() },
             )
         }
     }, contentList = { focusRequester ->
@@ -476,13 +476,12 @@ fun RenderWidget(
             Box(
                 modifier = Modifier
             ) {
-                SmartTextWidget(
+                MasterTextContentWidget(
                     text = textContent.text,
                     metadata = textContent.metadata,
                     focusRequester = focusRequester,
                     onDocumentChange = { onUpdate(RichTextCodec.applyTo(textContent, it)) },
                     modifier = Modifier.padding( 16.dp)
-
                 )
             }
         }
@@ -542,7 +541,7 @@ fun RenderWidget(
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val exportLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(contentAudio.type))
+                contract = CreateDocument(MimeCatalog.mimeFor(contentAudio.type))
             ) { uri ->
                 if (uri != null) {
                     scope.launch {
@@ -619,6 +618,10 @@ fun RenderWidget(
                 )
             }
         }
+
+        ContentType.DRAWING -> TODO()
+        ContentType.FORMULA -> TODO()
+        ContentType.TABLE -> TODO()
     }
 }
 

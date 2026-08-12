@@ -29,7 +29,7 @@ struct MasterCanvas<NodeContent: View>: View {
 
     private var commands: CanvasCommands { CanvasCommands.shared }
 
-    private var isHandTool: Bool { commands.isHandTool(state: state) }
+    private var permits: CanvasPermits { commands.permitsOf(state: state) }
 
     var body: some View {
         GeometryReader { geometry in
@@ -61,7 +61,7 @@ struct MasterCanvas<NodeContent: View>: View {
         let viewport: Viewport = state.viewport
         let editingId: String? = state.editingNodeId
         let selectedId: String? = state.selectedNodeId
-        let handTool: Bool = isHandTool
+        let canDrag: Bool = permits.canDragNode
         let allNodes: [CanvasNode] = state.document.nodes
         let visible: [CanvasNode] = state.visibleNodes
 
@@ -88,7 +88,7 @@ struct MasterCanvas<NodeContent: View>: View {
                 isSelected: selected,
                 // drag only once selected, so a pinch starting over a page still reaches
                 // the scaling layer instead of being claimed as a node drag
-                dragEnabled: selected && !handTool && !editing && !node.locked
+                dragEnabled: selected && canDrag && !node.locked
             )
             result.append(placement)
         }
@@ -115,7 +115,7 @@ struct MasterCanvas<NodeContent: View>: View {
         .background(nodeSurface)
         .overlay(nodeBorder(placement.isSelected))
         .overlay(alignment: .bottomTrailing) {
-            if placement.isSelected && !isHandTool && !node.locked {
+            if placement.isSelected && permits.canResizeNode && !node.locked {
                 resizeHandle(for: node)
             }
         }
@@ -135,6 +135,9 @@ struct MasterCanvas<NodeContent: View>: View {
             .gesture(
                 DragGesture(minimumDistance: 1)
                     .onChanged { value in
+                        if lastResize == .zero {
+                            onIntent(commands.beginResize(nodeId: node.id))
+                        }
                         let deltaX = value.translation.width - lastResize.width
                         let deltaY = value.translation.height - lastResize.height
                         lastResize = value.translation
@@ -146,7 +149,10 @@ struct MasterCanvas<NodeContent: View>: View {
                         ) else { return }
                         onIntent(intent)
                     }
-                    .onEnded { _ in lastResize = .zero }
+                    .onEnded { _ in
+                        lastResize = .zero
+                        onIntent(commands.endResize())
+                    }
             )
     }
 
@@ -183,7 +189,9 @@ struct MasterCanvas<NodeContent: View>: View {
         let canvasX = Float(point.x)
         let canvasY = Float(point.y)
         if let node = state.document.hitTest(canvasX: canvasX, canvasY: canvasY) {
-            onIntent(commands.focusNode(nodeId: node.id))
+            onIntent(commands.setEditing(nodeId: node.id))
+        } else if commands.isEditing(state: state) {
+            onIntent(commands.exitEditing())
         } else {
             onIntent(commands.zoomToFit())
         }
@@ -208,7 +216,7 @@ struct MasterCanvas<NodeContent: View>: View {
     private var panGesture: some Gesture {
         DragGesture()
             .onChanged { value in
-                guard isHandTool || state.draggingNodeId == nil else { return }
+                guard permits.canPan else { return }
                 let deltaX: CGFloat = value.translation.width - lastPan.width
                 let deltaY: CGFloat = value.translation.height - lastPan.height
                 lastPan = value.translation

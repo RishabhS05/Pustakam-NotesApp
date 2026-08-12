@@ -37,8 +37,6 @@ fun addContent(context: Context,note : Note, contentType : ContentType) : NoteCo
         }
         // 🔧 18-Jul-2026: file-import types — same media path (keeps `val content` exhaustive)
         GIF, PDF, AUDIO , DOCX, VIDEO, IMAGE, TXT, MD, EPUB, OTHER -> {
-// 🔧 30-Jul-2026 02:10 Phase 1 — folder/name policy moved to PathPolicy.capturePath.
-            //   Byte-identical to the previous inline rule: "<type-lowercase>/<noteId>/<ts><ext>".
             val timeStamp = getCurrentTimestamp()
             val destination = PathPolicy.capturePath(contentType, noteId, timeStamp)
             val filePath = createFileWithFolders(
@@ -47,6 +45,8 @@ fun addContent(context: Context,note : Note, contentType : ContentType) : NoteCo
             content = NoteContentObjectHelper.createMedia(positionedAt = position, timestamp = timeStamp.toString(),
                 noteId = noteId, localPath = filePath ,  contentType = contentType).copy( title = "$contentType-$position",)
         }
+        else ->   content = NoteContentObjectHelper.createText(positionedAt = position,
+            noteId = noteId)
     }
     return content
 }

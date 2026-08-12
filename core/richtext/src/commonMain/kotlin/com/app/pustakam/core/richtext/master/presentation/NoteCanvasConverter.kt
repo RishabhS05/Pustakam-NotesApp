@@ -4,21 +4,13 @@ import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.richtext.master.model.CanvasDocument
 import com.app.pustakam.core.richtext.master.model.CanvasNode
-import com.app.pustakam.core.richtext.master.model.CanvasNodeKind
-
 object NoteCanvasConverter {
 
     const val COLUMN_GAP = 48f
     const val ROW_GAP = 32f
     const val MEDIA_PER_ROW = 3
 
-    fun kindOf(content: NoteContentModel): CanvasNodeKind = when (content.type) {
-        ContentType.TEXT -> CanvasNodeKind.MASTER_TEXT
-        ContentType.LINK -> CanvasNodeKind.LINK
-        ContentType.LOCATION -> CanvasNodeKind.LOCATION
-        ContentType.PDF, ContentType.DOCX -> CanvasNodeKind.DOCUMENT
-        else -> CanvasNodeKind.MEDIA
-    }
+
 
     private fun isSequentialMedia(content: NoteContentModel): Boolean =
         content.type == ContentType.IMAGE ||
@@ -53,13 +45,13 @@ object NoteCanvasConverter {
                         y += CanvasNode.DEFAULT_MEDIA_HEIGHT + ROW_GAP
                     }
                     val node = CanvasNode.of(
-                        kind = CanvasNodeKind.MEDIA,
+                        kind = media.type,
                         contentId = media.id,
                         x = x,
                         y = y,
                         width = CanvasNode.DEFAULT_MEDIA_WIDTH,
                         height = CanvasNode.DEFAULT_MEDIA_HEIGHT,
-                        name = CanvasNode.defaultName(CanvasNodeKind.MEDIA, nodes.size)
+                        name = CanvasNode.defaultName( content.type, nodes.size)
                     ).copy(z = z++)
                     nodes.add(linkFrom(previousId, node, nodes))
                     previousId = node.id
@@ -70,17 +62,16 @@ object NoteCanvasConverter {
                 continue
             }
 
-            val kind = kindOf(content)
-            val isText = kind == CanvasNodeKind.MASTER_TEXT
+            val isText = content.type == ContentType.TEXT
             val height = if (isText) CanvasNode.DEFAULT_TEXT_HEIGHT else CanvasNode.DEFAULT_MEDIA_HEIGHT
             val node = CanvasNode.of(
-                kind = kind,
+                kind =  content.type,
                 contentId = content.id,
                 x = 0f,
                 y = y,
                 width = if (isText) CanvasNode.DEFAULT_TEXT_WIDTH else CanvasNode.DEFAULT_MEDIA_WIDTH,
                 height = height,
-                name = CanvasNode.defaultName(kind, nodes.size)
+                name = CanvasNode.defaultName( content.type, nodes.size)
             ).copy(z = z++)
             nodes.add(linkFrom(previousId, node, nodes))
             previousId = node.id

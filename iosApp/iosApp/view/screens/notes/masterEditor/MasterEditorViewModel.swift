@@ -48,7 +48,6 @@ final class MasterEditorViewModel: ObservableObject {
 
     func load(noteId: String?) {
         guard let noteId else { return }
-        // onAppear fires again on every return from a pushed screen — never clobber unsaved edits
         guard self.noteId != noteId || note == nil, dirtyContentIds.isEmpty else { return }
         self.noteId = noteId
         adapter.readNote(noteId: noteId) { [weak self] result in
@@ -68,9 +67,6 @@ final class MasterEditorViewModel: ObservableObject {
         }
     }
 
-    /// readNote is a Flow subscription, so this runs again after every write we make.
-    /// Only the note snapshot is refreshed here — re-reading the canvas on each emission
-    /// rebuilt every MasterTextState mid-keystroke and pinned the CPU.
     private func apply(note: Note) {
         self.note = note
         if dirtyContentIds.isEmpty {
@@ -102,7 +98,6 @@ final class MasterEditorViewModel: ObservableObject {
             onError: { [weak self] message in
                 guard let self else { return }
                 DispatchQueue.main.async {
-                    // never leave the editor on a blank canvas: show the note in memory anyway
                     self.errorMessage = message
                     self.hydratedNoteId = nil
                     self.render(nodes: self.seedNodes(noteId: noteId, contents: contents), viewport: nil)
@@ -116,8 +111,6 @@ final class MasterEditorViewModel: ObservableObject {
         canvas = commands.loaded(state: canvas, nodes: nodes, viewport: viewport)
     }
 
-    /// Fills in states for nodes that gained content since the last emission, and leaves
-    /// every existing editor untouched so typing is never interrupted.
     private func refreshMissingTexts() {
         let existing = texts
         let built = buildTexts(nodes: canvas.document.nodes, contents: textContents, keeping: existing)
@@ -249,34 +242,46 @@ final class MasterEditorViewModel: ObservableObject {
 
     // MARK: - Nodes
 
-    func addWidgetNearFocused(kind: CanvasNodeKind, content: NoteContentModel? = nil) {
-        guard note != nil else { return }
-        let anchor = commands.anchorOf(state: canvas)
-        let node = commands.nodeFor(state: canvas, kind: kind, contentId: content?.id)
-
-        if let content {
-            addContent(content)
-            if let text = content as? NoteContentModel.TextContent {
-                texts[node.id] = MasterTextState.companion.of(
-                    document: RichTextCodec.shared.documentFrom(content: text)
-                )
-            }
-            saveNote()
-        }
-        onCanvasIntent(commands.addNode(node: node))
-        if let anchor {
-            onCanvasIntent(commands.linkNodes(fromId: anchor.id, toId: node.id))
-        }
-    }
-
-    func addTextNode() {
+    func addPage() {
         guard let note else { return }
         let content = NoteContentObjectHelper.shared.createText(
             noteId: note.id,
             positionedAt: Double(noteContents.count),
             text: ""
         )
-        addWidgetNearFocused(kind: CanvasNodeKind.masterText, content: content)
+        let page = commands.pageNode(state: canvas, contentId: content.id)
+        addContent(content)
+        texts[page.id] = MasterTextState.companion.of(
+            document: RichTextCodec.shared.documentFrom(content: content)
+        )
+        onCanvasIntent(commands.addNode(node: page))
+        onCanvasIntent(commands.selectNode(nodeId: page.id))
+        saveNote()
+    }
+
+    func addWidget(kind : ContentType , content: NoteContentModel? = nil) {
+        guard note != nil, content != nil else { return }
+        
+        if let content, content.type == ContentType.text {
+            addPage()
+            return
+        }
+        guard let page = commands.pageForSpawn(state: canvas) else {
+            addPage()
+            addWidget(kind:  kind, content: content)
+            return
+        }
+        let node = commands.widgetIn(
+            state: canvas,
+            page: page,
+            kind: content!.type,
+            contentId: content?.id
+        )
+        if let content {
+            addContent(content)
+            saveNote()
+        }
+        onCanvasIntent(commands.addNode(node: node))
     }
 
     func deleteNode(nodeId: String) {
@@ -292,10 +297,17 @@ final class MasterEditorViewModel: ObservableObject {
         capabilities = next
     }
 
-    func requestCapture(_ kind: CaptureKind) {
+    func requestCapture(_ type: ContentType) {
         capabilities = EditorCapabilityReducer.shared.requestCapture(
             state: capabilities,
-            kind: kind
+            type: type
+        )
+    }
+
+    func openImportSheet() {
+        capabilities = EditorCapabilityReducer.shared.setImportSheet(
+            state: capabilities,
+            visible: true
         )
     }
 
@@ -307,8 +319,8 @@ final class MasterEditorViewModel: ObservableObject {
             positionedAt: Double(noteContents.count)
         )
         if let content {
-            addWidgetNearFocused(
-                kind: NoteCanvasConverter.shared.kindOf(content: content),
+            addWidget(
+                kind: content.type,
                 content: content
             )
         }
@@ -323,7 +335,7 @@ final class MasterEditorViewModel: ObservableObject {
             startPosition: Double(noteContents.count)
         )
         for item in items {
-            addWidgetNearFocused(kind: NoteCanvasConverter.shared.kindOf(content: item), content: item)
+            addWidget(kind: item.type, content: item)
         }
     }
 
@@ -338,8 +350,8 @@ final class MasterEditorViewModel: ObservableObject {
             switch result {
             case .success(let items):
                 for item in items {
-                    self.addWidgetNearFocused(
-                        kind: NoteCanvasConverter.shared.kindOf(content: item),
+                    self.addWidget(
+                        kind: item.type,
                         content: item
                     )
                 }

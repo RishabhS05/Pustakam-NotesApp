@@ -10,6 +10,7 @@ struct MasterTextWidget: UIViewRepresentable {
     var accessory: AnyView?
     var dismissToken: Int = 0
     var shouldFocus: Bool = false
+    var scrollable: Bool = true
     var placeholder: String = "Keep your thoughts alive."
     var onFocused: () -> Void = {}
     let onIntent: (MasterTextIntent) -> Void
@@ -28,7 +29,7 @@ struct MasterTextWidget: UIViewRepresentable {
         textView.backgroundColor = .clear
         // scrolls inside the fixed node frame — mirrors Android's verticalScroll(). With this off,
         // sizeThatFits laid out the whole document on every SwiftUI pass and froze the canvas.
-        textView.isScrollEnabled = true
+        textView.isScrollEnabled = scrollable
         textView.isEditable = !readOnly
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
@@ -60,6 +61,7 @@ struct MasterTextWidget: UIViewRepresentable {
     func updateUIView(_ uiView: MasterTextUITextView, context: Context) {
         context.coordinator.parent = self
         uiView.isEditable = !readOnly
+        uiView.isScrollEnabled = scrollable
         uiView.configure(palette: palette, baseSize: baseSize)
         uiView.masterState = state
 
@@ -87,13 +89,15 @@ struct MasterTextWidget: UIViewRepresentable {
         context.coordinator.syncFirstResponder(uiView)
     }
 
-    /// Takes the frame the canvas node gives it and scrolls internally. Measuring the document
-    /// here re-laid out every visible node on every layout pass.
+    /// Canvas pages take the frame they are given and scroll inside it. In the note editor the
+    /// block has to grow with its text instead, so there we measure.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MasterTextUITextView, context: Context) -> CGSize? {
-        CGSize(
-            width: proposal.width ?? UIScreen.main.bounds.width,
-            height: proposal.height ?? baseSize * 2
-        )
+        let width = proposal.width ?? UIScreen.main.bounds.width
+        if scrollable {
+            return CGSize(width: width, height: proposal.height ?? baseSize * 2)
+        }
+        let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: max(fitted.height, baseSize * 2))
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -315,6 +319,106 @@ final class MasterTextUITextView: UITextView {
             UIColor(palette.onSurfaceMuted).setStroke()
             path.lineWidth = 1.5
             path.stroke()
+        }
+    }
+}
+
+struct MasterTextContentWidget: View {
+
+    let text: String
+    let metadata: RichTextMetadata?
+    var readOnly: Bool = false
+    var showKeyboardToolbar: Bool = true
+    let onDocumentChange: (RichDocument) -> Void
+
+    @State private var state: MasterTextState
+    @State private var lastEmitted: RichDocument
+    @State private var sheet: MasterTextSheet = .none
+    @State private var dismissToken = 0
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.openURL) private var openURL
+
+    init(
+        text: String,
+        metadata: RichTextMetadata?,
+        readOnly: Bool = false,
+        showKeyboardToolbar: Bool = true,
+        onDocumentChange: @escaping (RichDocument) -> Void
+    ) {
+        self.text = text
+        self.metadata = metadata
+        self.readOnly = readOnly
+        self.showKeyboardToolbar = showKeyboardToolbar
+        self.onDocumentChange = onDocumentChange
+        let document = RichTextCodec.shared.documentFrom(text: text, metadata: metadata)
+        _state = State(initialValue: MasterTextState.companion.of(document: document))
+        _lastEmitted = State(initialValue: document)
+    }
+
+    private var palette: SmartTextPalette { SmartTextPalette.of(scheme) }
+
+    var body: some View {
+        MasterTextWidget(
+            state: state,
+            readOnly: readOnly,
+            accessory: keyboardAccessory,
+            dismissToken: dismissToken,
+            scrollable: false,
+            onIntent: dispatch
+        )
+        .sheet(isPresented: Binding(
+            get: { sheet.isPresented },
+            set: { if !$0 { sheet = .none } }
+        )) {
+            MasterTextSheetHost(
+                sheet: sheet,
+                toolbar: state.toolbar,
+                onIntent: dispatch,
+                onDismiss: { sheet = .none }
+            )
+        }
+    }
+
+    private var keyboardAccessory: AnyView? {
+        guard showKeyboardToolbar, !readOnly else { return nil }
+        return AnyView(
+            SmartTextKeyboardToolbar(
+                toolbar: state.toolbar,
+                expanded: state.isToolbarExpanded,
+                canUndo: state.canUndo,
+                canRedo: state.canRedo,
+                onAction: handle
+            )
+            .environment(\.colorScheme, scheme)
+        )
+    }
+
+    private func dispatch(_ intent: MasterTextIntent) {
+        let next = MasterTextReducer.shared.reduce(state: state, intent: intent)
+        state = next
+        if next.document != lastEmitted {
+            lastEmitted = next.document
+            onDocumentChange(next.document)
+        }
+    }
+
+    private func handle(_ action: ToolbarAction) {
+        let commands = SmartTextCommands.shared
+        if commands.isMore(action: action) {
+            dispatch(
+                MasterTextCommands.shared.setToolbarExpanded(expanded: !state.isToolbarExpanded)
+            )
+        } else if commands.isDismiss(action: action) {
+            dismissToken &+= 1
+        } else if let intent = MasterTextCommands.shared.forToolbar(action: action) {
+            dispatch(intent)
+        } else {
+            let opened = MasterTextSheet.of(action: action)
+            if opened.isPresented {
+                dismissToken &+= 1
+                sheet = opened
+            }
         }
     }
 }
