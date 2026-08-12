@@ -50,7 +50,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalFocusManager
 import com.app.pustakam.android.widgets.smartText.LocalSmartTextToolbar
@@ -82,6 +81,7 @@ fun MasterTextWidget(
     placeholder: String = "Keep your thoughts alive.",
     onIntent: (MasterTextIntent) -> Unit,
     keyboardInsetPx: Float = 0f,
+    shouldFocus: Boolean = false,
     onFocusChanged: (Boolean) -> Unit = {}
 ) {
     val colors = SmartTextTokens.colors
@@ -115,6 +115,16 @@ fun MasterTextWidget(
 
     val minHeight = with(density) { (baseSize.toPx() * LINE_HEIGHT * minLines).toDp() }
 
+    // room to scroll the end of the text clear of the keyboard, and the caret clear of that
+    val trailingRoom = with(density) {
+        if (keyboardInsetPx <= 0f) 0.dp
+        else (keyboardInsetPx + CanvasCommands.caretRevealPadding(baseSize.toPx() * LINE_HEIGHT)).toDp()
+    }
+
+    LaunchedEffect(shouldFocus) {
+        if (shouldFocus) runCatching { focusRequester.requestFocus() }
+    }
+
     LaunchedEffect(caretRect, keyboardInsetPx) {
         val caret = caretRect ?: return@LaunchedEffect
         val clearance = CanvasCommands.caretRevealPadding(caret.height) + keyboardInsetPx
@@ -145,7 +155,7 @@ fun MasterTextWidget(
             modifier.fillMaxSize().verticalScroll(rememberScrollState())
         } else {
             modifier.fillMaxWidth().heightIn(min = minHeight)
-        }).then(checkboxTaps)
+        }).then(checkboxTaps).padding(bottom = trailingRoom)
     ) {
         if (state.text.isEmpty()) {
             Text(

@@ -13,6 +13,7 @@ struct MasterEditorScreen: View {
     @State private var showAttach = false
     @State private var sheet: MasterTextSheet = .none
     @State private var keyboardHeight: CGFloat = 0
+    @State private var autoFocused = false
 
     private var palette: SmartTextPalette { SmartTextPalette.of(scheme) }
 
@@ -87,6 +88,24 @@ struct MasterEditorScreen: View {
         // without this SwiftUI lifts the whole canvas when the keyboard opens, which moves
         // the page off the screen it was fitted to
         .ignoresSafeArea(.keyboard, edges: .bottom)
+        .onAppear { autoFocusLastText() }
+        .onChange(of: autoFocusKey) { _, _ in autoFocusLastText() }
+    }
+
+    private var autoFocusKey: String {
+        let target = commands.lastTextNodeId(state: viewModel.canvas) ?? ""
+        return "\(target)@\(Int(viewModel.canvas.viewport.widthPx))"
+    }
+
+    /// Opening a canvas lands the caret in its last text field, once there is a viewport to
+    /// fit the page to. Selecting the page is what puts it into edit mode.
+    private func autoFocusLastText() {
+        guard !autoFocused,
+              viewModel.canvas.viewport.widthPx > 0,
+              viewModel.canvas.editingNodeId == nil,
+              let target = commands.lastTextNodeId(state: viewModel.canvas) else { return }
+        autoFocused = true
+        viewModel.onCanvasIntent(commands.selectNode(nodeId: target))
     }
 
     private func nodeBody(node: CanvasNode, isEditing: Bool) -> MasterNodeContent {

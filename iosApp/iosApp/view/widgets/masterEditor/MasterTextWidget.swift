@@ -76,6 +76,12 @@ struct MasterTextWidget: UIViewRepresentable {
         uiView.isEditable = !readOnly
         uiView.isScrollEnabled = scrollable
         uiView.configure(palette: palette, baseSize: baseSize)
+        // room to scroll the end of the text clear of the keyboard, and the caret clear of that
+        uiView.textContainerInset.bottom = keyboardInsetPx <= 0 ? 0 : keyboardInsetPx + CGFloat(
+            CanvasCommands.shared.caretRevealPadding(
+                lineHeightPx: Float(baseSize * MasterTextWidget.lineHeight)
+            )
+        )
         uiView.masterState = state
 
         let rendered = MasterTextRenderer.attributed(

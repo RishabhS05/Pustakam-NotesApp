@@ -77,6 +77,22 @@ fun MasterEditorScreen(
 
     LaunchedEffect(noteId) { viewModel.load(noteId) }
 
+    var autoFocused by remember(noteId) { mutableStateOf(false) }
+    val autoFocusId = CanvasCommands.lastTextNodeId(canvas)
+
+    // opening a canvas lands the caret in its last text field, once there is a viewport to fit
+    // the page to. selecting the page is what puts it into edit mode.
+    LaunchedEffect(autoFocusId, canvas.viewport.widthPx) {
+        if (!autoFocused &&
+            autoFocusId != null &&
+            canvas.viewport.widthPx > 0f &&
+            canvas.editingNodeId == null
+        ) {
+            autoFocused = true
+            viewModel.onCanvasIntent(CanvasCommands.selectNode(autoFocusId))
+        }
+    }
+
     EditorCapabilityHost(
         state = uiState.capabilities,
         noteTitle = uiState.note?.title.orEmpty(),

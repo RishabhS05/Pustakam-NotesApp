@@ -64,6 +64,7 @@ fun MasterNodeContent(
                     readOnly = false,
                     onIntent = onTextIntent,
                     keyboardInsetPx = keyboardInsetPx,
+                    shouldFocus = isEditing,
                     onFocusChanged = { if (it) onFocused() }
                 )
             }

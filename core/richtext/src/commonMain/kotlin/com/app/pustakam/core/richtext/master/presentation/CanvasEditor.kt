@@ -638,6 +638,9 @@ object CanvasCommands {
         else -> false
     }
 
+    /** The text field a freshly opened canvas should land in. */
+    fun lastTextNodeId(state: CanvasEditorState): String? = state.document.pages.lastOrNull()?.id
+
     /** The page a select has just fitted to the screen, so its new size can be stored. */
     fun fittedPageId(state: CanvasEditorState, intent: CanvasEditorIntent): String? =
         when (intent) {
