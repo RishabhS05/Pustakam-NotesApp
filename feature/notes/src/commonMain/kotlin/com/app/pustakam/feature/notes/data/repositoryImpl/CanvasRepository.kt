@@ -1,8 +1,12 @@
 package com.app.pustakam.feature.notes.data.repositoryImpl
 
 import com.app.pustakam.core.common.coroutines.provideDispatcher
+import com.app.pustakam.core.common.util.Error
+import com.app.pustakam.core.common.util.ErrorMessage
+import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.database.NotesDatabase
 import com.app.pustakam.core.database.localdb.database.CanvasDao
+import com.app.pustakam.core.model.models.BaseResponse
 import com.app.pustakam.core.richtext.master.model.CanvasDocument
 import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.model.CanvasRect
@@ -19,42 +23,52 @@ internal class CanvasRepository : ICanvasRepository, KoinComponent {
 
     private val dispatcher by lazy { provideDispatcher() }
 
-    private suspend fun <T> onIo(block: () -> T): T =
-        withContext(dispatcher.io) { block() }
+    private suspend fun <T> onIo(block: () -> T?): Result<BaseResponse<T>, Error> =
+        withContext(dispatcher.io) {
+            runCatching { block() }.fold(
+                onSuccess = {
+                    Result.Success(BaseResponse(data = it, isFromDb = true, isSuccessful = true))
+                },
+                onFailure = {
+                    Result.Error(ErrorMessage(it.message ?: "Canvas storage is unavailable."))
+                }
+            )
+        }
 
-    override suspend fun load(noteId: String): CanvasDocument =
-        onIo { CanvasDocument(dao.nodes(noteId)) }
+    override suspend fun load(noteId: String) = onIo { CanvasDocument(dao.nodes(noteId)) }
 
-    override suspend fun loadVisible(noteId: String, rect: CanvasRect): CanvasDocument =
+    override suspend fun loadVisible(noteId: String, rect: CanvasRect) =
         onIo { CanvasDocument(dao.nodesIn(noteId, rect)) }
 
-    override suspend fun save(noteId: String, node: CanvasNode) = onIo { dao.upsert(noteId, node) }
+    override suspend fun save(noteId: String, node: CanvasNode) =
+        onIo { dao.upsert(noteId, node); node }
 
     override suspend fun saveAll(noteId: String, nodes: List<CanvasNode>) =
-        onIo { dao.upsertAll(noteId, nodes) }
+        onIo { dao.upsertAll(noteId, nodes); nodes }
 
-    override suspend fun move(nodeId: String, x: Float, y: Float) = onIo { dao.move(nodeId, x, y) }
+    override suspend fun move(nodeId: String, x: Float, y: Float) =
+        onIo { dao.move(nodeId, x, y); true }
 
     override suspend fun resize(nodeId: String, width: Float, height: Float) =
-        onIo { dao.resize(nodeId, width, height) }
+        onIo { dao.resize(nodeId, width, height); true }
 
-    override suspend fun raise(nodeId: String, z: Int) = onIo { dao.raise(nodeId, z) }
+    override suspend fun raise(nodeId: String, z: Int) = onIo { dao.raise(nodeId, z); true }
 
-    override suspend fun rename(nodeId: String, name: String) = onIo { dao.rename(nodeId, name) }
+    override suspend fun rename(nodeId: String, name: String) =
+        onIo { dao.rename(nodeId, name); true }
 
-    override suspend fun remove(nodeId: String) = onIo { dao.delete(nodeId) }
+    override suspend fun remove(nodeId: String) = onIo { dao.delete(nodeId); true }
 
-    override suspend fun removeAll(noteId: String) = onIo { dao.deleteAll(noteId) }
+    override suspend fun removeAll(noteId: String) = onIo { dao.deleteAll(noteId); true }
 
-    override suspend fun count(noteId: String): Int = onIo { dao.count(noteId).toInt() }
+    override suspend fun count(noteId: String) = onIo { dao.count(noteId).toInt() }
 
-    override suspend fun nodeForContent(contentId: String): CanvasNode? =
-        onIo { dao.nodeForContent(contentId) }
+    override suspend fun nodeForContent(contentId: String) = onIo { dao.nodeForContent(contentId) }
 
-    override suspend fun pruneOrphans() = onIo { dao.pruneOrphans() }
+    override suspend fun pruneOrphans() = onIo { dao.pruneOrphans(); true }
 
-    override suspend fun loadViewport(noteId: String): Viewport? = onIo { dao.viewport(noteId) }
+    override suspend fun loadViewport(noteId: String) = onIo { dao.viewport(noteId) }
 
     override suspend fun saveViewport(noteId: String, viewport: Viewport) =
-        onIo { dao.saveViewport(noteId, viewport) }
+        onIo { dao.saveViewport(noteId, viewport); viewport }
 }

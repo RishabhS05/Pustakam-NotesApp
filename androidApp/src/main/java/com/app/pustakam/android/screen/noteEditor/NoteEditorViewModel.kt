@@ -38,7 +38,6 @@ import com.app.pustakam.core.common.util.ContentType.LOCATION
 import com.app.pustakam.core.common.util.ContentType.TEXT
 import com.app.pustakam.core.common.util.ContentType.VIDEO
 import com.app.pustakam.core.common.util.Error
-import com.app.pustakam.core.common.util.NetworkError
 import com.app.pustakam.core.common.util.log_d
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +48,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.inject
 import com.app.pustakam.core.common.util.Result
+import com.app.pustakam.core.common.util.isGalleryEligible
+import com.app.pustakam.core.common.util.isImage
+import org.koin.core.component.get
 
 class NoteEditorViewModel : BaseViewModel() {
     private val setSelectedNoteContentUseCase by inject<SetSelectedNoteContentUseCase>()
@@ -63,9 +65,6 @@ class NoteEditorViewModel : BaseViewModel() {
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
     private val dirtyContentIds = mutableSetOf<String>()
-
-    // 🔧 07-Aug-2026 — note-wide undo/redo. Capturing media and importing documents are NOT
-    //   recorded: the file is already on disk and rolling the note back would orphan it.
     private val _history = MutableStateFlow(NoteHistory())
     val history: StateFlow<NoteHistory> = _history.asStateFlow()
 
@@ -384,7 +383,7 @@ class NoteEditorViewModel : BaseViewModel() {
                 it.copy(note = updatedNote, contents = it.contents, isAllSetupDone = true)
             }
         }
-        if (content.isPlayingMedia())
+        if (content.isPlayableMedia())
             updateSelectedMediaContentUseCase(content as NoteContentModel.MediaContent)
     }
     /**content logic
@@ -465,16 +464,6 @@ class NoteEditorViewModel : BaseViewModel() {
         clearSelectedNoteContentUseCase()
     }
 
-    // 🔧 14-Jul-2026: CRASH FIX + PERF — this used to run inside composition and mutate
-    //   the snapshot list INSIDE StateFlow.update{} (which can re-run its lambda), producing
-    //   duplicate items and, with several images at once, a crash. Now it is pure: we build
-    //   ALL new MediaContent items first, mutate the SnapshotStateList exactly once (outside
-    //   the update lambda), then do a single state copy. Callers invoke it from a LaunchedEffect.
-    //
-    // 🔧 14-Jul-2026: FIX (I-1, video lost after Stop→Back) — the old `note ?: return` silently
-    //   DROPPED the captured paths when the note hadn't loaded yet (the View clears them right
-    //   after this call). Paths arriving too early are now stashed in `pendingMediaPaths` and
-    //   consumed as soon as READ/INSERT delivers the note — nothing is ever lost.
     private var pendingMediaPaths: List<Pair<String, ContentType>> = emptyList()
 
     private fun consumePendingMediaPaths() {
@@ -484,12 +473,7 @@ class NoteEditorViewModel : BaseViewModel() {
         getMediaData(pending)
     }
 
-    // 🔧 15-Jul-2026 Phase 2.3: application context for async thumbnail generation (safe to hold —
-    //   never an Activity). Set by getMediaData; used again when pending paths are consumed.
-    private var appContext: Context? = null
-
-    fun getMediaData(list: List<Pair<String, ContentType>>, context: Context? = null) {
-        if (context != null) appContext = context.applicationContext
+    fun getMediaData(list: List<Pair<String, ContentType>>) {
         if (list.isEmpty()) return
         val currentState = _noteContentUiState.value
         val note = currentState.note ?: run {
@@ -516,15 +500,14 @@ class NoteEditorViewModel : BaseViewModel() {
                 isAllSetupDone = true
             )
         }
-        newItems.filter { it.isPlayingMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
+        newItems.filter { it.isPlayableMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
 
         dirtyContentIds.addAll(newItems.map { it.id })
-        generateThumbnailsFor(newItems)
+        generateThumbnailsFor(newItems ,get())
     }
 
     fun importDeviceFiles(context: Context, uris: List<android.net.Uri>) {
         if (uris.isEmpty()) return
-        appContext = context.applicationContext
         val note = _noteContentUiState.value.note ?: run {
             _noteUiState.update { it.copy(error = "Note is still loading. Try again.") }; return
         }
@@ -544,7 +527,6 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun importFromLink(context: Context, url: String) {
         if (url.isBlank()) return
-        appContext = context.applicationContext
         val note = _noteContentUiState.value.note ?: run {
             _noteUiState.update { it.copy(error = "Note is still loading. Try again.") }; return
         }
@@ -575,15 +557,13 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteContentUiState.update {
             it.copy(note = note.withContents(note.contents + items), contents = it.contents, isAllSetupDone = true)
         }
-        items.filter { it.isPlayingMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
+        items.filter { it.isPlayableMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
         dirtyContentIds.addAll(items.map { it.id })   // 🔧 imported blocks are new rows → saved next save
-        generateThumbnailsFor(items)
+        generateThumbnailsFor(items, get())
     }
-    private fun generateThumbnailsFor(items: List<NoteContentModel.MediaContent>) {
-        val context = appContext ?: return
+    private fun generateThumbnailsFor(items: List<NoteContentModel.MediaContent>, context: Context) {
         items.filter {
-            it.thumbnailPath.isNullOrEmpty() && !it.localPath.isNullOrEmpty() &&
-                    (it.type == VIDEO || it.type == IMAGE || it.type == ContentType.GIF)
+            it.thumbnailPath.isNullOrEmpty() && !it.localPath.isNullOrEmpty() && it.type.isGalleryEligible()
         }.forEach { media ->
             viewModelScope.launch(Dispatchers.IO) {
                 val thumb = generateThumbnail(context, media.localPath!!, media.type) ?: return@launch

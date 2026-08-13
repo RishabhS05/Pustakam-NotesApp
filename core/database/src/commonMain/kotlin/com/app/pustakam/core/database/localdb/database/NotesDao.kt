@@ -10,6 +10,8 @@ import com.app.pustakam.core.database.NoteContent
 import com.app.pustakam.core.database.NotesDatabase
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.isDoc
+import com.app.pustakam.core.common.util.isMedia
 import com.app.pustakam.core.common.util.log_d
 import org.koin.core.component.KoinComponent
 import com.app.pustakam.core.model.models.RichTextMetadata
@@ -234,10 +236,10 @@ class NotesDao : KoinComponent {
                                   updatedAt = row.contentUpdatedAt,
                               )
 
-                              else -> {}
+                              else -> null
                           }
                       } else null
-                  }.toMutableList() as ArrayList<NoteContentModel>
+                  }
               )
           )
       }
@@ -420,9 +422,9 @@ class NotesDao : KoinComponent {
                 contents = rows.mapNotNull { row ->
                     if (row.contentId != null&&!row.type.isNullOrEmpty()) {
                         val type = ContentType.valueOf(row.type)
-                        when (type) {
-                            ContentType.TEXT ->
-                                NoteContentModel.TextContent(
+                        when  {
+                           type == ContentType.TEXT ->
+                                TextContent(
                                     id = row.contentId,
                                     noteId = row.noteId,
                                     text =  row.text!!,
@@ -432,9 +434,7 @@ class NotesDao : KoinComponent {
                                     metadata = row.metaData,
                                 )
 
-                            ContentType.IMAGE,ContentType.DOCX,
-                            ContentType.VIDEO , ContentType.AUDIO, ContentType.PDF, ContentType.GIF,
-                            ContentType.TXT, ContentType.MD, ContentType.EPUB, ContentType.OTHER -> NoteContentModel.MediaContent(
+                            type.isDoc() || type.isMedia()  ->MediaContent(
                                 title = row.contentTitle?:"${row.type}-${row.position}",
                                 id = row.contentId,
                                 noteId = row.noteId,
@@ -454,7 +454,7 @@ class NotesDao : KoinComponent {
                                 progressPage = (row.progressPage ?: 0L).toInt(),
                             )
 
-                            ContentType.LINK-> NoteContentModel.Link(
+                          type  == ContentType.LINK-> Link(
                                 url = row.url!!,
                                 id = row.contentId,
                                 noteId = row.noteId,
@@ -463,7 +463,7 @@ class NotesDao : KoinComponent {
                                 updatedAt = row.contentUpdatedAt,
                             )
 
-                            ContentType.LOCATION -> NoteContentModel.Location(
+                         type ==   ContentType.LOCATION -> Location(
                                 latitude = row.lat!!,
                                 longitude = row.long!!,
                                 address = row.address,
@@ -474,11 +474,11 @@ class NotesDao : KoinComponent {
                                 updatedAt = row.contentUpdatedAt,
                             )
 
-                            else -> {}
+                            else -> null
                         }
 
                     } else null
-                }.toMutableList() as ArrayList<NoteContentModel>
+                }
             )
         }
         return noteWithContent

@@ -14,7 +14,7 @@ final class MasterEditorViewModel: ObservableObject {
     @Published var keyboardDismissToken: Int = 0
 
     private let adapter: NotesBridgeAdapter
-    private let canvasBridge: CanvasBridge
+    private let canvasBridge: CanvasBridgeAdapter
     private var dirtyContentIds = Set<String>()
     private var noteId: String?
     private var hydratedNoteId: String?
@@ -27,14 +27,10 @@ final class MasterEditorViewModel: ObservableObject {
 
     init(
         adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
-        canvasBridge: CanvasBridge = CanvasBridge()
+        canvasBridge: CanvasBridgeAdapter = CanvasBridgeAdapter()
     ) {
         self.adapter = adapter
         self.canvasBridge = canvasBridge
-    }
-
-    deinit {
-        canvasBridge.dispose()
     }
 
     func text(for nodeId: String) -> MasterTextState? { texts[nodeId] }
@@ -46,8 +42,9 @@ final class MasterEditorViewModel: ObservableObject {
 
     // MARK: - Load
 
+    /// A nil id is passed straight through, the same as the note editor does: the repository
+    /// answers with a fresh empty note rather than nothing at all.
     func load(noteId: String?) {
-        guard let noteId else { return }
         guard self.noteId != noteId || note == nil, dirtyContentIds.isEmpty else { return }
         self.noteId = noteId
         adapter.readNote(noteId: noteId) { [weak self] result in
@@ -82,28 +79,42 @@ final class MasterEditorViewModel: ObservableObject {
 
     private func hydrateCanvas(noteId: String) {
         let contents = textContents
-        canvasBridge.load(
-            noteId: noteId,
-            onLoaded: { [weak self] document, savedViewport in
-                guard let self else { return }
-                DispatchQueue.main.async {
-                    var nodes: [CanvasNode] = document.nodes
-                    if nodes.isEmpty {
-                        nodes = self.seedNodes(noteId: noteId, contents: contents)
-                        self.canvasBridge.saveAll(noteId: noteId, nodes: nodes)
-                    }
-                    self.render(nodes: nodes, viewport: savedViewport)
+        canvasBridge.readCanvas(noteId: noteId) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .loading:
+                self.isLoading = true
+            case .success(let document):
+                self.isLoading = false
+                var nodes: [CanvasNode] = document?.nodes ?? []
+                if nodes.isEmpty {
+                    nodes = self.seedNodes(noteId: noteId, contents: contents)
+                    self.canvasBridge.saveAll(noteId: noteId, nodes: nodes)
                 }
-            },
-            onError: { [weak self] message in
-                guard let self else { return }
-                DispatchQueue.main.async {
-                    self.errorMessage = message
-                    self.hydratedNoteId = nil
-                    self.render(nodes: self.seedNodes(noteId: noteId, contents: contents), viewport: nil)
-                }
+                self.readViewport(noteId: noteId, nodes: nodes)
+            case .failure(let error):
+                self.isLoading = false
+                self.errorMessage = error.message
+                self.hydratedNoteId = nil
+                self.render(nodes: self.seedNodes(noteId: noteId, contents: contents), viewport: nil)
+            case .idle:
+                break
             }
-        )
+        }
+    }
+
+    private func readViewport(noteId: String, nodes: [CanvasNode]) {
+        canvasBridge.readViewport(noteId: noteId) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let viewport):
+                self.render(nodes: nodes, viewport: viewport)
+            case .failure:
+                self.render(nodes: nodes, viewport: nil)
+            case .loading, .idle:
+                break
+            }
+        }
     }
 
     private func render(nodes: [CanvasNode], viewport: Viewport?) {

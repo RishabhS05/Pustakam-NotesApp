@@ -8,14 +8,6 @@ import com.app.pustakam.core.filesys.path.PathPolicy
 import com.app.pustakam.core.filesys.validation.ImportValidator
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.NoteContentObjectHelper
-
-// 🔧 30-Jul-2026 02:10 Phase 2 — decides WHERE an imported file goes and WHAT it is called.
-//   Performs NO file copying: it returns a plan and the caller does the IO. Every input that would
-//   normally require a filesystem (does this name already exist?) is injected as a lambda, which is
-//   what keeps this object pure and testable.
-//
-//   Package is `imports` rather than `import` because `import` is a hard keyword in Kotlin and
-//   cannot be used as a package segment without backticks at every call site.
 object ImportCoordinator {
 
     /**

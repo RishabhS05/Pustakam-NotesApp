@@ -1,5 +1,8 @@
 package com.app.pustakam.core.common.util
 
+import com.app.pustakam.core.common.util.ContentType.*
+import kotlin.collections.setOf
+
 // 🔧 18-Jul-2026: file-import feature — original order kept (ordinal-safe); new types appended
 
 enum class ContentType {
@@ -40,3 +43,11 @@ enum class ContentType {
 
    open fun getExt() = ""
 }
+
+/** Types that can be written into the system gallery rather than a document folder. */
+inline  fun ContentType.isGalleryEligible(): Boolean = this in setOf(IMAGE, VIDEO, GIF)
+inline fun ContentType.isMedia() = this in setOf(IMAGE, VIDEO, AUDIO, GIF)
+inline fun ContentType.isDoc() = this in setOf(DOCX, PDF, EPUB, TXT,MD, OTHER)
+inline fun ContentType.isImage() = this in setOf(IMAGE, GIF)
+
+inline fun ContentType.isPlayableMedia() = this in setOf(AUDIO, VIDEO)

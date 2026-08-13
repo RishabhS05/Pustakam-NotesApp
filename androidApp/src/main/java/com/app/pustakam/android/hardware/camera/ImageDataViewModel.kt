@@ -126,16 +126,9 @@ class ImageDataViewModel : ViewModel(), KoinComponent {
                     onTakenPhotoPreview(bitmap, dataStateEvent = DataStateEvent.Saved)
                 }
                 contentType == ContentType.VIDEO -> onVideoFullPreview(fileUrl, mediaId = mediaId)
-//                contentType == ContentType.AUDIO -> onAudioFilePreview(fileUrl)
             }
         }
     }
-
-//    private fun onAudioFilePreview(fileUrl: String, dataStateEvent: DataStateEvent = DataStateEvent.Saved) {
-//        _mediaFileState.update {
-//            it.copy(mediaFilePath = fileUrl,dataStateEvent = dataStateEvent, contentType = ContentType.AUDIO)
-//        }
-//    }
 
     private fun onVideoFullPreview(fileUrl : String, dataStateEvent: DataStateEvent= DataStateEvent.Saved, mediaId: String? = null ) {
         _mediaFileState.update {

@@ -3,9 +3,6 @@ package com.app.pustakam.core.filesys.validation
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.filesys.mime.MimeCatalog
 
-// 🔧 30-Jul-2026 02:10 Phase 1 — the app's file-acceptance rules, in ONE place.
-//   Pure business decisions only: nothing here opens, stats or touches a file.
-//   isBook() mirrors BookPageFactory.pagesFor exactly — see ImportValidatorTest.
 object ImportValidator {
 
     /** Mime types that are a web page, never a file the user meant to attach. */
@@ -38,24 +35,4 @@ object ImportValidator {
     /** True when we can classify this mime as a concrete type. */
     fun isSupported(mime: String?): Boolean = MimeCatalog.isSupported(mime)
 
-    /**
-     * Types the book reader paginates into pages.
-     * EXCLUDES EPUB on purpose: BookPageFactory.pagesFor routes EPUB to DocFilePage today, so
-     * claiming it here would change reader behaviour. Revisit when EPUB rendering lands.
-     */
-    fun isBook(type: ContentType): Boolean =
-        type == ContentType.PDF || type == ContentType.TXT || type == ContentType.MD
-
-    /** Types with a timeline or a frame — anything a player or gallery handles. */
-    fun isMedia(type: ContentType): Boolean =
-        type == ContentType.IMAGE || type == ContentType.GIF ||
-            type == ContentType.VIDEO || type == ContentType.AUDIO
-
-    /** Still or animated raster image. */
-    fun isImage(type: ContentType): Boolean =
-        type == ContentType.IMAGE || type == ContentType.GIF
-
-    /** Types that can be written into the system gallery rather than a document folder. */
-    fun isGalleryEligible(type: ContentType): Boolean =
-        type == ContentType.IMAGE || type == ContentType.VIDEO
 }

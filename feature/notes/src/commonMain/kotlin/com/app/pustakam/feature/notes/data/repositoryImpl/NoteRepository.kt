@@ -289,6 +289,7 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
                 isFromDb = false, isSuccessful = false )
             )
         }
+
         return getNoteByIdFromDb(id).onSuccess {
 //           getNoteApi(id)
         }

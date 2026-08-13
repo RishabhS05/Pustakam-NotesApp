@@ -6,10 +6,10 @@ import com.app.pustakam.core.common.util.ContentType
 // 🔧 C6: UniqueIdGenerator import moved out — id generation lives ONLY in NoteContentObjectHelper
 // 🔧 getCurrentTimestamp kept: withX() helpers stamp updatedAt on every edit
 import com.app.pustakam.core.common.util.getCurrentTimestamp
+import com.app.pustakam.core.common.util.isPlayableMedia
 import com.app.pustakam.core.common.util.resolveLocalFilePath // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import com.app.pustakam.core.common.util.resolveLocalFilePath
 
 @Serializable
 enum class SyncStatus { LOCAL_ONLY, SYNCED, PENDING_UPDATE, PENDING_DELETE }
@@ -143,7 +143,7 @@ sealed class NoteContentModel {
     ) : NoteContentModel()
 
     fun isMediaFile() : Boolean = this is MediaContent
-    fun isPlayingMedia(): Boolean = this.type == ContentType.AUDIO || this.type == ContentType.VIDEO
+    inline fun isPlayableMedia(): Boolean = this.type.isPlayableMedia()
 }
 // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: localPath goes through resolveLocalFilePath — on iOS the app
 //   container UUID changes on every update, so stored absolute paths are re-anchored onto the

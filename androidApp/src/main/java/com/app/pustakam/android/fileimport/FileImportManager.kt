@@ -13,18 +13,13 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-// 🔧 18-Jul-2026: NEW FEATURE (file import) — outcome of a link import; NoFileFound drives the
-//   "No file found" message the user asked for.
 sealed class ImportResult {
     data class Success(val contents: List<NoteContentModel.MediaContent>) : ImportResult()
     data object NoFileFound : ImportResult()
     data class Failed(val message: String) : ImportResult()
 }
 
-// 🔧 18-Jul-2026: NEW FEATURE (file import) — copies device picks / URL downloads into app storage
-//   (filesDir/imported/<noteId>/). 🔧 30-Jul-2026 02:10 Phase 3 — planning is now ImportCoordinator's;
-//   this object performs IO only.
-//   All functions are blocking — callers run them on Dispatchers.IO.
+
 object FileImportManager {
 
     private const val MAX_REDIRECTS = 5

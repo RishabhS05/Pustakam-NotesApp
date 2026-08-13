@@ -4,7 +4,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-fun Any?.isNotnull() = this != null
+inline fun Any?.isNotnull() = this != null
 fun String?.isValidEmail() = !this.isNullOrEmpty() && this.contains("@")
 
 fun String?.isValidPhone() = this.isDigits() && this!!.length > 7

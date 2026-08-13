@@ -1,6 +1,9 @@
 package com.app.pustakam.core.model.models.response.notes
 
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.isDoc
+import com.app.pustakam.core.common.util.isGalleryEligible
+import com.app.pustakam.core.common.util.isImage
 import kotlinx.serialization.Serializable
 
 // 🔧 15-Jul-2026 Phase 0.1: shared page size for the notes list (Android list paging; a page is
@@ -43,7 +46,7 @@ fun Note.toSummary(): NoteSummary {
     val snippet = sorted.filterIsInstance<NoteContentModel.TextContent>()
         .firstOrNull { it.text.isNotBlank() }?.text?.take(200)
     val thumb = sorted.filterIsInstance<NoteContentModel.MediaContent>()
-        .firstOrNull { it.type == ContentType.IMAGE || it.type == ContentType.VIDEO || it.type == ContentType.GIF }
+        .firstOrNull { it.type.isGalleryEligible()}
         // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: thumbnailPath resolved too (stale container UUID after app update)
         ?.let { com.app.pustakam.core.common.util.resolveLocalFilePath(it.thumbnailPath) ?: it.getMediaUrl().takeIf { p -> p.isNotEmpty() } }
     return NoteSummary(
@@ -51,10 +54,10 @@ fun Note.toSummary(): NoteSummary {
         createdAt = createdAt, updatedAt = updatedAt,
         snippet = snippet,
         contentCount = contents.size,
-        imageCount = contents.count { it.type == ContentType.IMAGE || it.type == ContentType.GIF },
+        imageCount = contents.count { it.type.isImage() },
         videoCount = contents.count { it.type == ContentType.VIDEO },
         audioCount = contents.count { it.type == ContentType.AUDIO },
-        docCount = contents.count { it.type == ContentType.PDF || it.type == ContentType.DOCX },
+        docCount = contents.count { it.type.isDoc() },
         thumbnailPath = thumb,
     )
 }

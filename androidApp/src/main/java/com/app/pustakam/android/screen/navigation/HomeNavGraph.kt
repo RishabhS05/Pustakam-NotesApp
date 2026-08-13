@@ -167,7 +167,15 @@ fun NavGraphBuilder.EditorNavGraph(navController: PustakmNavController){
             MasterEditorScreen(
                 noteId = backStackEntry.arguments?.getString("noteId"),
                 onBack = navController::upPress,
-                onCaptureMedia = { id -> id?.let { navController.navigateTo(CameraData(it)) } }
+                navigateTo=  navController::navigateTo
+            )
+        }
+        composable(
+            route = Route.MasterEditor
+        ) { backStackEntry ->
+            MasterEditorScreen(
+                onBack = navController::upPress,
+                navigateTo = navController::navigateTo
             )
         }
         /** just wanted to use navigation with args style to remember this way of passing data*/
@@ -179,13 +187,11 @@ fun NavGraphBuilder.EditorNavGraph(navController: PustakmNavController){
             val activity = requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner()) {
                 "No ViewModelStoreOwner found"
             }
-            val imageViewModel: ImageDataViewModel =viewModel(viewModelStoreOwner =activity)
+            val imageViewModel: ImageDataViewModel = viewModel(viewModelStoreOwner =activity)
             NoteEditorScreen(id = noteId,
                 noteEditorViewModel = viewModel,
                 imageDataViewModel = imageViewModel,
-                onBack = navController::upPress, onMasterEditor = {
-                    navController.navigateTo(Route.MasterEditor + "/$noteId")
-                }, navController::navigateTo, )
+                onBack = navController::upPress, navController::navigateTo)
         }
     }
 

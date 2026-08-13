@@ -3,13 +3,8 @@ package com.app.pustakam.core.filesys.export
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.isImage
 
-// 🔧 20-Jul-2026: NEW (export feature) — the SHARED, ordered, render-agnostic representation of a
-//   note. Android (PDF/PNG) and iOS (PDF/PNG) renderers AND the shared DOCX writer all walk this
-//   same list, so the note-flattening logic lives in exactly one place (DRY).
-// 🔧 20-Jul-2026: FIX — modelled as ONE data class + a `kind` enum (not a sealed hierarchy) so it
-//   crosses the Kotlin/Swift bridge cleanly (nested sealed subclasses don't export as usable
-//   Swift types). Swift reads block.kind.name + the flat fields; no downcasting needed.
 enum class ExportBlockKind { TITLE, PARAGRAPH, IMAGE, FILE, LINK, LOCATION }
 
 data class ExportBlock(
@@ -52,8 +47,8 @@ object NoteExportBuilder {
                 is NoteContentModel.TextContent ->
                     if (content.text.isNotBlank()) blocks.add(ExportBlock(ExportBlockKind.PARAGRAPH, text = content.text))
 
-                is NoteContentModel.MediaContent -> when (content.type) {
-                    ContentType.IMAGE, ContentType.GIF ->
+                is NoteContentModel.MediaContent -> when {
+                    content.type.isImage() ->
                         blocks.add(
                             ExportBlock(
                                 ExportBlockKind.IMAGE,

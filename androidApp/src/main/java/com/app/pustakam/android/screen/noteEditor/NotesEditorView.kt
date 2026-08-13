@@ -131,7 +131,6 @@ fun NoteEditorScreen(
     noteEditorViewModel: NoteEditorViewModel = viewModel(),
     imageDataViewModel: ImageDataViewModel = viewModel(),
     onBack: () -> Unit = {},
-    onMasterEditor: () -> Unit = {},
     navigateTo: (Any) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -215,7 +214,7 @@ fun NoteEditorScreen(
     LaunchedEffect(capturedPaths) {
         if (capturedPaths.isNotEmpty()) {
             // 🔧 15-Jul-2026 Phase 2.3: context enables async thumbnail generation for new media
-            noteEditorViewModel.getMediaData(capturedPaths, context)
+            noteEditorViewModel.getMediaData(capturedPaths)
             imageDataViewModel.clearPaths()
         }
     }
@@ -228,7 +227,10 @@ fun NoteEditorScreen(
             actions = {
             val noteHistory = noteEditorViewModel.history.collectAsStateWithLifecycle().value
                 IconButton(
-                    onClick = onMasterEditor
+                    onClick = {
+                        val route = if (id.isNotnull()) Route.MasterEditor +"/$id" else Route.MasterEditor
+                        navigateTo(route)
+                    }
                 ) {
                     Icon(
                          painterResource(com.app.pustakam.android.R.drawable.ic_board_icon),
@@ -301,12 +303,6 @@ fun NoteEditorScreen(
                     contentDescription = "Save",
                 )
             }
-//            IconButton(onClick = noteEditorViewModel::createOrUpdateNote) {
-//                Icon(
-//                    imageVector = Icons.Default.SaveAs,
-//                    contentDescription = "Save As",
-//                )
-//            }
             IconButton(onClick = noteEditorViewModel::shareNote) {
                 Icon(
                     Icons.Default.Share,
@@ -366,7 +362,7 @@ fun NoteEditorScreen(
                                     mediaId = contentValue.id
                                 )
                                 when {
-                                    contentValue.type == ContentType.IMAGE -> navigateTo(Route.ImagePreview)
+                                    contentValue.type == ContentType.IMAGE  -> navigateTo(Route.ImagePreview)
                                     contentValue.type == ContentType.VIDEO -> navigateTo(Route.VideoPreview)
                                 }
                             })
@@ -635,9 +631,8 @@ fun RenderWidget(
             }
         }
 
-        ContentType.DRAWING -> TODO()
-        ContentType.FORMULA -> TODO()
-        ContentType.TABLE -> TODO()
+        // canvas-only kinds, nothing to draw in the linear editor
+        ContentType.DRAWING, ContentType.FORMULA, ContentType.TABLE -> Unit
     }
 }
 

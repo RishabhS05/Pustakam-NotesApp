@@ -29,6 +29,8 @@ import com.app.pustakam.android.widgets.masterEditor.MasterTextWidget
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
 import com.app.pustakam.android.widgets.video.VideoCard
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.isDoc
+import com.app.pustakam.core.common.util.isImage
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 import com.app.pustakam.core.model.models.response.notes.getMediaUrl
 import com.app.pustakam.core.richtext.master.model.CanvasNode
@@ -70,25 +72,25 @@ fun MasterNodeContent(
             }
         }
         content is NoteContentModel.MediaContent -> {
-            when (content.type) {
-                ContentType.IMAGE, ContentType.GIF -> ImageCard(
+            when  {
+                content.type.isImage() -> ImageCard(
                     modifier = Modifier.fillMaxSize(),
                     imageUrl = content.getMediaUrl(),
                     onClick = onOpenMedia
                 )
 
-                ContentType.VIDEO -> VideoCard(
+               content.type ==  ContentType.VIDEO -> VideoCard(
                     modifier = Modifier.fillMaxSize(),
                     contentVideo = content,
                     onClick = onOpenMedia
                 )
 
-                ContentType.AUDIO -> AudioPlayerUIState(
+                content.type == ContentType.AUDIO -> AudioPlayerUIState(
                     noteContentModel = content,
                     onDelete = { onDelete() }
                 )
 
-                ContentType.DOCX, ContentType.EPUB, ContentType.MD, ContentType.PDF, ContentType.OTHER -> {
+                content.type.isDoc()  -> {
                         InlineBookFileWidget(
                             media = content,
                             modifier = Modifier.fillMaxSize(),
@@ -96,7 +98,7 @@ fun MasterNodeContent(
                         )
                 }
 
-                ContentType.LINK -> {
+                content.type == ContentType.LINK -> {
                     val link = content as? NoteContentModel.Link
                     val uriHandler = LocalUriHandler.current
                     Column(
@@ -125,7 +127,7 @@ fun MasterNodeContent(
                     }
                 }
 
-                ContentType.LOCATION -> {
+                content.type ==  ContentType.LOCATION -> {
                     val location = content as? NoteContentModel.Location
                     val uriHandler = LocalUriHandler.current
                     Column(

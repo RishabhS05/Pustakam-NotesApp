@@ -38,14 +38,18 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.pustakam.android.hardware.camera.ImageDataViewModel
 import com.app.pustakam.android.screen.editor.EditorCapabilityCallbacks
 import com.app.pustakam.android.screen.editor.EditorCapabilityHost
 import com.app.pustakam.android.screen.editor.permissionsFor
+import com.app.pustakam.android.widgets.audio.AudioRecording
 import com.app.pustakam.android.widgets.masterEditor.MasterCanvas
 import com.app.pustakam.android.widgets.smartText.SmartTextKeyboardToolbar
 import com.app.pustakam.android.widgets.smartText.SmartTextSheet
@@ -54,6 +58,12 @@ import com.app.pustakam.core.richtext.master.presentation.MasterTextCommands
 import com.app.pustakam.core.richtext.presentation.SmartTextCommands
 import com.app.pustakam.android.widgets.smartText.SmartTextTokens
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.android.screen.navigation.Route
+import com.app.pustakam.core.common.util.isDoc
+import com.app.pustakam.core.common.util.isImage
+import com.app.pustakam.core.model.models.CameraData
+import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.model.models.response.notes.getMediaUrl
 
 import com.app.pustakam.core.richtext.master.presentation.CanvasCommands
 import com.app.pustakam.core.richtext.master.presentation.CanvasTool
@@ -63,9 +73,9 @@ import com.app.pustakam.core.richtext.master.presentation.CanvasTool
 fun MasterEditorScreen(
     noteId: String? = null,
     viewModel: MasterEditorViewModel = viewModel(),
+    imageDataViewModel: ImageDataViewModel = viewModel(requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner())),
     onBack: () -> Unit = {},
-    onOpenMedia: (String?) -> Unit = {},
-    onCaptureMedia: (String?) -> Unit = {}
+    navigateTo: (Any) -> Unit
 ) {
     val colors = SmartTextTokens.colors
     val uiState by viewModel.state.collectAsStateWithLifecycle()
@@ -80,8 +90,6 @@ fun MasterEditorScreen(
     var autoFocused by remember(noteId) { mutableStateOf(false) }
     val autoFocusId = CanvasCommands.lastTextNodeId(canvas)
 
-    // opening a canvas lands the caret in its last text field, once there is a viewport to fit
-    // the page to. selecting the page is what puts it into edit mode.
     LaunchedEffect(autoFocusId, canvas.viewport.widthPx) {
         if (!autoFocused &&
             autoFocusId != null &&
@@ -93,13 +101,21 @@ fun MasterEditorScreen(
         }
     }
 
+    val capturedPaths = imageDataViewModel.paths.collectAsStateWithLifecycle().value
+    LaunchedEffect(capturedPaths) {
+        if (capturedPaths.isNotEmpty()) {
+            viewModel.getMediaData(capturedPaths)
+            imageDataViewModel.clearPaths()
+        }
+    }
+
     EditorCapabilityHost(
         state = uiState.capabilities,
         noteTitle = uiState.note?.title.orEmpty(),
         permissions = permissionsFor(uiState.capabilities.pendingCapture),
         callbacks = EditorCapabilityCallbacks(
             onState = viewModel::onCapabilityState,
-            onOpenCamera = { onCaptureMedia(uiState.note?.id) },
+            onOpenCamera = { uiState.note?.id?.let { it1 -> navigateTo(CameraData (it1)) } },
             onAudioSaved = viewModel::onCaptured,
             onFilesPicked = { context, uris -> viewModel.importDeviceFiles(context, uris) },
             onImportLink = { context, link -> viewModel.importFromLink(context, link) },
@@ -118,15 +134,40 @@ fun MasterEditorScreen(
             onIntent = viewModel::onCanvasIntent,
             onRename = viewModel::renameNode
         ) { node, isEditing ->
+            val nodeContent = uiState.note?.contents?.firstOrNull { it.id == node.contentId }
             MasterNodeContent(
                 node = node,
                 isEditing = isEditing,
                 scale = canvas.viewport.scale,
                 textState = uiState.textFor(node.id),
-                content = uiState.note?.contents?.firstOrNull { it.id == node.contentId },
+                content = nodeContent,
                 onTextIntent = { viewModel.onTextIntent(node.id, it) },
                 onFocused = { viewModel.onCanvasIntent(CanvasCommands.setEditing(node.id)) },
-                onOpenMedia = { onOpenMedia(node.contentId) },
+                onOpenMedia = {
+                    val media = nodeContent as? NoteContentModel.MediaContent
+                    when {
+                        media == null -> Unit
+                        // documents open in the reader, which reads the saved file off disk
+                        media.type.isDoc() -> viewModel.saveThenOpen {
+                            uiState.note?.id?.let { id ->
+                                navigateTo(Route.BookReader + "/$id?contentId=${media.id}")
+                            }
+                        }
+
+                        else -> {
+                            imageDataViewModel.onSetMediaToPreview(
+                                media.getMediaUrl(),
+                                media.type,
+                                mediaId = media.id
+                            )
+                            when {
+                                media.type.isImage() -> navigateTo(Route.ImagePreview)
+                                media.type == ContentType.VIDEO -> navigateTo(Route.VideoPreview)
+                                else -> Unit
+                            }
+                        }
+                    }
+                },
                 onDelete = { viewModel.deleteNode(node.id) },
                 keyboardInsetPx = imeHeightPx
             )
@@ -182,6 +223,16 @@ fun MasterEditorScreen(
                 }
             }
         }
+        val audioDraft = uiState.audioDraft
+        if (uiState.capabilities.isRecordingAudio && audioDraft != null) {
+            AudioRecording(
+                modifier = Modifier.align(Alignment.TopEnd),
+                noteContentModel = audioDraft,
+                onStop = { viewModel.onCaptured(it) },
+                onDelete = { viewModel.onCaptured(null) }
+            )
+        }
+
         val focusedText = canvas.editingNodeId?.let { uiState.textFor(it) }
         if (focusedText != null) {
             SmartTextKeyboardToolbar(

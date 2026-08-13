@@ -4,10 +4,6 @@ import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
 
-// 📖 01-Aug-2026 Step 1 — Content -> Block. ONE forward pass over the ordered contents that only
-//   ever appends, so reading order cannot be reordered: it is structurally impossible, not merely
-//   avoided. Grouping merges CONSECUTIVE runs only, which is why `Image Image Text Image` becomes
-//   ImageGrid(2), Paragraph, ImageGrid(1) and never ImageGrid(3).
 object ReaderBlockBuilder {
 
     fun build(note: Note, policy: PageLayoutPolicy): List<ReaderBlock> {
@@ -89,8 +85,9 @@ object ReaderBlockBuilder {
                     texts.add(content)
                 }
 
-                is NoteContentModel.MediaContent -> when (content.type) {
-                    ContentType.IMAGE, ContentType.GIF -> {
+                is NoteContentModel.MediaContent ->
+                    when (content.type) {
+                    ContentType.IMAGE -> {
                         if (videos.isNotEmpty() || texts.isNotEmpty()) flush()
                         images.add(content)
                     }
