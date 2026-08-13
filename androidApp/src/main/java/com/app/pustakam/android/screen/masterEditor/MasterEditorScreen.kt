@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
@@ -84,6 +85,7 @@ fun MasterEditorScreen(
     val canvas = uiState.canvas
     var showAttach by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf(SmartTextSheet.NONE) }
+    val context = LocalContext.current
     val density = LocalDensity.current
     val imeHeightPx = WindowInsets.ime.getBottom(density).toFloat()
 
@@ -231,14 +233,19 @@ fun MasterEditorScreen(
                 }
             }
         }
-        val audioDraft = uiState.audioDraft
-        if (uiState.capabilities.isRecordingAudio && audioDraft != null) {
-            AudioRecording(
-                modifier = Modifier.align(Alignment.TopEnd),
-                noteContentModel = audioDraft,
-                onStop = { viewModel.onCaptured(it) },
-                onDelete = { viewModel.onCaptured(null) }
-            )
+        if (uiState.capabilities.isRecordingAudio) {
+            val recordingContent = remember {
+                viewModel.addNewContent(context, ContentType.AUDIO)
+                    as? NoteContentModel.MediaContent
+            }
+            if (recordingContent != null) {
+                AudioRecording(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    noteContentModel = recordingContent,
+                    onStop = { viewModel.onCaptured(it) },
+                    onDelete = { viewModel.onCaptured(null) }
+                )
+            }
         }
 
         val focusedText = canvas.editingNodeId?.let { uiState.textFor(it) }

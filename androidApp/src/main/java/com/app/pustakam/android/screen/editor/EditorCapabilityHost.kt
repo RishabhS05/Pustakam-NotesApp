@@ -27,7 +27,7 @@ data class EditorCapabilityCallbacks(
     val onFilesPicked: (Context, List<Uri>) -> Unit,
     val onImportLink: (Context, String) -> Unit,
     val onDeleteContent: (String) -> Unit,
-    val onDeleteNote: () -> Unit
+    val onDeleteNote: () -> Unit,
 )
 
 @Composable
@@ -45,6 +45,7 @@ fun EditorCapabilityHost(
         if (uris.isNotEmpty()) callbacks.onFilesPicked(context, uris)
         callbacks.onState(EditorCapabilityReducer.captureFinished(state))
     }
+
 
     if (state.isPermissionPromptVisible) {
         AskPermissions(
@@ -113,8 +114,7 @@ fun permissionsFor(type: ContentType?): List<NeededPermission> = when (type) {
     ContentType.LOCATION -> listOf(
         NeededPermission.COARSE_LOCATION,
         NeededPermission.FINE_LOCATION,
-        NeededPermission.BACKGROUND_LOCATION
+        NeededPermission.BACKGROUND_LOCATION,
     )
-
     else -> listOf(NeededPermission.POST_NOTIFICATIONS)
 }

@@ -127,7 +127,7 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
             val activity = requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner()) {
                 "No ViewModelStoreOwner found"
             }
-            val imageViewModel: ImageDataViewModel = viewModel(viewModelStoreOwner =activity)
+            val imageViewModel: ImageDataViewModel = viewModel(viewModelStoreOwner = activity)
             imageViewModel.onHandleMediaOperation(MediaProcessingEvent.SetNoteId(data.noteId))
             CameraStreamingScreen(imageViewModel,navController::upPress,
                 { navController.navigateTo(it) })

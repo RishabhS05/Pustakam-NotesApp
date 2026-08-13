@@ -154,9 +154,7 @@ fun NoteEditorScreen(
         }
     }
     val capabilities = noteEditorViewModel.capabilities.collectAsStateWithLifecycle().value
-    LaunchedEffect(capabilities.isRecordingAudio) {
-        if (capabilities.isRecordingAudio) noteEditorViewModel.startStopAudioRecording()
-    }
+    if (capabilities.isRecordingAudio) noteEditorViewModel.startStopAudioRecording()
     EditorCapabilityHost(
         state = capabilities,
         noteTitle = noteEditorViewModel.noteContentUiState.value.note?.title.orEmpty(),
@@ -213,7 +211,6 @@ fun NoteEditorScreen(
     val capturedPaths = imageDataViewModel.paths.collectAsStateWithLifecycle().value
     LaunchedEffect(capturedPaths) {
         if (capturedPaths.isNotEmpty()) {
-            // 🔧 15-Jul-2026 Phase 2.3: context enables async thumbnail generation for new media
             noteEditorViewModel.getMediaData(capturedPaths)
             imageDataViewModel.clearPaths()
         }
@@ -568,6 +565,7 @@ fun RenderWidget(
             }
 
             AudioPlayerUIState(contentAudio, onDelete = onDelete, onSave = {
+
                     exportLauncher.launch(suggestedFileNameFromMedia(contentAudio))
                 })
         }
@@ -649,7 +647,7 @@ fun BoxScope.MediaSaveOverlay(
     val scope = rememberCoroutineScope()
     val isGalleryType = media.type == ContentType.IMAGE || media.type == ContentType.VIDEO
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(MimeCatalog.mimeFor(media.type))
+        contract = CreateDocument(MimeCatalog.mimeFor(media.type))
     ) { uri ->
         if (uri != null) {
             scope.launch {

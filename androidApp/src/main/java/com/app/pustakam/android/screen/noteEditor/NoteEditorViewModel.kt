@@ -332,6 +332,9 @@ class NoteEditorViewModel : BaseViewModel() {
         _capabilities.value = EditorCapabilityReducer.captureFinished(_capabilities.value)
     }
 
+    fun stopRecordingAudio(){
+        _capabilities.value = EditorCapabilityReducer.stopAudio(_capabilities.value)
+    }
     fun askDeleteContent(contentId: String) {
         _capabilities.value =
             EditorCapabilityReducer.askDeleteContent(_capabilities.value, contentId)
@@ -339,13 +342,6 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun askDeleteNote() {
         _capabilities.value = EditorCapabilityReducer.askDeleteNote(_capabilities.value)
-    }
-
-    fun preparePermissionDialog(contentType: ContentType? = null) {
-        val permission = getPermissions(contentType)
-        _noteUiState.update {
-            it.copy(permissions = permission, contentType = contentType, showPermissionAlert = true, isLoading = false)
-        }
     }
       fun addNewText() {
           recordHistory(NoteEditKind.ADD_TEXT)
@@ -414,6 +410,7 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun startStopAudioRecording(value: Boolean = true) {
         _noteUiState.update { it.copy(isLoading = false, showAudioRecorder = value) }
+        if(!value) stopRecordingAudio()
     }
 /**
  * Remove a note content for note
@@ -442,9 +439,6 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteContentUiState.update {
             val indexContent = it.contents.indexOf(find)
             if (indexContent != -1) it.contents.removeAt(indexContent)
-            // immutable Note: rebuild contents without the removed item.
-            // (old code removed from a discarded copy — note.contents was never
-            //  actually updated; this also fixes that silent bug)
             val updatedNote = it.note?.let { n ->
                 n.withContents(n.contents.filterNot { c -> c.id == value })
             }

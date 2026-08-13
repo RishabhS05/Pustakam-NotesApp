@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.fileUtils.generateThumbnail
+import com.app.pustakam.android.noteContentProvider.addContent
 import com.app.pustakam.android.fileimport.FileImportManager
 import com.app.pustakam.android.fileimport.ImportResult
 import com.app.pustakam.android.screen.CANVAS_CODES
@@ -63,7 +64,6 @@ data class MasterEditorUiState(
     val texts: Map<String, MasterTextState> = emptyMap(),
     val isLoading: Boolean = false,
     val capabilities: EditorCapabilityState = EditorCapabilityState(),
-    val audioDraft: NoteContentModel.MediaContent? = null,
     val error: String? = null
 ) {
     fun textFor(nodeId: String): MasterTextState? = texts[nodeId]
@@ -432,30 +432,24 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
     }
 
     fun requestCapture(type: ContentType) {
-        val note = _state.value.note ?: return
-        val draft = if (type == ContentType.AUDIO) {
-            NoteContentObjectHelper.createMedia(
-                contentType = ContentType.AUDIO,
-                noteId = note.id,
-                positionedAt = note.contents.size.toDouble()
-            )
-        } else {
-            _state.value.audioDraft
-        }
         _state.update {
-            it.copy(
-                audioDraft = draft,
-                capabilities = EditorCapabilityReducer.requestCapture(it.capabilities, type)
-            )
+            it.copy(capabilities = EditorCapabilityReducer.requestCapture(it.capabilities, type))
         }
+    }
+
+    /**
+     * Builds the content the recorder writes into. Goes through addContent() so the file is
+     * created on disk first — createMedia() alone leaves localPath empty and the recorder
+     * then opens "". Same call the note editor makes.
+     */
+    fun addNewContent(context: Context, contentType: ContentType): NoteContentModel? {
+        val note = _state.value.note ?: return null
+        return addContent(context = context, note = note, contentType = contentType)
     }
 
     fun onCaptured(content: NoteContentModel?) {
         _state.update {
-            it.copy(
-                audioDraft = null,
-                capabilities = EditorCapabilityReducer.captureFinished(it.capabilities)
-            )
+            it.copy(capabilities = EditorCapabilityReducer.captureFinished(it.capabilities))
         }
         val media = content as? NoteContentModel.MediaContent ?: return
         landCapturedMedia(listOf(media))

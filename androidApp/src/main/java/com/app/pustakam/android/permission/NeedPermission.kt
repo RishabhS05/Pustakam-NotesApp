@@ -28,7 +28,6 @@ enum class NeededPermission(
         title = "Accurate Location Permission",
         description = "This permission is needed to get your accurate location . Please grant the permission.",
         permanentlyDeniedDescription = "This permission is needed to get your approximate location. Please grant the permission in app settings.",
-
         ),
     COARSE_LOCATION(
         permission = Manifest.permission.ACCESS_COARSE_LOCATION,

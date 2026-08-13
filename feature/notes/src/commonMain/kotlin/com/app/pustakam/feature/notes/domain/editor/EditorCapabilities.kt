@@ -26,6 +26,7 @@ object EditorCapabilityReducer {
         else -> false
     }
 
+
     fun opensCamera(type: ContentType): Boolean =
         type == ContentType.IMAGE || type == ContentType.VIDEO
 
@@ -59,7 +60,6 @@ object EditorCapabilityReducer {
 
     fun stopAudio(state: EditorCapabilityState): EditorCapabilityState =
         state.copy(isRecordingAudio = false, pendingCapture = null)
-
     fun stopLocation(state: EditorCapabilityState): EditorCapabilityState =
         state.copy(isTrackingLocation = false, pendingCapture = null)
 
@@ -83,6 +83,5 @@ object EditorCapabilityReducer {
 }
 
 object EditorCapabilityCommands {
-
     fun empty(): EditorCapabilityState = EditorCapabilityState()
 }
