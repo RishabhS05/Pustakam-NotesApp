@@ -16,7 +16,6 @@ final class MasterEditorViewModel: ObservableObject {
     private let adapter: NotesBridgeAdapter
     private let canvasBridge: CanvasBridgeAdapter
     private var dirtyContentIds = Set<String>()
-    private var noteId: String?
     private var hydratedNoteId: String?
 
     private var commands: CanvasCommands { CanvasCommands.shared }
@@ -26,11 +25,14 @@ final class MasterEditorViewModel: ObservableObject {
     }
 
     init(
+        noteId: String? = nil,
         adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
-        canvasBridge: CanvasBridgeAdapter = CanvasBridgeAdapter()
+        canvasBridge : CanvasBridgeAdapter = CanvasBridgeAdapter()
     ) {
+        
         self.adapter = adapter
         self.canvasBridge = canvasBridge
+        load(noteId: noteId)
     }
 
     func text(for nodeId: String) -> MasterTextState? { texts[nodeId] }
@@ -42,11 +44,17 @@ final class MasterEditorViewModel: ObservableObject {
 
     // MARK: - Load
 
+    /// Re-reads the note that is already open. Never passes nil, so coming back to the screen
+    /// cannot create a second note — mirrors NoteEditorViewModel.refresh().
+    func refresh() {
+        guard dirtyContentIds.isEmpty else { return }   // don't overwrite unsaved edits
+        guard let id = note?.id, !id.isEmpty else { return }
+        load(noteId: id)
+    }
+
     /// A nil id is passed straight through, the same as the note editor does: the repository
     /// answers with a fresh empty note rather than nothing at all.
     func load(noteId: String?) {
-        guard self.noteId != noteId || note == nil, dirtyContentIds.isEmpty else { return }
-        self.noteId = noteId
         adapter.readNote(noteId: noteId) { [weak self] result in
             guard let self else { return }
             switch result {
@@ -54,10 +62,17 @@ final class MasterEditorViewModel: ObservableObject {
                 self.isLoading = true
             case .success(let note):
                 self.isLoading = false
+                self.errorMessage = nil
                 if let note { self.apply(note: note) }
             case .failure(let error):
                 self.isLoading = false
-                self.errorMessage = error.message
+                // a stale or deleted id must not dead-end the screen. Retry with nil, which is
+                // the repository's "create an empty note" path, exactly as opening with no id.
+                if noteId != nil {
+                    self.load(noteId: nil)
+                } else {
+                    self.errorMessage = error.message
+                }
             case .idle:
                 break
             }
@@ -90,6 +105,9 @@ final class MasterEditorViewModel: ObservableObject {
                 if nodes.isEmpty {
                     nodes = self.seedNodes(noteId: noteId, contents: contents)
                     self.canvasBridge.saveAll(noteId: noteId, nodes: nodes)
+                    // a note built by the "create empty note" path exists only in memory until
+                    // now; write it so the canvas has a real parent and refresh() can find it
+                    self.saveNote()
                 }
                 self.readViewport(noteId: noteId, nodes: nodes)
             case .failure(let error):
@@ -211,7 +229,7 @@ final class MasterEditorViewModel: ObservableObject {
     }
 
     private func persistCanvas(before: CanvasEditorState, intent: CanvasEditorIntent) {
-        guard let noteId else { return }
+        guard let noteId = note?.id else { return }
         if commands.isEndDrag(intent: intent) {
             guard let dragging = before.draggingNodeId,
                   let node = canvas.document.nodeById(nodeId: dragging) else { return }
@@ -282,28 +300,34 @@ final class MasterEditorViewModel: ObservableObject {
         saveNote()
     }
 
-    func addWidget(kind : ContentType , content: NoteContentModel? = nil) {
-        guard note != nil, content != nil else { return }
-        
+    /// A nil content is normal: the attach menu adds an empty table/drawing widget that has no
+    /// note content behind it yet. Mirrors MasterEditorViewModel.addWidget on Android.
+    func addWidget(kind: ContentType, content: NoteContentModel? = nil) {
+        guard note != nil else { return }
         if kind == ContentType.text {
             addPage()
             return
         }
+        if let content {
+            addContent(content)
+            saveNote()
+        }
+        spawnWidgetNode(kind: kind, contentId: content?.id)
+    }
+
+    /// Split out so captured media can land on the canvas without re-adding its content.
+    private func spawnWidgetNode(kind: ContentType, contentId: String?) {
         guard let page = commands.pageForSpawn(state: canvas) else {
             addPage()
-            addWidget(kind:  kind, content: content)
+            spawnWidgetNode(kind: kind, contentId: contentId)
             return
         }
         let node = commands.widgetIn(
             state: canvas,
             page: page,
-            kind: content!.type,
-            contentId: content?.id
+            kind: kind,
+            contentId: contentId
         )
-        if let content {
-            addContent(content)
-            saveNote()
-        }
         onCanvasIntent(commands.addNode(node: node))
     }
 
@@ -318,6 +342,11 @@ final class MasterEditorViewModel: ObservableObject {
 
     func onCapabilityState(_ next: EditorCapabilityState) {
         capabilities = next
+    }
+
+    /// Without this a denied camera/mic just does nothing and looks like a broken button.
+    func onPermissionDenied(_ type: ContentType) {
+        errorMessage = "Allow \(type.name.lowercased()) access in Settings to capture here."
     }
 
     func requestCapture(_ type: ContentType) {
@@ -410,7 +439,7 @@ final class MasterEditorViewModel: ObservableObject {
     // MARK: - Conversion
 
     func rebuildLayoutFromNote() {
-        guard let noteId else { return }
+        guard let noteId = note?.id else { return }
         let document = NoteCanvasConverter.shared.toCanvas(contents: noteContents)
         onCanvasIntent(commands.replaceDocument(document: document))
         texts = buildTexts(nodes: document.nodes, contents: textContents)

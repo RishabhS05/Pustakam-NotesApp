@@ -4,9 +4,17 @@ import shared
 struct MasterEditorScreen: View {
 
     let noteId: String?
-    var onOpenMedia: (String?) -> Void = { _ in }
+    var onOpenMedia: (String?) -> Void
 
-    @StateObject private var viewModel = MasterEditorViewModel()
+    // seeded once with the id, like NoteEditorView: the view model does the load in init, so
+    // a nil id creates exactly one new note instead of one per appearance
+    @StateObject private var viewModel: MasterEditorViewModel
+
+    init(noteId: String?, onOpenMedia: @escaping (String?) -> Void = { _ in }) {
+        self.noteId = noteId
+        self.onOpenMedia = onOpenMedia
+        _viewModel = StateObject(wrappedValue: MasterEditorViewModel(noteId: noteId))
+    }
     @Environment(Router.self) var router: Router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
@@ -28,7 +36,7 @@ struct MasterEditorScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(palette.page.ignoresSafeArea())
-        .onAppear { viewModel.load(noteId: noteId) }
+        .onAppear { viewModel.refresh() }
         .onReceive(
             NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
         ) { note in
@@ -58,7 +66,8 @@ struct MasterEditorScreen: View {
                 onFilesPicked: { viewModel.importFiles(urls: $0) },
                 onImportLink: { viewModel.importFromLink($0) },
                 onDeleteContent: { viewModel.deleteContent($0) },
-                onDeleteNote: { dismiss() }
+                onDeleteNote: { dismiss() },
+                onPermissionDenied: { viewModel.onPermissionDenied($0) }
             )
         )
         .sheet(isPresented: Binding(

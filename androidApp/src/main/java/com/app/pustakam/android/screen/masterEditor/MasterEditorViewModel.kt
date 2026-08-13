@@ -94,6 +94,17 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
 
     fun load(id: String?) = readFromDataBase(id)
 
+    /**
+     * Re-reads the note that is already open. Uses the loaded note's id, never the route id,
+     * so coming back to the screen cannot mint a second note when the screen was opened
+     * without one — mirrors NoteEditorViewModel.refreshOnResume().
+     */
+    fun refreshOnResume() {
+        val id = _state.value.note?.id ?: return
+        if (id.isEmpty()) return
+        readFromDataBase(id)
+    }
+
     /** A null id makes the repository hand back a fresh empty note, same as the note editor. */
     fun readFromDataBase(id: String?) {
         makeAWish(NOTES_CODES.READ) {
@@ -109,9 +120,22 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
 
     private fun applyCanvas(document: CanvasDocument) {
         val note = _state.value.note ?: return
-        val textContents = note.contents.filterIsInstance<NoteContentModel.TextContent>()
+        val existing = note.contents.filterIsInstance<NoteContentModel.TextContent>()
+        val needsSeed = document.nodes.isEmpty()
+
+        // the first page needs a content row of its own, otherwise its node points at nothing
+        // and the page renders as an empty placeholder
+        val seedContent =
+            if (needsSeed && existing.isEmpty()) {
+                NoteContentObjectHelper.createText(noteId = note.id, positionedAt = 0.0)
+            } else {
+                null
+            }
+        val textContents = existing + listOfNotNull(seedContent)
+        val seededNote = seedContent?.let { note.withContents(note.contents + it) } ?: note
+
         val nodes = document.nodes.ifEmpty {
-            buildInitialNodes(note, textContents).also { seeded ->
+            CanvasCommands.stackedTextNodes(textContents.map { it.id }).also { seeded ->
                 makeAWish(CANVAS_CODES.SAVE_NODES, showLoader = false) {
                     saveCanvasNodes(note.id, seeded)
                 }
@@ -119,9 +143,15 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
         }
         _state.update {
             it.copy(
+                note = seededNote,
                 canvas = CanvasCommands.loaded(it.canvas, nodes, null),
                 texts = textStatesOf(nodes, textContents)
             )
+        }
+        // a note from the "create empty note" path lives only in memory until now; write it so
+        // the canvas has a real parent and a later read by id can find it
+        if (needsSeed) {
+            makeAWish(NOTES_CODES.UPDATE, showLoader = false) { saveNoteUseCase(seededNote) }
         }
         makeAWish(CANVAS_CODES.READ_VIEWPORT, showLoader = false) {
             readCanvasViewport(note.id)
@@ -148,16 +178,6 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
             node.id to MasterTextState.of(RichTextCodec.documentFrom(content))
         }
         .toMap()
-
-    private fun buildInitialNodes(
-        note: Note,
-        textContents: List<NoteContentModel.TextContent>
-    ): List<CanvasNode> {
-        val contents = textContents.ifEmpty {
-            listOf(NoteContentObjectHelper.createText(noteId = note.id, positionedAt = 0.0))
-        }
-        return CanvasCommands.stackedTextNodes(contents.map { it.id })
-    }
 
     fun onCanvasIntent(intent: CanvasEditorIntent) {
         val before = _state.value.canvas

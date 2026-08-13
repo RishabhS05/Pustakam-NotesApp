@@ -76,7 +76,16 @@ struct NoteEditorView: View {
                 onFilesPicked: { noteEditorViewModel.importFiles(urls: $0) },
                 onImportLink: { noteEditorViewModel.importFromLink($0) },
                 onDeleteContent: { noteEditorViewModel.deleteContent(contentId: $0) },
-                onDeleteNote: { noteEditorViewModel.deleteNote { dismiss() } }
+                onDeleteNote: { noteEditorViewModel.deleteNote { dismiss() } },
+                // a denied camera/mic used to raise the "open Settings" alert; without this the
+                // tap looks like nothing happened at all
+                onPermissionDenied: { kind in
+                    switch kind {
+                    case ContentType.audio: setAlert(alertType: .MIC)
+                    case ContentType.location: setAlert(alertType: .LOCATION)
+                    default: setAlert(alertType: .CAMERA)
+                    }
+                }
             )
         )
 
@@ -109,7 +118,6 @@ struct NoteEditorView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack{
                     ActionButtonWithoutBackground(iconName: "board_icon",
-                                                  enabled : noteEditorViewModel.isNoteValid(),
                                                   action: {
                         if let noteId = noteEditorViewModel.state.note?.id {
                             router.navigate(to: .MasterEditor(noteId: noteId))

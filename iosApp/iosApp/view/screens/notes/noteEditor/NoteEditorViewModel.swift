@@ -16,7 +16,7 @@ struct NoteEditorUIState {
 class NoteEditorViewModel: ObservableObject {
 
     @Published var state = NoteEditorUIState()
-    @Published private(set) var capabilities = EditorCapabilityCommands.shared.empty()
+    @Published var capabilities = EditorCapabilityCommands.shared.empty()
 
     private let adapter: NotesBridgeAdapter
     private let contentBridge: NoteContentBridge
@@ -93,7 +93,7 @@ class NoteEditorViewModel: ObservableObject {
         load(noteId: id)
     }
 
-    private func load(noteId: String?) {
+    func load(noteId: String?) {
         adapter.readNote(noteId: noteId) { [weak self] result in
             guard let self else { return }
             switch result {
@@ -120,7 +120,7 @@ class NoteEditorViewModel: ObservableObject {
         guard state.isNoteReady else { return }                 // fixes E3 crash window
         dirtyContentIds.insert(content.id)   // 🔧 15-Jul-2026 iOS parity: new block → must be saved
         state.noteContents.append(content)
-        if content.isPlayingMedia(), let media = content as? NoteContentModel.MediaContent {
+        if content.isPlayableMedia(), let media = content as? NoteContentModel.MediaContent {
             contentBridge.updateMediaContent(content: media)    // safe cast (was as!)
         }
     }

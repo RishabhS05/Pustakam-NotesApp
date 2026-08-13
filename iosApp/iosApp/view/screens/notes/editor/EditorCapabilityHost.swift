@@ -30,8 +30,9 @@ struct EditorCapabilityHost: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay(alignment: .top) { recorder }
-            .onChange(of: state.isPermissionPromptVisible) { _, visible in
-                if visible { resolvePermission() }
+            .task(id: permissionRequestId) {
+                guard state.isPermissionPromptVisible else { return }
+                resolvePermission()
             }
             .confirmationDialog(
                 "Import files",
@@ -88,6 +89,11 @@ struct EditorCapabilityHost: ViewModifier {
                 callbacks.onState(reducer.stopAudio(state: state))
             }
         }
+    }
+
+    /// Changes whenever a new capture is asked for, including the very first one.
+    private var permissionRequestId: String {
+        "\(state.pendingCapture?.name ?? "none")-\(state.isPermissionPromptVisible)"
     }
 
     private var importSheetBinding: Binding<Bool> {

@@ -16,7 +16,7 @@ import SwiftUI
         case Camera (onCapture : (CapturedMedia?) -> Void)
         case BookReader (bookId : String)
         case NoteBookReader (noteId : String, startContentId : String? = nil)
-        case MasterEditor (noteId : String)
+        case MasterEditor (noteId : String? = nil)
 
         func hash(into hasher: inout Hasher) {
             switch self {

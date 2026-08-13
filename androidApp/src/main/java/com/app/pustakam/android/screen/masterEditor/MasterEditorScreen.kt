@@ -46,6 +46,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
+import androidx.lifecycle.Lifecycle
+import com.app.pustakam.android.screen.OnLifecycleEvent
 import com.app.pustakam.android.screen.editor.EditorCapabilityCallbacks
 import com.app.pustakam.android.screen.editor.EditorCapabilityHost
 import com.app.pustakam.android.screen.editor.permissionsFor
@@ -85,7 +87,13 @@ fun MasterEditorScreen(
     val density = LocalDensity.current
     val imeHeightPx = WindowInsets.ime.getBottom(density).toFloat()
 
-    LaunchedEffect(noteId) { viewModel.load(noteId) }
+    OnLifecycleEvent { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_CREATE -> viewModel.load(noteId)
+            Lifecycle.Event.ON_RESUME -> viewModel.refreshOnResume()
+            else -> {}
+        }
+    }
 
     var autoFocused by remember(noteId) { mutableStateOf(false) }
     val autoFocusId = CanvasCommands.lastTextNodeId(canvas)
