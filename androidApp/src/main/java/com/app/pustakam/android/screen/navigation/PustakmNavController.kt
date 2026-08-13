@@ -1,5 +1,6 @@
 package com.app.pustakam.android.screen.navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -12,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.app.pustakam.core.common.extensions.isNotnull
+import com.app.pustakam.core.model.models.CameraData
 
 object Route {
     const val Home = "HOME"
@@ -30,6 +32,13 @@ object Route {
     const val BookReader = "BOOK_READER"   // 🔧 18-Jul-2026: page-flip book reader
     const val NoteBookReader = "NOTEBOOK_READER"   // 🔧 18-Jul-2026: page-flip book reader
 }
+
+/** Screens that belong to a capture flow rather than to a place the user was working. */
+private val captureRoutes = listOf(
+    Route.ImagePreview,
+    Route.VideoPreview,
+    CameraData::class.qualifiedName.orEmpty()
+)
 @Stable
 class PustakmNavController(
     val navController: NavHostController,
@@ -50,12 +59,28 @@ class PustakmNavController(
     fun upPress() {
         navController.navigateUp()
     }
+    /**
+     * Pops back to [route], keeping it on the stack. One atomic pop rather than a loop of
+     * upPress(): if the route is not on the back stack popBackStack() reports it and we step
+     * back once, instead of emptying the stack and leaving the host with no destination.
+     */
     fun popBackInclusive (route: String ?= null){
-        if(route.isNotnull()) while (navController.currentBackStackEntry?.destination?.route?.startsWith(route!!) == false) {
-            upPress()
-        }
-        else upPress()
+        if (route.isNotnull() && navController.popBackStack(route!!, false)) return
+        upPress()
     }
+
+
+    /**
+     * The screen that opened the capture flow: the newest back stack entry that is neither a
+     * camera/preview screen nor a NavGraph. Graph entries carry routes too, but the current
+     * entry is never one, so returning a graph route would make popBackInclusive unstoppable.
+     */
+    @SuppressLint("RestrictedApi")
+    fun captureOriginRoute(): String? = navController.currentBackStack.value
+        .asReversed()
+        .filterNot { it.destination is NavGraph }
+        .mapNotNull { it.destination.route }
+        .firstOrNull { route -> captureRoutes.none { route.startsWith(it) } }
 
     fun goToHomeScreen() {
         navController.clearBackStack<Screen.Authentication>()

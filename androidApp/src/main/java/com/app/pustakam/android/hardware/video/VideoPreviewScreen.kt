@@ -21,8 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
 import com.app.pustakam.android.extension.startServiceWrapper
@@ -46,7 +48,9 @@ import com.app.pustakam.core.common.util.ScreenOrientation
 //   How to use: navigate(Route.VideoPreview) after onSetMediaToPreview(...) — see NotesEditorView.
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPreviewScreen(imageDataViewModel: ImageDataViewModel, onDismiss : () -> Unit = {}){
+fun VideoPreviewScreen(imageDataViewModel: ImageDataViewModel
+                       = viewModel(viewModelStoreOwner =  requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner()))
+                       , onDismiss : () -> Unit = {}){
     val previewState = imageDataViewModel.mediaFileState.collectAsStateWithLifecycle().value
     val viewModel: PlayMediaViewModel = viewModel()
     val playerState = viewModel.state.collectAsStateWithLifecycle().value

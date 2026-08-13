@@ -2,6 +2,7 @@ package com.app.pustakam.android.screen.navigation
 
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
@@ -29,6 +30,7 @@ import com.app.pustakam.android.screen.notification.NotificationView
 import com.app.pustakam.android.screen.search.SearchView
 import com.app.pustakam.android.screen.settings.SettingsScreen
 import com.app.pustakam.core.common.util.ContentType
+import com.app.pustakam.core.common.util.isImage
 import com.app.pustakam.core.model.models.CameraData
 import com.app.pustakam.core.model.models.response.notes.getMediaUrl
 
@@ -87,9 +89,9 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
                 },
                 onOpenMedia = { media ->
                     imageViewModel.onSetMediaToPreview(media.getMediaUrl(), media.type, mediaId = media.id)
-                    when (media.type) {
-                        ContentType.IMAGE, ContentType.GIF -> navController.navigateTo(Route.ImagePreview)
-                        ContentType.VIDEO -> navController.navigateTo(Route.VideoPreview)
+                    when  {
+                        media.type.isImage() -> navController.navigateTo(Route.ImagePreview)
+                        media.type == ContentType.VIDEO -> navController.navigateTo(Route.VideoPreview)
                         else -> Unit
                     }
                 },
@@ -113,25 +115,18 @@ fun NavGraphBuilder.HomeNavGraph(navController: PustakmNavController){
 
         /** Routes For handling videos and Images*/
         composable(route = Route.ImagePreview) {
-            val activity = requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner()) {
-                "No ViewModelStoreOwner found"
-            }
-            val imageViewModel: ImageDataViewModel = viewModel(viewModelStoreOwner = activity)
-            ImageEditorScreen(imageViewModel,     navController::popBackInclusive )
+            // resolved once on entry, before any pops change what the back stack looks like
+            val landingRoute = remember { navController.captureOriginRoute() }
+            ImageEditorScreen(landingRoute = landingRoute, onDismiss = navController::popBackInclusive)
         }
         composable(route = Route.VideoPreview) {
-            val activity = requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner()) {
-                "No ViewModelStoreOwner found"
-            }
-            val imageViewModel: ImageDataViewModel = viewModel(viewModelStoreOwner = activity)
-            VideoPreviewScreen(imageViewModel, onDismiss = navController::upPress)
+            VideoPreviewScreen(onDismiss = navController::upPress)
         }
         composable<CameraData> { backStackEntry ->
             val data = backStackEntry.toRoute<CameraData>()
             val activity = requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner()) {
                 "No ViewModelStoreOwner found"
             }
-
             val imageViewModel: ImageDataViewModel = viewModel(viewModelStoreOwner =activity)
             imageViewModel.onHandleMediaOperation(MediaProcessingEvent.SetNoteId(data.noteId))
             CameraStreamingScreen(imageViewModel,navController::upPress,

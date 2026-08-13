@@ -32,10 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.fileUtils.createFileWithFolders
-import com.app.pustakam.android.screen.navigation.Route
 import com.app.pustakam.android.widgets.zoom.zoomable   // 🔧 19-Jul-2026: pinch-zoom on preview
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.common.util.ScreenOrientation
@@ -51,16 +53,24 @@ import com.app.pustakam.core.common.util.getCurrentTimestamp
  * F6 : undo and redo changes on Image.
  * */
 @Composable
-fun ImageEditorScreen(imageDataViewModel: ImageDataViewModel,
+fun ImageEditorScreen(imageDataViewModel: ImageDataViewModel= viewModel(viewModelStoreOwner =  requireNotNull(LocalView.current.findViewTreeViewModelStoreOwner())),
+                      landingRoute: String? = null,
                       onDismiss: (route: String?) -> Unit, ) {
     val state = imageDataViewModel
         .mediaFileState.collectAsStateWithLifecycle().value
-    ImagePreviewAndEditor(state = state, onEditImageAction=imageDataViewModel::onHandleMediaOperation, onDismiss)
+    ImagePreviewAndEditor(
+        state = state,
+        onEditImageAction = imageDataViewModel::onHandleMediaOperation,
+        landingRoute = landingRoute,
+        onDismiss = onDismiss
+    )
 }
 @Composable
 fun ImagePreviewAndEditor(
     state: MediaFileStateHandler,
     onEditImageAction: (MediaProcessingEvent) -> Unit,
+    // where "Done" returns to — the screen that opened the capture, not a fixed route
+    landingRoute: String? = null,
     onDismiss: (route: String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -141,7 +151,7 @@ fun ImagePreviewAndEditor(
                 //TODO TBD for other android screen orientation
                 onEditImageAction(MediaProcessingEvent.ScreenOrientationEvent(ScreenOrientation.UNSPECIFIED))
                 if(state.dataStateEvent == DataStateEvent.Editing) saveImage()
-                onDismiss(Route.NotesEditor)
+                onDismiss(landingRoute)
             }){ Text("Done") }
     }
 }
