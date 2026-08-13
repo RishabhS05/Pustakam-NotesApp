@@ -21,6 +21,7 @@ class NoteEditorViewModel: ObservableObject {
     private let adapter: NotesBridgeAdapter
     private let contentBridge: NoteContentBridge
     private var contentUpdatesHandle: Closeable?
+    private var contentSyncHandle: Closeable?
     private var dirtyContentIds = Set<String>()
 
     @Published private(set) var history = NoteHistory(
@@ -72,6 +73,7 @@ class NoteEditorViewModel: ObservableObject {
 
     deinit {
         contentUpdatesHandle?.close()
+        contentSyncHandle?.close()
         contentBridge.dispose()
     }
 
@@ -87,8 +89,9 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     // MARK: - Load
+    /// Always re-reads. Unsaved work is protected per content by the reducer's dirty guard,
+    /// so one stale dirty id can no longer block the whole refresh.
     func refresh() {
-        guard dirtyContentIds.isEmpty else { return }   // don't overwrite unsaved edits
         guard let id = state.note?.id, !id.isEmpty else { return }
         load(noteId: id)
     }
@@ -108,10 +111,32 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     private func apply(note: Note) {
+        let isFirstLoad = state.note == nil
         state.note = note
-        state.title = note.title ?? ""
-        state.noteContents = note.contents as? [NoteContentModel] ?? []
+        if isFirstLoad {
+            state.title = note.title ?? ""
+            state.noteContents = note.contents as? [NoteContentModel] ?? []
+        } else {
+            // a re-read merges instead of assigning, so returning from the canvas picks up
+            // its text without discarding anything typed here that is not saved yet
+            onEditorIntent(
+                EditorCommands.shared.externalContentsChanged(
+                    contents: note.contents as? [NoteContentModel] ?? []
+                )
+            )
+        }
         contentBridge.setSelectedNote(note: note)
+        observeExternalContents(noteId: note.id)
+    }
+
+    private func observeExternalContents(noteId: String) {
+        guard !noteId.isEmpty else { return }
+        contentSyncHandle?.close()
+        contentSyncHandle = contentBridge.observeContents(noteId: noteId) { [weak self] contents in
+            self?.onEditorIntent(
+                EditorCommands.shared.externalContentsChanged(contents: contents)
+            )
+        }
     }
 
     // MARK: - Content editing (single list; note.contents materialized only at save)
@@ -150,6 +175,55 @@ class NoteEditorViewModel: ObservableObject {
         addContent(content: text)
     }
 
+    private func editorState() -> EditorState {
+        EditorCommands.shared.stateOf(
+            note: state.note,
+            contents: state.noteContents,
+            dirtyContentIds: dirtyContentIds,
+            isLoading: state.isLoading,
+            error: state.errorMessage,
+            capabilities: capabilities
+        )
+    }
+
+    func onEditorIntent(_ intent: any EditorIntent) {
+        let commands = EditorCommands.shared
+        let before = editorState()
+        let next = commands.reduce(state: before, intent: intent)
+
+        capabilities = next.capabilities
+        dirtyContentIds.formUnion(next.dirtyContentIds.subtracting(before.dirtyContentIds))
+        if before.contents != next.contents { state.noteContents = next.contents }
+        if before.error != next.error { state.errorMessage = next.error }
+
+        for effect in commands.effects(before: before, next: next, intent: intent) {
+            runEffect(effect)
+        }
+    }
+
+    private func runEffect(_ effect: any EditorEffect) {
+        let commands = EditorCommands.shared
+
+        if let publish = commands.publishMediaEffect(effect: effect) {
+            contentBridge.updateMediaContent(content: publish.content)
+
+        } else if let thumbnail = commands.makeThumbnailEffect(effect: effect) {
+            makeThumbnail(for: thumbnail.content)
+        }
+    }
+
+    private func makeThumbnail(for media: NoteContentModel.MediaContent) {
+        guard let path = media.localPath, !path.isEmpty else { return }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let thumb = generateThumbnail(sourcePath: path, type: media.type) else { return }
+            DispatchQueue.main.async {
+                self?.onEditorIntent(
+                    EditorCommands.shared.thumbnailReady(contentId: media.id, thumbnailPath: thumb)
+                )
+            }
+        }
+    }
+
     func getCapturedData(media: CapturedMedia?) {
         guard let noteId = state.note?.id else { return }
         guard let content = EditorCapture.persist(
@@ -157,9 +231,8 @@ class NoteEditorViewModel: ObservableObject {
             noteId: noteId,
             positionedAt: Double(state.noteContents.count)
         ) else { return }
-        addContent(content: content)
-        generateThumbnailAsync(for: content)
-        capabilities = EditorCapabilityReducer.shared.captureFinished(state: capabilities)
+        onEditorIntent(EditorCommands.shared.addContent(content: content))
+        onEditorIntent(EditorCommands.shared.captureFinished())
     }
 
     func onCapabilityState(_ next: EditorCapabilityState) {
@@ -167,28 +240,19 @@ class NoteEditorViewModel: ObservableObject {
     }
 
     func requestCapture(_ type: ContentType) {
-        capabilities = EditorCapabilityReducer.shared.requestCapture(
-            state: capabilities,
-            type: type
-        )
+        onEditorIntent(EditorCommands.shared.captureRequested(type: type))
     }
 
     func openImportSheet() {
-        capabilities = EditorCapabilityReducer.shared.setImportSheet(
-            state: capabilities,
-            visible: true
-        )
+        onEditorIntent(EditorCommands.shared.showImportSheet(visible: true))
     }
 
     func askDeleteContent(_ contentId: String) {
-        capabilities = EditorCapabilityReducer.shared.askDeleteContent(
-            state: capabilities,
-            contentId: contentId
-        )
+        onEditorIntent(EditorCommands.shared.askDeleteContent(contentId: contentId))
     }
 
     func askDeleteNote() {
-        capabilities = EditorCapabilityReducer.shared.askDeleteNote(state: capabilities)
+        onEditorIntent(EditorCommands.shared.askDeleteNote())
     }
 
     // MARK: - File import (18-Jul-2026)
@@ -211,8 +275,7 @@ class NoteEditorViewModel: ObservableObject {
                     self.state.errorMessage = "Couldn't import the selected files."
                     return
                 }
-                items.forEach { self.addContent(content: $0) }          // dirty + playlist handled inside
-                items.forEach { self.generateThumbnailAsync(for: $0) }  // image/video thumbs only
+                self.onEditorIntent(EditorCommands.shared.addContents(contents: items))
             }
         }
     }
@@ -231,8 +294,7 @@ class NoteEditorViewModel: ObservableObject {
             self.state.isLoading = false
             switch result {
             case .success(let items):
-                items.forEach { self.addContent(content: $0) }
-                items.forEach { self.generateThumbnailAsync(for: $0) }
+                self.onEditorIntent(EditorCommands.shared.addContents(contents: items))
             case .noFileFound:
                 self.state.errorMessage = "No file found at this link."
             case .failed(let message):
@@ -241,19 +303,6 @@ class NoteEditorViewModel: ObservableObject {
         }
     }
 
-    private func generateThumbnailAsync(for media: NoteContentModel.MediaContent) {
-        guard media.type == ContentType.image || media.type == ContentType.video,
-              let path = media.localPath, !path.isEmpty else { return }
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            guard let thumb = generateThumbnail(sourcePath: path, type: media.type) else { return }
-            DispatchQueue.main.async {
-                guard let self else { return }
-                let latest = self.state.noteContents.first { $0.id == media.id }
-                    as? NoteContentModel.MediaContent ?? media
-                self.updateContent(content: latest.withThumbnail(path: thumb))
-            }
-        }
-    }
 
     // MARK: - Save / Delete
     func saveThenOpen(onSaved: @escaping () -> Void) {

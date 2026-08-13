@@ -15,8 +15,10 @@ final class MasterEditorViewModel: ObservableObject {
 
     private let adapter: NotesBridgeAdapter
     private let canvasBridge: CanvasBridgeAdapter
+    private let contentBridge = NoteContentBridge()
     private var dirtyContentIds = Set<String>()
     private var hydratedNoteId: String?
+    private var contentSyncHandle: Closeable?
 
     private var commands: CanvasCommands { CanvasCommands.shared }
 
@@ -29,10 +31,14 @@ final class MasterEditorViewModel: ObservableObject {
         adapter: NotesBridgeAdapter = NotesBridgeAdapter(),
         canvasBridge : CanvasBridgeAdapter = CanvasBridgeAdapter()
     ) {
-        
         self.adapter = adapter
         self.canvasBridge = canvasBridge
         load(noteId: noteId)
+    }
+
+    deinit {
+        contentSyncHandle?.close()
+        contentBridge.dispose()
     }
 
     func text(for nodeId: String) -> MasterTextState? { texts[nodeId] }
@@ -89,7 +95,20 @@ final class MasterEditorViewModel: ObservableObject {
             return
         }
         hydratedNoteId = note.id
+        observeExternalContents(noteId: note.id)
         hydrateCanvas(noteId: note.id)
+    }
+
+    private func observeExternalContents(noteId: String) {
+        contentSyncHandle?.close()
+        contentSyncHandle = contentBridge.observeContents(noteId: noteId) { [weak self] contents in
+            guard let self else { return }
+            self.onEditorIntent(
+                EditorCommands.shared.externalContentsChanged(contents: contents)
+            )
+            self.adoptOrphanContents()
+            self.refreshMissingTexts()
+        }
     }
 
     private func hydrateCanvas(noteId: String) {
@@ -140,10 +159,37 @@ final class MasterEditorViewModel: ObservableObject {
         canvas = commands.loaded(state: canvas, nodes: nodes, viewport: viewport)
     }
 
+    private func adoptOrphanContents() {
+        guard commands.pageForSpawn(state: canvas) != nil else { return }
+        for content in noteContents where canvas.document.nodeForContent(contentId: content.id) == nil {
+            spawnWidgetNode(kind: content.type, contentId: content.id)
+        }
+    }
+
     private func refreshMissingTexts() {
-        let existing = texts
-        let built = buildTexts(nodes: canvas.document.nodes, contents: textContents, keeping: existing)
-        if Set(built.keys) != Set(existing.keys) { texts = built }
+        var updated = texts
+        var changed = false
+        let byContentId = Dictionary(
+            textContents.map { ($0.id, $0) },
+            uniquingKeysWith: { _, last in last }
+        )
+        for node in canvas.document.nodes where node.isText {
+            guard let contentId = node.contentId,
+                  let content = byContentId[contentId],
+                  !dirtyContentIds.contains(contentId) else { continue }
+            let document = RichTextCodec.shared.documentFrom(content: content)
+            if updated[node.id]?.document != document {
+                updated[node.id] = MasterTextState.companion.of(document: document)
+                changed = true
+            }
+        }
+
+        let liveIds = Set(canvas.document.nodes.map { $0.id })
+        for id in updated.keys where !liveIds.contains(id) {
+            updated.removeValue(forKey: id)
+            changed = true
+        }
+        if changed { texts = updated }
     }
 
     private func seedNodes(
@@ -184,23 +230,94 @@ final class MasterEditorViewModel: ObservableObject {
 
     // MARK: - Content editing
 
-    private func addContent(_ content: NoteContentModel) {
-        dirtyContentIds.insert(content.id)
-        noteContents.append(content)
+    private func editorState() -> EditorState {
+        EditorCommands.shared.stateOf(
+            note: note,
+            contents: noteContents,
+            dirtyContentIds: dirtyContentIds,
+            isLoading: isLoading,
+            error: errorMessage,
+            capabilities: capabilities
+        )
     }
 
-    private func updateContent(_ content: NoteContentModel) {
-        dirtyContentIds.insert(content.id)
-        if let index = noteContents.firstIndex(where: { $0.id == content.id }) {
-            noteContents[index] = content
-        } else {
-            noteContents.append(content)
+    func onEditorIntent(_ intent: any EditorIntent) {
+        let commands = EditorCommands.shared
+        let before = editorState()
+        let next = commands.reduce(state: before, intent: intent)
+
+        note = next.noteWithContents() ?? next.note
+        noteContents = next.contents
+        dirtyContentIds = next.dirtyContentIds
+        isLoading = next.isLoading
+        errorMessage = next.error
+        capabilities = next.capabilities
+
+        for effect in commands.effects(before: before, next: next, intent: intent) {
+            runEffect(effect)
         }
     }
 
+    private func runEffect(_ effect: any EditorEffect) {
+        let commands = EditorCommands.shared
+
+        if let read = commands.readNoteEffect(effect: effect) {
+            load(noteId: read.noteId)
+
+        } else if let save = commands.saveNoteEffect(effect: effect) {
+            let dirty = save.dirtyContentIds
+            adapter.createOrUpdateNote(note: save.note, dirtyContentIds: dirty) { [weak self] result in
+                switch result {
+                case .success(let saved):
+                    self?.dirtyContentIds.subtract(dirty)
+                    if let saved { self?.note = saved }
+                case .failure(let error):
+                    self?.errorMessage = error.message
+                case .loading, .idle:
+                    break
+                }
+            }
+
+        } else if let row = commands.deleteContentRowEffect(effect: effect) {
+            adapter.deleteNoteContent(contentId: row.contentId) { _ in }
+
+        } else if let files = commands.deleteFilesEffect(effect: effect) {
+            for path in files.paths {
+                deleteFile(
+                    filePath: LocalFilePathResolver_iosKt.resolveLocalFilePath(path: path) ?? path
+                )
+            }
+
+        } else if let publish = commands.publishMediaEffect(effect: effect) {
+            contentBridge.updateMediaContent(content: publish.content)
+
+        } else if let thumbnail = commands.makeThumbnailEffect(effect: effect) {
+            makeThumbnail(for: thumbnail.content)
+        }
+    }
+
+    private func makeThumbnail(for media: NoteContentModel.MediaContent) {
+        guard let path = media.localPath, !path.isEmpty else { return }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let thumb = generateThumbnail(sourcePath: path, type: media.type) else { return }
+            DispatchQueue.main.async {
+                self?.onEditorIntent(
+                    EditorCommands.shared.thumbnailReady(contentId: media.id, thumbnailPath: thumb)
+                )
+            }
+        }
+    }
+
+    private func addContent(_ content: NoteContentModel) {
+        onEditorIntent(EditorCommands.shared.addContent(content: content))
+    }
+
+    private func updateContent(_ content: NoteContentModel) {
+        onEditorIntent(EditorCommands.shared.updateContent(content: content))
+    }
+
     private func removeContent(id: String) {
-        dirtyContentIds.insert(id)
-        noteContents.removeAll { $0.id == id }
+        onEditorIntent(EditorCommands.shared.removeContent(contentId: id))
     }
 
     func saveNote() {
@@ -278,7 +395,6 @@ final class MasterEditorViewModel: ObservableObject {
         guard let contentId = canvas.document.nodeById(nodeId: nodeId)?.contentId,
               let content = textContents.first(where: { $0.id == contentId }) else { return }
         updateContent(RichTextCodec.shared.applyTo(content: content, document: state.document))
-        saveNote()
     }
 
     // MARK: - Nodes
@@ -297,7 +413,6 @@ final class MasterEditorViewModel: ObservableObject {
         )
         onCanvasIntent(commands.addNode(node: page))
         onCanvasIntent(commands.selectNode(nodeId: page.id))
-        saveNote()
     }
 
     /// A nil content is normal: the attach menu adds an empty table/drawing widget that has no
@@ -308,10 +423,7 @@ final class MasterEditorViewModel: ObservableObject {
             addPage()
             return
         }
-        if let content {
-            addContent(content)
-            saveNote()
-        }
+        if let content { addContent(content) }
         spawnWidgetNode(kind: kind, contentId: content?.id)
     }
 
@@ -337,7 +449,6 @@ final class MasterEditorViewModel: ObservableObject {
         texts[nodeId] = nil
         guard let contentId else { return }
         removeContent(id: contentId)
-        saveNote()
     }
 
     func onCapabilityState(_ next: EditorCapabilityState) {
@@ -350,17 +461,11 @@ final class MasterEditorViewModel: ObservableObject {
     }
 
     func requestCapture(_ type: ContentType) {
-        capabilities = EditorCapabilityReducer.shared.requestCapture(
-            state: capabilities,
-            type: type
-        )
+        onEditorIntent(EditorCommands.shared.captureRequested(type: type))
     }
 
     func openImportSheet() {
-        capabilities = EditorCapabilityReducer.shared.setImportSheet(
-            state: capabilities,
-            visible: true
-        )
+        onEditorIntent(EditorCommands.shared.showImportSheet(visible: true))
     }
 
     func onCaptured(_ media: CapturedMedia?) {
@@ -376,7 +481,7 @@ final class MasterEditorViewModel: ObservableObject {
                 content: content
             )
         }
-        capabilities = EditorCapabilityReducer.shared.captureFinished(state: capabilities)
+        onEditorIntent(EditorCommands.shared.captureFinished())
     }
 
     func importFiles(urls: [URL]) {
@@ -416,16 +521,12 @@ final class MasterEditorViewModel: ObservableObject {
     }
 
     func askDeleteContent(_ contentId: String) {
-        capabilities = EditorCapabilityReducer.shared.askDeleteContent(
-            state: capabilities,
-            contentId: contentId
-        )
+        onEditorIntent(EditorCommands.shared.askDeleteContent(contentId: contentId))
     }
 
     func deleteContent(_ contentId: String) {
         guard let nodeId = canvas.document.nodeForContent(contentId: contentId)?.id else {
             removeContent(id: contentId)
-            saveNote()
             return
         }
         deleteNode(nodeId: nodeId)
@@ -452,8 +553,6 @@ final class MasterEditorViewModel: ObservableObject {
             contents: noteContents,
             document: canvas.document
         )
-        noteContents = reordered
-        noteContents.forEach { dirtyContentIds.insert($0.id) }
-        saveNote()
+        onEditorIntent(EditorCommands.shared.addContents(contents: reordered))
     }
 }

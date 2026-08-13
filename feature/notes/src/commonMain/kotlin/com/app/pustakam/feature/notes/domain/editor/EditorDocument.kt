@@ -146,31 +146,3 @@ object EditorDocumentReducer {
     private fun recordOn(state: EditorDocument, kind: NoteEditKind): NoteHistory =
         state.snapshot()?.let { state.history.record(it, kind) } ?: state.history
 }
-
-object EditorCommands {
-
-    fun empty(): EditorDocument = EditorDocument()
-
-    fun of(note: Note): EditorDocument = EditorDocumentReducer.loaded(EditorDocument(), note)
-
-    fun textKind(): NoteEditKind = NoteEditKind.TEXT
-
-    fun formattingKind(): NoteEditKind = NoteEditKind.FORMATTING
-
-    fun addTextKind(): NoteEditKind = NoteEditKind.ADD_TEXT
-
-    fun addMediaKind(): NoteEditKind = NoteEditKind.ADD_MEDIA
-
-    fun addDocumentKind(): NoteEditKind = NoteEditKind.ADD_DOCUMENT
-
-    fun deleteKind(): NoteEditKind = NoteEditKind.DELETE_CONTENT
-
-    fun reorderKind(): NoteEditKind = NoteEditKind.REORDER
-
-    fun dirtyIds(state: EditorDocument): List<String> = state.dirtyContentIds.toList()
-
-    fun contentsOf(state: EditorDocument): List<NoteContentModel> = state.contents
-
-    fun textContentsOf(state: EditorDocument): List<NoteContentModel.TextContent> =
-        state.textContents
-}

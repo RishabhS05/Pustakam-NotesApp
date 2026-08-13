@@ -16,11 +16,16 @@ import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
+import com.app.pustakam.feature.notes.domain.editor.EditorEffect
+import com.app.pustakam.feature.notes.domain.editor.EditorIntent
+import com.app.pustakam.feature.notes.domain.editor.EditorReducer
+import com.app.pustakam.feature.notes.domain.editor.EditorState
 import com.app.pustakam.feature.notes.domain.history.NoteEditKind
 import com.app.pustakam.feature.notes.domain.history.NoteHistory
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ObserveNoteContentsUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadNoteUseCase
 import com.app.pustakam.core.model.models.BaseResponse
 import com.app.pustakam.core.model.models.response.notes.Note
@@ -44,6 +49,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.inject
@@ -60,11 +66,13 @@ class NoteEditorViewModel : BaseViewModel() {
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
     private val deleteNoteContentUseCase by inject<DeleteNoteContentUseCase>()
     private val createUpdateNoteUseCase by inject<CreateORUpdateNoteUseCase>()
+    private val observeNoteContents by inject<ObserveNoteContentsUseCase>()
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
     private val _noteContentUiState = MutableStateFlow(NoteContentUiState())
     val noteContentUiState: StateFlow<NoteContentUiState> = _noteContentUiState.asStateFlow()
     private val dirtyContentIds = mutableSetOf<String>()
+    private var contentSyncJob: Job? = null
     private val _history = MutableStateFlow(NoteHistory())
     val history: StateFlow<NoteHistory> = _history.asStateFlow()
 
@@ -161,6 +169,8 @@ class NoteEditorViewModel : BaseViewModel() {
                     )
                 }
 
+                onEditorIntent(EditorIntent.ExternalContentsChanged(note.contents))
+                observeExternalContents(note.id)
                 setSelectedNoteContentUseCase(_noteContentUiState.value.note ?: note)
 
                 consumePendingMediaPaths()
@@ -223,6 +233,9 @@ class NoteEditorViewModel : BaseViewModel() {
             createUpdateNoteUseCase.invoke(_noteContentUiState.value.note!!, lastSavedDirtyIds)
         }
     }
+    /** Flush without touching NoteStatus, so leaving or backgrounding never triggers navigation. */
+    fun saveNow() = saveThenOpen { }
+
     fun saveThenOpen(onSaved: () -> Unit) {
         updateNoteObject()
         val note = _noteContentUiState.value.note ?: run { onSaved(); return }
@@ -248,7 +261,7 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun refreshOnResume(id: String?) {
         if (dirtyContentIds.isNotEmpty()) return   // don't overwrite unsaved edits
-        readFromDataBase(id)
+        readFromDataBase(_noteContentUiState.value.note?.id ?: id)
     }
 
     fun deleteNote(noteId: String) {
@@ -320,28 +333,96 @@ class NoteEditorViewModel : BaseViewModel() {
         _capabilities.value = next
     }
 
+    private fun observeExternalContents(noteId: String) {
+        if (noteId.isEmpty()) return
+        contentSyncJob?.cancel()
+        contentSyncJob = viewModelScope.launch {
+            observeNoteContents(noteId).collect {
+                onEditorIntent(EditorIntent.ExternalContentsChanged(it))
+            }
+        }
+    }
+
+    private fun editorState(): EditorState = EditorState(
+        note = _noteContentUiState.value.note,
+        contents = _noteContentUiState.value.contents.toList(),
+        dirtyContentIds = dirtyContentIds.toSet(),
+        isLoading = _noteUiState.value.isLoading,
+        error = _noteUiState.value.error,
+        capabilities = _capabilities.value
+    )
+
+    fun onEditorIntent(intent: EditorIntent) {
+        val before = editorState()
+        val next = EditorReducer.reduce(before, intent)
+        _capabilities.value = next.capabilities
+        dirtyContentIds.addAll(next.dirtyContentIds - before.dirtyContentIds)
+        syncContents(before.contents, next.contents, next.note)
+        if (next.error != before.error) {
+            _noteUiState.update { it.copy(error = next.error) }
+        }
+        EditorReducer.effects(before, next, intent).forEach { runEffect(it) }
+    }
+
+    private fun syncContents(
+        before: List<NoteContentModel>,
+        next: List<NoteContentModel>,
+        note: Note?
+    ) {
+        if (before == next) return
+        val live = _noteContentUiState.value.contents
+        val keep = next.map { it.id }.toSet()
+        live.removeAll { it.id !in keep }
+        next.sortedBy { it.position }.forEach { content ->
+            val index = live.indexOfFirst { it.id == content.id }
+            if (index == -1) live.add(content) else if (live[index] != content) live[index] = content
+        }
+        _noteContentUiState.update {
+            it.copy(
+                note = note?.withContents(live.toList()),
+                contents = it.contents,
+                isAllSetupDone = true
+            )
+        }
+    }
+
+    private fun runEffect(effect: EditorEffect) {
+        when (effect) {
+            is EditorEffect.PublishMedia -> updateSelectedMediaContentUseCase(effect.content)
+
+            is EditorEffect.MakeThumbnail -> viewModelScope.launch(Dispatchers.IO) {
+                val path = generateThumbnail(get(), effect.content.localPath!!, effect.content.type)
+                    ?: return@launch
+                withContext(Dispatchers.Main) {
+                    onEditorIntent(EditorIntent.ThumbnailReady(effect.content.id, path))
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
     fun requestCapture(type: ContentType) {
-        _capabilities.value = EditorCapabilityReducer.requestCapture(_capabilities.value, type)
+        onEditorIntent(EditorIntent.CaptureRequested(type))
     }
 
     fun openImportSheet() {
-        _capabilities.value = EditorCapabilityReducer.setImportSheet(_capabilities.value, true)
+        onEditorIntent(EditorIntent.ShowImportSheet(true))
     }
 
     fun captureFinished() {
-        _capabilities.value = EditorCapabilityReducer.captureFinished(_capabilities.value)
+        onEditorIntent(EditorIntent.CaptureFinished)
     }
 
     fun stopRecordingAudio(){
         _capabilities.value = EditorCapabilityReducer.stopAudio(_capabilities.value)
     }
     fun askDeleteContent(contentId: String) {
-        _capabilities.value =
-            EditorCapabilityReducer.askDeleteContent(_capabilities.value, contentId)
+        onEditorIntent(EditorIntent.AskDeleteContent(contentId))
     }
 
     fun askDeleteNote() {
-        _capabilities.value = EditorCapabilityReducer.askDeleteNote(_capabilities.value)
+        onEditorIntent(EditorIntent.AskDeleteNote)
     }
       fun addNewText() {
           recordHistory(NoteEditKind.ADD_TEXT)
@@ -494,10 +575,7 @@ class NoteEditorViewModel : BaseViewModel() {
                 isAllSetupDone = true
             )
         }
-        newItems.filter { it.isPlayableMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
-
-        dirtyContentIds.addAll(newItems.map { it.id })
-        generateThumbnailsFor(newItems ,get())
+        onEditorIntent(EditorIntent.AddContents(newItems))
     }
 
     fun importDeviceFiles(context: Context, uris: List<android.net.Uri>) {
@@ -551,21 +629,6 @@ class NoteEditorViewModel : BaseViewModel() {
         _noteContentUiState.update {
             it.copy(note = note.withContents(note.contents + items), contents = it.contents, isAllSetupDone = true)
         }
-        items.filter { it.isPlayableMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
-        dirtyContentIds.addAll(items.map { it.id })   // 🔧 imported blocks are new rows → saved next save
-        generateThumbnailsFor(items, get())
-    }
-    private fun generateThumbnailsFor(items: List<NoteContentModel.MediaContent>, context: Context) {
-        items.filter {
-            it.thumbnailPath.isNullOrEmpty() && !it.localPath.isNullOrEmpty() && it.type.isGalleryEligible()
-        }.forEach { media ->
-            viewModelScope.launch(Dispatchers.IO) {
-                val thumb = generateThumbnail(context, media.localPath!!, media.type) ?: return@launch
-                val latest = _noteContentUiState.value.contents
-                    .filterIsInstance<NoteContentModel.MediaContent>()
-                    .firstOrNull { it.id == media.id } ?: media
-                updateContent(content = latest.copy(thumbnailPath = thumb))
-            }
-        }
+        onEditorIntent(EditorIntent.AddContents(items))
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.pustakam.android.fileUtils.deleteFile
 import com.app.pustakam.android.fileUtils.generateThumbnail
 import com.app.pustakam.android.noteContentProvider.addContent
 import com.app.pustakam.android.fileimport.FileImportManager
@@ -32,10 +33,15 @@ import com.app.pustakam.core.richtext.master.presentation.MasterTextIntent
 import com.app.pustakam.core.richtext.master.presentation.MasterTextReducer
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 import com.app.pustakam.core.richtext.master.presentation.NoteCanvasConverter
-import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
+import com.app.pustakam.feature.notes.domain.editor.EditorEffect
+import com.app.pustakam.feature.notes.domain.editor.EditorIntent
+import com.app.pustakam.feature.notes.domain.editor.EditorReducer
+import com.app.pustakam.feature.notes.domain.editor.EditorState
 import com.app.pustakam.feature.notes.domain.usecase.ClearCanvasUseCase
+import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.MoveCanvasNodeUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ObserveNoteContentsUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasViewportUseCase
 import com.app.pustakam.feature.notes.domain.usecase.RemoveCanvasNodeUseCase
@@ -53,6 +59,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
@@ -85,10 +92,15 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
     private val readNoteUseCase by inject<ReadNoteUseCase>()
     private val saveNoteUseCase by inject<CreateORUpdateNoteUseCase>()
     private val updateSelectedMediaContentUseCase by inject<UpdateSelectedMediaContentUseCase>()
+    private val deleteNoteContentUseCase by inject<DeleteNoteContentUseCase>()
+    private val observeNoteContents by inject<ObserveNoteContentsUseCase>()
 
     private var pendingLayoutNodes: List<CanvasNode> = emptyList()
     private var pendingMediaPaths: List<Pair<String, ContentType>> = emptyList()
     private var pendingOpen: (() -> Unit)? = null
+    private var contentSyncJob: Job? = null
+    private var dirtyContentIds: Set<String> = emptySet()
+    private var lastSavedDirtyIds: Set<String> = emptySet()
     private val _state = MutableStateFlow(MasterEditorUiState())
     val state: StateFlow<MasterEditorUiState> = _state.asStateFlow()
 
@@ -112,7 +124,57 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
         }
     }
 
+    private fun observeExternalContents(noteId: String) {
+        if (noteId.isEmpty()) return
+        contentSyncJob?.cancel()
+        contentSyncJob = viewModelScope.launch {
+            observeNoteContents(noteId).collect { contents ->
+                onEditorIntent(EditorIntent.ExternalContentsChanged(contents))
+                adoptOrphanContents()
+                refreshMissingTexts()
+            }
+        }
+    }
+
+    private fun adoptOrphanContents() {
+        val state = _state.value
+        if (CanvasCommands.pageForSpawn(state.canvas) == null) return
+        state.note?.contents.orEmpty()
+            .filter { state.canvas.document.nodeForContent(it.id) == null }
+            .forEach { spawnWidgetNode(it.type, it.id) }
+    }
+
+    private fun refreshMissingTexts() {
+        val state = _state.value
+        val byContentId = state.note?.contents
+            ?.filterIsInstance<NoteContentModel.TextContent>()
+            ?.associateBy { it.id }
+            .orEmpty()
+        val updated = state.texts.toMutableMap()
+        var changed = false
+
+        state.canvas.document.nodes
+            .filter { it.kind == ContentType.TEXT }
+            .forEach { node ->
+                val content = node.contentId?.let { byContentId[it] } ?: return@forEach
+                if (content.id in dirtyContentIds) return@forEach
+                val document = RichTextCodec.documentFrom(content)
+                if (updated[node.id]?.document != document) {
+                    updated[node.id] = MasterTextState.of(document)
+                    changed = true
+                }
+            }
+
+        val stale = updated.keys - state.canvas.document.nodes.map { it.id }.toSet()
+        if (stale.isNotEmpty()) {
+            stale.forEach { updated.remove(it) }
+            changed = true
+        }
+        if (changed) _state.update { it.copy(texts = updated) }
+    }
+
     private fun readCanvasOf(note: Note) {
+        observeExternalContents(note.id)
         makeAWish(CANVAS_CODES.READ_CANVAS, showLoader = false) {
             readCanvas(note.id)
         }
@@ -178,6 +240,66 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
             node.id to MasterTextState.of(RichTextCodec.documentFrom(content))
         }
         .toMap()
+
+    private fun editorState(): EditorState = _state.value.let {
+        EditorState(
+            note = it.note,
+            contents = it.note?.contents.orEmpty(),
+            dirtyContentIds = dirtyContentIds,
+            isLoading = it.isLoading,
+            error = it.error,
+            capabilities = it.capabilities
+        )
+    }
+
+    fun onEditorIntent(intent: EditorIntent) {
+        val before = editorState()
+        val next = EditorReducer.reduce(before, intent)
+        dirtyContentIds = next.dirtyContentIds
+        _state.update {
+            it.copy(
+                note = next.noteWithContents() ?: next.note,
+                isLoading = next.isLoading,
+                error = next.error,
+                capabilities = next.capabilities
+            )
+        }
+        EditorReducer.effects(before, next, intent).forEach { runEffect(it) }
+    }
+
+    private fun runEffect(effect: EditorEffect) {
+        when (effect) {
+            is EditorEffect.ReadNote -> readFromDataBase(effect.noteId)
+
+            is EditorEffect.SaveNote -> {
+                lastSavedDirtyIds = effect.dirtyContentIds
+                makeAWish(NOTES_CODES.UPDATE, showLoader = false) {
+                    saveNoteUseCase(effect.note, effect.dirtyContentIds)
+                }
+            }
+
+            is EditorEffect.DeleteContentRow ->
+                makeAWish(NOTES_CODES.DELETE, showLoader = false) {
+                    deleteNoteContentUseCase.invoke(effect.contentId)
+                }
+
+            is EditorEffect.DeleteFiles -> viewModelScope.launch(Dispatchers.IO) {
+                effect.paths.forEach { runCatching { deleteFile(filePath = it) } }
+            }
+
+            is EditorEffect.PublishMedia -> updateSelectedMediaContentUseCase(effect.content)
+
+            is EditorEffect.MakeThumbnail -> viewModelScope.launch(Dispatchers.IO) {
+                val path = generateThumbnail(get(), effect.content.localPath!!, effect.content.type)
+                    ?: return@launch
+                withContext(Dispatchers.Main) {
+                    onEditorIntent(EditorIntent.ThumbnailReady(effect.content.id, path))
+                }
+            }
+
+            else -> Unit
+        }
+    }
 
     fun onCanvasIntent(intent: CanvasEditorIntent) {
         val before = _state.value.canvas
@@ -263,12 +385,7 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
             .filterIsInstance<NoteContentModel.TextContent>()
             .firstOrNull { it.id == contentId } ?: return
 
-        val updated = RichTextCodec.applyTo(content, textState.document)
-        val contents = note.contents.map { if (it.id == updated.id) updated else it }
-        val nextNote = note.withContents(contents)
-         makeAWish(NOTES_CODES.UPDATE) {
-            saveNoteUseCase(nextNote)
-        }
+        onEditorIntent(EditorIntent.UpdateContent(RichTextCodec.applyTo(content, textState.document)))
     }
 
     fun addPage() {
@@ -278,16 +395,14 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
             positionedAt = note.contents.size.toDouble()
         )
         val page = CanvasCommands.pageNode(_state.value.canvas, content.id)
-        val nextNote = note.withContents(note.contents + content)
         _state.update {
             it.copy(
-                note = nextNote,
                 texts = it.texts + (page.id to MasterTextState.of(RichTextCodec.documentFrom(content)))
             )
         }
         onCanvasIntent(CanvasEditorIntent.AddNode(page))
         onCanvasIntent(CanvasCommands.selectNode(page.id))
-        makeAWish(  NOTES_CODES.UPDATE ) { saveNoteUseCase(nextNote) }
+        onEditorIntent(EditorIntent.AddContent(content))
     }
 
     fun addWidget(kind: ContentType, content: NoteContentModel? = null) {
@@ -295,12 +410,8 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
             addPage()
             return
         }
-        val note = _state.value.note ?: return
-        if (content != null) {
-            val nextNote = note.withContents(note.contents + content)
-            _state.update { it.copy(note = nextNote) }
-            makeAWish(NOTES_CODES.UPDATE, showLoader = false) { saveNoteUseCase(nextNote) }
-        }
+        if (_state.value.note == null) return
+        if (content != null) onEditorIntent(EditorIntent.AddContent(content))
         spawnWidgetNode(kind, content?.id)
     }
 
@@ -321,10 +432,7 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
     }
 
     private fun removeContentOnly(contentId: String) {
-        val note = _state.value.note ?: return
-        val nextNote = note.withContents(note.contents.filterNot { it.id == contentId })
-        _state.update { it.copy(note = nextNote) }
-        makeAWish(  NOTES_CODES.UPDATE ) { saveNoteUseCase(nextNote) }
+        onEditorIntent(EditorIntent.RemoveContent(contentId))
     }
 
     fun importDeviceFiles(context: Context, uris: List<Uri>) {
@@ -391,11 +499,7 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
         val contentId = _state.value.canvas.document.nodeById(nodeId)?.contentId
         onCanvasIntent(CanvasCommands.removeNode(nodeId))
         _state.update { it.copy(texts = it.texts - nodeId) }
-        if (contentId != null) {
-            val nextNote = note.withContents(note.contents.filterNot { it.id == contentId })
-            _state.update { it.copy(note = nextNote) }
-            makeAWish(  NOTES_CODES.UPDATE ) { saveNoteUseCase(nextNote) }
-        }
+        if (contentId != null) onEditorIntent(EditorIntent.RemoveContent(contentId))
     }
 
     fun renameNode(nodeId: String, name: String) {
@@ -422,9 +526,7 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
             note.contents,
             _state.value.canvas.document
         )
-        val nextNote = note.withContents(reordered)
-        _state.update { it.copy(note = nextNote) }
-        makeAWish(  NOTES_CODES.UPDATE ) { saveNoteUseCase(nextNote) }
+        onEditorIntent(EditorIntent.AddContents(reordered))
     }
 
     fun onCapabilityState(next: EditorCapabilityState) {
@@ -432,9 +534,7 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
     }
 
     fun requestCapture(type: ContentType) {
-        _state.update {
-            it.copy(capabilities = EditorCapabilityReducer.requestCapture(it.capabilities, type))
-        }
+        onEditorIntent(EditorIntent.CaptureRequested(type))
     }
 
     /**
@@ -448,9 +548,7 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
     }
 
     fun onCaptured(content: NoteContentModel?) {
-        _state.update {
-            it.copy(capabilities = EditorCapabilityReducer.captureFinished(it.capabilities))
-        }
+        onEditorIntent(EditorIntent.CaptureFinished)
         val media = content as? NoteContentModel.MediaContent ?: return
         landCapturedMedia(listOf(media))
     }
@@ -485,52 +583,19 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
     /** Captured media becomes note content AND a canvas widget, so it shows up on the board. */
     private fun landCapturedMedia(items: List<NoteContentModel.MediaContent>) {
         if (items.isEmpty()) return
-        val note = _state.value.note ?: return
-        val known = note.contents.map { it.id }.toSet()
+        val known = _state.value.note?.contents?.map { it.id }?.toSet().orEmpty()
         val fresh = items.filterNot { it.id in known }
-        val merged = note.contents.map { existing ->
-            items.firstOrNull { it.id == existing.id } ?: existing
-        } + fresh
-        val nextNote = note.withContents(merged)
-        _state.update { it.copy(note = nextNote) }
+        onEditorIntent(EditorIntent.AddContents(items))
         fresh.forEach { spawnWidgetNode(it.type, it.id) }
-        items.filter { it.isPlayableMedia() }.forEach { updateSelectedMediaContentUseCase(it) }
-        makeAWish(NOTES_CODES.UPDATE, showLoader = false) { saveNoteUseCase(nextNote) }
-        generateThumbnailsFor(items, get())
     }
 
-    private fun generateThumbnailsFor(
-        items: List<NoteContentModel.MediaContent>,
-        context: Context
-    ) {
-        items.filter {
-            it.thumbnailPath.isNullOrEmpty() && !it.localPath.isNullOrEmpty() &&
-                (it.type == ContentType.VIDEO || it.type == ContentType.IMAGE ||
-                    it.type == ContentType.GIF)
-        }.forEach { media ->
-            viewModelScope.launch(Dispatchers.IO) {
-                val thumb = generateThumbnail(context, media.localPath!!, media.type)
-                    ?: return@launch
-                val latest = _state.value.note?.contents
-                    ?.filterIsInstance<NoteContentModel.MediaContent>()
-                    ?.firstOrNull { it.id == media.id } ?: media
-                landCapturedMedia(listOf(latest.copy(thumbnailPath = thumb)))
-            }
-        }
-    }
 
     fun askDeleteContent(contentId: String) {
-        _state.update {
-            it.copy(
-                capabilities = EditorCapabilityReducer.askDeleteContent(it.capabilities, contentId)
-            )
-        }
+        onEditorIntent(EditorIntent.AskDeleteContent(contentId))
     }
 
     fun setAttachSheet(visible: Boolean) {
-        _state.update {
-            it.copy(capabilities = EditorCapabilityReducer.setAttachSheet(it.capabilities, visible))
-        }
+        onEditorIntent(EditorIntent.ShowAttachSheet(visible))
     }
 
     override fun onSuccess(
@@ -547,6 +612,8 @@ class MasterEditorViewModel : BaseViewModel(), KoinComponent {
 
             NOTES_CODES.UPDATE -> {
                 val note = result.data.data as? Note ?: return
+                dirtyContentIds = dirtyContentIds - lastSavedDirtyIds
+                lastSavedDirtyIds = emptySet()
                 _state.update { it.copy(note = note, isLoading = false, error = null) }
                 runPendingOpen()
             }

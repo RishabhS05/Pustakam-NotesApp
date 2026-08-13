@@ -451,6 +451,17 @@ struct MasterTextContentWidget: View {
                 onDismiss: { sheet = .none }
             )
         }
+        // @State is seeded once in init, so without this the widget keeps rendering the
+        // document it was created with even after the note is edited somewhere else
+        .onAppear { reseedIfNeeded() }
+        .onChange(of: text) { _, _ in reseedIfNeeded() }
+    }
+
+    private func reseedIfNeeded() {
+        let document = RichTextCodec.shared.documentFrom(text: text, metadata: metadata)
+        guard document != lastEmitted, document != state.document else { return }
+        state = MasterTextState.companion.of(document: document)
+        lastEmitted = document
     }
 
     private var keyboardAccessory: AnyView? {

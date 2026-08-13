@@ -182,6 +182,11 @@ fun NoteEditorScreen(
             Lifecycle.Event.ON_RESUME -> {
                 noteEditorViewModel.refreshOnResume(id)
             }
+            // leaving the screen or going to background flushes the note, so the other
+            // editor sees the text without waiting for a back press
+            Lifecycle.Event.ON_PAUSE -> {
+                noteEditorViewModel.saveNow()
+            }
 
             else -> {}
         }

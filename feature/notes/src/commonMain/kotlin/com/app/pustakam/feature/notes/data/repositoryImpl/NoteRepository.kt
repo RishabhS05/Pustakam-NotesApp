@@ -22,11 +22,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteSyncRepository
 import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import org.koin.core.component.inject
 
 internal class NoteRepository : BaseRepository(), INoteRepository {
+        private val syncRepository: INoteSyncRepository by inject()
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(emptyList())
 
@@ -244,6 +247,7 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
     override suspend fun insertOrUpdateNote(note : Note, dirtyContentIds: Set<String>?) : Result<BaseResponse<Note>, Error> {
         return insertUpdateFromDb(note, dirtyContentIds).onSuccess {
             log_d("Insert Update","added ")
+            syncRepository.publishContents(note.id, note.contents)
             _notes.update { current->
                 val newList = ArrayList(current.notes)                    // 1. copy FIRST
                 val index = newList.indexOfFirst { it.id == note.id }     // 2. single O(n) scan

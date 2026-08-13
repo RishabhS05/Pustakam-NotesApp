@@ -68,9 +68,11 @@ struct NoteEditorView: View {
             callbacks: EditorCapabilityCallbacks(
                 onState: { noteEditorViewModel.onCapabilityState($0) },
                 onOpenCamera: {
-                    router.navigate(to: .Camera { data in
-                        noteEditorViewModel.getCapturedData(media: data)
-                    })
+                    noteEditorViewModel.saveThenOpen {
+                        router.navigate(to: .Camera { data in
+                            noteEditorViewModel.getCapturedData(media: data)
+                        })
+                    }
                 },
                 onCaptured: { noteEditorViewModel.getCapturedData(media: $0) },
                 onFilesPicked: { noteEditorViewModel.importFiles(urls: $0) },
@@ -120,7 +122,11 @@ struct NoteEditorView: View {
                     ActionButtonWithoutBackground(iconName: "board_icon",
                                                   action: {
                         if let noteId = noteEditorViewModel.state.note?.id {
-                            router.navigate(to: .MasterEditor(noteId: noteId))
+                            // flush first: the canvas reads the note from the db on open,
+                            // so navigating before the write lands shows stale text
+                            noteEditorViewModel.saveThenOpen {
+                                router.navigate(to: .MasterEditor(noteId: noteId))
+                            }
                         }
                     }, tint: Theme.Colors.secondary)
                     
@@ -138,7 +144,9 @@ struct NoteEditorView: View {
                                                   enabled : noteEditorViewModel.isNoteValid(),
                                                   action: {
                         if let noteId = noteEditorViewModel.state.note?.id {
-                            router.navigate(to: .NoteBookReader(noteId: noteId))
+                            noteEditorViewModel.saveThenOpen {
+                                router.navigate(to: .NoteBookReader(noteId: noteId))
+                            }
                         }
                     }, tint: Theme.Colors.secondary)
                     ActionButtonWithoutBackground(iconName: "square.and.arrow.up.on.square", action: {
@@ -155,6 +163,13 @@ struct NoteEditorView: View {
         }
         .onDisappear {saveNote() }
         .onAppear { noteEditorViewModel.refresh() }
+        // backgrounding is not a disappear, so flush there too and the other editor
+        // sees the text without waiting for the screen to close
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.willResignActiveNotification
+            )
+        ) { _ in saveNote() }
     }
     
     

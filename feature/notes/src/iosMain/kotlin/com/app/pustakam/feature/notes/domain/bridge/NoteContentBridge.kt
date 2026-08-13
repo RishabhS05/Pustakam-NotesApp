@@ -2,6 +2,7 @@ package com.app.pustakam.feature.notes.domain.bridge
 
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.feature.notes.domain.usecase.ObserveNoteContentsUseCase
 import com.app.pustakam.feature.notes.domain.usecase.SetSelectedNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateSelectedMediaContentUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -20,11 +21,17 @@ class NoteContentBridge : KoinComponent {
 
     private val setSelectedNoteUseCase: SetSelectedNoteContentUseCase by inject()
     private val updateMediaUseCase: UpdateSelectedMediaContentUseCase by inject()
+    private val observeNoteContentsUseCase: ObserveNoteContentsUseCase by inject()
 
     fun setSelectedNote(note: Note) = setSelectedNoteUseCase(note)
 
     fun updateMediaContent(content: NoteContentModel.MediaContent) =
         updateMediaUseCase(content)
+
+    fun observeContents(
+        noteId: String,
+        onChange: (List<NoteContentModel>) -> Unit
+    ): Closeable = observeNoteContentsUseCase(noteId).watch(scope) { onChange(it) }
 
     /** Live media list of the selected note (players/visualizers). */
     fun observeSelectedMedia(onChange: (List<NoteContentModel.MediaContent>) -> Unit): Closeable =

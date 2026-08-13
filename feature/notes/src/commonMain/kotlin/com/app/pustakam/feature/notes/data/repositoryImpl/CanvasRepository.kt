@@ -12,6 +12,7 @@ import com.app.pustakam.core.richtext.master.model.CanvasNode
 import com.app.pustakam.core.richtext.master.model.CanvasRect
 import com.app.pustakam.core.richtext.master.model.Viewport
 import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteSyncRepository
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -19,6 +20,7 @@ import org.koin.core.component.inject
 internal class CanvasRepository : ICanvasRepository, KoinComponent {
 
     private val database by inject<NotesDatabase>()
+    private val syncRepository by inject<INoteSyncRepository>()
     private val dao by lazy { CanvasDao(database) }
 
     private val dispatcher by lazy { provideDispatcher() }
@@ -41,10 +43,10 @@ internal class CanvasRepository : ICanvasRepository, KoinComponent {
         onIo { CanvasDocument(dao.nodesIn(noteId, rect)) }
 
     override suspend fun save(noteId: String, node: CanvasNode) =
-        onIo { dao.upsert(noteId, node); node }
+        onIo { dao.upsert(noteId, node); node }.also { publish(noteId) }
 
     override suspend fun saveAll(noteId: String, nodes: List<CanvasNode>) =
-        onIo { dao.upsertAll(noteId, nodes); nodes }
+        onIo { dao.upsertAll(noteId, nodes); nodes }.also { publish(noteId) }
 
     override suspend fun move(nodeId: String, x: Float, y: Float) =
         onIo { dao.move(nodeId, x, y); true }
@@ -59,7 +61,12 @@ internal class CanvasRepository : ICanvasRepository, KoinComponent {
 
     override suspend fun remove(nodeId: String) = onIo { dao.delete(nodeId); true }
 
-    override suspend fun removeAll(noteId: String) = onIo { dao.deleteAll(noteId); true }
+    override suspend fun removeAll(noteId: String) =
+        onIo { dao.deleteAll(noteId); true }.also { publish(noteId) }
+
+    private suspend fun publish(noteId: String) {
+        runCatching { syncRepository.publishCanvasNodes(noteId, dao.nodes(noteId)) }
+    }
 
     override suspend fun count(noteId: String) = onIo { dao.count(noteId).toInt() }
 

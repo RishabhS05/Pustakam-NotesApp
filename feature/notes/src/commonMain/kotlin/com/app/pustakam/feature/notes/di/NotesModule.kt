@@ -1,9 +1,11 @@
 package com.app.pustakam.feature.notes.di
 
 import com.app.pustakam.feature.notes.data.repositoryImpl.CanvasRepository
+import com.app.pustakam.feature.notes.data.repositoryImpl.NoteSyncRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteRepository
 import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteSyncRepository
 import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
@@ -12,6 +14,8 @@ import com.app.pustakam.feature.notes.domain.usecase.ClearCanvasUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ClearSelectedNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.MoveCanvasNodeUseCase
 import com.app.pustakam.feature.notes.domain.usecase.PruneCanvasOrphansUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ObserveCanvasNodesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ObserveNoteContentsUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadCanvasViewportUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ReadVisibleCanvasUseCase
@@ -48,6 +52,7 @@ fun notesModule(): Module = module {
 
     single<INoteContentRepository> { NoteContentRepository() }
     single<ICanvasRepository> { CanvasRepository() }
+    single<INoteSyncRepository> { NoteSyncRepository() }
     factory<CreateORUpdateNoteUseCase> { CreateORUpdateNoteUseCase() }
     factory<DeleteNoteUseCase> { DeleteNoteUseCase() }
     factory<ReadNoteUseCase> { ReadNoteUseCase() }
@@ -58,6 +63,8 @@ fun notesModule(): Module = module {
     factory<UpdateReadingProgressUseCase> { UpdateReadingProgressUseCase() }
     factory<ReadContentUseCase> { ReadContentUseCase() }
     factory<ReadCanvasUseCase> { ReadCanvasUseCase() }
+    factory<ObserveNoteContentsUseCase> { ObserveNoteContentsUseCase() }
+    factory<ObserveCanvasNodesUseCase> { ObserveCanvasNodesUseCase() }
     factory<ReadVisibleCanvasUseCase> { ReadVisibleCanvasUseCase() }
     factory<ReadCanvasViewportUseCase> { ReadCanvasViewportUseCase() }
     factory<SaveCanvasNodeUseCase> { SaveCanvasNodeUseCase() }
