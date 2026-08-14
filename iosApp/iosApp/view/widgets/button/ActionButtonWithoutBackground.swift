@@ -58,7 +58,7 @@ struct ActionButtonWithoutBackground: View {
             .resizable()
             .scaledToFit()
             .frame(width: 18, height: 18)
-            .padding(12)
+            .padding(6)
             .shadow(color: .gray.opacity(0.1), radius: 4)
             .foregroundColor(enabled ? tint : .gray)
     }
@@ -68,8 +68,9 @@ struct ActionButtonWithoutBackground: View {
             .renderingMode(.original)
             .resizable()
             .scaledToFit()
-            .frame(width: 20, height: 20)
-            .padding(11)
+            .frame(width: 24, height: 24)
+            .padding(4)
+            .foregroundColor(enabled ? tint : .gray)
             .opacity(enabled ? 1 : 0.4)
     }
 }

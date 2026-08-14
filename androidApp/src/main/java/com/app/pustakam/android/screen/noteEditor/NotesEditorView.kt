@@ -235,7 +235,7 @@ fun NoteEditorScreen(
                     }
                 ) {
                     Icon(
-                         painterResource(com.app.pustakam.android.R.drawable.ic_board_icon),
+                         painterResource(com.app.pustakam.android.R.drawable.workspace),
                         contentDescription = "MasterEditor",
                         Modifier.size(24.dp)
                     )

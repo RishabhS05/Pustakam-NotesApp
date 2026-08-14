@@ -24,9 +24,11 @@ import com.app.pustakam.core.richtext.model.ParagraphStyle
 
 object MasterTextRenderer {
 
-    private const val BULLET_SCALE = 0.55f
-    private const val NUMBER_SCALE = 0.85f
-    private const val CHECKBOX_DP = 16f
+    private const val BULLET_SCALE = 2f
+    private const val NUMBER_SCALE = .8f
+    private const val CHECKBOX_DP = 17f
+    private const val X_HEIGHT_RATIO = 0.32f
+    private const val NUMBER_TRAIL_SP = 4f
 
 
     const val INDENT_STEP_SP = 20f
@@ -98,19 +100,21 @@ object MasterTextRenderer {
             if (!paragraph.hasMarker) return@forEach
             val offset = paragraph.start.coerceIn(0, layout.layoutInput.text.length)
             val line = runCatching { layout.getLineForOffset(offset) }.getOrNull() ?: return@forEach
-            val top = layout.getLineTop(line)
+            val baseline = layout.getLineBaseline(line)
             val indentPx = with(density) {
                 (paragraph.indentLevel * INDENT_STEP_SP).sp.toPx()
             }
+            val gutterPx = with(density) { MARKER_GUTTER_SP.sp.toPx() }
+            val fontPx = with(density) { (baseSize * paragraph.style.relativeSize).toPx() }
+            val midY = baseline - fontPx * X_HEIGHT_RATIO
 
             if (paragraph.isChecklist) {
-                val lineHeight = layout.getLineBottom(line) - top
                 val boxPx = with(density) { CHECKBOX_DP.dp.toPx() }
-                val gutterPx = with(density) { MARKER_GUTTER_SP.sp.toPx() }
-                drawCheckbox(
+                drawChecklistMark(
                     scope,
                     indentPx + (gutterPx - boxPx) / 2f,
-                    top + (lineHeight - boxPx) / 2f,
+                    midY - boxPx / 2f,
+                    boxPx,
                     paragraph.checked,
                     colors,
                     density
@@ -118,8 +122,8 @@ object MasterTextRenderer {
                 return@forEach
             }
 
-            val markerScale =
-                if (paragraph.listStyle == ListStyle.BULLET) BULLET_SCALE else NUMBER_SCALE
+            val isBullet = paragraph.listStyle == ListStyle.BULLET
+            val markerScale = if (isBullet) BULLET_SCALE else NUMBER_SCALE
             val glyph = measurer.measure(
                 text = AnnotatedString(paragraph.marker),
                 style = TextStyle(
@@ -128,42 +132,55 @@ object MasterTextRenderer {
                     fontWeight = FontWeight.Medium
                 )
             )
-            val lineHeight = layout.getLineBottom(line) - top
-            val centred = top + (lineHeight - glyph.size.height) / 2f
-            val gutterPx = with(density) { MARKER_GUTTER_SP.sp.toPx() }
-            val centredX = indentPx + (gutterPx - glyph.size.width) / 2f
-            scope.drawText(glyph, topLeft = Offset(centredX, centred))
+            val x = if (isBullet) {
+                indentPx + (gutterPx - glyph.size.width) / 2f
+            } else {
+                val trail = with(density) { NUMBER_TRAIL_SP.sp.toPx() }
+                indentPx + gutterPx - glyph.size.width - trail
+            }
+            val y = if (isBullet) midY - (glyph.size.height * 0.45f) else baseline - glyph.firstBaseline
+            scope.drawText(glyph, topLeft = Offset(x, y))
         }
     }
 
-    private fun drawCheckbox(
+    private fun drawChecklistMark(
         scope: DrawScope,
         left: Float,
         top: Float,
+        size: Float,
         checked: Boolean,
         colors: SmartTextColors,
         density: Density
     ) {
-        val size = with(density) { CHECKBOX_DP.dp.toPx() }
         val stroke = with(density) { 1.5.dp.toPx() }
-        val corner = with(density) { 4.dp.toPx() }
-        val offset = Offset(left, top)
-        if (checked) {
-            scope.drawRoundRect(
-                color = colors.accent,
-                topLeft = offset,
-                size = androidx.compose.ui.geometry.Size(size, size),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
-            )
-        } else {
-            scope.drawRoundRect(
+        val radius = size / 2f
+        val centre = Offset(left + radius, top + radius)
+
+        if (!checked) {
+            scope.drawCircle(
                 color = colors.onSurfaceMuted,
-                topLeft = offset,
-                size = androidx.compose.ui.geometry.Size(size, size),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner),
+                radius = radius - stroke / 2f,
+                center = centre,
                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
             )
+            return
         }
+
+        scope.drawCircle(color = colors.accent, radius = radius, center = centre)
+        val tick = androidx.compose.ui.graphics.Path().apply {
+            moveTo(left + size * 0.28f, top + size * 0.52f)
+            lineTo(left + size * 0.44f, top + size * 0.68f)
+            lineTo(left + size * 0.74f, top + size * 0.34f)
+        }
+        scope.drawPath(
+            path = tick,
+            color = colors.surface,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                width = stroke,
+                cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                join = androidx.compose.ui.graphics.StrokeJoin.Round
+            )
+        )
     }
 
     fun markerHitOffset(

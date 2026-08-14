@@ -42,9 +42,6 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
     private fun createNewEmptyNote(tagId  : String = ""): Note {
         val date = getCurrentTimestamp().toString()
         val id = UniqueIdGenerator.generateUniqueId()
-        // 🔧 21-Jul-2026 databasev2.md §2.4: stamp offline-first sync fields at creation.
-        //   ownerId = the signed-in user's id from prefs; version = a fresh generated-uuid string
-        //   (never hardcoded); syncStatus starts PENDING so the sync queue picks it up.
         return Note(
             id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId,
             ownerId = session.userId,
@@ -53,9 +50,6 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
     }
     fun insertNotes(notes : Notes){
         _notes.update { current ->
-            // 🔧 15-Jul-2026 Phase 0.1: page merge — page 2+ APPENDS (deduped by id) instead of
-            //   replacing the list, otherwise loading the next page would erase the previous one.
-            //   page <= 1 (fresh load or legacy full load, page 0) replaces, as before.
             val list: ArrayList<Note> = if (notes.page > 1) {
                 ArrayList(current.notes).apply {
                     val existingIds = map { it.id }.toSet()

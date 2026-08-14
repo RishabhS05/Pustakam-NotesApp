@@ -39,7 +39,7 @@ class ClearSelectedNoteContentUseCase : NoteContentBaseUseCase() {
 class UpdateReadingProgressUseCase : NoteBaseUseCase() {
     private val noteContentRepository: INoteContentRepository by inject()
 
-    suspend operator fun invoke(contentId: String?, progressPage: Int, totalPages: Int) =
+     operator fun invoke(contentId: String?, progressPage: Int, totalPages: Int) =
         getBaseApiCall {
             noteRepository.updateReadingProgressFromDb(contentId ?: "", progressPage, totalPages)
                 .onSuccess {
@@ -51,10 +51,10 @@ class UpdateReadingProgressUseCase : NoteBaseUseCase() {
         }
 }
 class ReadContentUseCase : NoteBaseUseCase() {
-    suspend operator fun invoke(contentId: String?) =
+     operator fun invoke(contentId: String?) =
         getBaseApiCall { noteRepository.getNoteContentByIdFromDb(contentId) }
 }
 class DeleteNoteContentUseCase : NoteBaseUseCase() {
-    suspend operator fun invoke(id: String?) =
+     operator fun invoke(id: String?) =
         getBaseApiCall { noteRepository.deleteNoteContentFromDb(id ?: "") }
 }

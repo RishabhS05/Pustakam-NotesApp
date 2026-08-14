@@ -119,7 +119,7 @@ struct NoteEditorView: View {
             
             ToolbarItem(placement: .topBarTrailing) {
                 HStack{
-                    ActionButtonWithoutBackground(iconName: "board_icon",
+                    ActionButtonWithoutBackground(iconName: "workspace",
                                                   action: {
                         if let noteId = noteEditorViewModel.state.note?.id {
                             // flush first: the canvas reads the note from the db on open,
@@ -163,8 +163,6 @@ struct NoteEditorView: View {
         }
         .onDisappear {saveNote() }
         .onAppear { noteEditorViewModel.refresh() }
-        // backgrounding is not a disappear, so flush there too and the other editor
-        // sees the text without waiting for the screen to close
         .onReceive(
             NotificationCenter.default.publisher(
                 for: UIApplication.willResignActiveNotification

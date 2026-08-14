@@ -6,9 +6,11 @@ enum MasterTextRenderer {
 
     static let indentStep: CGFloat = 20
     static let markerGutter: CGFloat = 26
-    static let bulletScale: CGFloat = 1.0
-    static let numberScale: CGFloat = 1.0
-    static let checkboxSide: CGFloat = 16
+    static let bulletScale: CGFloat = 2
+    static let numberScale: CGFloat = 0.8
+    static let checkboxSide: CGFloat = 18
+    static let xHeightRatio: CGFloat = 0.32
+    static let numberTrail: CGFloat = 4
 
     static func attributed(
         state: MasterTextState,
@@ -149,16 +151,39 @@ enum MasterTextRenderer {
             rect.origin.x += textView.textContainerInset.left
             rect.origin.y += textView.textContainerInset.top
             let indent = CGFloat(paragraph.indentLevel) * indentStep
-            // centred on the line rather than pinned to its top
-            let markerSize = baseSize * CGFloat(paragraph.style.relativeSize)
+            let fontSize = baseSize * CGFloat(paragraph.style.relativeSize)
+            let markerSize = fontSize
                 * (paragraph.listStyle == ListStyle.bullet ? bulletScale : numberScale)
-            let box = paragraph.isChecklist ? checkboxSide : markerSize
+            let font = UIFont.systemFont(ofSize: markerSize, weight: .medium)
+            // markers sit on the text baseline, not centred in the line box, or they read low
+            let baseline = rect.minY + textView.layoutManager.location(
+                forGlyphAt: glyphRange.location
+            ).y
+            let isBullet = paragraph.listStyle == ListStyle.bullet
+
+            if paragraph.isChecklist {
+                let box = checkboxSide
+                return (
+                    paragraph,
+                    CGPoint(
+                        x: rect.minX + indent + (markerGutter - box) / 2,
+                        y: baseline - fontSize * xHeightRatio - box / 2
+                    ),
+                    markerSize
+                )
+            }
+
+            let width = (paragraph.marker as NSString)
+                .size(withAttributes: [.font: font]).width
+            let x = isBullet
+                ? rect.minX + indent + (markerGutter - width) / 2
+                : rect.minX + indent + markerGutter - width - numberTrail
+            let y: CGFloat = isBullet
+                ? baseline - (font.ascender + (font.descender * 0.5))
+                : baseline - font.ascender
             return (
                 paragraph,
-                CGPoint(
-                    x: rect.minX + indent + (markerGutter - box) / 2,
-                    y: rect.minY + (rect.height - box) / 2
-                ),
+                CGPoint(x: x, y: y),
                 markerSize
             )
         }

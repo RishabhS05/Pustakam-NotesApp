@@ -12,61 +12,61 @@ abstract class CanvasBaseUseCase : BaseUseCase() {
 }
 
 class ReadCanvasUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String) =
+     operator fun invoke(noteId: String) =
         getBaseApiCall { canvasRepository.load(noteId) }
 }
 
 class ReadVisibleCanvasUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String, rect: CanvasRect) =
+     operator fun invoke(noteId: String, rect: CanvasRect) =
         getBaseApiCall { canvasRepository.loadVisible(noteId, rect) }
 }
 
 class ReadCanvasViewportUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String) =
+     operator fun invoke(noteId: String) =
         getBaseApiCall { canvasRepository.loadViewport(noteId) }
 }
 
 class SaveCanvasNodeUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String, node: CanvasNode) =
+     operator fun invoke(noteId: String, node: CanvasNode) =
         getBaseApiCall { canvasRepository.save(noteId, node) }
 }
 
 class SaveCanvasNodesUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String, nodes: List<CanvasNode>) =
+     operator fun invoke(noteId: String, nodes: List<CanvasNode>) =
         getBaseApiCall { canvasRepository.saveAll(noteId, nodes) }
 }
 
 class MoveCanvasNodeUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(nodeId: String, x: Float, y: Float) =
+     operator fun invoke(nodeId: String, x: Float, y: Float) =
         getBaseApiCall { canvasRepository.move(nodeId, x, y) }
 }
 
 class ResizeCanvasNodeUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(nodeId: String, width: Float, height: Float) =
+     operator fun invoke(nodeId: String, width: Float, height: Float) =
         getBaseApiCall { canvasRepository.resize(nodeId, width, height) }
 }
 
 class RenameCanvasNodeUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(nodeId: String, name: String) =
+     operator fun invoke(nodeId: String, name: String) =
         getBaseApiCall { canvasRepository.rename(nodeId, name) }
 }
 
 class RemoveCanvasNodeUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(nodeId: String) =
+     operator fun invoke(nodeId: String) =
         getBaseApiCall { canvasRepository.remove(nodeId) }
 }
 
 class ClearCanvasUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String) =
+     operator fun invoke(noteId: String) =
         getBaseApiCall { canvasRepository.removeAll(noteId) }
 }
 
 class SaveCanvasViewportUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke(noteId: String, viewport: Viewport) =
+     operator fun invoke(noteId: String, viewport: Viewport) =
         getBaseApiCall { canvasRepository.saveViewport(noteId, viewport) }
 }
 
 class PruneCanvasOrphansUseCase : CanvasBaseUseCase() {
-    suspend operator fun invoke() =
+     operator fun invoke() =
         getBaseApiCall { canvasRepository.pruneOrphans() }
 }

@@ -383,16 +383,29 @@ final class MasterTextUITextView: UITextView {
 
     private func drawCheckbox(at point: CGPoint, checked: Bool) {
         let side: CGFloat = MasterTextRenderer.checkboxSide
+        let stroke: CGFloat = 1.5
         let box = CGRect(x: point.x, y: point.y, width: side, height: side)
-        let path = UIBezierPath(roundedRect: box, cornerRadius: 4)
-        if checked {
-            UIColor(palette.accent).setFill()
-            path.fill()
-        } else {
+
+        guard checked else {
+            let ring = UIBezierPath(ovalIn: box.insetBy(dx: stroke / 2, dy: stroke / 2))
             UIColor(palette.onSurfaceMuted).setStroke()
-            path.lineWidth = 1.5
-            path.stroke()
+            ring.lineWidth = stroke
+            ring.stroke()
+            return
         }
+
+        UIColor(palette.accent).setFill()
+        UIBezierPath(ovalIn: box).fill()
+
+        let tick = UIBezierPath()
+        tick.move(to: CGPoint(x: box.minX + side * 0.28, y: box.minY + side * 0.52))
+        tick.addLine(to: CGPoint(x: box.minX + side * 0.44, y: box.minY + side * 0.68))
+        tick.addLine(to: CGPoint(x: box.minX + side * 0.74, y: box.minY + side * 0.34))
+        tick.lineWidth = stroke
+        tick.lineCapStyle = .round
+        tick.lineJoinStyle = .round
+        UIColor(palette.surface).setStroke()
+        tick.stroke()
     }
 }
 

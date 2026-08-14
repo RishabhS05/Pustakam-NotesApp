@@ -172,7 +172,6 @@ class NoteEditorViewModel : BaseViewModel() {
                 onEditorIntent(EditorIntent.ExternalContentsChanged(note.contents))
                 observeExternalContents(note.id)
                 setSelectedNoteContentUseCase(_noteContentUiState.value.note ?: note)
-
                 consumePendingMediaPaths()
             }
 
