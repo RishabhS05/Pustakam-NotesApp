@@ -8,23 +8,32 @@ struct ReaderScrollView: View {
     var onPageChanged: (Int) -> Void = { _ in }
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
     var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
+    // 📖 15-Aug-2026: off keeps the shipped behaviour — documents stay cards, list never resizes
+    var inlineDocumentsEnabled: Bool = false
+    var inlineDocuments: InlineDocumentState = .disabled
 
     @State private var reportedIndex: Int = -1
+
+    private var documents: InlineDocumentState {
+        inlineDocumentsEnabled ? inlineDocuments : .disabled
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
+                    // 📖 stableKey survives expand/collapse, so untouched pages are never rebuilt
+                    ForEach(Array(pages.enumerated()), id: \.element.stableKey) { index, page in
                         ReaderPageView(
                             page: page,
                             policy: policy,
                             fillHeight: true,
                             zoomEnabled: true,
+                            documents: documents,
                             onOpenDocument: onOpenDocument,
                             onOpenImage: onOpenImage
                         )
-                        .id(index)
+                        .id(page.stableKey)
                         .background(
                             GeometryReader { geometry in
                                 Color.clear.preference(
@@ -49,7 +58,14 @@ struct ReaderScrollView: View {
             }
             .onAppear {
                 guard startIndex > 0, startIndex < pages.count else { return }
-                proxy.scrollTo(startIndex, anchor: .top)
+                proxy.scrollTo(pages[startIndex].stableKey, anchor: .top)
+            }
+            // 📖 the caller moves the anchor deliberately (collapse lands back on the card)
+            .task(id: "\(startIndex)-\(pages.count)") {
+                guard inlineDocumentsEnabled, !pages.isEmpty else { return }
+                let target = min(max(startIndex, 0), pages.count - 1)
+                guard target != reportedIndex else { return }
+                proxy.scrollTo(pages[target].stableKey, anchor: .top)
             }
         }
     }

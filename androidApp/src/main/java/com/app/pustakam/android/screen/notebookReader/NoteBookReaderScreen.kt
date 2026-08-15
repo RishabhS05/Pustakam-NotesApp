@@ -5,10 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List // 📖 25-Jul-2026 scroll-mode toggle
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 
 import androidx.compose.material3.Icon
@@ -38,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.android.screen.bookUIView.BookPageContent
 import com.app.pustakam.android.screen.bookUIView.BookScrollReader
 
+import com.app.pustakam.android.screen.bookUIView.InlineDocumentUiState
 import com.app.pustakam.android.screen.bookUIView.ReaderPageContent
 import com.app.pustakam.android.screen.bookUIView.ReaderScrollReader
 import com.app.pustakam.android.theme.typography
@@ -83,6 +83,20 @@ fun NoteBookReaderScreen(
             state.error != null -> SnackBarUi(error = state.error!!) { bookReaderViewModel.clearError(); onBack() }
             state.pages.isNotEmpty() -> {
                 var pageIndex by remember { mutableIntStateOf(state.startPageIndex) }
+                // 📖 15-Aug-2026: the anchor moves only when a document opens or closes
+                LaunchedEffect(state.startPageIndex) { pageIndex = state.startPageIndex }
+                val inlineDocuments = remember(
+                    state.expandedDocumentIds, state.busyDocumentIds, state.unreadableDocumentIds,
+                ) {
+                    InlineDocumentUiState(
+                        enabled = true,
+                        expandedIds = state.expandedDocumentIds,
+                        busyIds = state.busyDocumentIds,
+                        unreadableIds = state.unreadableDocumentIds,
+                        onToggle = bookReaderViewModel::toggleDocument,
+                        onLoadMore = bookReaderViewModel::loadMoreDocumentPages,
+                    )
+                }
 
                 // 📖 01-Aug-2026: both modes render the SAME state.pages — switching never rebuilds
                 when (state.readingMode) {
@@ -90,18 +104,21 @@ fun NoteBookReaderScreen(
                         BookPager(
                             pageCount = state.pages.size,
                             initialPage = state.startPageIndex,
+                            inlineDocumentsEnabled = true,
                             onPageChanged = {
                                 pageIndex = it
-                                // 📖 23-Jul-2026: persist progress on every turn (page-curl mode)
                                 bookReaderViewModel.onPageChanged(it)
                             },
                         ) { index ->
-                            ReaderPageContent(
-                                page = state.pages[index],
-                                policy = bookReaderViewModel.layoutPolicy,
-                                onOpenDocument = onOpenDocument,
-                                onOpenImage = onOpenMedia,
-                            )
+                            state.pages.getOrNull(index)?.let { page ->
+                                ReaderPageContent(
+                                    page = page,
+                                    policy = bookReaderViewModel.layoutPolicy,
+                                    documents = inlineDocuments,
+                                    onOpenDocument = onOpenDocument,
+                                    onOpenImage = onOpenMedia,
+                                )
+                            }
                         }
 
                     ReadingMode.SCROLL ->
@@ -109,6 +126,8 @@ fun NoteBookReaderScreen(
                             pages = state.pages,
                             policy = bookReaderViewModel.layoutPolicy,
                             startPageIndex = state.startPageIndex,
+                            inlineDocumentsEnabled = true,
+                            inlineDocuments = inlineDocuments,
                             onPageChanged = {
                                 pageIndex = it
                                 bookReaderViewModel.onPageChanged(it)   // 📖 same progress save as page mode

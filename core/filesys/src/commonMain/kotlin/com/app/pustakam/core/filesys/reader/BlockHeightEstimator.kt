@@ -46,6 +46,8 @@ object BlockHeightEstimator {
 
         is ReaderBlock.Audio -> policy.audioHeight
         is ReaderBlock.Document -> policy.documentHeight
+        // 📖 15-Aug-2026: an injected sheet owns the whole page, so it is never packed with others
+        is ReaderBlock.DocumentPage -> policy.usableHeight
         is ReaderBlock.Link -> policy.linkHeight
         is ReaderBlock.Location -> policy.locationHeight
     }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,10 +42,21 @@ fun BookPager(
     pageCount: Int,
     initialPage: Int = 0,
     onPageChanged: (Int) -> Unit = {},
+    // 📖 15-Aug-2026: only inline documents resize the list under the pager; off, nothing changes
+    inlineDocumentsEnabled: Boolean = false,
     pageContent: @Composable (Int) -> Unit,
 ) {
     if (pageCount <= 0) return
     var currentPage by remember { mutableIntStateOf(initialPage.coerceIn(0, pageCount - 1).coerceAtLeast(0)) }
+
+    if (inlineDocumentsEnabled) {
+        // the caller moves [initialPage] deliberately (expand / collapse / load more) — follow it,
+        // and never keep an index the resized list no longer holds
+        LaunchedEffect(pageCount, initialPage) {
+            val target = initialPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+            if (target != currentPage || currentPage > pageCount - 1) currentPage = target
+        }
+    }
 
     val flip = remember { Animatable(0f) }
     var direction by remember { mutableStateOf<FlipDirection?>(null) }
@@ -134,12 +146,14 @@ fun BookPager(
     ) {
         val dir = direction
         val progress = flip.value
-        val leafFrontPage = if (dir == FlipDirection.BACKWARD) currentPage - 1 else currentPage
-        val leafBackPage = if (dir == FlipDirection.BACKWARD) currentPage else currentPage + 1
-        val basePage = if (dir == FlipDirection.BACKWARD) currentPage else (currentPage + 1).coerceAtMost(pageCount - 1)
+        // 📖 15-Aug-2026: read through a clamped index — a resized list can never be indexed stale
+        val page = currentPage.coerceIn(0, pageCount - 1)
+        val leafFrontPage = if (dir == FlipDirection.BACKWARD) page - 1 else page
+        val leafBackPage = if (dir == FlipDirection.BACKWARD) page else page + 1
+        val basePage = if (dir == FlipDirection.BACKWARD) page else (page + 1).coerceAtMost(pageCount - 1)
 
         if (dir == null) {
-            Box(Modifier.fillMaxSize()) { pageContent(currentPage) }
+            Box(Modifier.fillMaxSize()) { pageContent(page) }
         } else {
             // base layer — what lies under the turning leaf
             Box(Modifier.fillMaxSize()) { pageContent(basePage) }

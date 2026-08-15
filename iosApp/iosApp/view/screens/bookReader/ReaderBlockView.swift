@@ -6,6 +6,8 @@ import shared
 struct ReaderBlockView: View {
     let block: ReaderBlock
     let policy: PageLayoutPolicy
+    var documents: InlineDocumentState = .disabled
+    var zoomEnabled: Bool = true
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
     var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
 
@@ -22,7 +24,9 @@ struct ReaderBlockView: View {
         case let audio as ReaderBlock.Audio:
             AudioBlockView(block: audio)
         case let document as ReaderBlock.Document:
-            DocumentBlockView(block: document, onOpen: onOpenDocument)
+            DocumentBlockView(block: document, documents: documents, onOpen: onOpenDocument)
+        case let sheet as ReaderBlock.DocumentPage:
+            DocumentPageBlockView(block: sheet, documents: documents, zoomEnabled: zoomEnabled)
         case let link as ReaderBlock.Link:
             LinkBlockView(block: link)
         case let location as ReaderBlock.Location:

@@ -78,17 +78,20 @@ object BookPageFactory {
         }
     }
 
+    // 🔧 15-Aug-2026: shared with the inline document probe so both cap text files identically
+    fun readCappedText(file: File): String = file.inputStream().use { stream ->
+        stream.readBytes().let { bytes ->
+            if (bytes.size > MAX_TEXT_FILE_BYTES) bytes.copyOf(MAX_TEXT_FILE_BYTES.toInt()) else bytes
+        }.decodeToString()
+    }
+
     // 🔧 19-Jul-2026: txt/md files become paginated text pages (md shown as plain text v1)
     private fun textFilePages(media: NoteContentModel.MediaContent): List<BookPage> {
         val path = media.localPath ?: return listOf(BookPage.DocFilePage(media, media.id))
         return try {
             val file = File(path)
             if (!file.exists()) return listOf(BookPage.DocFilePage(media, media.id))
-            val text = file.inputStream().use { stream ->
-                stream.readBytes().let { bytes ->
-                    if (bytes.size > MAX_TEXT_FILE_BYTES) bytes.copyOf(MAX_TEXT_FILE_BYTES.toInt()) else bytes
-                }.decodeToString()
-            }
+            val text = readCappedText(file)
             paginate(text, media.id).ifEmpty { listOf(BookPage.DocFilePage(media, media.id)) }
         } catch (e: Exception) {
             e.printStackTrace()

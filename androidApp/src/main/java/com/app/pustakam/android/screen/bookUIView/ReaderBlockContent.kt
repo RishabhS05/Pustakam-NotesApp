@@ -11,6 +11,7 @@ fun ReaderBlockContent(
     block: ReaderBlock,
     policy: PageLayoutPolicy,
     modifier: Modifier = Modifier,
+    documents: InlineDocumentUiState = InlineDocumentUiState.Disabled,
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
     onOpenImage: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
@@ -20,7 +21,8 @@ fun ReaderBlockContent(
         is ReaderBlock.ImageGrid -> ImageGridBlockView(block, policy, modifier, onOpenImage)
         is ReaderBlock.VideoGrid -> VideoGridBlockView(block, policy, modifier, onOpenImage)
         is ReaderBlock.Audio -> AudioBlockView(block, modifier)
-        is ReaderBlock.Document -> DocumentBlockView(block, modifier, onOpenDocument)
+        is ReaderBlock.Document -> DocumentBlockView(block, modifier, documents, onOpenDocument)
+        is ReaderBlock.DocumentPage -> DocumentPageBlockView(block, modifier, documents)
         is ReaderBlock.Link -> LinkBlockView(block, modifier)
         is ReaderBlock.Location -> LocationBlockView(block, modifier)
     }

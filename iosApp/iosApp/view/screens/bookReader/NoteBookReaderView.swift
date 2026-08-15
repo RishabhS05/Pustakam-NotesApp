@@ -3,11 +3,14 @@ import shared
 
 // 📖 01-Aug-2026: WHOLE-NOTE reader. Pages come from the SHARED PageLayoutEngine — the same engine
 //   Android calls — so both platforms produce identical page boundaries. This file only renders.
+// 📖 15-Aug-2026: documents also open in place. The engine list never changes; sheets are spliced
+//   on top of it by the shared ReaderDocumentExpander, exactly as on Android.
 struct NoteBookReaderView: View {
     let noteId: String
     var startContentId: String? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(Router.self) private var router
     @State private var adapter = NotesBridgeAdapter()
     @State private var pages: [ReaderPage] = []
     @State private var isLoading = true
@@ -19,9 +22,28 @@ struct NoteBookReaderView: View {
     @State private var progressContentId: String? = nil
     @State private var previewImagePath: String? = nil
 
+    // the engine list, never mutated — progress is always persisted against these indices
+    @State private var basePages: [ReaderPage] = []
+    @State private var expandedPages: ExpandedPages? = nil
+    @State private var sources: [String: EmbeddedDocumentSource] = [:]
+    @State private var expansions: [String: Int] = [:]
+    @State private var busyIds: Set<String> = []
+    @State private var unreadableIds: Set<String> = []
+
     // the ONE policy pages are generated against; the views read it back so what they draw always
     // matches the heights the engine reserved
     @State private var policy = PageLayoutPolicy.companion.standard()
+
+    private var inlineDocuments: InlineDocumentState {
+        InlineDocumentState(
+            enabled: true,
+            expandedIds: Set(expansions.keys),
+            busyIds: busyIds,
+            unreadableIds: unreadableIds,
+            onToggle: { media in toggleDocument(media) },
+            onLoadMore: { contentId in loadMoreDocumentPages(contentId) }
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -40,8 +62,10 @@ struct NoteBookReaderView: View {
                             currentIndex = index
                             saveProgress()
                         },
-                        onOpenDocument: openMedia,
-                        onOpenImage: openMedia
+                        onOpenDocument: openDocument,
+                        onOpenImage: openMedia,
+                        inlineDocumentsEnabled: true,
+                        inlineDocuments: inlineDocuments
                     )
                     .ignoresSafeArea(edges: .bottom)
                 case .scroll:
@@ -53,8 +77,10 @@ struct NoteBookReaderView: View {
                             currentIndex = index
                             saveProgress()
                         },
-                        onOpenDocument: openMedia,
-                        onOpenImage: openMedia
+                        onOpenDocument: openDocument,
+                        onOpenImage: openMedia,
+                        inlineDocumentsEnabled: true,
+                        inlineDocuments: inlineDocuments
                     )
                     .ignoresSafeArea(edges: .bottom)
                 }
@@ -113,10 +139,91 @@ struct NoteBookReaderView: View {
         previewImagePath = media.getMediaUrl()
     }
 
+    // 📖 15-Aug-2026: the card's arrow still opens the dedicated reader, as on Android
+    private func openDocument(_ media: NoteContentModel.MediaContent) {
+        router.navigate(to: .BookReader(bookId: media.id))
+    }
+
+    // MARK: - documents read in place
+
+    private func toggleDocument(_ media: NoteContentModel.MediaContent) {
+        let contentId = media.id
+        if expansions[contentId] != nil {
+            expansions.removeValue(forKey: contentId)
+            publish(anchorOn: contentId)
+            return
+        }
+        if let known = sources[contentId] {
+            guard known.isReadable else { return }
+            expansions[contentId] = Int(ReaderDocumentExpander.shared.firstWindow(pageCount: known.pageCount))
+            publish(anchorOn: contentId)
+            return
+        }
+        busyIds.insert(contentId)
+        // counting sheets touches the file, so it happens once per document and off the main thread
+        DispatchQueue.global(qos: .userInitiated).async {
+            let probed = EmbeddedDocumentProbe.probe(media)
+            DispatchQueue.main.async {
+                self.sources[contentId] = probed
+                self.busyIds.remove(contentId)
+                if probed.isReadable {
+                    self.expansions[contentId] = Int(
+                        ReaderDocumentExpander.shared.firstWindow(pageCount: probed.pageCount)
+                    )
+                } else {
+                    self.unreadableIds.insert(contentId)
+                }
+                self.publish(anchorOn: contentId)
+            }
+        }
+    }
+
+    private func loadMoreDocumentPages(_ contentId: String) {
+        guard let source = sources[contentId], let loaded = expansions[contentId] else { return }
+        let next = Int(ReaderDocumentExpander.shared.nextWindow(
+            loadedCount: Int32(loaded), pageCount: source.pageCount
+        ))
+        guard next != loaded else { return }
+        expansions[contentId] = next
+        publish(anchorAt: currentIndex)
+    }
+
+    private func publish(anchorOn contentId: String? = nil, anchorAt: Int? = nil) {
+        let rebuilt = ReaderDocumentExpander.shared.expand(
+            basePages: basePages,
+            sources: Array(sources.values),
+            expansions: expansions.map { DocumentExpansion(contentId: $0.key, loadedCount: Int32($0.value)) },
+            policy: policy
+        )
+        let list = rebuilt.pages
+        let anchor: Int
+        if let anchorAt {
+            anchor = min(max(anchorAt, 0), max(list.count - 1, 0))
+        } else if let contentId {
+            anchor = cardIndex(list, contentId)
+        } else {
+            anchor = Int(rebuilt.displayIndexOf(baseIndex: Int32(currentIndex)))
+        }
+        expandedPages = rebuilt
+        pages = list
+        startIndex = anchor
+        currentIndex = anchor
+    }
+
+    private func cardIndex(_ list: [ReaderPage], _ contentId: String) -> Int {
+        list.firstIndex { page in
+            !page.isDocumentSheet && page.blocks.contains { block in
+                (block as? ReaderBlock.Document)?.item.id == contentId
+            }
+        } ?? 0
+    }
+
     private func saveProgress() {
-        guard let contentId = progressContentId, !pages.isEmpty else { return }
-        let page = min(max(currentIndex, 0), pages.count - 1)
-        readerPrefs.saveProgress(contentId: contentId, page: page, totalPages: pages.count)
+        guard let contentId = progressContentId, !basePages.isEmpty else { return }
+        // a document sheet reports its card's page, so progress stays inside the engine list
+        let base = Int(expandedPages?.baseIndexOf(displayIndex: Int32(currentIndex)) ?? Int32(currentIndex))
+        let page = min(max(base, 0), basePages.count - 1)
+        readerPrefs.saveProgress(contentId: contentId, page: page, totalPages: basePages.count)
     }
 
     private func loadNote(policy: PageLayoutPolicy) {
@@ -143,7 +250,13 @@ struct NoteBookReaderView: View {
 
                     DispatchQueue.main.async {
                         self.isLoading = false
+                        self.basePages = built
                         self.pages = built
+                        self.expandedPages = ExpandedPages(pages: built)
+                        self.sources = [:]
+                        self.expansions = [:]
+                        self.busyIds = []
+                        self.unreadableIds = []
                         self.progressContentId = media?.id
                         self.startIndex = resolvedStart
                         self.currentIndex = resolvedStart

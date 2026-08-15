@@ -6,6 +6,7 @@ struct ReaderPageView: View {
     let policy: PageLayoutPolicy
     var fillHeight: Bool = true
     var zoomEnabled: Bool = true
+    var documents: InlineDocumentState = .disabled
     var onOpenDocument: (NoteContentModel.MediaContent) -> Void = { _ in }
     var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
 
@@ -25,6 +26,8 @@ struct ReaderPageView: View {
                     ReaderBlockView(
                         block: block,
                         policy: policy,
+                        documents: documents,
+                        zoomEnabled: zoomEnabled,
                         onOpenDocument: onOpenDocument,
                         onOpenImage: onOpenImage
                     )

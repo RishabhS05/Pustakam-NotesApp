@@ -29,6 +29,7 @@ fun ReaderPageContent(
     modifier: Modifier = Modifier,
     fillHeight: Boolean = true,
     zoomEnabled: Boolean = true,
+    documents: InlineDocumentUiState = InlineDocumentUiState.Disabled,
     onOpenDocument: (NoteContentModel.MediaContent) -> Unit = {},
     onOpenImage: (NoteContentModel.MediaContent) -> Unit = {},
 ) {
@@ -55,6 +56,7 @@ fun ReaderPageContent(
                 ReaderBlockContent(
                     block = block,
                     policy = policy,
+                    documents = documents,
                     onOpenDocument = onOpenDocument,
                     onOpenImage = onOpenImage,
                 )

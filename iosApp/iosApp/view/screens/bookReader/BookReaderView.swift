@@ -133,7 +133,9 @@ enum BookPagesBuilder {
         }
     }
 
-    private static func paginate(_ text: String, sourceId: String?) -> [BookPageItem] {
+    // 📖 15-Aug-2026: the chunking itself, shared with the inline document probe so a txt/md file
+    //   paginates identically whether it is read inline or in this reader
+    static func textChunks(_ text: String) -> [String] {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
         var chunks: [String] = []
         var remaining = Substring(text)
@@ -148,7 +150,14 @@ enum BookPagesBuilder {
             remaining = remaining[cutIndex...].drop { $0 == "\n" || $0 == " " }
         }
         if !remaining.isEmpty { chunks.append(String(remaining)) }
-        return chunks.enumerated().map { .text(body: $1, chunk: $0 + 1, chunkCount: chunks.count, sourceId: sourceId) }
+        return chunks
+    }
+
+    private static func paginate(_ text: String, sourceId: String?) -> [BookPageItem] {
+        let chunks = textChunks(text)
+        return chunks.enumerated().map {
+            .text(body: $1, chunk: $0 + 1, chunkCount: chunks.count, sourceId: sourceId)
+        }
     }
 
     private static func pdfSheets(_ media: NoteContentModel.MediaContent) -> [BookPageItem] {
@@ -169,11 +178,16 @@ enum BookPagesBuilder {
     }
 
     // 🔧 18-Jul-2026: txt/md file → paginated text pages (md shown as plain text v1)
-    private static func textFilePages(_ media: NoteContentModel.MediaContent) -> [BookPageItem] {
+    // 📖 15-Aug-2026: file read + byte cap, shared with the inline document probe
+    static func cappedText(_ media: NoteContentModel.MediaContent) -> String? {
         guard let path = resolved(media.localPath),
-              let data = FileManager.default.contents(atPath: path) else { return [.docFile(media)] }
+              let data = FileManager.default.contents(atPath: path) else { return nil }
         let capped = data.count > maxTextFileBytes ? data.prefix(maxTextFileBytes) : data[...]
-        guard let text = String(data: Data(capped), encoding: .utf8) else { return [.docFile(media)] }
+        return String(data: Data(capped), encoding: .utf8)
+    }
+
+    private static func textFilePages(_ media: NoteContentModel.MediaContent) -> [BookPageItem] {
+        guard let text = cappedText(media) else { return [.docFile(media)] }
         let pages = paginate(text, sourceId: media.id)
         return pages.isEmpty ? [.docFile(media)] : pages
     }
