@@ -1,6 +1,7 @@
 package com.app.pustakam.core.filesys.reader
 
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.richtext.model.RichBlock
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -34,6 +35,10 @@ object BlockHeightEstimator {
 
         is ReaderBlock.Paragraph -> textHeight(block.text, policy)
 
+        // 📖 15-Aug-2026: measured with the editor's own numbers — style size, its own line height,
+        //   and the width left after its indent and list marker
+        is ReaderBlock.RichParagraph -> richHeight(block.block, policy)
+
         // a lone image is aspect-aware and full width; two or more use uniform 4:3 grid cells
         is ReaderBlock.ImageGrid ->
             if (block.items.size == 1) singleImageHeight(block.items[0], policy)
@@ -50,6 +55,40 @@ object BlockHeightEstimator {
         is ReaderBlock.DocumentPage -> policy.usableHeight
         is ReaderBlock.Link -> policy.linkHeight
         is ReaderBlock.Location -> policy.locationHeight
+    }
+
+    fun richHeight(block: RichBlock, policy: PageLayoutPolicy): Float = when (block) {
+        is RichBlock.Text -> {
+            val size = policy.bodyFontSize * block.style.relativeSize
+            val lineHeight = size * block.lineHeight
+            lineCount(block, policy) * lineHeight * policy.overflowGuard + block.paragraphSpacing
+        }
+
+        is RichBlock.Divider -> policy.blockGap * 2f + 1f
+        is RichBlock.Code -> (max(1, block.code.split('\n').size) * policy.bodyLineHeight) + 20f
+        is RichBlock.Table -> (block.data.rows.size * (policy.bodyLineHeight + 8f)) + 12f
+    }
+
+    /** Width left for text once the block's indent and its list marker are taken out. */
+    fun textWidth(block: RichBlock.Text, policy: PageLayoutPolicy): Float {
+        val indent = policy.indentStep * (block.listLevel + block.indent) +
+            if (block.list != null) policy.markerGutter else 0f
+        return (policy.usableWidth - indent).coerceAtLeast(policy.bodyFontSize)
+    }
+
+    /** Characters per line for THIS block — its own font size, its own usable width. */
+    fun charsPerLine(block: RichBlock.Text, policy: PageLayoutPolicy): Int {
+        val size = policy.bodyFontSize * block.style.relativeSize
+        return (textWidth(block, policy) / (size * PageLayoutPolicy.AVG_CHAR_WIDTH_RATIO))
+            .toInt().coerceAtLeast(1)
+    }
+
+    fun lineCount(block: RichBlock.Text, policy: PageLayoutPolicy): Int {
+        val perLine = charsPerLine(block, policy)
+        val lines = block.text.split('\n').sumOf { line ->
+            if (line.isEmpty()) 1 else ceil(line.length.toDouble() / perLine).toInt()
+        }
+        return max(1, lines)
     }
 
     /** Lines × line height. A hard newline and a wrapped line each consume one line. */

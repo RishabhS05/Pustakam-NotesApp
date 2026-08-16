@@ -27,6 +27,12 @@ data class PageLayoutPolicy(
     val documentHeight: Float = 200f,
     val linkHeight: Float = 130f,
     val locationHeight: Float = 150f,
+    // 📖 15-Aug-2026: the editor's own indent geometry, so a reader page measures a list exactly
+    //   as the editor lays it out
+    val indentStep: Float = INDENT_STEP,
+    val markerGutter: Float = MARKER_GUTTER,
+    /** Measure slightly tall: an estimate error must cost an extra page, never clipped text. */
+    val overflowGuard: Float = OVERFLOW_GUARD,
 ) {
     /** Step 2 — usable page box after margins. */
     val usableHeight: Float get() = pageHeight - marginTop - marginBottom
@@ -53,6 +59,9 @@ data class PageLayoutPolicy(
         const val MARGIN = 40f
         // mean glyph advance as a fraction of font size — serif body copy
         const val AVG_CHAR_WIDTH_RATIO = 0.5f
+        const val INDENT_STEP = 20f
+        const val MARKER_GUTTER = 26f
+        const val OVERFLOW_GUARD = 1.08f
 
         /** Swift-facing factory — Kotlin default arguments are not exposed to Swift. */
         fun standard(): PageLayoutPolicy = PageLayoutPolicy()

@@ -368,4 +368,4 @@ fun MasterTextContentWidget(
     )
 }
 
-private const val LINE_HEIGHT = 0.9f
+private const val LINE_HEIGHT = 0.5f

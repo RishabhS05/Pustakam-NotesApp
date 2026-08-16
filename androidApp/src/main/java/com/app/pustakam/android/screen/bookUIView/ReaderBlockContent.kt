@@ -18,6 +18,8 @@ fun ReaderBlockContent(
     when (block) {
         is ReaderBlock.Title -> TitleBlockView(block, modifier)
         is ReaderBlock.Paragraph -> ParagraphBlockView(block, modifier)
+
+        is ReaderBlock.RichParagraph -> RichParagraphBlockView(block, modifier)
         is ReaderBlock.ImageGrid -> ImageGridBlockView(block, policy, modifier, onOpenImage)
         is ReaderBlock.VideoGrid -> VideoGridBlockView(block, policy, modifier, onOpenImage)
         is ReaderBlock.Audio -> AudioBlockView(block, modifier)

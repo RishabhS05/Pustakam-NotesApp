@@ -17,6 +17,8 @@ struct ReaderBlockView: View {
             TitleBlockView(block: title)
         case let paragraph as ReaderBlock.Paragraph:
             ParagraphBlockView(block: paragraph)
+        case let rich as ReaderBlock.RichParagraph:
+            RichParagraphBlockView(block: rich)
         case let images as ReaderBlock.ImageGrid:
             ImageGridBlockView(block: images, policy: policy, onTap: onOpenImage)
         case let videos as ReaderBlock.VideoGrid:

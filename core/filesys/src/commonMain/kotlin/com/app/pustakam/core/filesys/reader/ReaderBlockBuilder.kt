@@ -3,6 +3,8 @@ package com.app.pustakam.core.filesys.reader
 import com.app.pustakam.core.common.util.ContentType
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.richtext.codec.RichTextCodec
+import com.app.pustakam.core.richtext.model.RichBlock
 
 object ReaderBlockBuilder {
 
@@ -24,6 +26,7 @@ object ReaderBlockBuilder {
         return grouped.flatMap { block ->
             when (block) {
                 is ReaderBlock.Paragraph -> splitParagraph(block, policy)
+                is ReaderBlock.RichParagraph -> splitRichParagraph(block, policy)
                 is ReaderBlock.ImageGrid -> splitImageGrid(block, policy)
                 is ReaderBlock.VideoGrid -> splitVideoGrid(block, policy)
                 else -> listOf(block)
@@ -47,6 +50,42 @@ object ReaderBlockBuilder {
         return block.items.chunked(perPage).map { ReaderBlock.VideoGrid(it, it.map { m -> m.id }) }
     }
 
+    // 📖 15-Aug-2026: a run of text contents stays PLAIN unless one of them actually carries
+    //   formatting — that is what keeps every unformatted note paginating exactly as it does today.
+    fun textBlocks(texts: List<NoteContentModel.TextContent>): List<ReaderBlock> {
+        val documents = texts.map { it to RichTextCodec.documentFrom(it) }
+        if (documents.none { (_, document) -> document.hasFormatting }) {
+            return listOf(
+                ReaderBlock.Paragraph(
+                    text = texts.joinToString("\n\n") { it.text },
+                    chunkIndex = 1, chunkCount = 1,
+                    sourceContentIds = texts.map { it.id },
+                )
+            )
+        }
+        return documents.flatMap { (content, document) ->
+            document.blocks.map { block ->
+                ReaderBlock.RichParagraph(
+                    block = block, chunkIndex = 1, chunkCount = 1,
+                    sourceContentIds = listOf(content.id),
+                )
+            }
+        }
+    }
+
+    /** A formatted paragraph taller than a page is cut to fit — never clipped by the renderer. */
+    fun splitRichParagraph(
+        block: ReaderBlock.RichParagraph,
+        policy: PageLayoutPolicy,
+    ): List<ReaderBlock.RichParagraph> {
+        val text = block.block as? RichBlock.Text ?: return listOf(block)
+        val chunks = RichTextSplitter.split(text, policy)
+        if (chunks.size == 1) return listOf(block)
+        return chunks.mapIndexed { index, chunk ->
+            block.copy(block = chunk, chunkIndex = index + 1, chunkCount = chunks.size)
+        }
+    }
+
     // ---- Step 1: consecutive-run grouping ----
 
     private fun group(contents: List<NoteContentModel>): List<ReaderBlock> {
@@ -66,13 +105,7 @@ object ReaderBlockBuilder {
                 videos.clear()
             }
             if (texts.isNotEmpty()) {
-                blocks.add(
-                    ReaderBlock.Paragraph(
-                        text = texts.joinToString("\n\n") { it.text },
-                        chunkIndex = 1, chunkCount = 1,
-                        sourceContentIds = texts.map { it.id },
-                    )
-                )
+                blocks.addAll(textBlocks(texts.toList()))
                 texts.clear()
             }
         }

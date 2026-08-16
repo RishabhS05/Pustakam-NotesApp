@@ -16,6 +16,7 @@
 		0000000022B2CB1000000008 /* ReaderPageCurlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000009 /* ReaderPageCurlView.swift */; };
 		0000000022B2CB100000000A /* TitleBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000000B /* TitleBlockView.swift */; };
 		0000000022B2CB100000000C /* ParagraphBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000000D /* ParagraphBlockView.swift */; };
+		0000000022B2CB1000000109 /* RichParagraphBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000010A /* RichParagraphBlockView.swift */; };
 		0000000022B2CB100000000E /* ImageGridBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB100000000F /* ImageGridBlockView.swift */; };
 		0000000022B2CB1000000010 /* ImageGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000011 /* ImageGridCell.swift */; };
 		0000000022B2CB1000000012 /* VideoGridBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000013 /* VideoGridBlockView.swift */; };
@@ -74,6 +75,7 @@
 		22D0B517301F3C1D00BF1F4C /* CardActionsButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D0B516301F3C1D00BF1F4C /* CardActionsButton.swift */; };
 		22D196BD30283E37000CF5F1 /* MasterTextWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */; };
 		22D196BE30283E37000CF5F1 /* MasterTextRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */; };
+		0000000022B2CB1000000107 /* SmartTextDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000022B2CB1000000108 /* SmartTextDisplay.swift */; };
 		22D196BF30283E37000CF5F1 /* MasterCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196B930283E37000CF5F1 /* MasterCanvas.swift */; };
 		22D196C430283E37000CF5F1 /* MasterEditorScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */; };
 		22D196C530283E37000CF5F1 /* MasterEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */; };
@@ -181,6 +183,7 @@
 		0000000022B2CB1000000009 /* ReaderPageCurlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPageCurlView.swift; sourceTree = "<group>"; };
 		0000000022B2CB100000000B /* TitleBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBlockView.swift; sourceTree = "<group>"; };
 		0000000022B2CB100000000D /* ParagraphBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParagraphBlockView.swift; sourceTree = "<group>"; };
+		0000000022B2CB100000010A /* RichParagraphBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichParagraphBlockView.swift; sourceTree = "<group>"; };
 		0000000022B2CB100000000F /* ImageGridBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGridBlockView.swift; sourceTree = "<group>"; };
 		0000000022B2CB1000000011 /* ImageGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGridCell.swift; sourceTree = "<group>"; };
 		0000000022B2CB1000000013 /* VideoGridBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGridBlockView.swift; sourceTree = "<group>"; };
@@ -234,6 +237,7 @@
 		22D0B516301F3C1D00BF1F4C /* CardActionsButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardActionsButton.swift; sourceTree = "<group>"; };
 		22D196B930283E37000CF5F1 /* MasterCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterCanvas.swift; sourceTree = "<group>"; };
 		22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextRenderer.swift; sourceTree = "<group>"; };
+		0000000022B2CB1000000108 /* SmartTextDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTextDisplay.swift; sourceTree = "<group>"; };
 		22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterTextWidget.swift; sourceTree = "<group>"; };
 		22D196C230283E37000CF5F1 /* MasterEditorScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorScreen.swift; sourceTree = "<group>"; };
 		22D196C330283E37000CF5F1 /* MasterEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditorViewModel.swift; sourceTree = "<group>"; };
@@ -345,6 +349,7 @@
 				22B2CF5000000000000000C2 /* GridSizing.swift */,
 				22B2CE4000000000000000B2 /* VideoGridCell.swift */,
 				0000000022B2CB100000000D /* ParagraphBlockView.swift */,
+				0000000022B2CB100000010A /* RichParagraphBlockView.swift */,
 				0000000022B2CB100000000F /* ImageGridBlockView.swift */,
 				0000000022B2CB1000000011 /* ImageGridCell.swift */,
 				0000000022B2CB1000000013 /* VideoGridBlockView.swift */,
@@ -571,6 +576,7 @@
 			children = (
 				22D196B930283E37000CF5F1 /* MasterCanvas.swift */,
 				22D196BA30283E37000CF5F1 /* MasterTextRenderer.swift */,
+				0000000022B2CB1000000108 /* SmartTextDisplay.swift */,
 				22D196BB30283E37000CF5F1 /* MasterTextWidget.swift */,
 				22D196C830283E37000CF5F1 /* MasterTextSheets.swift */,
 			);
@@ -1145,6 +1151,7 @@
 				22D196C430283E37000CF5F1 /* MasterEditorScreen.swift in Sources */,
 				22D196C530283E37000CF5F1 /* MasterEditorViewModel.swift in Sources */,
 				22D196BE30283E37000CF5F1 /* MasterTextRenderer.swift in Sources */,
+				0000000022B2CB1000000107 /* SmartTextDisplay.swift in Sources */,
 				22D196BF30283E37000CF5F1 /* MasterCanvas.swift in Sources */,
 				63A5529A2D91949300A9C006 /* ThemeManager.swift in Sources */,
 				22B8109C301DC72200DAF43F /* GenericGrid.swift in Sources */,
@@ -1199,6 +1206,7 @@
 				0000000022B2CB1000000008 /* ReaderPageCurlView.swift in Sources */,
 				0000000022B2CB100000000A /* TitleBlockView.swift in Sources */,
 				0000000022B2CB100000000C /* ParagraphBlockView.swift in Sources */,
+				0000000022B2CB1000000109 /* RichParagraphBlockView.swift in Sources */,
 				0000000022B2CB100000000E /* ImageGridBlockView.swift in Sources */,
 				0000000022B2CB1000000010 /* ImageGridCell.swift in Sources */,
 				0000000022B2CB1000000012 /* VideoGridBlockView.swift in Sources */,

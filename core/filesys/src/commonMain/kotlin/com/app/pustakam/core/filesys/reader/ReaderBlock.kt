@@ -1,6 +1,7 @@
 package com.app.pustakam.core.filesys.reader
 
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
+import com.app.pustakam.core.richtext.model.RichBlock
 
 // 📖 01-Aug-2026 — ONE renderable widget on a page. A page is a list of these, so a page can hold a
 //   title + paragraph + image grid + three audio players instead of one widget per page.
@@ -22,6 +23,20 @@ sealed class ReaderBlock {
         val chunkCount: Int,
         override val sourceContentIds: List<String>,
     ) : ReaderBlock()
+
+    /**
+     * 📖 15-Aug-2026: one paragraph of a formatted note, carried WHOLE — text, spans, style, list,
+     * indent, line height. The reader draws it through the same mapper the editor uses, so it
+     * shows exactly as written. Long ones arrive pre-split by RichTextSplitter.
+     */
+    data class RichParagraph(
+        val block: RichBlock,
+        val chunkIndex: Int,
+        val chunkCount: Int,
+        override val sourceContentIds: List<String>,
+    ) : ReaderBlock() {
+        val text: String get() = block.plainText
+    }
 
     /** Consecutive images — every item renders; the builder splits a grid too tall for a page. */
     data class ImageGrid(

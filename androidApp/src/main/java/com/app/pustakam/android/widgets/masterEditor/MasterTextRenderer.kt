@@ -2,13 +2,17 @@ package com.app.pustakam.android.widgets.masterEditor
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.ParagraphStyle as ComposeParagraphStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
@@ -21,6 +25,7 @@ import com.app.pustakam.core.richtext.master.presentation.MasterTextLayout
 import com.app.pustakam.core.richtext.master.presentation.MasterTextState
 import com.app.pustakam.core.richtext.model.ListStyle
 import com.app.pustakam.core.richtext.model.ParagraphStyle
+import com.app.pustakam.core.richtext.model.RichBlock
 
 object MasterTextRenderer {
 
@@ -34,6 +39,22 @@ object MasterTextRenderer {
     const val INDENT_STEP_SP = 20f
     const val MARKER_GUTTER_SP = 26f
 
+    // 🔧 15-Aug-2026: ONE text style for the editor field, its placeholder and the read-only view.
+    //   includeFontPadding = false drops Android's legacy per-line padding — that padding is both
+    //   the extra air between lines AND the offset that left the caret blinking a line below the
+    //   text being typed. Centring the compressed line box keeps caret and glyphs together.
+    @OptIn(ExperimentalTextApi::class)
+    fun textStyle(color: Color, baseSize: TextUnit): TextStyle = TextStyle(
+        color = color,
+        fontSize = baseSize,
+        lineHeight = baseSize * RichBlock.DEFAULT_LINE_HEIGHT,
+        lineHeightStyle = LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.None,
+        ),
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+    )
+
     fun annotate(
         state: MasterTextState,
         colors: SmartTextColors,
@@ -43,10 +64,16 @@ object MasterTextRenderer {
         val builder = AnnotatedString.Builder(text)
         val paragraphs = MasterTextLayout.paragraphs(state)
 
-        paragraphs.forEach { paragraph ->
+        paragraphs.forEachIndexed { index, paragraph ->
             val start = paragraph.start.coerceIn(0, text.length)
             val end = paragraph.end.coerceIn(start, text.length)
-            builder.addStyle(paragraphStyle(paragraph, baseSize), start, end)
+            // 🔧 15-Aug-2026: the '\n' between paragraphs MUST be inside this paragraph's style
+            //   range. Text left uncovered becomes a paragraph of its own in Compose — that lone
+            //   separator was the blank line between paragraphs, and the caret landing in it is why
+            //   the cursor blinked a line below the text being typed.
+            val styled = (paragraphs.getOrNull(index + 1)?.start ?: text.length)
+                .coerceIn(start, text.length)
+            builder.addStyle(paragraphStyle(paragraph, baseSize), start, styled)
             builder.addStyle(paragraphSpanStyle(paragraph, colors, baseSize), start, end)
         }
 
@@ -70,6 +97,10 @@ object MasterTextRenderer {
         return ComposeParagraphStyle(
             textAlign = SmartTextStyleMapper.alignOf(paragraph.align),
             lineHeight = size * paragraph.lineHeight,
+            lineHeightStyle = LineHeightStyle(
+                alignment = LineHeightStyle.Alignment.Center,
+                trim = LineHeightStyle.Trim.None,
+            ),
             textIndent = TextIndent(
                 firstLine = if (paragraph.firstLineIndent) (indent + 24f).sp else indent.sp,
                 restLine = indent.sp

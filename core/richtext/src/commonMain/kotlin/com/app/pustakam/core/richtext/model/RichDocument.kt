@@ -15,6 +15,19 @@ data class RichDocument(
     val plainText: String
         get() = blocks.joinToString("\n") { it.plainText }
 
+    /** 📖 15-Aug-2026: false when this is flat text — the reader then keeps its plain fast path. */
+    val hasFormatting: Boolean
+        get() = blocks.any { block ->
+            when (block) {
+                is RichBlock.Text -> block.spans.isNotEmpty() ||
+                    block.style != ParagraphStyle.PARAGRAPH ||
+                    block.list != null ||
+                    block.align != TextAlign.START ||
+                    block.indent > 0
+                else -> true
+            }
+        }
+
     fun indexOf(blockId: String): Int = blocks.indexOfFirst { it.id == blockId }
 
     fun blockById(blockId: String): RichBlock? = blocks.firstOrNull { it.id == blockId }
