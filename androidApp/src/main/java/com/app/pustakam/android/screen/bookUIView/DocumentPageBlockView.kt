@@ -90,7 +90,7 @@ fun DocumentPageBlockView(
         }
         // 📖 zoomable() consumes gestures only while pinching or already zoomed, so a one-finger
         //   scroll or page flip still passes through at 1x
-        Box(Modifier.weight(1f).fillMaxWidth().padding(top = 6.dp).zoomable()) {
+        Box(Modifier.weight(1f).fillMaxWidth().zoomable()) {
             when (ref.kind) {
                 EmbeddedDocumentKind.PDF -> PdfSheet(
                     path = media.localPath,
@@ -125,7 +125,7 @@ private fun PdfSheet(path: String?, pageIndex: Int, label: String) {
         SheetMessage("File not available offline")
         return
     }
-    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         // 📖 ask for exactly the width this sheet draws at — never a full-screen bitmap in a card
         val widthPx = with(LocalDensity.current) { maxWidth.roundToPx() }
         var bitmap by remember(path, pageIndex, widthPx) {
@@ -135,9 +135,10 @@ private fun PdfSheet(path: String?, pageIndex: Int, label: String) {
             if (bitmap == null) bitmap = PdfPageRenderer.render(path, pageIndex, widthPx)
         }
         bitmap?.let {
+            // 📖 the sheet spans the full width of the page and starts at the top
             Image(
                 bitmap = it.asImageBitmap(), contentDescription = label,
-                contentScale = ContentScale.Fit, modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth(),
             )
         } ?: BookLoadingAnimation(modifier = Modifier.size(28.dp))
     }

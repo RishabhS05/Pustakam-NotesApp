@@ -9,7 +9,7 @@ struct DocumentPageBlockView: View {
 
     var body: some View {
         let ref = block.ref
-        VStack(spacing: 6) {
+        VStack(spacing: 0) {
             HStack(spacing: 6) {
                 Image(systemName: "doc.text.fill")
                     .font(.caption2).foregroundColor(BookPalette.cover)
@@ -31,15 +31,18 @@ struct DocumentPageBlockView: View {
 
             // 📖 pinch / double-tap the sheet — the page is a fixed full-screen box, so the
             //   zoom container has a real height to work in
+            // 📖 the sheet spans the full width of the page and starts at the top
             MaybeZoomable(enabled: zoomEnabled) { sheet(ref) }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             if ref.showsLoadMore {
                 Button {
                     documents.onLoadMore(ref.contentId)
                 } label: {
                     Text("Load more (\(ref.remaining) left)")
-                        .font(.caption).foregroundColor(Theme.Colors.primary)
+                        .font(.subheadline).foregroundColor(Theme.Colors.primary)
+                        .padding(20)
+
                 }
             }
         }
@@ -52,6 +55,7 @@ struct DocumentPageBlockView: View {
         case .pdf:
             if let path = BookPagesBuilder.readablePdfPath(block.item.localPath) {
                 PdfSheetView(path: path, pageIndex: Int(ref.pageIndex))
+                    .frame(maxWidth: .infinity, alignment: .top)
             } else {
                 message("File not available offline")
             }

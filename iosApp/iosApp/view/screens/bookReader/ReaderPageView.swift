@@ -11,17 +11,22 @@ struct ReaderPageView: View {
     var onOpenImage: (NoteContentModel.MediaContent) -> Void = { _ in }
 
     var body: some View {
+        // 📖 15-Aug-2026: a document sheet IS the page — edge to edge, no paper margins, no rounding
+        let isDocument = page.isDocumentSheet
         let sheet = ZStack(alignment: .topLeading) {
             BookPalette.paper
-            HStack(spacing: 0) {
-                LinearGradient(
-                    colors: [Color.black.opacity(0.18), .clear],
-                    startPoint: .leading, endPoint: .trailing
-                )
-                .frame(width: 14)
-                Spacer()
+            if !isDocument {
+                // the spine shading is book paper, not part of a document sheet
+                HStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.18), .clear],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(width: 14)
+                    Spacer()
+                }
             }
-            VStack(alignment: .leading, spacing: CGFloat(policy.blockGap)) {
+            VStack(alignment: .leading, spacing: isDocument ? 0 : CGFloat(policy.blockGap)) {
                 ForEach(Array(page.blocks.enumerated()), id: \.offset) { _, block in
                     ReaderBlockView(
                         block: block,
@@ -34,17 +39,17 @@ struct ReaderPageView: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.leading, CGFloat(policy.marginStart))
-            .padding(.trailing, CGFloat(policy.marginEnd))
-            .padding(.top, CGFloat(policy.marginTop))
-            .padding(.bottom, CGFloat(policy.marginBottom))
+            .padding(.leading, isDocument ? 0 : CGFloat(policy.marginStart))
+            .padding(.trailing, isDocument ? 0 : CGFloat(policy.marginEnd))
+            .padding(.top, isDocument ? 0 : CGFloat(policy.marginTop))
+            .padding(.bottom, isDocument ? 0 : CGFloat(policy.marginBottom))
         }
         .frame(maxWidth: .infinity)
         .frame(maxHeight: fillHeight ? .infinity : nil)
         .frame(height: fillHeight ? nil : CGFloat(policy.pageHeight))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: isDocument ? 0 : 6))
 
         sheet
-            .padding(.vertical, 6)
+            .padding(.vertical, isDocument ? 0 : 6)
     }
 }
