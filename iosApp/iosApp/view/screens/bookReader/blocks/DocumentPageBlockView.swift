@@ -1,9 +1,7 @@
 import SwiftUI
 import shared
 
-// 📖 15-Aug-2026: ONE sheet of a document opened inside the note. The bar on top belongs to every
-//   sheet, so the document can be collapsed from anywhere in either reading mode.
-//   Mirrors Android DocumentPageBlockView.
+
 struct DocumentPageBlockView: View {
     let block: ReaderBlock.DocumentPage
     var documents: InlineDocumentState = .disabled
@@ -31,7 +29,8 @@ struct DocumentPageBlockView: View {
             .onTapGesture { documents.onToggle(block.item) }
             .accessibilityLabel(Text("Collapse document"))
 
-            // 📖 pinch / double-tap the sheet itself, same widget the full readers use
+            // 📖 pinch / double-tap the sheet — the page is a fixed full-screen box, so the
+            //   zoom container has a real height to work in
             MaybeZoomable(enabled: zoomEnabled) { sheet(ref) }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 

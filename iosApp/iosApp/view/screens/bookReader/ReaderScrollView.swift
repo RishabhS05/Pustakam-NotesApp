@@ -27,7 +27,9 @@ struct ReaderScrollView: View {
                         ReaderPageView(
                             page: page,
                             policy: policy,
-                            fillHeight: true,
+                            // 📖 15-Aug-2026: a page is a FIXED full-screen sheet (policy.pageHeight),
+                            //   never content-sized — widgets are arranged inside that box
+                            fillHeight: false,
                             zoomEnabled: true,
                             documents: documents,
                             onOpenDocument: onOpenDocument,
