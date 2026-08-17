@@ -84,6 +84,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.pustakam.R
 import com.app.pustakam.android.MyApplicationTheme
+import com.app.pustakam.android.fileimport.IncomingShare
 import com.app.pustakam.android.fileUtils.saveMediaToGallery
 import com.app.pustakam.android.fileUtils.writeMediaToUri
 import com.app.pustakam.android.hardware.camera.ImageDataViewModel
@@ -182,8 +183,6 @@ fun NoteEditorScreen(
             Lifecycle.Event.ON_RESUME -> {
                 noteEditorViewModel.refreshOnResume(id)
             }
-            // leaving the screen or going to background flushes the note, so the other
-            // editor sees the text without waiting for a back press
             Lifecycle.Event.ON_PAUSE -> {
                 noteEditorViewModel.saveNow()
             }
@@ -220,6 +219,16 @@ fun NoteEditorScreen(
             imageDataViewModel.clearPaths()
         }
     }
+    // 🔧 17-Aug-2026: Open With / Share — wait for the blank note to exist, then reuse the picker's
+    //   import path. Clearing the buffer is what stops AppNavGraph re-navigating here.
+    val sharedUris = IncomingShare.uris.collectAsStateWithLifecycle().value
+    val isNoteReady = state.value.note.isNotnull()
+    LaunchedEffect(sharedUris, isNoteReady) {
+        if (sharedUris.isNotEmpty() && isNoteReady && id == null) {
+            noteEditorViewModel.importSharedFiles(context, sharedUris)
+            IncomingShare.clear()
+        }
+    }
     NotesEditor(state = state, topBar = {
         TopAppBar(title = {
 
@@ -228,18 +237,6 @@ fun NoteEditorScreen(
         ) ,
             actions = {
             val noteHistory = noteEditorViewModel.history.collectAsStateWithLifecycle().value
-                IconButton(
-                    onClick = {
-                        val route = if (id.isNotnull()) Route.MasterEditor +"/$id" else Route.MasterEditor
-                        navigateTo(route)
-                    }
-                ) {
-                    Icon(
-                         painterResource(com.app.pustakam.android.R.drawable.workspace),
-                        contentDescription = "MasterEditor",
-                        Modifier.size(24.dp)
-                    )
-                }
                 IconButton(
                 onClick = { noteEditorViewModel.undo() },
                 enabled = noteHistory.canUndo
@@ -259,17 +256,18 @@ fun NoteEditorScreen(
                 )
             }
 
-            IconButton(
-                onClick = {
-                    state.value.note?.id?.let { navigateTo(Route.MasterEditor + "/${it}") }
-                },
-                enabled = noteEditorViewModel.isNoteValid()
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.GridView,
-                    contentDescription = "Open canvas editor",
-                )
-            }
+                IconButton(
+                    onClick = {
+                        val route = if (id.isNotnull()) Route.MasterEditor +"/$id" else Route.MasterEditor
+                        navigateTo(route)
+                    }
+                ) {
+                    Icon(
+                        painterResource(com.app.pustakam.android.R.drawable.workspace),
+                        contentDescription = "MasterEditor",
+                        Modifier.size(24.dp)
+                    )
+                }
 
             IconButton(onClick = {
                     state.value.note?.id?.let {

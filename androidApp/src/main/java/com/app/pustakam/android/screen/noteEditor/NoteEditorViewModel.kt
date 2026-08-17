@@ -1,6 +1,7 @@
 package com.app.pustakam.android.screen.noteEditor
 
 import com.app.pustakam.core.common.util.displayMessage
+import com.app.pustakam.core.common.util.log_d
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
@@ -187,12 +188,11 @@ class NoteEditorViewModel : BaseViewModel() {
 
     override fun onFailure(taskCode: TaskCode, error: Error) {
         when (taskCode) {
+            // 🔧 17-Aug-2026: a READ miss is NOT a reason to leave the editor — exiting on it is what
+            //   popped the screen the instant a new note opened. Drop the loader and stay put.
             NOTES_CODES.READ -> {
-                _noteUiState.update {
-                    it.copy(
-                        isLoading = false, error = error.displayMessage(), noteStatus = NoteStatus.onSaveCompletedExit
-                    )
-                }
+                log_d("NoteEditor", "read failed (suppressed for UX): $error")
+                _noteUiState.update { it.copy(isLoading = false) }
             }
 
             else -> _noteUiState.update {
@@ -260,7 +260,10 @@ class NoteEditorViewModel : BaseViewModel() {
 
     fun refreshOnResume(id: String?) {
         if (dirtyContentIds.isNotEmpty()) return   // don't overwrite unsaved edits
-        readFromDataBase(_noteContentUiState.value.note?.id ?: id)
+        // 🔧 17-Aug-2026: a Quick note lives only in memory until it is saved. Re-reading the id it
+        //   was handed at creation misses in the DB, and that miss used to close the editor on open.
+        val persisted = id?.takeIf { it.isNotEmpty() } ?: return
+        readFromDataBase(persisted)
     }
 
     fun deleteNote(noteId: String) {
@@ -575,6 +578,21 @@ class NoteEditorViewModel : BaseViewModel() {
             )
         }
         onEditorIntent(EditorIntent.AddContents(newItems))
+    }
+
+    // 🔧 17-Aug-2026: Open With / Share — same import as the picker, plus the file names the note
+    //   while the title is still blank, so a shared file is findable in the list.
+    fun importSharedFiles(context: Context, uris: List<android.net.Uri>) {
+        if (uris.isEmpty()) return
+        val titleState = _noteContentUiState.value.titleTextState
+        if (titleState.value.isBlank()) {
+            com.app.pustakam.android.fileimport.FileImportManager
+                .displayNameOf(context, uris.first())
+                ?.substringBeforeLast('.')
+                ?.takeIf { it.isNotBlank() }
+                ?.let { titleState.value = it }
+        }
+        importDeviceFiles(context, uris)
     }
 
     fun importDeviceFiles(context: Context, uris: List<android.net.Uri>) {

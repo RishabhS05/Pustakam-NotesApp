@@ -32,6 +32,26 @@ object FileImportManager {
     private fun fileFor(context: Context, plan: ImportPlan): File =
         File(context.filesDir, plan.relativePath).apply { parentFile?.mkdirs() }
 
+    /** SAF display name + size in ONE cursor pass. Size 0 means "unknown", never "empty". */
+    // 🔧 17-Aug-2026: lifted out of importUris so the share flow can name a note after the file
+    //   without opening a second cursor on the same uri.
+    private fun nameAndSizeOf(context: Context, uri: Uri): Pair<String?, Long> {
+        var name: String? = null
+        var size = 0L
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+            if (cursor.moveToFirst()) {
+                if (nameIdx != -1) name = cursor.getString(nameIdx)
+                if (sizeIdx != -1 && !cursor.isNull(sizeIdx)) size = cursor.getLong(sizeIdx)
+            }
+        }
+        return name?.takeIf { it.isNotBlank() } to size
+    }
+
+    /** Display name only — used to title a note created from an Open With / Share hand-off. */
+    fun displayNameOf(context: Context, uri: Uri): String? = nameAndSizeOf(context, uri).first
+
     /** Probe the coordinator uses to detect an already-taken destination. */
     private fun existsIn(context: Context): (String) -> Boolean =
         { relativePath -> File(context.filesDir, relativePath).exists() }
@@ -67,16 +87,8 @@ object FileImportManager {
         return uris.mapNotNull { uri ->
             try {
                 // 🔧 18-Jul-2026: display name + size from OpenableColumns; mime from the resolver
-                var name = "import-${getCurrentTimestamp()}"
-                var size = 0L
-                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
-                    if (cursor.moveToFirst()) {
-                        if (nameIdx != -1) cursor.getString(nameIdx)?.let { name = it }
-                        if (sizeIdx != -1 && !cursor.isNull(sizeIdx)) size = cursor.getLong(sizeIdx)
-                    }
-                }
+                val (displayName, size) = nameAndSizeOf(context, uri)
+                val name = displayName ?: "import-${getCurrentTimestamp()}"
                 val mime = context.contentResolver.getType(uri)
 
                 // SAF often omits SIZE; 0 means "unknown" here, not "empty", so pass 1 and read the

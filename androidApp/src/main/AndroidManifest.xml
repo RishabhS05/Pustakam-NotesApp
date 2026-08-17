@@ -62,6 +62,34 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="pustakam" android:host="book" />
             </intent-filter>
+
+
+                <!-- 🔧 17-Aug-2026: Open With — a mimeType-only filter matches content:// and file://
+                     uris. text/* covers txt/md/csv, octet-stream is the "unknown binary" fallback. -->
+                <intent-filter>
+                    <action android:name="android.intent.action.VIEW" />
+
+                    <category android:name="android.intent.category.DEFAULT" />
+                    <category android:name="android.intent.category.BROWSABLE" />
+                    <data android:mimeType="application/pdf" />
+                    <data android:mimeType="application/msword" />
+                    <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                    <data android:mimeType="application/epub+zip" />
+                    <data android:mimeType="application/octet-stream" />
+                    <data android:mimeType="text/*" />
+                    <data android:mimeType="image/*" />
+                    <data android:mimeType="video/*" />
+                    <data android:mimeType="audio/*" />
+                </intent-filter>
+
+                <!-- 🔧 17-Aug-2026: Share sheet — one or many files land in ONE new note -->
+                <intent-filter>
+                    <action android:name="android.intent.action.SEND" />
+                    <action android:name="android.intent.action.SEND_MULTIPLE" />
+                    <category android:name="android.intent.category.DEFAULT" />
+                    <data android:mimeType="*/*" />
+                </intent-filter>
+
         </activity>
         <!-- 🔧 18-Jul-2026: home-screen "Book" widget — opens the last-read note as a book -->
         <receiver

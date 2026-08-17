@@ -64,6 +64,11 @@ enum FileImportService {
                 print("❌ import copy failed: \(error)")
                 return nil
             }
+            // 🔧 17-Aug-2026: an Open With hand-off leaves the original in Documents/Inbox — drop it
+            //   once it is safely copied. The picker's asCopy urls live in tmp, so they are untouched.
+            if url.path.contains("/Documents/Inbox/") {
+                try? FileManager.default.removeItem(at: url)
+            }
             let written = ((try? FileManager.default.attributesOfItem(atPath: dest.path)[.size]) as? Int64) ?? 0
             // SHARED factory — same construction path Android uses.
             let media = ImportCoordinator.shared.mediaFromPlan(
@@ -175,3 +180,27 @@ struct MultiFilePicker: UIViewControllerRepresentable {
 }
 
 
+// 🔧 17-Aug-2026: NEW FEATURE (Open With) — holds the file urls another app handed us until the
+//   new note exists. Lives here rather than in its own file because the iosApp target is not a
+//   synchronized group; a new .swift would need a project.pbxproj edit to be compiled.
+enum IncomingShare {
+
+    private static var pending: [URL] = []
+
+    static var hasPending: Bool { !pending.isEmpty }
+
+    /// Only file urls belong here — pustakam:// deep links are handled by the router.
+    @discardableResult
+    static func accept(_ url: URL) -> Bool {
+        guard url.isFileURL else { return false }
+        pending.append(url)
+        return true
+    }
+
+    /// Reads and empties in one step, so a share can never be imported twice.
+    static func take() -> [URL] {
+        let urls = pending
+        pending = []
+        return urls
+    }
+}

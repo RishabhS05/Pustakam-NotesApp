@@ -14,6 +14,37 @@
 			</array>
 		</dict>
 	</array>
+	<!-- 🔧 17-Aug-2026: Open With — declaring the types the note editor can render puts Pustakam
+	     in the "Open In / Copy to" list of Files, Mail, Safari and Photos. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Note attachment</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.adobe.pdf</string>
+				<string>com.microsoft.word.doc</string>
+				<string>org.openxmlformats.wordprocessingml.document</string>
+				<string>org.idpf.epub-container</string>
+				<string>net.daringfireball.markdown</string>
+				<string>public.plain-text</string>
+				<string>public.text</string>
+				<string>public.image</string>
+				<string>public.movie</string>
+				<string>public.audio</string>
+				<string>public.item</string>
+			</array>
+		</dict>
+	</array>
+	<!-- 🔧 17-Aug-2026: false = iOS copies the file into Documents/Inbox, so no security-scoped
+	     bookmark juggling; FileImportService removes the Inbox copy once it is imported. -->
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

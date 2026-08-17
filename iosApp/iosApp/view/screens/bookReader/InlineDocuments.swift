@@ -2,9 +2,7 @@ import SwiftUI
 import PDFKit
 import shared
 
-// 📖 15-Aug-2026: everything the reader needs to open a document in place. Disabled by default, so
-//   every existing caller keeps the card-only behaviour it has today. Mirrors Android
-//   InlineDocumentUiState.
+
 struct InlineDocumentState {
     var enabled: Bool = false
     var expandedIds: Set<String> = []
@@ -25,8 +23,6 @@ struct InlineDocumentState {
     func readsInline(_ contentId: String) -> Bool { enabled && isReadable(contentId) }
 }
 
-// 📖 15-Aug-2026: how many sheets a document has, answered ONCE per file. PDFs are counted by
-//   PDFKit, txt/md by the same chunker BookReaderView uses. Mirrors Android EmbeddedDocumentProbe.
 enum EmbeddedDocumentProbe {
 
     static func probe(_ media: NoteContentModel.MediaContent) -> EmbeddedDocumentSource {

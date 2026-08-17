@@ -58,6 +58,11 @@ private struct AppRootView: View {
         }
         // 🔧 18-Jul-2026: widget deep link pustakam://book/<noteId> → open the book reader
         .onOpenURL { url in
+            // 🔧 17-Aug-2026: Open With — a file url starts a NEW note that holds that file
+            if IncomingShare.accept(url) {
+                router.navigate(to: .NoteEditor(noteId: nil))
+                return
+            }
             guard url.scheme == "pustakam", url.host == "book" else { return }
             let noteId = url.lastPathComponent
             if !noteId.isEmpty && noteId != "book" {

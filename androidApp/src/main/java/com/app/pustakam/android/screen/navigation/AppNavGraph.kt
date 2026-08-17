@@ -3,6 +3,7 @@ package com.app.pustakam.android.screen.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
@@ -11,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.app.pustakam.android.fileimport.IncomingShare
 import com.app.pustakam.android.screen.AppViewModel
 import com.app.pustakam.android.screen.navigation.NavRouteRegistry.buildAll
 
@@ -23,6 +25,11 @@ fun AppNavGraph(
     val isAuthenticated = appViewModel.isAuthenticated
         .collectAsStateWithLifecycle(initialValue = false).value
     val startRoute = if (isAuthenticated) Route.Home else Route.Authentication
+
+    val sharedUris = IncomingShare.uris.collectAsStateWithLifecycle().value
+    LaunchedEffect(sharedUris, isAuthenticated) {
+        if (sharedUris.isNotEmpty() && isAuthenticated) navHostController.navigateTo(Route.NotesEditor)
+    }
 
     val backStackEntry by navHostController.navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination

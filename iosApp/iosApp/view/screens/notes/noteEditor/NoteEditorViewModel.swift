@@ -257,6 +257,17 @@ class NoteEditorViewModel: ObservableObject {
 
     // MARK: - File import (18-Jul-2026)
 
+    // 🔧 17-Aug-2026: Open With — same import as the picker, plus the file names the note while the
+    //   title is still blank, so a shared file is findable in the list.
+    func importShared(urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        if state.title.isEmpty, let first = urls.first {
+            let name = first.deletingPathExtension().lastPathComponent
+            if !name.isEmpty { state.title = name }
+        }
+        importFiles(urls: urls)
+    }
+
     // 🔧 18-Jul-2026: NEW FEATURE (file import) — device multi-pick: copy on background, append on main
     func importFiles(urls: [URL]) {
         guard let noteId = state.note?.id else {

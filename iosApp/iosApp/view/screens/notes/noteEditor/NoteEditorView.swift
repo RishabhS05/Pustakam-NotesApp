@@ -18,12 +18,16 @@ struct NoteEditorView: View {
     // 🔧 V1 fix: @StateObject (was @ObservedObject + inline init → VM recreated on every
     //           re-render, wiping edits). Note passed via init — setNote() no longer exists.
     @StateObject private var noteEditorViewModel: NoteEditorViewModel
+
+    private let isNewNote: Bool
+    @State private var didConsumeShare = false
     private var cameraPermission = CameraPermission()
     private var micPermission = MicPermission()
     init(noteId: String? = nil) {
         _noteEditorViewModel = StateObject(wrappedValue: NoteEditorViewModel(noteId: noteId))
         // title now lives in the VM state (fixes lost-title bug); only showDelete stays local
         _showDelete = State(initialValue: noteId != nil)
+        isNewNote = noteId == nil
     }
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -163,6 +167,11 @@ struct NoteEditorView: View {
         }
         .onDisappear {saveNote() }
         .onAppear { noteEditorViewModel.refresh() }
+        .onChange(of: noteEditorViewModel.state.isNoteReady, initial: true) { _, ready in
+            guard ready, isNewNote, !didConsumeShare, IncomingShare.hasPending else { return }
+            didConsumeShare = true
+            noteEditorViewModel.importShared(urls: IncomingShare.take())
+        }
         .onReceive(
             NotificationCenter.default.publisher(
                 for: UIApplication.willResignActiveNotification
