@@ -33,7 +33,7 @@ struct LoginView: View {
         case email, password
     }
     @FocusState private var focusedField: Fields?
-    @Environment(Router.self) var router: Router
+    @Environment(Router.self) private var router: Router
     var body: some View {
         ZStack(alignment: .center){
             VStack{
@@ -85,7 +85,10 @@ struct LoginView: View {
     }
     
     func login(email: String, password: String) {
-        let login = Login(email: email, password: password, phone: nil)
+        // 🔧 19-Aug-2026 — field carries either an email or a phone number; route it accordingly
+        let login = email.contains("@")
+            ? Login(email: email, password: password, phone: nil)
+            : Login(email: nil, password: password, phone: email)
         let validation = loginHandler.checkLoginCredValidity(req: login)
         if validation != nil && validation!.showErrorAlert {
             errorField = validation!

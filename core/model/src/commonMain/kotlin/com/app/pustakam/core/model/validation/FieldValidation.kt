@@ -10,11 +10,12 @@ import com.app.pustakam.core.common.util.ValidationError
 
 
 fun isPasswordEqualsToConfirmPassword(password: String?, confirmPassword : String? ) = !confirmPassword.isNullOrEmpty() && !password.isNullOrEmpty() && password == confirmPassword
+// 🔧 19-Aug-2026 — accepts either a valid email or a valid phone number as the identifier
 fun checkLoginEmailPasswordValidity(req: Login): ValidationError = when {
-    !req.email.isValidEmail() ->  ValidationError.EMAIL
-        !req.password.isValidPassword() -> ValidationError.PASSWORD
-        else -> ValidationError.NONE
-    }
+    !(req.email.isValidEmail() || req.phone.isValidPhone()) -> ValidationError.EMAIL
+    !req.password.isValidPassword() -> ValidationError.PASSWORD
+    else -> ValidationError.NONE
+}
 
 fun checkRegisterFieldsValidity(req : RegisterReq) : ValidationError
 = when {

@@ -11,6 +11,7 @@ import com.app.pustakam.feature.auth.domain.usecase.LoginUseCase
 import com.app.pustakam.core.common.util.NetworkError
 import com.app.pustakam.core.common.util.ValidationError
 import com.app.pustakam.core.model.validation.checkLoginEmailPasswordValidity
+import com.app.pustakam.core.common.extensions.isValidEmail
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,9 @@ class LoginViewModel : BaseViewModel() {
     private val _loginUiState = MutableStateFlow(LoginUIState(isLoading = false ))
     val loginUIState: StateFlow<LoginUIState> = _loginUiState.asStateFlow()
     fun login(email : String, password :String ){
-        val req = Login(email = email,password= password)
+        // 🔧 19-Aug-2026 — field carries either an email or a phone number; route it accordingly
+        val req = if (email.isValidEmail()) Login(email = email, password = password)
+                  else Login(email = null, phone = email, password = password)
         val isValidationCred = checkLoginEmailPasswordValidity(req = req)
         if( isValidationCred == ValidationError.NONE)
              makeAWish(AUTH.LOGIN, showLoader = true, call = {

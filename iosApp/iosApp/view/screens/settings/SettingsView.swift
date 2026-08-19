@@ -16,11 +16,11 @@ struct SettingsView: View {
 
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.palette) private var palette
-
+    @Environment(Router.self) var router: Router
     // 📖 23-Jul-2026 — reading mode shares one persisted value with the reader's toolbar toggle
     @State private var readerPrefs = ReaderPrefsAdapter()
     @State private var readingMode: ReadingMode = .page
-
+    @State private var authBridge = AuthBridgeAdapter()
     var body: some View {
         @Bindable var themeManager = themeManager
 
@@ -94,7 +94,9 @@ struct SettingsView: View {
                         SettingsRow(icon: "lock.fill", tint: Theme.Colors.copper,
                                     title: "Privacy & Security", subtitle: "App lock · Face ID", value: "")
                         SettingsRow(icon: "gearshape.2.fill", tint: Theme.Colors.forest,
-                                    title: "Developer options", value: "", isLast: true)
+                                    title: "Developer options", value: "",)
+                        SettingsRow(icon: "rectangle.portrait.and.arrow.right", tint: Color.red,
+                                    title: "Logout ", value: "", onTap: { authBridge.logout {router.navigate(to: .Login)}})
                     }
                 }
             }
@@ -157,7 +159,6 @@ struct SettingsCard<Content: View>: View {
 
 // 🎨 22-Jul-2026 — one settings row: tinted icon, title/subtitle, then a toggle OR a value chevron.
 struct SettingsRow: View {
-
     let icon: String
     let tint: Color
     let title: String
@@ -167,7 +168,7 @@ struct SettingsRow: View {
     // 📖 23-Jul-2026 — rows that own real state pass a callback; presentational rows omit it
     var onToggle: ((Bool) -> Void)? = nil
     var isLast: Bool = false
-
+    var onTap: () -> Void  = {}
     @State private var toggleState: Bool = false
     @Environment(\.palette) private var palette
 
@@ -196,7 +197,6 @@ struct SettingsRow: View {
                 }
 
                 Spacer(minLength: Theme.Spacing.sm)
-
                 if isOn != nil {
                     Toggle("", isOn: $toggleState)
                         .labelsHidden()
@@ -210,7 +210,7 @@ struct SettingsRow: View {
                                 .font(Theme.Fonts.metaCaption)
                                 .foregroundStyle(palette.text3)
                         }
-                        Image(systemName: "chevron.right")
+                        Image(systemName: Images.arrowRight)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(palette.text3)
                     }
@@ -227,6 +227,9 @@ struct SettingsRow: View {
         }
         .contentShape(Rectangle())
         .onAppear { toggleState = isOn ?? false }
+        .onTapGesture {
+            onTap()
+        }
         // 📖 23-Jul-2026 — follow the owner's value when it changes elsewhere (e.g. the reader's
         //   toolbar toggle). Assigning the same value doesn't re-fire onChange, so no write echo.
         .onChange(of: isOn) { _, newValue in

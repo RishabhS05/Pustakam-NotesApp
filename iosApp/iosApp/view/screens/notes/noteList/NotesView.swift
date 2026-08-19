@@ -5,7 +5,7 @@ import shared
 struct NotesView: View {
     @StateObject private var notesViewModel = NotesViewModel()
     
-    @Environment(Router.self) var router: Router
+    @Environment(Router.self) private var router: Router
     var loadingUi : some View {
         LoadingUI().frame(alignment: .center)
         return Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)

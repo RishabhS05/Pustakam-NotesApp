@@ -7,7 +7,7 @@ import shared
 //   note in the editor via a contents-less stub (the editor re-reads by id).
 struct SearchView: View {
     @StateObject private var viewModel = SearchViewModel()
-    @Environment(Router.self) var router: Router
+    @Environment(Router.self) private var router: Router
 
     var body: some View {
         VStack(spacing: 8) {

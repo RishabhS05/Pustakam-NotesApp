@@ -15,7 +15,7 @@ class  UserPreferenceWrapper : ObservableObject {
 
 
 struct AppView : View {
-    @Environment(Router.self) var router : Router
+    @Environment(Router.self) private var router : Router
     @Environment(\.dismiss) var dismiss
     @StateObject var userPreferenceWrapper : UserPreferenceWrapper = UserPreferenceWrapper()
 

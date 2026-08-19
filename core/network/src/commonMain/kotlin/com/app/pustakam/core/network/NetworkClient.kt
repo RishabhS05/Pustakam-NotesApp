@@ -44,7 +44,7 @@ fun createHttpClient(authTokenProvider:()-> String? ): HttpClient = platformHttp
 }
 
 //private fun getBaseUrl(): String = "https://notesapp-s8wpnlgb.b4a.run"
-private fun getBaseUrl(): String = "https://unarmored-bucket-yo-yo.ngrok-free.dev/"
+private fun getBaseUrl(): String = "https://unarmored-bucket-yo-yo.ngrok-free.dev"
 private fun getBaseUrlDev(): String =
     //"http://192.168.68.103:3000"
 "http://192.168.31.4:3000"

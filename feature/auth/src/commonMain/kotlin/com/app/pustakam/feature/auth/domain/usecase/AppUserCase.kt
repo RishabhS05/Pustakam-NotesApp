@@ -11,5 +11,8 @@ class AppUserCase : AuthBaseUseCase() {
     val authState: StateFlow<UserPreference> get() = authRepository.authState
 
     val isAuthenticated: Flow<Boolean>
-        get() = authRepository.authState.map { AuthConfig.BYPASS_AUTH || it.isAuthenticated }
+        get() = authRepository.authState.map { AuthConfig.BYPASS_AUTH || it.isAuthenticated
+        }
+
+
 }

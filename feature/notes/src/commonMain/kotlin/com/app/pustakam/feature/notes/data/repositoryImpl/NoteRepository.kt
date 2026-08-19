@@ -7,7 +7,6 @@ import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import com.app.pustakam.core.model.models.response.notes.Notes
 import com.app.pustakam.core.model.models.response.notes.toSummary
-
 import com.app.pustakam.core.data.base.BaseRepository
 import com.app.pustakam.core.common.extensions.isNotnull
 import com.app.pustakam.core.common.util.Error

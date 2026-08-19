@@ -88,7 +88,8 @@ fun SettingsScreen(
         onCloudSyncChange = viewModel::onCloudSyncChange,
         onAutoBackupChange = viewModel::onAutoBackupChange,
         onOfflineModeChange = viewModel::onOfflineModeChange,
-        onReadingModeChange = viewModel::onReadingModeChange
+        onReadingModeChange = viewModel::onReadingModeChange,
+        onLogout = viewModel::logout
     )
 }
 
@@ -102,7 +103,8 @@ fun SettingsContent(
     onCloudSyncChange: (Boolean) -> Unit = {},
     onAutoBackupChange: (Boolean) -> Unit = {},
     onOfflineModeChange: (Boolean) -> Unit = {},
-    onReadingModeChange: (Boolean) -> Unit = {}
+    onReadingModeChange: (Boolean) -> Unit = {},
+    onLogout : () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -206,7 +208,12 @@ fun SettingsContent(
                 )
                 SettingsRow(
                     icon = Icons.Default.Settings, tint = GranthForest,
-                    title = "Developer options", value = "", isLast = true
+                    title = "Developer options", value = "",
+                )
+                SettingsRow(
+                    icon = Icons.Default.Settings, tint = Color.Red,
+                    title = "Logout", value = "",
+                    onClick = onLogout
                 )
             }
         }

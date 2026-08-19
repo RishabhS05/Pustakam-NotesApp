@@ -2,7 +2,7 @@ import SwiftUI
 import shared
 
 struct NoteEditorView: View {
-    @Environment(Router.self) var router: Router
+    @Environment(Router.self) private var router: Router
     @Environment(\.dismiss) private var dismiss
     @State private var errorField: ErrorField = ErrorField()
     @State private var noteContent: String = ""

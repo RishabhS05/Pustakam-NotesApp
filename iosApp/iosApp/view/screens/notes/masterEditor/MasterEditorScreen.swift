@@ -15,7 +15,7 @@ struct MasterEditorScreen: View {
         self.onOpenMedia = onOpenMedia
         _viewModel = StateObject(wrappedValue: MasterEditorViewModel(noteId: noteId))
     }
-    @Environment(Router.self) var router: Router
+    @Environment(Router.self) private var router: Router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
     @State private var showAttach = false
