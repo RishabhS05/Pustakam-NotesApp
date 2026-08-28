@@ -30,12 +30,20 @@ data class Note(
     val version: String = "",
     val syncStatus: String = "PENDING",
     val deleted: Boolean = false,
+    // 🔄 20-Aug-2026 sync: when the tombstone was made, and the SERVER's clock for this note.
+    //   Both are bookkeeping — NoteWireMapper strips them before a push.
+    val deletedAt: String? = null,
+    val serverUpdatedAt: Long? = null,
     val contents: List<NoteContentModel> = emptyList(),
     ) {
     /** Swift-friendly copy helpers — Kotlin data-class copy() does not export
      *  usable default arguments to Swift, so immutable edits go through these.
      *  🔧 every edit stamps updatedAt = getCurrentTimestamp() → "last updated" is always current */
     fun withNextVersion () : String = Version.nextVersion(ownerId, version)
+    // 🔧 20-Aug-2026 sync: withNextVersion() returns a String and BOTH call sites wrapped it in
+    //   .apply { }, which threw the result away — the version never actually advanced. Sync compares
+    //   versions for idempotency, so it has to. updatedAt is deliberately NOT touched here.
+    fun stampedWithNextVersion(): Note = copy(version = withNextVersion())
     fun withTitle(newTitle: String?): Note =
         copy(title = newTitle, updatedAt = "${getCurrentTimestamp()}", syncStatus = "PENDING")
 
@@ -104,9 +112,21 @@ sealed class NoteContentModel {
         val thumbnailPath: String? = null,
         val totalPages: Int = 0,
         val progressPage: Int = 0,
+        // 🖼️ 20-Aug-2026 sync: the server's name for these bytes. localPath is this device's
+        //   copy and never travels; assetId is what the other device downloads with.
+        val assetId: String? = null,
+        val checksum: String? = null,
     ) : NoteContentModel() {
         fun withThumbnail(path: String?): MediaContent =
             copy(thumbnailPath = path, updatedAt = "${getCurrentTimestamp()}")
+        // 🖼️ 20-Aug-2026 sync: stamped after an upload; updatedAt is NOT touched, because
+        //   gaining a server identity is not a user edit and must not re-dirty the note.
+        fun withAsset(assetId: String?, url: String, checksum: String?): MediaContent =
+            copy(assetId = assetId, url = url, checksum = checksum)
+        // 🖼️ 20-Aug-2026 sync: stamped after a download landed the bytes on THIS device
+        fun withLocalPath(path: String?): MediaContent = copy(localPath = path)
+        fun needsUpload(): Boolean = assetId.isNullOrBlank() && !localPath.isNullOrBlank()
+        fun needsDownload(): Boolean = !assetId.isNullOrBlank() && localPath.isNullOrBlank()
         fun withReadingProgress(page: Int, total: Int): MediaContent =
             copy(progressPage = page, totalPages = total, updatedAt = "${getCurrentTimestamp()}")
         fun withProgressPage(page: Int): MediaContent = copy(progressPage = page)

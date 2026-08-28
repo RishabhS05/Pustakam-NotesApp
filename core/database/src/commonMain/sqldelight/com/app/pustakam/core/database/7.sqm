@@ -1,0 +1,23 @@
+-- 🔄 20-Aug-2026 sync: everything the sync engine needs, added additively. No column is dropped or
+--   retyped, so an existing install keeps every note it already has.
+--   Notes.deleted already existed (3.sqm) but nothing ever set it — deletes were a hard DELETE.
+ALTER TABLE Notes ADD COLUMN deletedAt TEXT;
+
+-- 🔄 the SERVER's clock. Pull pages on (serverUpdatedAt, _id); a phone clock cannot be trusted for it.
+ALTER TABLE Notes ADD COLUMN serverUpdatedAt INTEGER;
+
+-- 🖼️ how a media file is named ON THE SERVER. localPath is device state and never leaves the device.
+ALTER TABLE NoteContent ADD COLUMN assetId TEXT;
+ALTER TABLE NoteContent ADD COLUMN checksum TEXT;
+
+-- 🔄 the pull watermark, per user. In SQLite rather than DataStore so that advancing it and
+--   committing the page it came from happen inside ONE transaction — a crash re-pulls, never skips.
+CREATE TABLE SyncState(
+userId TEXT NOT NULL PRIMARY KEY,
+lastPulledAt INTEGER NOT NULL DEFAULT 0,
+lastPulledId TEXT,
+lastSyncedAt INTEGER NOT NULL DEFAULT 0
+);
+
+-- 🔄 every sync run starts with "what is dirty?"; without this it is a full scan of Notes
+CREATE INDEX idx_notes_syncstatus ON Notes(syncStatus, deleted);

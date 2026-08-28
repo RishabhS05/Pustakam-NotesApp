@@ -131,6 +131,7 @@
 		63D2A6482E5D9C5E00FCF4A7 /* HSVColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D2A6472E5D9C5E00FCF4A7 /* HSVColorPicker.swift */; };
 		63DE80E32CB6ADCD00626E49 /* BaseNetworkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */; };
 		63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DE80E42CB6AEFF00626E49 /* ErrorField.swift */; };
+		65D436ABFDB7B24C33FA4D9C /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C7FFD33144B8FB8262EEAD /* SyncController.swift */; };
 		63DF200B2DBC3698001E0EDE /* PlayerUiState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DF200A2DBC3698001E0EDE /* PlayerUiState.swift */; };
 		63DF20112DBC5969001E0EDE /* SystemControlledPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DF20102DBC5969001E0EDE /* SystemControlledPlayerView.swift */; };
 		63DF20132DBC59BF001E0EDE /* MediaControlledPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DF20122DBC59BF001E0EDE /* MediaControlledPlayer.swift */; };
@@ -291,6 +292,7 @@
 		63D2A6472E5D9C5E00FCF4A7 /* HSVColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HSVColorPicker.swift; sourceTree = "<group>"; };
 		63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseNetworkHandler.swift; sourceTree = "<group>"; };
 		63DE80E42CB6AEFF00626E49 /* ErrorField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorField.swift; sourceTree = "<group>"; };
+		74C7FFD33144B8FB8262EEAD /* SyncController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		63DF200A2DBC3698001E0EDE /* PlayerUiState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerUiState.swift; sourceTree = "<group>"; };
 		63DF20102DBC5969001E0EDE /* SystemControlledPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemControlledPlayerView.swift; sourceTree = "<group>"; };
 		63DF20122DBC59BF001E0EDE /* MediaControlledPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControlledPlayer.swift; sourceTree = "<group>"; };
@@ -884,6 +886,7 @@
 			children = (
 				63DE80E22CB6ADCD00626E49 /* BaseNetworkHandler.swift */,
 				63DE80E42CB6AEFF00626E49 /* ErrorField.swift */,
+				74C7FFD33144B8FB8262EEAD /* SyncController.swift */,
 			);
 			path = network;
 			sourceTree = "<group>";
@@ -1178,6 +1181,7 @@
 				6345BFB92CEF363A00CC254C /* LocationPermission.swift in Sources */,
 				63FDAFCA2D96DFBC0067169C /* ActionButtonWithoutBackground.swift in Sources */,
 				63DE80E52CB6AEFF00626E49 /* ErrorField.swift in Sources */,
+				65D436ABFDB7B24C33FA4D9C /* SyncController.swift in Sources */,
 				635557452DC0732700C7D533 /* DateTime.swift in Sources */,
 				634F659E2DA9CF7F00DD5142 /* AlertUseCase.swift in Sources */,
 				2287BB423010149D00F6D3E2 /* FolderItem.swift in Sources */,

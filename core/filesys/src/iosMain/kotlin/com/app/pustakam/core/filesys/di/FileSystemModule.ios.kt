@@ -11,7 +11,9 @@ import com.app.pustakam.core.filesys.platform.IosFileDeleter
 import com.app.pustakam.core.filesys.platform.IosFileReader
 import com.app.pustakam.core.filesys.platform.IosFileWriter
 import com.app.pustakam.core.filesys.platform.IosMetadataReader
+import com.app.pustakam.core.filesys.platform.IosStoragePaths
 import com.app.pustakam.core.filesys.platform.MetadataReader
+import com.app.pustakam.core.filesys.platform.StoragePaths
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -29,4 +31,5 @@ actual fun getFileSystemModule(): Module = module {
     single<FileCopier> { IosFileCopier() }
     single<FileDeleter> { IosFileDeleter() }
     single<MetadataReader> { IosMetadataReader() }
+    single<StoragePaths> { IosStoragePaths() }
 }

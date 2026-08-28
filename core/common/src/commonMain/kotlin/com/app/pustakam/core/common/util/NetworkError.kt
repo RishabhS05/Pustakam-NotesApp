@@ -52,6 +52,24 @@ enum class NetworkError : Error {
             return "Serialization"
         }
     },
+    // 🔐 20-Aug-2026 sync: refresh failed / token unusable — the ONLY error that should force a logout
+    SESSION_EXPIRED {
+        override fun getError(): String {
+            return "Your session has expired. Please sign in again."
+        }
+    },
+    // 🔐 20-Aug-2026 sync: 403 is "not yours", not "not logged in" — logging out on it is wrong
+    FORBIDDEN {
+        override fun getError(): String {
+            return "You do not have access to this."
+        }
+    },
+    // 🔧 20-Aug-2026: 400 used to map to NOT_FOUND, which hid every validation failure
+    BAD_REQUEST {
+        override fun getError(): String {
+            return "The request was rejected. Please try again."
+        }
+    },
     UNKNOWN {
         override fun getError(): String {
             return ""

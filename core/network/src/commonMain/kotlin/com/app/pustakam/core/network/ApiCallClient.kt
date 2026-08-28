@@ -8,8 +8,16 @@ import com.app.pustakam.core.model.models.response.DeleteDataModel
 import com.app.pustakam.core.model.models.response.User
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.Notes
+import com.app.pustakam.core.model.models.sync.SyncPullResponse
+import com.app.pustakam.core.model.models.sync.SyncPushRequest
+import com.app.pustakam.core.model.models.sync.SyncPushResponse
+import com.app.pustakam.core.model.models.sync.MediaUploadResponse
 import com.app.pustakam.core.common.util.NetworkError
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -46,6 +54,44 @@ class ApiCallClient : BaseClient() {
     suspend fun addNewNote(userId: String, note: Note): Result<BaseResponse<Note>, Error> =
         post(url= "${ApiRoute.NOTES.getName()}/$userId", requestData = note)
 
+
+    // 🔄 20-Aug-2026 sync: per-note results, never all-or-nothing. Idempotent on (noteId, version).
+    suspend fun syncPush(userId: String, request: SyncPushRequest): Result<BaseResponse<SyncPushResponse>, Error> =
+        post(url = "${ApiRoute.SYNC.getName()}/$userId/push", requestData = request)
+
+    // 🔄 `since` is ALWAYS a serverUpdatedAt the server handed us — never a device clock reading
+    suspend fun syncPull(
+        userId: String, since: Long, sinceId: String?, limit: Int
+    ): Result<BaseResponse<SyncPullResponse>, Error> {
+        val cursor = sinceId?.takeIf { it.isNotBlank() }?.let { "&sinceId=$it" } ?: ""
+        return get(url = "${ApiRoute.SYNC.getName()}/$userId/pull?since=$since&limit=$limit$cursor")
+    }
+
+    /** 🖼️ 20-Aug-2026 sync: ONE file per request on purpose. The server persists a batch in a loop
+     *  and throws on the first bad file, so a batch would let one unsupported attachment fail all
+     *  the others. Per-file requests give per-file failure. */
+    suspend fun uploadMedia(file: MediaUpload): Result<BaseResponse<MediaUploadResponse>, Error> =
+        baseApiCall<BaseResponse<MediaUploadResponse>, NetworkError> {
+            httpClient.submitFormWithBinaryData(
+                url = ApiRoute.IMAGES.getName(),
+                formData = formData {
+                    append(
+                        key = UPLOAD_FIELD_FILES,
+                        value = file.bytes,
+                        headers = Headers.build {
+                            append(HttpHeaders.ContentType, file.mimeType)
+                            append(HttpHeaders.ContentDisposition, "filename=\"${file.fileName}\"")
+                        }
+                    )
+                }
+            )
+        }
+
+    /** 🖼️ raw bytes — this route streams the file itself and does NOT wrap it in BaseResponse. */
+    suspend fun downloadMedia(userId: String, assetId: String): Result<ByteArray, Error> =
+        baseApiCall<ByteArray, NetworkError> {
+            httpClient.get(urlString = "${ApiRoute.MEDIA.getName()}/$userId/$assetId")
+        }
 
     suspend fun getUser(userId: String): Result<BaseResponse<User>, Error> =
         get(url = "${ApiRoute.USERS.getName()}/$userId")

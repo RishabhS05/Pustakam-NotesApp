@@ -1,23 +1,10 @@
-//
-//  SettingsView.swift
-//  iosApp
-//
-//  Created by Rishabh on 22/07/26.
-//  Copyright © 2026 orgName. All rights reserved.
-//
-
-
 import SwiftUI
 
-// 🎨 22-Jul-2026 — Granth spec §6 Settings. Replaces the placeholder Text("Settings") with the
-//   profile header + grouped sections. Appearance is live-wired to ThemeManager; the remaining
-//   rows are presentational until their features land.
 struct SettingsView: View {
 
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.palette) private var palette
     @Environment(Router.self) var router: Router
-    // 📖 23-Jul-2026 — reading mode shares one persisted value with the reader's toolbar toggle
     @State private var readerPrefs = ReaderPrefsAdapter()
     @State private var readingMode: ReadingMode = .page
     @State private var authBridge = AuthBridgeAdapter()

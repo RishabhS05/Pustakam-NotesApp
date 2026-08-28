@@ -56,6 +56,30 @@ interface FileDeleter {
     fun delete(relativePath: String): Boolean
 }
 
+/**
+ * 🖼️ 20-Aug-2026 sync — absolute ↔ relative, the seam nothing needed until now.
+ *
+ * Every interface above takes a path RELATIVE to app storage, but `MediaContent.localPath` is
+ * stored ABSOLUTE, because that is the form every playback and rendering call site expects.
+ * Sync is the first thing that has to cross between the two, so the rule lives here once.
+ *
+ * Only [rootPath] is platform-specific; the rest is the same arithmetic everywhere.
+ */
+interface StoragePaths {
+
+    /** Absolute path of the private app-storage root, no trailing slash. */
+    fun rootPath(): String
+
+    /** Null when the file is OUTSIDE app storage — sync must never read or overwrite those. */
+    fun toRelative(absolutePath: String): String? {
+        val prefix = rootPath().trimEnd('/') + "/"
+        return if (absolutePath.startsWith(prefix)) absolutePath.removePrefix(prefix) else null
+    }
+
+    fun toAbsolute(relativePath: String): String =
+        rootPath().trimEnd('/') + "/" + relativePath.trimStart('/')
+}
+
 /** Describe a file without the caller opening it. */
 interface MetadataReader {
     // 🔧 30-Jul-2026 02:10 Phase 3 — named describe(), NOT read(): read(String) would collide with

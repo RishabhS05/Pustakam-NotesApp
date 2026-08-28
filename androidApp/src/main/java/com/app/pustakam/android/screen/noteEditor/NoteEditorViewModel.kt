@@ -4,10 +4,13 @@ import com.app.pustakam.core.common.util.displayMessage
 import com.app.pustakam.core.common.util.log_d
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
 import com.app.pustakam.android.fileUtils.deleteFile
 import com.app.pustakam.android.fileUtils.generateThumbnail
+import com.app.pustakam.android.fileimport.FileImportManager
+import com.app.pustakam.android.fileimport.ImportResult
 import com.app.pustakam.android.noteContentProvider.addContent
 import com.app.pustakam.android.permission.NeededPermission
 import com.app.pustakam.android.screen.NOTES_CODES
@@ -15,6 +18,7 @@ import com.app.pustakam.android.screen.NoteContentUiState
 import com.app.pustakam.android.screen.NoteUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.android.screen.base.BaseViewModel
+import com.app.pustakam.android.screen.base.apiWithCollect
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityReducer
 import com.app.pustakam.feature.notes.domain.editor.EditorCapabilityState
 import com.app.pustakam.feature.notes.domain.editor.EditorEffect
@@ -24,6 +28,7 @@ import com.app.pustakam.feature.notes.domain.editor.EditorState
 import com.app.pustakam.feature.notes.domain.history.NoteEditKind
 import com.app.pustakam.feature.notes.domain.history.NoteHistory
 import com.app.pustakam.feature.notes.domain.usecase.CreateORUpdateNoteUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SyncNowUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.DeleteNoteUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ObserveNoteContentsUseCase
@@ -67,6 +72,7 @@ class NoteEditorViewModel : BaseViewModel() {
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
     private val deleteNoteContentUseCase by inject<DeleteNoteContentUseCase>()
     private val createUpdateNoteUseCase by inject<CreateORUpdateNoteUseCase>()
+    private val syncNowUseCase by inject<SyncNowUseCase>()
     private val observeNoteContents by inject<ObserveNoteContentsUseCase>()
     private val _noteUiState = MutableStateFlow(NoteUIState(isLoading = false))
     val noteUIState: StateFlow<NoteUIState> = _noteUiState.asStateFlow()
@@ -236,14 +242,39 @@ class NoteEditorViewModel : BaseViewModel() {
     fun saveNow() = saveThenOpen { }
 
     fun saveThenOpen(onSaved: () -> Unit) {
+        if(!isNoteValid()) return
         updateNoteObject()
         val note = _noteContentUiState.value.note ?: run { onSaved(); return }
         val dirty = dirtyContentIds.toSet()
-        viewModelScope.launch(Dispatchers.IO) {
-            createUpdateNoteUseCase.invoke(note, dirty).collect { result ->
-                if (result is Result.Success || result is Result.Error) {
-                    dirtyContentIds.removeAll(dirty)
-                    withContext(Dispatchers.Main) { onSaved() }
+        createUpdateNoteUseCase(note = note, dirtyContentIds = dirty).apiWithCollect(
+            scope = viewModelScope,
+            onLoading = {},
+            onFailure = {
+                dirtyContentIds.removeAll(dirty)
+                withContext(Dispatchers.Main) { onSaved() }
+            },
+            onSuccess = {
+                dirtyContentIds.removeAll(dirty)
+                withContext(Dispatchers.Main) { onSaved() }
+            }
+        )
+    }
+
+    /** 🔄 28-Aug-2026 — PULL TO REFRESH in the editor: sync, then re-read THIS note from the DB
+     *  so anything that arrived for it is on screen immediately rather than on the next open. */
+    fun refresh(noteId: String?) {
+        viewModelScope.launch {
+            _noteUiState.update { it.copy(isRefreshing = true, error = null) }
+            syncNowUseCase().collect { result ->
+                when (result) {
+                    is Result.Error -> _noteUiState.update {
+                        it.copy(isRefreshing = false, error = result.error.displayMessage())
+                    }
+                    is Result.Success -> {
+                        _noteUiState.update { it.copy(isRefreshing = false) }
+                        readFromDataBase(noteId)
+                    }
+                    is Result.Loading -> {}
                 }
             }
         }
@@ -257,7 +288,6 @@ class NoteEditorViewModel : BaseViewModel() {
             readNoteUseCase.invoke(id)
         }
     }
-
     fun refreshOnResume(id: String?) {
         if (dirtyContentIds.isNotEmpty()) return   // don't overwrite unsaved edits
         // 🔧 17-Aug-2026: a Quick note lives only in memory until it is saved. Re-reading the id it
@@ -582,11 +612,11 @@ class NoteEditorViewModel : BaseViewModel() {
 
     // 🔧 17-Aug-2026: Open With / Share — same import as the picker, plus the file names the note
     //   while the title is still blank, so a shared file is findable in the list.
-    fun importSharedFiles(context: Context, uris: List<android.net.Uri>) {
+    fun importSharedFiles(context: Context, uris: List<Uri>) {
         if (uris.isEmpty()) return
         val titleState = _noteContentUiState.value.titleTextState
         if (titleState.value.isBlank()) {
-            com.app.pustakam.android.fileimport.FileImportManager
+            FileImportManager
                 .displayNameOf(context, uris.first())
                 ?.substringBeforeLast('.')
                 ?.takeIf { it.isNotBlank() }
@@ -595,14 +625,14 @@ class NoteEditorViewModel : BaseViewModel() {
         importDeviceFiles(context, uris)
     }
 
-    fun importDeviceFiles(context: Context, uris: List<android.net.Uri>) {
+    fun importDeviceFiles(context: Context, uris: List<Uri>) {
         if (uris.isEmpty()) return
         val note = _noteContentUiState.value.note ?: run {
             _noteUiState.update { it.copy(error = "Note is still loading. Try again.") }; return
         }
         _noteUiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
-            val items = com.app.pustakam.android.fileimport.FileImportManager.importUris(
+            val items = FileImportManager.importUris(
                 context.applicationContext, note.id, note.contents.count().toDouble(), uris
             )
            withContext(Dispatchers.Main) {
@@ -621,16 +651,16 @@ class NoteEditorViewModel : BaseViewModel() {
         }
         _noteUiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
-            val result = com.app.pustakam.android.fileimport.FileImportManager.importFromUrl(
+            val result = FileImportManager.importFromUrl(
                 context.applicationContext, note.id, note.contents.count().toDouble(), url
             )
             withContext(Dispatchers.Main) {
                 _noteUiState.update { it.copy(isLoading = false) }
                 when (result) {
-                    is com.app.pustakam.android.fileimport.ImportResult.Success -> addImportedContents(result.contents)
-                    is com.app.pustakam.android.fileimport.ImportResult.NoFileFound ->
+                    is ImportResult.Success -> addImportedContents(result.contents)
+                    is ImportResult.NoFileFound ->
                         _noteUiState.update { it.copy(error = "No file found at this link.") }
-                    is com.app.pustakam.android.fileimport.ImportResult.Failed ->
+                    is ImportResult.Failed ->
                         _noteUiState.update { it.copy(error = result.message) }
                 }
             }

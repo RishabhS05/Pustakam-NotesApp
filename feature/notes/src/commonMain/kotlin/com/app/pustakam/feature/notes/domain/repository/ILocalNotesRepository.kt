@@ -15,6 +15,9 @@ interface ILocalNotesRepository {
     val tagState: StateFlow<List<Tag>>
     val noteSummariesState: StateFlow<List<NoteSummary>>
 
+    // 🔄 20-Aug-2026 sync: a pull moves the DB underneath these flows — this re-reads what landed,
+    //   keeping exactly as many rows as were already loaded so a scrolled list is not truncated.
+    suspend fun refreshFromDb()
     suspend fun insertUpdateFromDb(note: Note) : Result<BaseResponse<Note>, Error>
     suspend fun deleteNoteByIdFromDb(id : String?) : Result<BaseResponse<Boolean>, Error>
     suspend fun getNotesFromDb(page: Int, limit: Int = 0) : Result<BaseResponse<Notes>, Error>

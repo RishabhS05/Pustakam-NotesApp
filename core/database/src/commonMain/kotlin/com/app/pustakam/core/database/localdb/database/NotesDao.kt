@@ -19,6 +19,9 @@ import com.app.pustakam.core.model.models.response.notes.NoteContentModel.*
 import com.app.pustakam.core.model.models.response.notes.NoteSummary
 import org.koin.core.component.get
 
+// 🔄 20-Aug-2026 sync: the schema default is 'PENDING', so "dirty" is "not SYNCED", not "== PENDING"
+const val SYNC_STATUS_SYNCED = "SYNCED"
+
 class NotesDao : KoinComponent {
 
     private val database =  get<NotesDatabase>()
@@ -110,7 +113,7 @@ class NotesDao : KoinComponent {
                    "FROM NoteContentFts " +
                    "JOIN NoteContent c ON c.rowid = NoteContentFts.rowid " +
                    "JOIN Notes n ON n.id = c.noteId " +
-                   "WHERE NoteContentFts MATCH ? " +
+                   "WHERE NoteContentFts MATCH ? AND n.deleted = 0 " +
                    "GROUP BY n.id ORDER BY n.updatedAt DESC LIMIT 50",
            { cursor ->
                while (cursor.next().value) {
@@ -182,6 +185,8 @@ class NotesDao : KoinComponent {
                   version = note.version,
                   syncStatus = note.syncStatus,
                   deleted = note.deleted == 1L,
+                  deletedAt = note.deletedAt,
+                  serverUpdatedAt = note.serverUpdatedAt,
                   contents = rows.mapNotNull { row ->
                       if (row.contentId != null&& !row.type.isNullOrEmpty()) {
                           val type = ContentType.valueOf(row.type)
@@ -214,6 +219,8 @@ class NotesDao : KoinComponent {
                                   thumbnailPath = row.thumbnailPath,
                                   totalPages = (row.totalPages ?: 0L).toInt(),
                                   progressPage = (row.progressPage ?: 0L).toInt(),
+                                  assetId = row.assetId,
+                                  checksum = row.checksum,
                               )
 
                               ContentType.LINK -> NoteContentModel.Link(
@@ -275,6 +282,8 @@ class NotesDao : KoinComponent {
         var thumbnailPath: String? = null
         var totalPages: Long = 0
         var progressPage: Long = 0
+        var assetId: String? = null
+        var checksum: String? = null
         when (noteContent) {
             is NoteContentModel.TextContent -> {
                 text = noteContent.text
@@ -292,6 +301,8 @@ class NotesDao : KoinComponent {
                 thumbnailPath = noteContent.thumbnailPath
                 totalPages = noteContent.totalPages.toLong()
                 progressPage = noteContent.progressPage.toLong()
+                assetId = noteContent.assetId
+                checksum = noteContent.checksum
             }
             is NoteContentModel.Location -> {
                 address = noteContent.address
@@ -324,7 +335,10 @@ class NotesDao : KoinComponent {
             thumbnailPath = thumbnailPath,
             totalPages = totalPages,
             progressPage = progressPage,
-            metaData =  metadata
+            metaData =  metadata,
+            // 🖼️ 20-Aug-2026 sync: same reason — INSERT OR REPLACE would drop the server asset id
+            assetId = assetId,
+            checksum = checksum,
         )
     }
 
@@ -359,6 +373,7 @@ class NotesDao : KoinComponent {
                 width = width?.toInt() ?: 0, height = height?.toInt() ?: 0,
                 thumbnailPath = thumbnailPath,
                 totalPages = totalPages.toInt(), progressPage = progressPage.toInt(),
+                assetId = assetId, checksum = checksum,
             )
 
             ContentType.LINK -> Link(
@@ -377,11 +392,82 @@ class NotesDao : KoinComponent {
             ContentType.TABLE -> TODO()
         }
     }
+    // 🔄 20-Aug-2026 sync: a tombstone, not a DELETE — a hard delete can never reach another device.
+    //   The contents go immediately (mirrors the server's soft delete); the note row survives until
+    //   the server has acknowledged the deletion, then purgeAckedTombstones drops it.
     suspend fun deleteNoteByIdFromDb(id: String) : Boolean {
-        queries.deleteNoteById(id)
-        val note  = selectNoteById(id)
-        return note == null
+        val now = "${getCurrentTimestamp()}"
+        database.transaction {
+            queries.deleteNoteContentsForNote(id)
+            // 🎨 canvas nodes are derived layout, regenerated from the note on first open
+            queries.deleteCanvasNodesForNote(id)
+            queries.softDeleteNoteById(deletedAt = now, updatedAt = now, id = id)
+        }
+        // 🔧 keeps the old contract: deleting a note that was never saved still counts as success
+        val row = selectNoteByIdIncludingDeleted(id)
+        return row == null || row.deleted
     }
+
+    /** 🔄 the push queue. Tombstones are in it on purpose — the delete has to travel too. */
+    fun selectDirtyNotes(limit: Int): List<Note> =
+        queries.selectDirtyNoteIds(limit.toLong()).executeAsList()
+            .mapNotNull { selectNoteByIdIncludingDeleted(it) }
+
+    fun countDirtyNotes(): Long = queries.countDirtyNotes().executeAsOne()
+
+    /** 🖼️ the media backfill queue — notes whose bytes are on the server but not on this device. */
+    fun selectNoteIdsNeedingMedia(limit: Int): List<String> =
+        queries.selectNoteIdsNeedingMedia(limit.toLong()).executeAsList()
+
+    /** 🔄 only the server may mark a note clean, and only with the version IT accepted. */
+    fun markNoteSynced(id: String, version: String, serverUpdatedAt: Long?) =
+        queries.markNoteSynced(version = version, serverUpdatedAt = serverUpdatedAt, id = id)
+
+    /** 🔄 writes a note that came FROM the server. Deliberately does NOT bump version or set a
+     *  dirty syncStatus — doing either would re-queue every pulled note and loop forever. */
+    fun applyServerNote(note: Note) {
+        database.transaction {
+            queries.deleteNoteContentsForNote(note.id)
+            queries.insertOrUpdateNote(
+                id = note.id,
+                title = note.title,
+                updatedAt = note.updatedAt,
+                createdAt = note.createdAt,
+                categoryId = note.categoryId,
+                ownerId = note.ownerId,
+                version = note.version,
+                syncStatus = SYNC_STATUS_SYNCED,
+                deleted = if (note.deleted) 1L else 0L,
+                deletedAt = note.deletedAt,
+                serverUpdatedAt = note.serverUpdatedAt,
+            )
+            if (!note.deleted) note.contents.forEach { insertOrUpdateNotesContent(it) }
+        }
+    }
+
+    /** 🔄 the watermark and the page it describes are committed together, so a crash re-pulls
+     *  rather than skips. [block] must do the note writes. */
+    fun commitPulledPage(
+        userId: String, lastPulledAt: Long, lastPulledId: String?, block: () -> Unit
+    ) = database.transaction {
+        block()
+        queries.upsertSyncState(
+            userId = userId,
+            lastPulledAt = lastPulledAt,
+            lastPulledId = lastPulledId,
+            lastSyncedAt = getCurrentTimestamp(),
+        )
+    }
+
+    fun readSyncWatermark(userId: String): Pair<Long, String?> =
+        queries.selectSyncState(userId).executeAsOneOrNull()
+            ?.let { it.lastPulledAt to it.lastPulledId } ?: (0L to null)
+
+    fun resetSyncWatermark(userId: String) =
+        queries.upsertSyncState(userId = userId, lastPulledAt = 0L, lastPulledId = null, lastSyncedAt = 0L)
+
+    /** 🔄 safe only for tombstones we have already pulled PAST, so no pull can resurrect them. */
+    fun purgeAckedTombstones(before: Long) = queries.purgeAckedTombstones(before)
     fun insertOrUpdateNoteFromDb(note: Note, dirtyContentIds: Set<String>? = null) : Note {
         log_d("NoteDao insert", note)
         queries.insertOrUpdateNote(
@@ -394,6 +480,10 @@ class NotesDao : KoinComponent {
             version = note.version,
             syncStatus = note.syncStatus,
             deleted = if (note.deleted) 1L else 0L,
+            // 🔄 20-Aug-2026 sync: INSERT OR REPLACE rewrites the WHOLE row — omitting these would
+            //   silently null the tombstone stamp and the server clock on every ordinary save.
+            deletedAt = note.deletedAt,
+            serverUpdatedAt = note.serverUpdatedAt,
         )
            database.transaction {
                val contentsToWrite =
@@ -406,7 +496,12 @@ class NotesDao : KoinComponent {
        log_d("NoteDao end ", note)
        return note
     }
-    fun selectNoteById(id: String): Note? {
+    // 🔄 20-Aug-2026 sync: keeps the pre-tombstone contract — a deleted note reads as absent,
+    //   exactly as it did when delete was a hard DELETE. Sync uses the ...IncludingDeleted variant.
+    fun selectNoteById(id: String): Note? =
+        selectNoteByIdIncludingDeleted(id)?.takeIf { !it.deleted }
+
+    fun selectNoteByIdIncludingDeleted(id: String): Note? {
         val rows = queries.selectById(id).executeAsList()
         val noteWithContent = rows.firstOrNull()?.let { note ->
             Note(
@@ -419,6 +514,8 @@ class NotesDao : KoinComponent {
                 version = note.version,
                 syncStatus = note.syncStatus,
                 deleted = note.deleted == 1L,
+                deletedAt = note.deletedAt,
+                serverUpdatedAt = note.serverUpdatedAt,
                 contents = rows.mapNotNull { row ->
                     if (row.contentId != null&&!row.type.isNullOrEmpty()) {
                         val type = ContentType.valueOf(row.type)
@@ -452,6 +549,8 @@ class NotesDao : KoinComponent {
                                 thumbnailPath = row.thumbnailPath,
                                 totalPages = (row.totalPages ?: 0L).toInt(),
                                 progressPage = (row.progressPage ?: 0L).toInt(),
+                                assetId = row.assetId,
+                                checksum = row.checksum,
                             )
 
                           type  == ContentType.LINK-> Link(

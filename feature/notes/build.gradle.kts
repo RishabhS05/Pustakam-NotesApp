@@ -34,7 +34,7 @@ kotlin {
                 api(projects.core.model)
                 api(projects.core.data)
                 api(projects.core.database)
-                // 🔧 30-Jul-2026 02:10 — the bridges are KoinComponents -> supertype -> api
+                api(projects.core.filesys)
                 api(libs.koin)
                 implementation(libs.kotlinx.coroutines.core)
             }

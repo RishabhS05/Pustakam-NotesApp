@@ -13,7 +13,11 @@ CREATE TABLE Notes (
  ownerId TEXT,
  version TEXT NOT NULL DEFAULT '',
  syncStatus TEXT NOT NULL DEFAULT 'PENDING',
- deleted INTEGER NOT NULL DEFAULT 0
+ deleted INTEGER NOT NULL DEFAULT 0,
+ -- 🔄 20-Aug-2026 sync: a delete becomes a tombstone. A DELETE row can never reach another device.
+ deletedAt TEXT,
+ -- 🔄 the SERVER's clock, never the phone's — this is what pull pages on
+ serverUpdatedAt INTEGER
 );
 
 CREATE TABLE NoteContent(
@@ -40,7 +44,10 @@ thumbnailPath TEXT,
 --   (replaces the DataStore last-page tracking). totalPages = 0 until the doc has been opened once.
 totalPages INTEGER NOT NULL DEFAULT 0,
 progressPage INTEGER NOT NULL DEFAULT 0,
-metaData TEXT AS RichTextMetadata
+metaData TEXT AS RichTextMetadata,
+-- 🖼️ 20-Aug-2026 sync: how a media file is named ON THE SERVER. localPath stays device-only.
+assetId TEXT,
+checksum TEXT
 );
 
 -- 🔧 15-Jul-2026 Phase 0.2: composite index — every content fetch filters by noteId and sorts by
@@ -88,15 +95,27 @@ CREATE TABLE Tags(
 id TEXT NOT NULL PRIMARY KEY,
 color TEXT,
 label TEXT);
+
+-- 🔄 20-Aug-2026 sync: the pull watermark, per user. It lives in SQLite and not DataStore so that
+--   advancing it and committing the page it came from happen in ONE transaction.
+CREATE TABLE SyncState(
+userId TEXT NOT NULL PRIMARY KEY,
+lastPulledAt INTEGER NOT NULL DEFAULT 0,
+lastPulledId TEXT,
+lastSyncedAt INTEGER NOT NULL DEFAULT 0
+);
+
+-- 🔄 every sync starts by asking "what is dirty?" — without this it is a full table scan
+CREATE INDEX idx_notes_syncstatus ON Notes(syncStatus, deleted);
 -- 🔧 21-Jul-2026 databasev2.md §2.4: now persists sync fields (ownerId/version/syncStatus/deleted)
 insertOrUpdateNote:
-INSERT OR REPLACE INTO Notes(id, categoryId, title, createdAt, updatedAt, ownerId, version, syncStatus, deleted)
-VALUES(?,?,?,?,?,?,?,?,?);
+INSERT OR REPLACE INTO Notes(id, categoryId, title, createdAt, updatedAt, ownerId, version, syncStatus, deleted, deletedAt, serverUpdatedAt)
+VALUES(?,?,?,?,?,?,?,?,?,?,?);
 
 -- 🔧 C1/S1: now persists title + media metadata
 insertNoteContentById:
-INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration, title, mimeType, sizeBytes, width, height, thumbnailPath, totalPages, progressPage, metaData )
-VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?);
+INSERT OR REPLACE INTO NoteContent ( id ,noteId, type, position, createdAt, updatedAt, localPath, url , text,  lat , long, address, duration, title, mimeType, sizeBytes, width, height, thumbnailPath, totalPages, progressPage, metaData, assetId, checksum )
+VALUES (? , ?, ?, ?,  ?, ?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?);
 
 -- 📖 23-Jul-2026: reading progress is written on its own, not through a full row rewrite — the
 --   reader saves on exit and must not clobber concurrent edits to the rest of the content row.
@@ -130,7 +149,8 @@ SELECT * FROM NoteContent
 WHERE id = ?;
 
 selectAll:
-SELECT * FROM Notes;
+-- 🔄 20-Aug-2026 sync: deleted = 0 — a tombstone must never surface in a list, search or export
+SELECT * FROM Notes WHERE deleted = 0;
 
 selectById:
 SELECT
@@ -143,6 +163,8 @@ SELECT
     Notes.version,
     Notes.syncStatus,
     Notes.deleted,
+    Notes.deletedAt, -- 🔄 20-Aug-2026 sync
+    Notes.serverUpdatedAt,
     NoteContent.id AS contentId,
     NoteContent.type,
     NoteContent.position,
@@ -163,7 +185,9 @@ SELECT
     NoteContent.thumbnailPath,
     NoteContent.totalPages, -- 📖 23-Jul-2026: per-document reading progress
     NoteContent.progressPage,
-    NoteContent.metaData
+    NoteContent.metaData,
+    NoteContent.assetId, -- 🖼️ 20-Aug-2026 sync
+    NoteContent.checksum
 FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
 WHERE Notes.id = ?
@@ -177,7 +201,9 @@ DELETE FROM Notes WHERE  id = ? ;
 --   each id with the existing selectById mapper. Ordered by id = creation order (ids are
 --   timestamp-prefixed, see UniqueIdGenerator).
 selectNoteIdsPage:
+-- 🔄 20-Aug-2026 sync: deleted = 0 — a tombstone must never surface in a list, search or export
 SELECT id FROM Notes
+WHERE deleted = 0
 ORDER BY id
 LIMIT :limit OFFSET :offset;
 
@@ -204,7 +230,9 @@ SELECT
     (SELECT COALESCE(c.thumbnailPath, c.localPath, c.url) FROM NoteContent c
         WHERE c.noteId = n.id AND c.type IN ('IMAGE','VIDEO','GIF')
         ORDER BY c.position LIMIT 1) AS thumbnailPath
+-- 🔄 20-Aug-2026 sync: deleted = 0 — a tombstone must never surface in a list, search or export
 FROM Notes n
+WHERE n.deleted = 0
 ORDER BY n.id
 LIMIT :limit OFFSET :offset;
 
@@ -219,6 +247,8 @@ SELECT
     Notes.version,
     Notes.syncStatus,
     Notes.deleted,
+    Notes.deletedAt, -- 🔄 20-Aug-2026 sync
+    Notes.serverUpdatedAt,
     NoteContent.id AS contentId,
     NoteContent.type,
     NoteContent.position,
@@ -239,9 +269,13 @@ SELECT
     NoteContent.thumbnailPath,
     NoteContent.totalPages, -- 📖 23-Jul-2026: per-document reading progress
     NoteContent.progressPage,
-    NoteContent.metaData
+    NoteContent.metaData,
+    NoteContent.assetId, -- 🖼️ 20-Aug-2026 sync
+    NoteContent.checksum
 FROM Notes
 LEFT JOIN NoteContent ON Notes.id = NoteContent.noteId
+-- 🔄 20-Aug-2026 sync: deleted = 0 — a tombstone must never surface in a list, search or export
+WHERE Notes.deleted = 0
 ORDER BY Notes.id, NoteContent.position;
 -- LIMIT ? OFFSET ?;
 
@@ -254,7 +288,7 @@ SELECT
     SUBSTR(c.text, 1, 200) AS snippet
 FROM NoteContent c
 JOIN Notes n ON n.id = c.noteId
-WHERE c.type = 'TEXT' AND c.text LIKE '%' || :query || '%'
+WHERE c.type = 'TEXT' AND c.text LIKE '%' || :query || '%' AND n.deleted = 0
 GROUP BY n.id
 ORDER BY n.updatedAt DESC
 LIMIT 50;
@@ -264,7 +298,7 @@ LIMIT 50;
 searchTitles:
 SELECT id, categoryId, title, createdAt, updatedAt
 FROM Notes
-WHERE title LIKE '%' || :query || '%'
+WHERE title LIKE '%' || :query || '%' AND deleted = 0
 ORDER BY updatedAt DESC
 LIMIT 50;
 
@@ -337,3 +371,52 @@ VALUES(?,?,?,?,?);
 
 selectCanvasViewport:
 SELECT * FROM CanvasViewport WHERE noteId = ?;
+
+-- 🔄 20-Aug-2026 sync: the push queue. Tombstones are IN it on purpose — a delete has to travel too.
+--   'PENDING' is the schema default, so "not SYNCED" is the dirty predicate, not "== PENDING".
+selectDirtyNoteIds:
+SELECT id FROM Notes
+WHERE syncStatus != 'SYNCED'
+ORDER BY updatedAt
+LIMIT :limit;
+
+countDirtyNotes:
+SELECT count(*) FROM Notes WHERE syncStatus != 'SYNCED';
+
+-- 🔄 the note row survives as a tombstone; its contents do not, mirroring the server's soft delete
+softDeleteNoteById:
+UPDATE Notes
+SET deleted = 1, syncStatus = 'PENDING_DELETE', deletedAt = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteNoteContentsForNote:
+DELETE FROM NoteContent WHERE noteId = ?;
+
+-- 🔄 only the server may mark a note clean, and only with the version IT accepted
+markNoteSynced:
+UPDATE Notes
+SET syncStatus = 'SYNCED', version = ?, serverUpdatedAt = ?
+WHERE id = ?;
+
+-- 🔄 a tombstone is only droppable once we have pulled PAST it, so no pull can resurrect it
+purgeAckedTombstones:
+DELETE FROM Notes
+WHERE deleted = 1 AND syncStatus = 'SYNCED'
+AND serverUpdatedAt IS NOT NULL AND serverUpdatedAt < :before;
+
+selectSyncState:
+SELECT * FROM SyncState WHERE userId = ?;
+
+upsertSyncState:
+INSERT OR REPLACE INTO SyncState(userId, lastPulledAt, lastPulledId, lastSyncedAt)
+VALUES(?,?,?,?);
+
+-- 🖼️ 20-Aug-2026 sync: notes holding media the server has but this device does not. Drives the
+--   eager backfill, and covers leftovers from a cycle that ran out of its download budget.
+selectNoteIdsNeedingMedia:
+SELECT DISTINCT c.noteId FROM NoteContent c
+JOIN Notes n ON n.id = c.noteId
+WHERE n.deleted = 0
+AND c.assetId IS NOT NULL AND c.assetId != ''
+AND (c.localPath IS NULL OR c.localPath = '')
+LIMIT :limit;

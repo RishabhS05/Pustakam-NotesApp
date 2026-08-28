@@ -137,3 +137,8 @@ class AndroidMetadataReader(private val context: Context) : MetadataReader {
         e.printStackTrace(); null
     }
 }
+
+// 🖼️ 20-Aug-2026 sync: filesDir is the root every Android call site already resolves against
+class AndroidStoragePaths(private val context: Context) : StoragePaths {
+    override fun rootPath(): String = context.filesDir.absolutePath
+}

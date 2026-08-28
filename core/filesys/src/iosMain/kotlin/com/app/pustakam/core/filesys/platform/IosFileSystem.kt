@@ -153,3 +153,9 @@ class IosMetadataReader : MetadataReader {
         )
     }
 }
+
+// 🖼️ 20-Aug-2026 sync: recomputed per call on purpose — the container UUID changes on every update,
+//   so a cached root would go stale exactly like the absolute paths resolveLocalFilePath re-anchors.
+class IosStoragePaths : StoragePaths {
+    override fun rootPath(): String = documentsRoot()
+}

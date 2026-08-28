@@ -5,6 +5,7 @@ import com.app.pustakam.core.model.models.Tag
 import com.app.pustakam.core.model.models.response.DeleteDataModel
 import com.app.pustakam.core.model.models.response.notes.Note
 import com.app.pustakam.core.model.models.response.notes.NoteSummary
+import com.app.pustakam.core.model.models.response.notes.NOTES_PAGE_SIZE
 import com.app.pustakam.core.model.models.response.notes.Notes
 import com.app.pustakam.core.model.models.response.notes.toSummary
 import com.app.pustakam.core.data.base.BaseRepository
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteSyncRepository
+import com.app.pustakam.feature.notes.domain.repository.ISyncRepository
 import com.app.pustakam.core.common.util.Result
 import com.app.pustakam.core.common.util.onSuccess
 import com.app.pustakam.core.model.models.response.notes.NoteContentModel
@@ -29,6 +31,10 @@ import org.koin.core.component.inject
 
 internal class NoteRepository : BaseRepository(), INoteRepository {
         private val syncRepository: INoteSyncRepository by inject()
+
+    // 🔄 28-Aug-2026 — server sync. Lazy on purpose: SyncRepository injects THIS repository back,
+    //   and only a lazy resolve on both sides keeps that cycle from biting during construction.
+    private val remoteSync: ISyncRepository by inject()
         private val _notes= MutableStateFlow(Notes())
         private val _tags= MutableStateFlow<List<Tag>>(emptyList())
 
@@ -45,7 +51,7 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
             id = id, title = "", updatedAt = date, createdAt = date, categoryId = tagId,
             ownerId = session.userId,
             syncStatus = "PENDING",
-        ).apply { withNextVersion() }
+        ).stampedWithNextVersion()
     }
     fun insertNotes(notes : Notes){
         _notes.update { current ->
@@ -118,7 +124,7 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
 
     fun insertUpdateFromDb(note: Note, dirtyContentIds: Set<String>?): Result<BaseResponse<Note>, Error> {
        return try {
-            val newNote = notesDao.insertOrUpdateNoteFromDb(note.apply {withNextVersion()}, dirtyContentIds)
+            val newNote = notesDao.insertOrUpdateNoteFromDb(note.stampedWithNextVersion(), dirtyContentIds)
             return if(newNote.isNotnull()) {
                 val response = BaseResponse(data = newNote , isSuccessful = true,
                     isFromDb = true)
@@ -131,6 +137,14 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
            Result.Error(error = ErrorMessage(e.stackTraceToString()))
         }
     }
+    // 🔄 20-Aug-2026 sync: called after a pull commits, so the list screen shows what arrived
+    override suspend fun refreshFromDb() {
+        val loaded = _noteSummaries.value.size.coerceAtLeast(NOTES_PAGE_SIZE)
+        _noteSummaries.value = notesDao.selectNoteSummariesPage(limit = loaded, page = 1)
+        val cached = _notes.value.notes.size.coerceAtLeast(NOTES_PAGE_SIZE)
+        _notes.value = notesDao.selectAllNotesFromDb(limit = cached, page = 1)
+    }
+
     /** delete a note data from local db */
     override suspend fun deleteNoteByIdFromDb(id: String?): Result<BaseResponse<Boolean>, Error> {
         // 🔧 F3: missing `return` — the null-check was dead code, then id!! could NPE
@@ -238,22 +252,28 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
      */
     // 🔧 15-Jul-2026 Phase 0.4: dirtyContentIds flows through to the DAO (null = full write)
     override suspend fun insertOrUpdateNote(note : Note, dirtyContentIds: Set<String>?) : Result<BaseResponse<Note>, Error> {
-        return insertUpdateFromDb(note, dirtyContentIds).onSuccess {
+        return insertUpdateFromDb(note, dirtyContentIds).onSuccess { response ->
             log_d("Insert Update","added ")
+            // 🔧 20-Aug-2026 sync: the SAVED note (version-stamped) is what the flows must carry
+            val saved = response.data ?: note
             syncRepository.publishContents(note.id, note.contents)
             _notes.update { current->
                 val newList = ArrayList(current.notes)                    // 1. copy FIRST
                 val index = newList.indexOfFirst { it.id == note.id }     // 2. single O(n) scan
-                if (index != -1) newList[index] = note else newList.add(note)
+                if (index != -1) newList[index] = saved else newList.add(saved)
                 current.copy(notes = newList)
             }
             // 🔧 15-Jul-2026 Summary query: keep the list-screen summaries in sync without a re-query
             _noteSummaries.update { current ->
-                val summary = note.toSummary()
+                val summary = saved.toSummary()
                 val index = current.indexOfFirst { s -> s.id == note.id }
                 if (index != -1) current.toMutableList().apply { this[index] = summary }
                 else current + summary
             }
+            // 🔄 28-Aug-2026 — SYNC ON SAVE. Debounced inside the engine, so typing is one push.
+            //   Offline this is a no-op that costs nothing: the note is already safe in SQLite and
+            //   the connectivity trigger flushes it the moment there is a line again.
+            remoteSync.requestSyncSoon()
 //              if(existingNote != null ) {
 //                  updateNoteApi(note)
 //              }else upsertNewNoteApi(note)
@@ -272,6 +292,8 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
             }
             // 🔧 15-Jul-2026 Summary query: mirror the deletion into the summaries flow
             _noteSummaries.update { current -> current.filterNot { s -> s.id == id } }
+            // 🔄 28-Aug-2026 — a delete has to travel too; the tombstone is what carries it
+            remoteSync.requestSyncSoon()
         }
     }
     /** method for decision logic (A note)

@@ -2,10 +2,13 @@ package com.app.pustakam.feature.notes.di
 
 import com.app.pustakam.feature.notes.data.repositoryImpl.CanvasRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteSyncRepository
+import com.app.pustakam.feature.notes.data.repositoryImpl.SyncRepository
+import com.app.pustakam.feature.notes.data.sync.MediaSyncer
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteContentRepository
 import com.app.pustakam.feature.notes.data.repositoryImpl.NoteRepository
 import com.app.pustakam.feature.notes.domain.repository.ICanvasRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteSyncRepository
+import com.app.pustakam.feature.notes.domain.repository.ISyncRepository
 import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteContentRepository
 import com.app.pustakam.feature.notes.domain.repository.INoteRepository
@@ -41,6 +44,11 @@ import com.app.pustakam.feature.notes.domain.usecase.ReadContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateReadingProgressUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateSelectedMediaContentUseCase
 import com.app.pustakam.feature.notes.domain.usecase.UpdateTagUseCase
+import com.app.pustakam.feature.notes.domain.usecase.NotifyConnectivityUseCase
+import com.app.pustakam.feature.notes.domain.usecase.ObserveSyncStateUseCase
+import com.app.pustakam.feature.notes.domain.usecase.RequestSyncUseCase
+import com.app.pustakam.feature.notes.domain.usecase.StartSyncUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SyncNowUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -53,6 +61,11 @@ fun notesModule(): Module = module {
     single<INoteContentRepository> { NoteContentRepository() }
     single<ICanvasRepository> { CanvasRepository() }
     single<INoteSyncRepository> { NoteSyncRepository() }
+    // 🔄 20-Aug-2026 sync: single — it owns the run lock and the backoff counter, so a second
+    //   instance would let two cycles push the same notes at once.
+    single<ISyncRepository> { SyncRepository() }
+    // 🖼️ stateless — it only reads and writes files and calls the API
+    single<MediaSyncer> { MediaSyncer() }
     factory<CreateORUpdateNoteUseCase> { CreateORUpdateNoteUseCase() }
     factory<DeleteNoteUseCase> { DeleteNoteUseCase() }
     factory<ReadNoteUseCase> { ReadNoteUseCase() }
@@ -84,4 +97,9 @@ fun notesModule(): Module = module {
     factory<UpdateSelectedMediaContentUseCase> { UpdateSelectedMediaContentUseCase() }
     factory<GetSelectedMediaIndexUseCase> { GetSelectedMediaIndexUseCase() }
     factory<ClearSelectedNoteContentUseCase> { ClearSelectedNoteContentUseCase() }
+    factory<StartSyncUseCase> { StartSyncUseCase() }
+    factory<SyncNowUseCase> { SyncNowUseCase() }
+    factory<RequestSyncUseCase> { RequestSyncUseCase() }
+    factory<NotifyConnectivityUseCase> { NotifyConnectivityUseCase() }
+    factory<ObserveSyncStateUseCase> { ObserveSyncStateUseCase() }
 }

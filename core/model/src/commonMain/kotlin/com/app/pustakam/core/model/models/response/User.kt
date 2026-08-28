@@ -16,4 +16,7 @@ data class User(
     val createdAt : String?,
     @SerialName("updateAt")
     val updatedAt : String?,
+    // 🔐 20-Aug-2026 sync: /login, /register and /auth/refresh spread both tokens into `data`
+    val accessToken : String? = null,
+    val refreshToken : String? = null,
 )

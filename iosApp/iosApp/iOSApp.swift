@@ -11,6 +11,10 @@ struct iOSApp: App {
 
         FirebaseApp.configure()
         KoinKt.doInitKoin(appDeclaration: {_ in})
+        // 🔄 20-Aug-2026 sync: BGTaskScheduler.register MUST happen before launch finishes
+        SyncController.shared.registerBackgroundTask()
+        SyncController.shared.start()
+        SyncController.shared.scheduleBackgroundRefresh()
     }
     var body: some Scene {
         WindowGroup {
@@ -26,6 +30,8 @@ struct iOSApp: App {
 private struct AppRootView: View {
     @State var themeManager = ThemeManager()
     @State var router = Router()
+    // 🔄 20-Aug-2026 sync: returning to the app is a trigger, same as Android's onStart
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack(path: $router.navPath){
@@ -68,6 +74,10 @@ private struct AppRootView: View {
             if !noteId.isEmpty && noteId != "book" {
                 router.navigate(to: .NoteBookReader(noteId: noteId))
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { SyncController.shared.nudge() }
+            if phase == .background { SyncController.shared.scheduleBackgroundRefresh() }
         }
         .environment(router)
         .environment(themeManager)

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences.PreferencesKeys.IS_USER_AUTHENTIC
 import com.app.pustakam.core.database.localdb.preferences.BasePreferences.PreferencesKeys.TOKEN
@@ -34,6 +35,8 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
         val USER_ID = stringPreferencesKey("userId")
         val TOKEN = stringPreferencesKey("token")
         val IS_USER_AUTHENTIC = booleanPreferencesKey("isAuthenticated")
+        val REFRESH_TOKEN = stringPreferencesKey("refreshToken")
+        val SYNC_GENERATION = intPreferencesKey("sync.generation")
         val THEME_MODE = stringPreferencesKey("granth.themeMode")
         val READING_MODE = stringPreferencesKey("granth.readingMode")
     }
@@ -52,10 +55,12 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
                 println(this)
             }
         }
+    // 🔧 20-Aug-2026 sync: Eagerly, was WhileSubscribed() — NOTHING collects this flow, it is only ever
+    //   read via currentTokenOrNull().value, so the upstream never started and the token stayed blank forever.
     val userPreferenceStateFlow =
         userPreferencesFlow.stateIn(scope = CoroutineScope(provideDispatcher().io),
             initialValue = UserPreference(),
-            started =  SharingStarted.WhileSubscribed())
+            started =  SharingStarted.Eagerly)
 
 
     suspend fun fetchInitialPreferences() =
@@ -69,6 +74,22 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
     override suspend fun setToken(token: String) {
         dataStore.edit {
             it[TOKEN] = token
+        }
+    }
+    override suspend fun setRefreshToken(token: String) {
+        dataStore.edit {
+            it[PreferencesKeys.REFRESH_TOKEN] = token
+        }
+    }
+    override suspend fun getRefreshToken(): String? =
+        dataStore.data.map { it[PreferencesKeys.REFRESH_TOKEN] }.firstOrNull()
+
+    // 🔐 20-Aug-2026 sync: only the credentials go — theme and reading mode are not session state
+    override suspend fun clearTokens() {
+        dataStore.edit {
+            it.remove(TOKEN)
+            it.remove(PreferencesKeys.REFRESH_TOKEN)
+            it[IS_USER_AUTHENTIC] = false
         }
     }
     override suspend fun setAuth(isAuth: Boolean) {
@@ -94,6 +115,17 @@ open class BasePreferences(private val dataStore: DataStore<Preferences>) : IApp
             it[PreferencesKeys.THEME_MODE] = mode
         }
     }
+    // 🔄 28-Aug-2026 — see IAppPreferences. 0 means "written by a build that had no generation",
+    //   which is exactly the set of installs that need the one-off re-pull.
+    override suspend fun getSyncGeneration(): Int =
+        dataStore.data.map { it[PreferencesKeys.SYNC_GENERATION] ?: 0 }.firstOrNull() ?: 0
+
+    override suspend fun setSyncGeneration(generation: Int) {
+        dataStore.edit {
+            it[PreferencesKeys.SYNC_GENERATION] = generation
+        }
+    }
+
     override suspend fun getAuthToken(): String? {
         return dataStore.data.map { it[TOKEN] }.firstOrNull()
     }

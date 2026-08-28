@@ -80,9 +80,17 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<!-- 🔄 20-Aug-2026 sync: fetch + processing let BGTaskScheduler wake the app to sync -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	<!-- 🔄 must match SyncController.taskIdentifier exactly or register() throws at launch -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.app.pustakam.iosApp.sync</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

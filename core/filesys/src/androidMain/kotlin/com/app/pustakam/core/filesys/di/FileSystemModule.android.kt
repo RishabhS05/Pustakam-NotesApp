@@ -7,6 +7,7 @@ import com.app.pustakam.core.filesys.platform.AndroidFileDeleter
 import com.app.pustakam.core.filesys.platform.AndroidFileReader
 import com.app.pustakam.core.filesys.platform.AndroidFileWriter
 import com.app.pustakam.core.filesys.platform.AndroidMetadataReader
+import com.app.pustakam.core.filesys.platform.AndroidStoragePaths
 import com.app.pustakam.core.filesys.platform.AndroidTextMeasurer
 import com.app.pustakam.core.filesys.platform.AndroidThumbnailGenerator
 import com.app.pustakam.core.filesys.platform.DirectoryManager
@@ -16,6 +17,7 @@ import com.app.pustakam.core.filesys.platform.FileDeleter
 import com.app.pustakam.core.filesys.platform.FileReader
 import com.app.pustakam.core.filesys.platform.FileWriter
 import com.app.pustakam.core.filesys.platform.MetadataReader
+import com.app.pustakam.core.filesys.platform.StoragePaths
 import com.app.pustakam.core.filesys.platform.TextMeasurer
 import com.app.pustakam.core.filesys.platform.ThumbnailGenerator
 import org.koin.android.ext.koin.androidContext
@@ -31,6 +33,7 @@ actual fun getFileSystemModule(): Module = module {
     single<FileCopier> { AndroidFileCopier(androidContext()) }
     single<FileDeleter> { AndroidFileDeleter(androidContext()) }
     single<MetadataReader> { AndroidMetadataReader(androidContext()) }
+    single<StoragePaths> { AndroidStoragePaths(androidContext()) }
     single<ThumbnailGenerator> { AndroidThumbnailGenerator(androidContext()) }
     single<DocumentRenderer> { AndroidDocumentRenderer(androidContext()) }
     single<TextMeasurer> { AndroidTextMeasurer() }

@@ -1,12 +1,10 @@
 package com.app.pustakam.android.screen.noteEditor
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,8 +21,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.lazy.itemsIndexed
-
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -32,7 +30,6 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.IosShare   // 🔧 20-Jul-2026: export action
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SaveAlt
@@ -229,7 +226,10 @@ fun NoteEditorScreen(
             IncomingShare.clear()
         }
     }
-    NotesEditor(state = state, topBar = {
+    NotesEditor(
+        isRefreshing = stateEditor.isRefreshing,
+        onRefresh = { noteEditorViewModel.refresh(id) },
+        state = state, topBar = {
         TopAppBar(title = {
 
         }, colors = TopAppBarDefaults.topAppBarColors(
@@ -394,12 +394,17 @@ fun NoteEditorScreen(
 @Composable
 fun rememberFocusRequester() = remember { FocusRequester() }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesEditor(
     state: State<NoteContentUiState>,
     topBar: @Composable () -> Unit,
     contentList: @Composable (FocusRequester) -> Unit,
     onButtonOverLays: @Composable () -> Unit,
+    // 🔄 28-Aug-2026 — pull to refresh inside the editor. Defaulted so the preview call site
+    //   further down this file keeps compiling untouched.
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
 ) {
     val isRuledEnabledState = remember { mutableStateOf(false) }
     val focusRequester = rememberFocusRequester()
@@ -408,7 +413,10 @@ fun NotesEditor(
     val smartTextToolbar = rememberSmartTextToolbarController()
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(topBar = topBar, floatingActionButton = onButtonOverLays) { padding ->
-            Box(
+            // 🔄 28-Aug-2026 — pull down here to fetch this note's latest content from the server
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
