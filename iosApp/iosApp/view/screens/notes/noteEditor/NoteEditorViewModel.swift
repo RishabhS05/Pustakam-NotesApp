@@ -91,6 +91,14 @@ class NoteEditorViewModel: ObservableObject {
     // MARK: - Load
     /// Always re-reads. Unsaved work is protected per content by the reducer's dirty guard,
     /// so one stale dirty id can no longer block the whole refresh.
+    /// 🔄 28-Aug-2026 — PULL TO REFRESH in the editor: run a sync, then re-read this note so
+    ///   whatever arrived for it is on screen straight away rather than on the next open.
+    @MainActor
+    func syncNowAndReload() async {
+        _ = await SyncController.shared.syncNowAsync()
+        refresh()
+    }
+
     func refresh() {
         guard let id = state.note?.id, !id.isEmpty else { return }
         load(noteId: id)

@@ -104,7 +104,14 @@ struct NotesView: View {
             ZStack(alignment: .center){
                 // 🎨 20-Jul-2026 — warm parchment page background (spec §2.2 `bg`) so the notes list is not
                 //   a stark white page behind the cards. Sits under everything, ignores safe area.
-                if notesViewModel.state.summaries.isEmpty { emptyNotesUI
+                // 🔄 28-Aug-2026 — pull to refresh. The empty state gets its own ScrollView on
+                //   purpose: an empty list is exactly when someone reaches for this gesture, and
+                //   .refreshable needs something scrollable to hang off.
+                if notesViewModel.state.summaries.isEmpty {
+                    ScrollView {
+                        emptyNotesUI.frame(maxWidth: .infinity, minHeight: 420)
+                    }
+                    .refreshable { await notesViewModel.syncNow() }
                 }
                 else {
                     ScrollView{
@@ -113,6 +120,7 @@ struct NotesView: View {
                             staggeredGrid
                         }
                     }
+                    .refreshable { await notesViewModel.syncNow() }
                 }
                 if notesViewModel.state.isLoading {
                     loadingUi
@@ -138,6 +146,14 @@ struct NotesView: View {
         // ZStack
         .sheet(isPresented: $notesViewModel.state.showSheet){
             createTag
+        }
+        // 🔄 28-Aug-2026 — a failed sync has to be visible, not just a log line
+        .alert("Sync failed",
+               isPresented: Binding(get: { notesViewModel.state.errorMessage != nil },
+                                    set: { if !$0 { notesViewModel.state.errorMessage = nil } })) {
+            Button("OK", role: .cancel) { notesViewModel.state.errorMessage = nil }
+        } message: {
+            Text(notesViewModel.state.errorMessage ?? "")
         }
         .padding(.vertical,8)
             .onAppear {

@@ -49,6 +49,9 @@ data class NotesUIState(
     // 🔧 15-Jul-2026 Summary query: what the list actually renders now — light summaries
     //   (title/snippet/counts/thumbnail); full Note contents never load for the list screen.
     val summaries: List<NoteSummary> = emptyList(),
+    // 🔄 28-Aug-2026 — pull-to-refresh. Deliberately NOT isLoading: that one blocks the screen
+    //   with a spinner overlay, and a refresh must leave the list readable while it runs.
+    val isRefreshing: Boolean = false,
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
 //Note ActionState
@@ -65,6 +68,8 @@ data class NoteUIState(
     val contentType : ContentType? = null,
     val permissions : List<NeededPermission> = listOf(),
     val LocationState : Boolean = false ,
+    // 🔄 28-Aug-2026 — pull-to-refresh inside the editor
+    val isRefreshing: Boolean = false,
 ) : BaseUIState(isLoading = isLoading, error = error, successMessage = successMessage)
 
 //NoteDataState

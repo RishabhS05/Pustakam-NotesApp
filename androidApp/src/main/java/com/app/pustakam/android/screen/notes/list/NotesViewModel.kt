@@ -7,6 +7,7 @@ import com.app.pustakam.android.screen.NOTES_CODES
 import com.app.pustakam.android.screen.NotesUIState
 import com.app.pustakam.android.screen.TaskCode
 import com.app.pustakam.feature.notes.domain.usecase.GetNoteSummariesUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SyncNowUseCase
 import com.app.pustakam.core.model.models.BaseResponse
 import com.app.pustakam.core.model.models.response.notes.NOTES_PAGE_SIZE
 import com.app.pustakam.core.common.util.NetworkError
@@ -27,6 +28,7 @@ class NotesViewModel : BaseViewModel() {
     // 🔧 15-Jul-2026 Summary query: the list now fetches/observes light summaries —
     //   full Note contents never load for the list screen.
     private val getNoteSummariesUseCase by inject<GetNoteSummariesUseCase>()
+    private val syncNowUseCase by inject<SyncNowUseCase>()
     private val _notesUiState = MutableStateFlow(NotesUIState(isLoading = false,
         isNextPage = true))
 
@@ -65,6 +67,24 @@ class NotesViewModel : BaseViewModel() {
             }
         }
     }
+    /** 🔄 28-Aug-2026 — PULL TO REFRESH. Pushes whatever is waiting, pulls whatever is new, and
+     *  puts the reason on screen when it fails. A sync that fails silently is why this feature
+     *  looked broken: the list simply never changed and nothing said why. */
+    fun refresh() {
+        viewModelScope.launch {
+            _notesUiState.update { it.copy(isRefreshing = true, error = null) }
+            syncNowUseCase().collect { result ->
+                when (result) {
+                    is Result.Error -> _notesUiState.update {
+                        it.copy(isRefreshing = false, error = result.error.displayMessage())
+                    }
+                    is Result.Success -> _notesUiState.update { it.copy(isRefreshing = false) }
+                    is Result.Loading -> {}
+                }
+            }
+        }
+    }
+
     override fun onLoading(taskCode: TaskCode) {
         _notesUiState.update {
             it.copy(isLoading = true)

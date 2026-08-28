@@ -167,6 +167,8 @@ struct NoteEditorView: View {
         }
         .onDisappear {saveNote() }
         .onAppear { noteEditorViewModel.refresh() }
+        // 🔄 28-Aug-2026 — pull down inside the editor to fetch this note's latest content
+        .refreshable { await noteEditorViewModel.syncNowAndReload() }
         .onChange(of: noteEditorViewModel.state.isNoteReady, initial: true) { _, ready in
             guard ready, isNewNote, !didConsumeShare, IncomingShare.hasPending else { return }
             didConsumeShare = true

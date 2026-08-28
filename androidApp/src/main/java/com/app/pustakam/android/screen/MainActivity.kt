@@ -3,6 +3,8 @@ package com.app.pustakam.android.screen
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.app.pustakam.feature.notes.domain.usecase.RequestSyncUseCase
+import org.koin.android.ext.android.inject
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -36,6 +38,8 @@ import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
 
+    private val requestSync: RequestSyncUseCase by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -67,7 +71,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-
+        // 🔄 28-Aug-2026 — coming back to the app is a sync trigger, exactly as it already is on
+        //   iOS (scenePhase == .active). Android had no foreground trigger at all: between the
+        //   15-minute WorkManager run and app launch, nothing pulled. Reopening the app looked
+        //   like it should update the list, and it never did.
+        requestSync()
     }
 
     override fun onPause() {

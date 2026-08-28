@@ -21,6 +21,9 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme.colorScheme // 🎨 20-Jul-2026 warm page bg
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 // 🔧 15-Jul-2026 Phase 0.1: infinite-scroll trigger
@@ -59,19 +62,35 @@ sealed interface TagIntent{
 @Composable
 fun NotesView(onNavigateNote: (noteId: String) -> Unit) {
     val notesViewModel: NotesViewModel = viewModel()
-     val state =  notesViewModel.notesUIState.collectAsStateWithLifecycle().value
-         .apply {
-             // 🔧 15-Jul-2026 Summary query: the list renders summaries; navigation only needs the id
-             when {
-                 summaries.isEmpty() -> { EmptyNoteUI(modifier = Modifier.fillMaxSize())}
-                 summaries.isNotEmpty() -> NotesListView(this,
-                     onNavigateNote = onNavigateNote,
-                     // 🔧 15-Jul-2026 Phase 0.1: next page loads when the grid reaches its end
-                     onLoadMore = notesViewModel::callGetNotes,
-                     paddingValues = PaddingValues(0.dp)
-                 )
-             }
-         }
+    val state = notesViewModel.notesUIState.collectAsStateWithLifecycle().value
+
+    // 🔄 28-Aug-2026 — PULL TO REFRESH. Wrapping the whole thing, not just the grid: an empty
+    //   list is exactly the moment someone reaches for this gesture, and the empty state needs
+    //   its own scroll container or there is nothing for the pull to hang off.
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = notesViewModel::refresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 🔧 15-Jul-2026 Summary query: the list renders summaries; navigation only needs the id
+        when {
+            state.summaries.isEmpty() -> Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            ) {
+                // 🔧 a fixed height, NOT fillMaxSize: inside a verticalScroll the max height is
+                //   infinite, and fillMaxSize against that constraint is a measure-time crash.
+                EmptyNoteUI(modifier = Modifier.fillMaxWidth().height(480.dp))
+            }
+
+            else -> NotesListView(
+                state,
+                onNavigateNote = onNavigateNote,
+                // 🔧 15-Jul-2026 Phase 0.1: next page loads when the grid reaches its end
+                onLoadMore = notesViewModel::callGetNotes,
+                paddingValues = PaddingValues(0.dp)
+            )
+        }
+    }
          if(state.error.isNotnull())
              SnackBarUi(error = state.error!!) {
                  notesViewModel.clearError()

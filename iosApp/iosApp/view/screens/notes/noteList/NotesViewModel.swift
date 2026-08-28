@@ -60,6 +60,16 @@ class NotesViewModel : ObservableObject {
        // 🔧 15-Jul-2026 iOS parity (paging): Android NOTES_PAGE_SIZE parity.
        private let pageSize = 20
 
+       /// 🔄 28-Aug-2026 — PULL TO REFRESH: push what is waiting, pull what is new, and say why
+       ///   when it fails. The summaries stream updates the list on its own once the pull lands.
+       @MainActor
+       func syncNow() async {
+           state.errorMessage = nil
+           if let message = await SyncController.shared.syncNowAsync() {
+               state.errorMessage = message
+           }
+       }
+
        /// Called from NotesView.onAppear — same name, new internals.
        func getNotesCall() {
            // 🔧 REALTIME-FIX: one-time initial load (see hasLoaded above).
