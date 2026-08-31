@@ -419,9 +419,16 @@ class NotesDao : KoinComponent {
     fun selectNoteIdsNeedingMedia(limit: Int): List<String> =
         queries.selectNoteIdsNeedingMedia(limit.toLong()).executeAsList()
 
-    /** 🔄 only the server may mark a note clean, and only with the version IT accepted. */
-    fun markNoteSynced(id: String, version: String, serverUpdatedAt: Long?) =
-        queries.markNoteSynced(version = version, serverUpdatedAt = serverUpdatedAt, id = id)
+    /** 🔄 only the server may mark a note clean, and only with the version IT accepted.
+     *  🔄 28-Aug-2026 — [pushedVersion] is what the note went up with; a row that has moved past it
+     *  was edited mid-push and stays dirty, so the newer edit still gets its turn. */
+    fun markNoteSynced(id: String, pushedVersion: String, acceptedVersion: String, serverUpdatedAt: Long?) =
+        queries.markNoteSynced(
+            pushedVersion = pushedVersion,
+            acceptedVersion = acceptedVersion,
+            serverUpdatedAt = serverUpdatedAt,
+            id = id,
+        )
 
     /** 🔄 writes a note that came FROM the server. Deliberately does NOT bump version or set a
      *  dirty syncStatus — doing either would re-queue every pulled note and loop forever. */
@@ -468,31 +475,34 @@ class NotesDao : KoinComponent {
 
     /** 🔄 safe only for tombstones we have already pulled PAST, so no pull can resurrect them. */
     fun purgeAckedTombstones(before: Long) = queries.purgeAckedTombstones(before)
+    // 🔄 28-Aug-2026 — the note row and its contents commit TOGETHER. Written apart, a save
+    //   published a version the contents had not reached yet: sync could read the row between the
+    //   two writes, push stale contents and mark that version clean, losing the edit.
     fun insertOrUpdateNoteFromDb(note: Note, dirtyContentIds: Set<String>? = null) : Note {
         log_d("NoteDao insert", note)
-        queries.insertOrUpdateNote(
-            id = note.id,
-            title = note.title,
-            updatedAt = note.updatedAt,
-            createdAt = note.createdAt,
-            categoryId = note.categoryId,
-            ownerId = note.ownerId,
-            version = note.version,
-            syncStatus = note.syncStatus,
-            deleted = if (note.deleted) 1L else 0L,
-            // 🔄 20-Aug-2026 sync: INSERT OR REPLACE rewrites the WHOLE row — omitting these would
-            //   silently null the tombstone stamp and the server clock on every ordinary save.
-            deletedAt = note.deletedAt,
-            serverUpdatedAt = note.serverUpdatedAt,
-        )
-           database.transaction {
-               val contentsToWrite =
-                   if (dirtyContentIds == null) note.contents
-                   else note.contents.filter { it.id in dirtyContentIds }
-               contentsToWrite.forEach { content ->
-                   insertOrUpdateNotesContent(content)
-               }
-           }
+        database.transaction {
+            queries.insertOrUpdateNote(
+                id = note.id,
+                title = note.title,
+                updatedAt = note.updatedAt,
+                createdAt = note.createdAt,
+                categoryId = note.categoryId,
+                ownerId = note.ownerId,
+                version = note.version,
+                syncStatus = note.syncStatus,
+                deleted = if (note.deleted) 1L else 0L,
+                // 🔄 20-Aug-2026 sync: INSERT OR REPLACE rewrites the WHOLE row — omitting these would
+                //   silently null the tombstone stamp and the server clock on every ordinary save.
+                deletedAt = note.deletedAt,
+                serverUpdatedAt = note.serverUpdatedAt,
+            )
+            val contentsToWrite =
+                if (dirtyContentIds == null) note.contents
+                else note.contents.filter { it.id in dirtyContentIds }
+            contentsToWrite.forEach { content ->
+                insertOrUpdateNotesContent(content)
+            }
+        }
        log_d("NoteDao end ", note)
        return note
     }

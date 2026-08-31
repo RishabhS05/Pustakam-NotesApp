@@ -23,6 +23,10 @@ data class SyncSummary(
     val pulled: Int = 0,
     val mediaUploaded: Int = 0,
     val mediaDownloaded: Int = 0,
+    // 🔄 29-Aug-2026 — a cycle that "succeeded" while the server refused notes, or while files could
+    //   not move, is exactly what silent data loss looks like. Count both.
+    val rejected: Int = 0,
+    val mediaSkipped: Int = 0,
 )
 
 // 🔄 tuned so one push cannot exceed the server's SYNC_MAX_NOTES_PER_PUSH, and one pull page stays
@@ -43,8 +47,20 @@ object SyncConfig {
     //   to write, so those notes could never be delivered again.
     const val RESYNC_GENERATION = 1
     const val INTERVAL_MILLIS = 15L * 60L * 1000L
+
+    // 🔄 29-Aug-2026 — there is no server push channel, so a device only learns about another
+    //   device's edit when it asks. While the app is ON SCREEN it asks this often; 15 minutes is
+    //   for the background. Raise the server's RateLimitMax.SYNC together with this.
+    const val FOREGROUND_INTERVAL_MILLIS = 20L * 1000L
     // 🔄 28-Aug-2026 — short enough to feel immediate, long enough that typing is one push
     const val SAVE_DEBOUNCE_MILLIS = 1200L
+
+    // 🔄 28-Aug-2026 — how long a sync waits for preferences to hydrate before calling the session dead
+    const val SESSION_WAIT_MILLIS = 3000L
+
+    // 🔄 29-Aug-2026 — backoff is for a device nobody is looking at. On screen it must never grow
+    //   past this, or one failed cycle silently turns the 20s poll into a 30-minute one.
+    const val FOREGROUND_MAX_BACKOFF_MILLIS = 60L * 1000L
     const val BASE_BACKOFF_MILLIS = 30L * 1000L
     const val MAX_BACKOFF_MILLIS = 30L * 60L * 1000L
 

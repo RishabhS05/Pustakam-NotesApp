@@ -19,6 +19,11 @@ interface ISyncRepository {
     /** Platform connectivity seam — Android WorkManager / iOS NWPathMonitor push into this. */
     fun onConnectivityChanged(isOnline: Boolean)
 
+    /** 🔄 29-Aug-2026 — app on screen or not. On screen the engine polls every
+     *  [com.app.pustakam.core.model.models.sync.SyncConfig.FOREGROUND_INTERVAL_MILLIS], which is
+     *  how another device's edit reaches this one without the user pulling to refresh. */
+    fun setForeground(isForeground: Boolean)
+
     /** Fire-and-forget; safe to call from anywhere, coalesces with a run already in flight. */
     fun requestSync()
 

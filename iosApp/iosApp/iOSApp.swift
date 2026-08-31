@@ -76,6 +76,9 @@ private struct AppRootView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
+            // 🔄 29-Aug-2026 — on screen the engine polls in seconds, which is how the other
+            //   device's edit arrives without a pull-to-refresh.
+            SyncController.shared.setForeground(phase == .active)
             if phase == .active { SyncController.shared.nudge() }
             if phase == .background { SyncController.shared.scheduleBackgroundRefresh() }
         }

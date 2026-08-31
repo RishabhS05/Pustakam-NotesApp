@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import com.app.pustakam.feature.notes.domain.usecase.RequestSyncUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SetSyncForegroundUseCase
 import org.koin.android.ext.android.inject
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -39,6 +40,7 @@ import org.koin.compose.koinInject
 class MainActivity : ComponentActivity() {
 
     private val requestSync: RequestSyncUseCase by inject()
+    private val setSyncForeground: SetSyncForegroundUseCase by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,15 +73,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 🔄 28-Aug-2026 — coming back to the app is a sync trigger, exactly as it already is on
-        //   iOS (scenePhase == .active). Android had no foreground trigger at all: between the
-        //   15-minute WorkManager run and app launch, nothing pulled. Reopening the app looked
-        //   like it should update the list, and it never did.
+        // 🔄 29-Aug-2026 — on screen the engine polls in seconds instead of every 15 minutes, which
+        //   is the only way another device's edit reaches this one without a pull-to-refresh.
+        //   setForeground(true) syncs immediately as well, so this covers the old onResume trigger.
+        setSyncForeground(true)
         requestSync()
     }
 
     override fun onPause() {
         super.onPause()
+        setSyncForeground(false)
     }
   // 🔧 17-Aug-2026: Open With / Share — type detection is NOT done here any more; MimeCatalog
   //   already classifies every uri inside the shared ImportCoordinator.

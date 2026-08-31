@@ -47,6 +47,7 @@ import com.app.pustakam.feature.notes.domain.usecase.UpdateTagUseCase
 import com.app.pustakam.feature.notes.domain.usecase.NotifyConnectivityUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ObserveSyncStateUseCase
 import com.app.pustakam.feature.notes.domain.usecase.RequestSyncUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SetSyncForegroundUseCase
 import com.app.pustakam.feature.notes.domain.usecase.StartSyncUseCase
 import com.app.pustakam.feature.notes.domain.usecase.SyncNowUseCase
 import org.koin.core.module.Module
@@ -101,5 +102,6 @@ fun notesModule(): Module = module {
     factory<SyncNowUseCase> { SyncNowUseCase() }
     factory<RequestSyncUseCase> { RequestSyncUseCase() }
     factory<NotifyConnectivityUseCase> { NotifyConnectivityUseCase() }
+    factory<SetSyncForegroundUseCase> { SetSyncForegroundUseCase() }
     factory<ObserveSyncStateUseCase> { ObserveSyncStateUseCase() }
 }

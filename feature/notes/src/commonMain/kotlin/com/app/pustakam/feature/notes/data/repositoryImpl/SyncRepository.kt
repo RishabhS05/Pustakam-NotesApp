@@ -18,6 +18,7 @@ import com.app.pustakam.core.model.models.sync.SyncSummary
 import com.app.pustakam.feature.notes.data.sync.MediaSyncer
 import com.app.pustakam.feature.notes.data.sync.NoteWireMapper
 import com.app.pustakam.feature.notes.domain.repository.ILocalNotesRepository
+import com.app.pustakam.feature.notes.domain.repository.INoteSyncRepository
 import com.app.pustakam.feature.notes.domain.repository.ISyncRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -26,13 +27,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.component.inject
 
 private const val TAG = "SyncRepository"
@@ -42,6 +43,10 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
     private val localNotes: ILocalNotesRepository by inject()
 
     private val mediaSyncer: MediaSyncer by inject()
+
+    // 🔄 29-Aug-2026 — the in-app content bus. Every editor on both platforms already watches it,
+    //   so a note pulled from the other device lands on an open screen with no new UI wiring.
+    private val noteBus: INoteSyncRepository by inject()
 
     private val scope = CoroutineScope(SupervisorJob() + provideDispatcher().io)
 
@@ -53,8 +58,17 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
 
     private var started = false
     private var online = true
+    private var foreground = false
+    private var timerJob: Job? = null
     private var failures = 0
     private var mediaUploaded = 0
+
+    // 🔄 28-Aug-2026 — conflicts rewrite notes too, so the list has to be refreshed for them as well
+    private var conflictsResolved = 0
+
+    // 🔄 29-Aug-2026 — a cycle is not "successful" if the server refused notes or files could not move
+    private var notesRejected = 0
+    private var mediaSkipped = 0
 
     // 🔄 28-Aug-2026 — a pull stops at the first note it may not overwrite, so an unpushed local
     //   edit is never lost. These bound that wait: a note push can NEVER clean (a rejected one)
@@ -63,6 +77,9 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
     private var stalledCycles = 0
     private var sawConnectivity = false
     private var saveNudge: Job? = null
+
+    // 🔄 28-Aug-2026 — a save that lands mid-cycle is not in that cycle's payload; it needs one more run
+    private var rerunRequested = false
 
     override fun start() {
         if (started) return
@@ -80,7 +97,23 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
         //   fires when a save happens to go through insertOrUpdateNote(). Every other write path
         //   saved silently and never synced. NoteRepository now calls requestSyncSoon() outright.
 
-        scope.launch {
+        restartTimer()
+    }
+
+    /** 🔄 29-Aug-2026 — the ONLY way this device hears about the other one's edits, so the cadence
+     *  follows the screen: seconds while the app is open, 15 minutes once it is not. */
+    override fun setForeground(isForeground: Boolean) {
+        if (foreground == isForeground) return
+        foreground = isForeground
+        if (!started) return
+        restartTimer()
+        if (isForeground) requestSync()
+    }
+
+    /** 🔄 cancels the TIMER only — a cycle in flight runs in its own job on [scope] and survives. */
+    private fun restartTimer() {
+        timerJob?.cancel()
+        timerJob = scope.launch {
             while (isActive) {
                 delay(nextDelayMillis())
                 requestSync()
@@ -103,7 +136,7 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
     }
 
     override fun requestSync() {
-        scope.launch { syncNow() }
+        scope.launch { runGuarded(waitForRunningCycle = false) }
     }
 
     // 🔄 28-Aug-2026 — one pending nudge at a time: each save cancels the previous timer, so a
@@ -112,27 +145,48 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
         saveNudge?.cancel()
         saveNudge = scope.launch {
             delay(SyncConfig.SAVE_DEBOUNCE_MILLIS)
-            syncNow()
+            // 🔄 28-Aug-2026 — the nudge owns the WAIT, never the cycle. It used to run syncNow()
+            //   itself, so the next keystroke cancelled the very push it had just started.
+            requestSync()
         }
     }
 
-    override suspend fun syncNow(): Result<BaseResponse<SyncSummary>, Error> {
-        val userId = session.userId
-        if (!session.isAuthenticated || userId.isBlank()) {
-            return Result.Error(NetworkError.SESSION_EXPIRED)
-        }
+    /** 🔄 an awaited caller (pull-to-refresh, the background worker) waits for the cycle in flight
+     *  instead of being told "fine" while nothing happened on screen. */
+    override suspend fun syncNow(): Result<BaseResponse<SyncSummary>, Error> =
+        runGuarded(waitForRunningCycle = true)
+
+    private suspend fun runGuarded(waitForRunningCycle: Boolean): Result<BaseResponse<SyncSummary>, Error> {
         if (!online) {
             _syncState.value = SyncRunState.Offline
             return Result.Error(NetworkError.NO_INTERNET)
         }
-        // 🔄 a run is already in flight — its result covers this caller too
-        if (!runLock.tryLock()) {
+        val userId = activeUserId() ?: return Result.Error(NetworkError.SESSION_EXPIRED)
+        // 🔄 a fire-and-forget trigger coalesces into the run already in flight; an awaited one queues
+        if (!waitForRunningCycle && !runLock.tryLock()) {
+            rerunRequested = true
             return Result.Success(BaseResponse(data = SyncSummary(), isSuccessful = true))
         }
+        if (waitForRunningCycle) runLock.lock()
+        // 🔄 only triggers that arrive AFTER this point describe work this cycle cannot have seen
+        rerunRequested = false
         return try {
             runCycle(userId)
         } finally {
             runLock.unlock()
+            if (rerunRequested) {
+                rerunRequested = false
+                requestSync()
+            }
+        }
+    }
+
+    /** 🔄 28-Aug-2026 — preferences hydrate asynchronously, so a sync fired at cold start read a
+     *  blank session and reported SESSION_EXPIRED: "Sync failed", no reason, on the first refresh. */
+    private suspend fun activeUserId(): String? {
+        session.userId.takeIf { session.isAuthenticated && it.isNotBlank() }?.let { return it }
+        return withTimeoutOrNull(SyncConfig.SESSION_WAIT_MILLIS) {
+            session.state.first { it.isAuthenticated && it.userId.isNotBlank() }.userId
         }
     }
 
@@ -142,38 +196,51 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
     private suspend fun runCycle(userId: String): Result<BaseResponse<SyncSummary>, Error> {
         _syncState.value = SyncRunState.Syncing
         mediaUploaded = 0
+        conflictsResolved = 0
+        notesRejected = 0
+        mediaSkipped = 0
         healWatermarkIfStale(userId)
 
         // 🔄 28-Aug-2026 — outbound and inbound are INDEPENDENT halves. Returning here on a push
         //   error (the old behaviour) meant one note the server would not take stopped every
         //   incoming change from ever arriving again — sync looked dead while the network was fine.
-        var failure: Error? = null
+        var pushFailure: Error? = null
+        var pullFailure: Error? = null
 
         val pushed = when (val result = pushDirtyNotes(userId)) {
-            is Result.Error -> 0.also { failure = result.error }
+            is Result.Error -> 0.also { pushFailure = result.error }
             is Result.Success -> result.data
             is Result.Loading -> 0
         }
 
         val pulled = when (val result = pullChanges(userId)) {
-            is Result.Error -> 0.also { if (failure == null) failure = result.error }
+            is Result.Error -> 0.also { pullFailure = result.error }
             is Result.Success -> result.data
             is Result.Loading -> 0
         }
 
-        // 🖼️ eager download: everything the server has and this device does not, budget permitting
-        val mediaDownloaded = if (failure == null) backfillMedia(userId) else 0
+        // 🖼️ 28-Aug-2026 — the bytes follow the PULL alone. Gating them on the whole cycle meant one
+        //   note the server would not take also kept every image on this device permanently blank.
+        val mediaDownloaded = if (pullFailure == null) backfillMedia(userId) else 0
 
-        if (pulled > 0 || pushed > 0 || mediaDownloaded > 0) localNotes.refreshFromDb()
+        val changed = pushed > 0 || pulled > 0 || conflictsResolved > 0 ||
+            mediaUploaded > 0 || mediaDownloaded > 0
+        if (changed) localNotes.refreshFromDb()
 
-        failure?.let { return failed(it) }
+        (pushFailure ?: pullFailure)?.let { return failed(it) }
 
         failures = 0
         _syncState.value = SyncRunState.Success(getCurrentTimestamp(), pushed, pulled)
-        log_d(TAG, "sync done: pushed=$pushed pulled=$pulled mediaUp=$mediaUploaded mediaDown=$mediaDownloaded")
+        log_d(
+            TAG,
+            "sync done: pushed=$pushed pulled=$pulled conflicts=$conflictsResolved " +
+                "mediaUp=$mediaUploaded mediaDown=$mediaDownloaded rejected=$notesRejected mediaSkipped=$mediaSkipped"
+        )
         return Result.Success(
             BaseResponse(
-                data = SyncSummary(pushed, pulled, mediaUploaded, mediaDownloaded),
+                data = SyncSummary(
+                    pushed, pulled, mediaUploaded, mediaDownloaded, notesRejected, mediaSkipped
+                ),
                 isSuccessful = true
             )
         )
@@ -204,10 +271,14 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
                 // 🖼️ insertOrUpdateNoteFromDb, NOT applyServerNote — this must preserve whatever
                 //   syncStatus the note already had, or a locally edited note would be marked clean.
                 notesDao.insertOrUpdateNoteFromDb(outcome.note)
+                publishToOpenEditor(outcome.note)
                 downloaded += outcome.moved
                 budget -= outcome.moved
             }
-            if (outcome.skipped > 0) log_d(TAG, "note $noteId: ${outcome.skipped} file(s) not downloaded")
+            if (outcome.skipped > 0) {
+                mediaSkipped += outcome.skipped
+                log_d(TAG, "SYNC-MEDIA note $noteId: ${outcome.skipped} file(s) NOT downloaded — retried next cycle")
+            }
         }
 
         if (budget <= 0) log_d(TAG, "media budget spent this cycle; the rest follows on the next run")
@@ -221,7 +292,11 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
         //   forever and this loop hammered the server until the rate limiter cut the device off.
         val attempted = mutableSetOf<String>()
         while (true) {
-            val dirty = notesDao.selectDirtyNotes(SyncConfig.PUSH_BATCH).filterNot { it.id in attempted }
+            // 🔄 28-Aug-2026 — ask for the batch PLUS what was already tried, or a note the server
+            //   keeps refusing sits at the head of the queue and starves everything behind it.
+            val dirty = notesDao.selectDirtyNotes(SyncConfig.PUSH_BATCH + attempted.size)
+                .filterNot { it.id in attempted }
+                .take(SyncConfig.PUSH_BATCH)
             if (dirty.isEmpty()) return Result.Success(pushed)
             attempted += dirty.map { it.id }
 
@@ -236,10 +311,14 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
                     mediaUploaded += outcome.moved
                 }
                 if (outcome.skipped > 0) {
-                    log_d(TAG, "note ${note.id}: ${outcome.skipped} media file(s) not uploaded")
+                    mediaSkipped += outcome.skipped
+                    log_d(TAG, "SYNC-MEDIA note ${note.id}: ${outcome.skipped} file(s) NOT uploaded — the note still pushes without them")
                 }
                 outcome.note
             }
+
+            // 🔄 the version each note leaves with — only THAT version may be marked clean again
+            val sentVersions = prepared.associate { it.id to it.version }
 
             val request = SyncPushRequest(
                 notes = prepared.map { NoteWireMapper.toWire(it) },
@@ -253,7 +332,13 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
             } ?: return Result.Success(pushed)
 
             response.accepted.forEach { accepted ->
-                notesDao.markNoteSynced(accepted.id, accepted.version, accepted.serverUpdatedAt)
+                val sent = sentVersions[accepted.id].orEmpty()
+                notesDao.markNoteSynced(
+                    id = accepted.id,
+                    pushedVersion = sent,
+                    acceptedVersion = accepted.version.ifBlank { sent },
+                    serverUpdatedAt = accepted.serverUpdatedAt,
+                )
                 pushed++
             }
 
@@ -262,12 +347,22 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
             //   definition, so the canApplyOverLocal() guard used on a pull would refuse it and
             //   leave the note dirty — re-pushed, re-conflicted, forever.
             response.conflicts.forEach { conflict ->
-                conflict.server?.let { serverNote -> applyServerWins(serverNote) }
+                conflict.server?.let { serverNote ->
+                    applyServerWins(serverNote)
+                    conflictsResolved++
+                }
             }
 
             // 🔄 a rejected note stays DIRTY on purpose — marking it clean would lose the edit silently
+            // 🔄 29-Aug-2026 — and the server now says WHICH field, so print it: a rejection that
+            //   only said "refused" is why one bad content block went undiagnosed for weeks.
             response.rejected.forEach { rejected ->
-                log_d(TAG, "push rejected ${rejected.id}: ${rejected.code} ${rejected.message}")
+                notesRejected++
+                val why = rejected.fields
+                    ?.entries
+                    ?.joinToString("; ") { (field, messages) -> "$field: ${messages.joinToString(", ")}" }
+                    .orEmpty()
+                log_d(TAG, "SYNC-REJECTED note ${rejected.id} [${rejected.code}] ${rejected.message} $why")
             }
         }
     }
@@ -350,7 +445,17 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
     /** 🔄 keeps this device's media file paths. The caller has already decided the server wins. */
     private fun applyServerWins(incoming: Note) {
         val local = notesDao.selectNoteByIdIncludingDeleted(incoming.id)
-        notesDao.applyServerNote(NoteWireMapper.mergeLocalMedia(incoming, local))
+        val merged = NoteWireMapper.mergeLocalMedia(incoming, local)
+        notesDao.applyServerNote(merged)
+        publishToOpenEditor(merged)
+    }
+
+    /** 🔄 29-Aug-2026 — writing the row is not enough: an editor already on screen reads its own
+     *  state, not the database. This is the bus it is subscribed to, and its merge keeps unsaved
+     *  local edits, so a note open on both devices picks the other one's change up live. */
+    private fun publishToOpenEditor(note: Note) {
+        if (note.deleted) return
+        noteBus.publishContents(note.id, note.contents)
     }
 
     private fun noteStalledOn(noteId: String) {
@@ -383,6 +488,13 @@ internal class SyncRepository : BaseRepository(), ISyncRepository {
         return backoff.coerceAtMost(SyncConfig.MAX_BACKOFF_MILLIS)
     }
 
-    private fun nextDelayMillis(): Long =
-        if (_syncState.value is SyncRunState.Failed) currentBackoffMillis() else SyncConfig.INTERVAL_MILLIS
+    private fun nextDelayMillis(): Long = when {
+        // 🔄 29-Aug-2026 — backoff is for a device nobody is watching. On screen it is capped, or a
+        //   single failed cycle quietly turned the 20-second poll into a 30-minute one.
+        _syncState.value is SyncRunState.Failed ->
+            if (foreground) currentBackoffMillis().coerceAtMost(SyncConfig.FOREGROUND_MAX_BACKOFF_MILLIS)
+            else currentBackoffMillis()
+        foreground -> SyncConfig.FOREGROUND_INTERVAL_MILLIS
+        else -> SyncConfig.INTERVAL_MILLIS
+    }
 }

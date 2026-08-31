@@ -9,6 +9,7 @@ import com.app.pustakam.core.model.models.sync.SyncSummary
 import com.app.pustakam.feature.notes.domain.usecase.NotifyConnectivityUseCase
 import com.app.pustakam.feature.notes.domain.usecase.ObserveSyncStateUseCase
 import com.app.pustakam.feature.notes.domain.usecase.RequestSyncUseCase
+import com.app.pustakam.feature.notes.domain.usecase.SetSyncForegroundUseCase
 import com.app.pustakam.feature.notes.domain.usecase.StartSyncUseCase
 import com.app.pustakam.feature.notes.domain.usecase.SyncNowUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,7 @@ class SyncBridge : KoinComponent {
     private val syncNowUseCase: SyncNowUseCase by inject()
     private val requestSyncUseCase: RequestSyncUseCase by inject()
     private val notifyConnectivityUseCase: NotifyConnectivityUseCase by inject()
+    private val setForegroundUseCase: SetSyncForegroundUseCase by inject()
     private val observeSyncStateUseCase: ObserveSyncStateUseCase by inject()
 
     /** Call once, from iOSApp on launch. Idempotent. */
@@ -43,6 +45,9 @@ class SyncBridge : KoinComponent {
 
     /** NWPathMonitor result. Passing true after a drop is what flushes offline work. */
     fun setOnline(isOnline: Boolean) = notifyConnectivityUseCase(isOnline)
+
+    /** scenePhase. On screen the engine polls in seconds so another device's edit shows up. */
+    fun setForeground(isForeground: Boolean) = setForegroundUseCase(isForeground)
 
     /** Pull-to-refresh: waits for the cycle and reports what moved. */
     fun syncNow(

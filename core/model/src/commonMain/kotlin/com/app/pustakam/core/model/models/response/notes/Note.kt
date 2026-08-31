@@ -163,7 +163,7 @@ sealed class NoteContentModel {
     ) : NoteContentModel()
 
     fun isMediaFile() : Boolean = this is MediaContent
-    inline fun isPlayableMedia(): Boolean = this.type.isPlayableMedia()
+    fun isPlayableMedia(): Boolean = this.type.isPlayableMedia()
 }
 // 🔧 15-Jul-2026 iOS MEDIA-LOST FIX: localPath goes through resolveLocalFilePath — on iOS the app
 //   container UUID changes on every update, so stored absolute paths are re-anchored onto the

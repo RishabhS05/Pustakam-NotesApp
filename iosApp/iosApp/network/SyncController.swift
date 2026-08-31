@@ -57,6 +57,11 @@ final class SyncController {
         bridge.nudge()
     }
 
+    /// 🔄 29-Aug-2026 — app on screen or not; on screen the engine polls in seconds.
+    func setForeground(_ isForeground: Bool) {
+        bridge.setForeground(isForeground: isForeground)
+    }
+
     /// 🔄 28-Aug-2026 — pull to refresh. Runs ONE full cycle and waits for it, so the spinner
     /// stops when the work is actually done. Returns nil on success, or the reason it failed —
     /// a sync that fails silently is exactly why this feature looked broken.

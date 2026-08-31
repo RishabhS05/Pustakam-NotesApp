@@ -39,6 +39,7 @@ private const val BEARER_PREFIX = "Bearer "
 @PublishedApi internal const val STATUS_REQUEST_TIMEOUT = 408
 @PublishedApi internal const val STATUS_CONFLICT = 409
 @PublishedApi internal const val STATUS_PAYLOAD_TOO_LARGE = 413
+@PublishedApi internal const val STATUS_UNPROCESSABLE_ENTITY = 422
 @PublishedApi internal const val STATUS_TOO_MANY_REQUESTS = 429
 
 abstract class BaseClient  : KoinComponent {
@@ -96,7 +97,17 @@ abstract class BaseClient  : KoinComponent {
         captureHeaderToken(response)
 
            when (response.status.value){
-               in 200..299 -> emit(Result.Success(response.body<T>()))
+               in 200..299 -> {
+                   // 🔧 28-Aug-2026: a body that will not decode used to throw straight out of the
+                   //   flow and take the collector with it; it is an error result like any other now.
+                   val decoded: Result<T, Error> = try {
+                       Result.Success(response.body<T>())
+                   } catch (e: Throwable) {
+                       log_d("Error", "$e")
+                       Result.Error(NetworkError.SERIALIZATION)
+                   }
+                   emit(decoded)
+               }
                STATUS_BAD_REQUEST -> emit(Result.Error(NetworkError.BAD_REQUEST))
                STATUS_UNAUTHORIZED -> emit(Result.Error(NetworkError.UNAUTHORIZED))
                STATUS_FORBIDDEN -> emit(Result.Error(NetworkError.FORBIDDEN))
@@ -104,6 +115,8 @@ abstract class BaseClient  : KoinComponent {
                STATUS_CONFLICT -> emit(Result.Error(NetworkError.CONFLICT))
                STATUS_REQUEST_TIMEOUT -> emit(Result.Error(NetworkError.REQUEST_TIMEOUT))
                STATUS_PAYLOAD_TOO_LARGE -> emit(Result.Error(NetworkError.PAYLOAD_TOO_LARGE))
+               // 🔧 28-Aug-2026: the server answers a schema rejection with 422, not 400
+               STATUS_UNPROCESSABLE_ENTITY -> emit(Result.Error(NetworkError.VALIDATION_FAILED))
                STATUS_TOO_MANY_REQUESTS -> emit(Result.Error(NetworkError.TOO_MANY_REQUESTS))
                in 500 ..599 -> emit(Result.Error(NetworkError.SERVER_ERROR))
                else ->  emit(Result.Error(NetworkError.UNKNOWN))

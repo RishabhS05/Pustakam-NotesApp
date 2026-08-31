@@ -138,10 +138,13 @@ internal class NoteRepository : BaseRepository(), INoteRepository {
         }
     }
     // 🔄 20-Aug-2026 sync: called after a pull commits, so the list screen shows what arrived
+    // 🔄 29-Aug-2026 — one page of HEADROOM. The list is ordered by id, and ids are timestamp
+    //   prefixed, so a note just made on the other device sorts LAST. Re-reading exactly as many
+    //   rows as were already loaded therefore never included it: it synced and stayed invisible.
     override suspend fun refreshFromDb() {
-        val loaded = _noteSummaries.value.size.coerceAtLeast(NOTES_PAGE_SIZE)
+        val loaded = _noteSummaries.value.size + NOTES_PAGE_SIZE
         _noteSummaries.value = notesDao.selectNoteSummariesPage(limit = loaded, page = 1)
-        val cached = _notes.value.notes.size.coerceAtLeast(NOTES_PAGE_SIZE)
+        val cached = _notes.value.notes.size + NOTES_PAGE_SIZE
         _notes.value = notesDao.selectAllNotesFromDb(limit = cached, page = 1)
     }
 

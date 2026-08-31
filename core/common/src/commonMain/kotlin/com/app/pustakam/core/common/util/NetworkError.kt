@@ -24,7 +24,7 @@ enum class NetworkError : Error {
     },
     CONFLICT {
         override fun getError(): String {
-            return ""
+            return "This was changed somewhere else. The other copy was kept."
         }
     },
     TOO_MANY_REQUESTS {
@@ -39,7 +39,7 @@ enum class NetworkError : Error {
     },
     PAYLOAD_TOO_LARGE {
         override fun getError(): String {
-            return ""
+            return "That file is too large to upload."
         }
     },
     SERVER_ERROR {
@@ -70,9 +70,16 @@ enum class NetworkError : Error {
             return "The request was rejected. Please try again."
         }
     },
+    // 🔧 28-Aug-2026: 422 had no mapping at all, so a rejected sync surfaced as UNKNOWN — and
+    //   UNKNOWN's message was an empty string, which is the blank "Sync failed" alert.
+    VALIDATION_FAILED {
+        override fun getError(): String {
+            return "The server could not accept this data."
+        }
+    },
     UNKNOWN {
         override fun getError(): String {
-            return ""
+            return "Something went wrong. Please try again."
         }
 
     };

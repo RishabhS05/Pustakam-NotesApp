@@ -37,6 +37,12 @@ class NotifyConnectivityUseCase : SyncBaseUseCase() {
     operator fun invoke(isOnline: Boolean) = remoteSync.onConnectivityChanged(isOnline)
 }
 
+/** 🔄 29-Aug-2026 — app on screen or not: Android onResume/onPause, iOS scenePhase. On screen the
+ *  engine polls in seconds, which is how the other device's edit arrives without a pull-to-refresh. */
+class SetSyncForegroundUseCase : SyncBaseUseCase() {
+    operator fun invoke(isForeground: Boolean) = remoteSync.setForeground(isForeground)
+}
+
 class ObserveSyncStateUseCase : SyncBaseUseCase() {
     operator fun invoke(): StateFlow<SyncRunState> = remoteSync.syncState
 }

@@ -43,11 +43,9 @@ enum class ContentType {
 
    open fun getExt() = ""
 }
-
 /** Types that can be written into the system gallery rather than a document folder. */
-inline  fun ContentType.isGalleryEligible(): Boolean = this in setOf(IMAGE, VIDEO, GIF)
-inline fun ContentType.isMedia() = this in setOf(IMAGE, VIDEO, AUDIO, GIF)
-inline fun ContentType.isDoc() = this in setOf(DOCX, PDF, EPUB, TXT,MD, OTHER)
-inline fun ContentType.isImage() = this in setOf(IMAGE, GIF)
-
-inline fun ContentType.isPlayableMedia() = this in setOf(AUDIO, VIDEO)
+fun ContentType.isGalleryEligible(): Boolean = this in setOf(IMAGE, VIDEO, GIF)
+fun ContentType.isMedia() = this in setOf(IMAGE, VIDEO, AUDIO, GIF)
+fun ContentType.isDoc() = this in setOf(DOCX, PDF, EPUB, TXT,MD, OTHER)
+fun ContentType.isImage() = this in setOf(IMAGE, GIF)
+fun ContentType.isPlayableMedia() = this in setOf(AUDIO, VIDEO)

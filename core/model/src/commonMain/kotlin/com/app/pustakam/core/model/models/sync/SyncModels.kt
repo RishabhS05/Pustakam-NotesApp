@@ -4,8 +4,7 @@ import com.app.pustakam.core.model.models.response.notes.Note
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// 🔄 20-Aug-2026 sync: the wire shape of POST /sync/{userId}/push and GET /sync/{userId}/pull.
-//   Server source of truth: PustakmServer/services/syncService.js + validation/syncSchemas.js
+
 
 @Serializable
 data class SyncPushRequest(
@@ -42,6 +41,9 @@ data class SyncRejected(
     val id: String? = null,
     val code: String? = null,
     val message: String? = null,
+    // 🔄 29-Aug-2026 — { "contents.0._id": ["Invalid id format"] }. Without this a rejection was
+    //   an unexplained "the server would not take it", which is how one bad block hid for weeks.
+    val fields: Map<String, List<String>>? = null,
 )
 
 @Serializable

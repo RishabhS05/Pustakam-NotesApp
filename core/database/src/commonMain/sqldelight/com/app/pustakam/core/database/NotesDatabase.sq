@@ -393,10 +393,14 @@ deleteNoteContentsForNote:
 DELETE FROM NoteContent WHERE noteId = ?;
 
 -- 🔄 only the server may mark a note clean, and only with the version IT accepted
+-- 🔄 28-Aug-2026 — guarded on the version that actually went up: a save made while the push was in
+--   flight has already moved the version on, and cleaning THAT row loses the edit with no trace.
 markNoteSynced:
 UPDATE Notes
-SET syncStatus = 'SYNCED', version = ?, serverUpdatedAt = ?
-WHERE id = ?;
+SET syncStatus = CASE WHEN version = :pushedVersion THEN 'SYNCED' ELSE syncStatus END,
+    version = CASE WHEN version = :pushedVersion THEN :acceptedVersion ELSE version END,
+    serverUpdatedAt = :serverUpdatedAt
+WHERE id = :id;
 
 -- 🔄 a tombstone is only droppable once we have pulled PAST it, so no pull can resurrect it
 purgeAckedTombstones:
